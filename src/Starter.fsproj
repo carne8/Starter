@@ -9,7 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="App.fs" />
+    <Compile Include="Helpers.fs" />
+
+    <Compile Include="App/App.Types.fs" />
+    <Compile Include="App/App.State.fs" />
+    <Compile Include="App/App.View.fs" />
+    <Compile Include="App/App.Host.fs" />
+
     <Compile Include="Program.fs" />
   </ItemGroup>
 
