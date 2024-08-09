@@ -1,12 +1,7 @@
 ﻿module Program
 
 open System
-open System.Threading
-open SharpHook
-open SharpHook.Native
-
 open Avalonia
-open Avalonia.Controls
 
 [<CompiledName "BuildAvaloniaApp">]
 let buildAvaloniaApp () =

@@ -1,71 +1,52 @@
 module Starter.App.Host
 
 open Starter.App
+open Starter.Features.Shortcuts
+
+open System.Threading
 open Elmish
+open SharpHook.Native
+open FluentAvalonia.Styling
+
 open Avalonia
 open Avalonia.Controls
 open Avalonia.Controls.ApplicationLifetimes
 open Avalonia.FuncUI.Hosts
 open Avalonia.FuncUI.Elmish
+open Avalonia.Media
 
-open System.Threading
-open SharpHook
-open SharpHook.Native
+let startElmish (hostWindow: HostWindow) =
+    let subscribeToWindowEvents = fun dispatch ->
+        let activated =
+            hostWindow.Activated.Subscribe(fun _ ->
+                WindowEvent.WindowActivated |> Msg.WindowEvent |> dispatch
+            )
+        let deactivated =
+            hostWindow.Deactivated.Subscribe(fun _ ->
+                WindowEvent.WindowDeactivated |> Msg.WindowEvent |> dispatch
+            )
 
-type KeyboardShortcutListener() =
-    let hook = new TaskPoolGlobalHook()
-    let event = new Event<unit>()
+        { new System.IDisposable with
+            member __.Dispose() =
+                activated.Dispose()
+                deactivated.Dispose()
+        }
 
-    // State
-    let shortcutKeys = [KeyCode.VcRightControl; KeyCode.VcSpace] |> Set.ofList
-    let mutable pressedKeys = Set.empty<KeyCode>
+    let subscribe _model =
+        [ ["window-events"], subscribeToWindowEvents ]
 
-    // Event handlers
-    let keyUp keyCode = pressedKeys <- pressedKeys |> Set.remove keyCode
-    let keyDown keyCode =
-        match pressedKeys |> Set.contains keyCode with // Ignore already pressed keys
-        | true -> ()
-        | false ->
-            // Add the key to the set
-            pressedKeys <- pressedKeys |> Set.add keyCode
+    Program.mkProgram State.init (State.update hostWindow) View.view
+    |> Program.withSubscription subscribe
+    |> Program.withHost hostWindow
+    |> Program.runWith hostWindow
 
-            // Check if the shortcut is pressed
-            let isShortcut =
-                shortcutKeys.Count = pressedKeys.Count
-                && shortcutKeys |> Set.forall (fun key -> pressedKeys |> Set.contains key)
-
-            match isShortcut with
-            | true -> event.Trigger()
-            | false -> ()
-
-    do
-        hook.HookEnabled.Add(fun _ -> printfn "Hook enabled")
-        hook.KeyPressed.Add(_.Data.KeyCode >> keyDown)
-        hook.KeyReleased.Add(_.Data.KeyCode >> keyUp)
-
-    member _.Run(ct: CancellationToken) =
-        ct.Register(fun _ -> hook.Dispose()) |> ignore
-        hook.RunAsync() |> ignore
-
-    member _.Dispose() = hook.Dispose()
-
-    [<CLIEvent>]
-    member _.ShortcutPressed = event.Publish
-
-
-let startElmish (host: IViewHost) =
-    Program.mkProgram State.init State.update View.view
-    |> Program.withHost host
-    |> Program.run
-
-let initAppWindow
-    (window: HostWindow)
-    =
+let initAppWindow (window: HostWindow) =
     window.Title <- "Starter"
-    // window.SystemDecorations <- SystemDecorations.None
+    window.SystemDecorations <- SystemDecorations.None
     window.Width <- 300
-    window.Height <- 30
-    // window.Show()
+    window.Height <- 35
+    window.Background <- Brushes.Transparent
+    window.Topmost <- true
 
     #if DEBUG
     window.AttachDevTools()
@@ -76,17 +57,22 @@ let initAppWindow
 type App() =
     inherit Application()
 
+    override this.Initialize() =
+        this.Styles.Add (FluentAvaloniaTheme())
+        this.RequestedThemeVariant <- Styling.ThemeVariant.Light
+
     override this.OnFrameworkInitializationCompleted() =
         match this.ApplicationLifetime with
         | :? IClassicDesktopStyleApplicationLifetime as desktop ->
             desktop.ShutdownMode <- ShutdownMode.OnExplicitShutdown
 
+            let hook = new ShortcutListener([KeyCode.VcRightControl; KeyCode.VcSpace])
+
             // Create window
             let window = HostWindow()
             window |> initAppWindow
+            window.Closed.Add(fun _ -> desktop.Shutdown())
 
-            // Hook
-            let hook = new KeyboardShortcutListener()
             hook.ShortcutPressed.Add(fun _ ->
                 Threading.runInUIThread'
                     Threading.DispatcherPriority.MaxValue
@@ -94,12 +80,9 @@ type App() =
                      | true -> ignore
                      | false -> window.Show)
             )
-            hook.Run(CancellationToken.None) |> ignore
 
-            window.LostFocus.Add(fun _ -> // TODO: This doesn't work
-                printfn "Lost focus"
-                window.Hide()
-            )
+            hook.Run(CancellationToken.None) |> ignore
+            desktop.ShutdownRequested.Add(fun _ -> hook.Dispose())
         | _ -> ()
 
         base.OnFrameworkInitializationCompleted()
