@@ -2,8 +2,8 @@ namespace Starter.App
 
 [<RequireQualifiedAccess>]
 type WindowEvent =
-    | WindowActivated
-    | WindowDeactivated
+    | WindowOpened
+    | WindowHidden
 
 type Model =
     { Text: string

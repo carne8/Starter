@@ -18,7 +18,7 @@ module Cmds =
         Cmd.Avalonia.runUiAction (ignore >> window.Hide)
 
 module State =
-    let init (_window: Window) =
+    let init (_window: Window) () =
         { Text = "Hello"
           TextBox = None },
         Cmd.none
@@ -26,8 +26,8 @@ module State =
     let update (window: Window) msg model =
         match msg with
         // Subscriptions
-        | Msg.WindowEvent (WindowEvent.WindowActivated) -> model, Cmds.resetTextBox model
-        | Msg.WindowEvent (WindowEvent.WindowDeactivated) -> model, Cmds.hideWindow window
+        | Msg.WindowEvent (WindowEvent.WindowOpened) -> model, Cmds.resetTextBox model
+        | Msg.WindowEvent (WindowEvent.WindowHidden) -> model, Cmds.hideWindow window
 
         | Msg.SetTextBox textBox -> { model with TextBox = Some textBox }, Cmd.none
         | Msg.TextChanged text -> { model with Text = text }, Cmd.none

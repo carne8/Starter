@@ -17,28 +17,26 @@ open Avalonia.Media
 
 let startElmish (hostWindow: HostWindow) =
     let subscribeToWindowEvents = fun dispatch ->
-        let activated =
-            hostWindow.Activated.Subscribe(fun _ ->
-                WindowEvent.WindowActivated |> Msg.WindowEvent |> dispatch
-            )
-        let deactivated =
-            hostWindow.Deactivated.Subscribe(fun _ ->
-                WindowEvent.WindowDeactivated |> Msg.WindowEvent |> dispatch
-            )
+        let dispatch = Msg.WindowEvent >> dispatch
+
+        let opened = hostWindow.Opened.Subscribe(fun _ -> WindowEvent.WindowOpened |> dispatch)
+        let hidden = hostWindow.Deactivated.Subscribe(fun _ -> WindowEvent.WindowHidden |> dispatch)
 
         { new System.IDisposable with
             member __.Dispose() =
-                activated.Dispose()
-                deactivated.Dispose()
+                opened.Dispose()
+                hidden.Dispose()
         }
 
-    let subscribe _model =
-        [ ["window-events"], subscribeToWindowEvents ]
+    let subscribe _model = [ ["window-events"], subscribeToWindowEvents ]
 
-    Program.mkProgram State.init (State.update hostWindow) View.view
+    Program.mkProgram
+        (State.init hostWindow)
+        (State.update hostWindow)
+        View.view
     |> Program.withSubscription subscribe
     |> Program.withHost hostWindow
-    |> Program.runWith hostWindow
+    |> Program.run
 
 let initAppWindow (window: HostWindow) =
     window.Title <- "Starter"
@@ -57,6 +55,20 @@ let initAppWindow (window: HostWindow) =
 type App() =
     inherit Application()
 
+    let displayWindowAndHideIt (window: Window) =
+        task {
+            let taskCompletionSource = new Tasks.TaskCompletionSource()
+
+            let sub = window.Opened.Subscribe(fun _ ->
+                window.Hide()
+                taskCompletionSource.TrySetResult() |> ignore
+            )
+
+            window.Show()
+            do! taskCompletionSource.Task
+            sub.Dispose()
+        }
+
     override this.Initialize() =
         this.Styles.Add (FluentAvaloniaTheme())
         this.RequestedThemeVariant <- Styling.ThemeVariant.Light
@@ -72,6 +84,12 @@ type App() =
             let window = HostWindow()
             window |> initAppWindow
             window.Closed.Add(fun _ -> desktop.Shutdown())
+
+            // This fix a bug where the window doesn't have focus the first time it's shown
+            // But doesn't fix the bug when published with AOT
+            window
+            |> displayWindowAndHideIt
+            |> ignore
 
             hook.ShortcutPressed.Add(fun _ ->
                 Threading.runInUIThread'

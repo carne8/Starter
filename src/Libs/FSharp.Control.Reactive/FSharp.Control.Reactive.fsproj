@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <PublishAot>true</PublishAot>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <DebugType>Full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <DebugType>None</DebugType>
+    <DebugSymbols>false</DebugSymbols>
+    <NativeDebugSymbols>false</NativeDebugSymbols>
+  </PropertyGroup>
+
+  <Target Name="ConfigureTrimming" BeforeTargets="PrepareForILLink">
+    <ItemGroup>
+      <ManagedAssemblyToLink Condition="'%(Filename)' == 'FSharp.Control.Reactive'">
+        <TrimMode>link</TrimMode>
+        <IsTrimmable>true</IsTrimmable>
+      </ManagedAssemblyToLink>
+    </ItemGroup>
+  </Target>
+  <ItemGroup>
+    <Compile Include="Disposable.fs" />
+    <Compile Include="Scheduler.fs" />
+    <Compile Include="Subject.fs" />
+    <Compile Include="Observable.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Reactive" Version="6.0.1" />
+  </ItemGroup>
+</Project>
