@@ -13,7 +13,6 @@ open Avalonia.Controls
 open Avalonia.Controls.ApplicationLifetimes
 open Avalonia.FuncUI.Hosts
 open Avalonia.FuncUI.Elmish
-open Avalonia.Media
 
 let startElmish (hostWindow: HostWindow) =
     let subscribeToWindowEvents = fun dispatch ->
@@ -38,36 +37,47 @@ let startElmish (hostWindow: HostWindow) =
     |> Program.withHost hostWindow
     |> Program.run
 
-let initAppWindow (window: HostWindow) =
-    window.Title <- "Starter"
-    window.SystemDecorations <- SystemDecorations.None
-    window.Width <- 300
-    window.Height <- 35
-    window.Background <- Brushes.Transparent
-    window.Topmost <- true
+type AppWindow() =
+    inherit HostWindow()
 
-    #if DEBUG
-    window.AttachDevTools()
-    #endif
+    override this.OnInitialized() =
+        this.Title <- "Starter"
+        this.SizeToContent <- SizeToContent.WidthAndHeight
+        this.ShowInTaskbar <- false
+        this.SystemDecorations <- SystemDecorations.None
+        this.Topmost <- true
 
-    startElmish window
+        this.Deactivated.Add(fun _ -> this.Hide())
+
+        #if DEBUG
+        this.AttachDevTools()
+        #endif
+
+        startElmish this
 
 type App() =
     inherit Application()
 
-    let displayWindowAndHideIt (window: Window) =
-        task {
-            let taskCompletionSource = new Tasks.TaskCompletionSource()
+    let mutable window: AppWindow option = None
 
-            let sub = window.Opened.Subscribe(fun _ ->
-                window.Hide()
-                taskCompletionSource.TrySetResult() |> ignore
+    let showWindow() =
+        Threading.runInUIThread'
+            Threading.DispatcherPriority.MaxValue
+            (fun _ ->
+                match window with
+                | Some w when w.IsVisible -> () // Don't show the window if it's already shown
+                | _ ->
+                    window <- new AppWindow() |> Some
+                    window.Value.Show()
             )
 
-            window.Show()
-            do! taskCompletionSource.Task
-            sub.Dispose()
-        }
+    let initializeHook (desktop: IClassicDesktopStyleApplicationLifetime) =
+        let hook = new ShortcutListener([KeyCode.VcRightControl; KeyCode.VcSpace])
+
+        hook.ShortcutPressed.Add showWindow
+        desktop.ShutdownRequested.Add (fun _ -> hook.Dispose())
+
+        hook.Run(CancellationToken.None) |> ignore
 
     override this.Initialize() =
         this.Styles.Add (FluentAvaloniaTheme())
@@ -75,32 +85,7 @@ type App() =
 
     override this.OnFrameworkInitializationCompleted() =
         match this.ApplicationLifetime with
-        | :? IClassicDesktopStyleApplicationLifetime as desktop ->
-            desktop.ShutdownMode <- ShutdownMode.OnExplicitShutdown
-
-            let hook = new ShortcutListener([KeyCode.VcRightControl; KeyCode.VcSpace])
-
-            // Create window
-            let window = HostWindow()
-            window |> initAppWindow
-            window.Closed.Add(fun _ -> desktop.Shutdown())
-
-            // This fix a bug where the window doesn't have focus the first time it's shown
-            // But doesn't fix the bug when published with AOT
-            window
-            |> displayWindowAndHideIt
-            |> ignore
-
-            hook.ShortcutPressed.Add(fun _ ->
-                Threading.runInUIThread'
-                    Threading.DispatcherPriority.MaxValue
-                    (match window.IsActive with
-                     | true -> ignore
-                     | false -> window.Show)
-            )
-
-            hook.Run(CancellationToken.None) |> ignore
-            desktop.ShutdownRequested.Add(fun _ -> hook.Dispose())
+        | :? IClassicDesktopStyleApplicationLifetime as desktop -> initializeHook desktop
         | _ -> ()
 
         base.OnFrameworkInitializationCompleted()
