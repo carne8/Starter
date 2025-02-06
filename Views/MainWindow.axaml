@@ -1,0 +1,69 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Starter.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:controls="using:Starter.Controls"
+        mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="200"
+        x:Class="Starter.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="Starter"
+        SystemDecorations="None"
+        Background="Transparent"
+        Width="300"
+        MinHeight="35"
+        SizeToContent="Height"
+        Topmost="True"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterScreen">
+
+    <!-- <Design.DataContext> -->
+    <!--     <vm:MainWindowViewModel /> -->
+    <!-- </Design.DataContext> -->
+
+    <Window.KeyBindings>
+        <KeyBinding Command="{Binding HideCommand}" Gesture="Escape" />
+        <KeyBinding Command="{Binding FocusUpCommand}" Gesture="Up" />
+        <KeyBinding Command="{Binding FocusDownCommand}" Gesture="Down" />
+    </Window.KeyBindings>
+
+    <StackPanel>
+        <TextBox
+            x:Name="TextBox"
+            Margin="0, 0, 0, 5"
+            Watermark="Start anything..."
+            Text="{Binding Text}">
+            <TextBox.KeyBindings>
+                <KeyBinding
+                    Command="{Binding ValidateCommand}"
+                    CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
+                    Gesture="Enter"/>
+            </TextBox.KeyBindings>
+        </TextBox>
+        <Border
+            IsVisible="{Binding SearchResults.Length}"
+            Padding="{DynamicResource MenuFlyoutPresenterThemePadding}"
+            BorderBrush="{DynamicResource MenuFlyoutPresenterBorderBrush}"
+            Background="{DynamicResource MenuFlyoutPresenterBackground}"
+            BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
+            CornerRadius="{DynamicResource OverlayCornerRadius}">
+            <ListBox
+                x:Name="ResultList"
+                ItemsSource="{Binding SearchResults}"
+                SelectionMode="Single"
+                MaxHeight="350">
+                <ListBox.KeyBindings>
+                    <KeyBinding Command="{Binding ValidateCommand}" Gesture="Enter" />
+                </ListBox.KeyBindings>
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal">
+                            <controls:SearchResultControl DataContext="{Binding}"  />
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+    </StackPanel>
+</Window>

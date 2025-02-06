@@ -1,0 +1,12 @@
+SHGetImageList
+ImageList_GetIcon
+SHIL_*
+SHGFI_FLAGS
+FILE_FLAGS_AND_ATTRIBUTES
+PCWSTR
+GetIconInfo
+BITMAP
+GetObject
+GetDC
+ReleaseDC
+GetDIBits
