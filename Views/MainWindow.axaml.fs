@@ -1,5 +1,6 @@
 namespace Starter.Views
 
+open Avalonia.Input
 open Starter
 open Avalonia
 open Avalonia.Controls
@@ -41,22 +42,55 @@ type MainWindow () as this =
 
         Win32Properties.AddWndProcHookCallback(this, wndProcCallback)
 
-        this.Loaded.Add(fun _ -> this.SetupKeyboardShortcuts())
+        this.Loaded.Add(fun _ ->
+            this.SetupKeyboardShortcuts()
+            // match Application.Current with
+            // | null -> ()
+            // | app ->
+            //     let x = this.TryFindResource("UIWindowBackgroundBrushActive")
+            //     x |> printfn "%A"
+            //     app.Resources["UIWindowBorderColorActive"] <-
+            //         match this.PlatformSettings with
+            //         | null -> Media.Colors.Transparent
+            //         | platformSettings -> platformSettings.GetColorValues().AccentColor1
+        )
 
         this.Activated.Add (fun _ ->
             this.TextBox.Focus() |> ignore
             this.TextBox.SelectAll()
-            this.ResultList.SelectedIndex <- -1 // Reset selection
+            this.ResultList.Selection.Select 1 // Reset selection
         )
         // this.Deactivated.Add (fun _ -> this.Hide())
 
     member private this.SetupKeyboardShortcuts() =
+        // Add hide key binding
+        KeyBinding(
+            Command = this.ViewModel.HideCommand,
+            Gesture = KeyGesture.Parse "Escape"
+        )
+        |> this.KeyBindings.Add
+
+        // Subscribe to hide command
         this.ViewModel.HideCommand.SubscribeOnUIThread(fun _ -> this.Hide())
 
+        // Set keyboard navigation
         let r = this.ResultList
-        this.ViewModel.FocusUpCommand.SubscribeOnUIThread(fun _ ->
-            r.SelectedIndex <- r.SelectedIndex - 1
-        )
-        this.ViewModel.FocusDownCommand.SubscribeOnUIThread(fun _ ->
-            r.SelectedIndex <- min (r.SelectedIndex + 1) (r.ItemCount - 1)
+        this.TextBox.KeyDown.Add(fun e ->
+            let newSelectedIdx =
+                match e.Key.ToNavigationDirection() |> Option.ofNullable with
+                | Some NavigationDirection.Up ->
+                    (r.SelectedIndex - 1)
+                    |> max 0
+                    |> Some
+                | Some NavigationDirection.Down ->
+                    (r.SelectedIndex + 1)
+                    |> min (r.ItemCount - 1)
+                    |> Some
+                | _ -> None
+
+            match newSelectedIdx with
+            | None -> ()
+            | Some newSelectedIdx ->
+                r.Selection.SelectedIndex <- newSelectedIdx
+                e.Handled <- true
         )

@@ -8,8 +8,22 @@
     <Application.DataTemplates>
         <local:ViewLocator />
     </Application.DataTemplates>
-  
+
+    <Application.Resources>
+        <ResourceDictionary>
+            <FontFamily x:Key="JetBrainsMono">avares://Starter/Assets/Fonts#JetBrains Mono</FontFamily>
+            <ResourceDictionary.MergedDictionaries>
+                <MergeResourceInclude Source="/Styles/Resources.axaml" />
+                <MergeResourceInclude Source="/Styles/CustomTextBox.axaml" />
+                <MergeResourceInclude Source="/Styles/CustomListBox.axaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
         <sty:FluentAvaloniaTheme PreferSystemTheme="True" PreferUserAccentColor="True" />
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource JetBrainsMono}" />
+        </Style>
     </Application.Styles>
 </Application>

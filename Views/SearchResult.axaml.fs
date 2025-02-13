@@ -1,8 +1,6 @@
 namespace Starter.Controls
 
 open System
-open System.Threading.Tasks
-open Avalonia
 open Avalonia.Platform
 open Avalonia.Threading
 open Starter.ViewModels
@@ -17,22 +15,26 @@ type SearchResultControl () as this =
     let mutable bitmap: Bitmap option = None
     static let fallbackBitmap = new Bitmap(AssetLoader.Open <| Uri "avares://Starter/Assets/avalonia-logo.ico")
 
-    do
-        this.InitializeComponent()
+    let mutable name = ""
+
+    do this.InitializeComponent()
 
     member this.InitializeComponent() =
         AvaloniaXamlLoader.Load this
         this.Loaded.Add(fun _ ->
             let vm = this.DataContext :?> SearchResultViewModel
+            name <- vm.Name
+
             let imageControl = this.Get<Image> "Icon"
 
-            match vm.LoadIcon() with
-            | null -> imageControl.Source <- fallbackBitmap
-            | bmp ->
-                bitmap <- Some bmp
-                imageControl.Source <- bmp
-        )
-
-        this.Unloaded.Add(fun _ ->
-            bitmap |> Option.iter _.Dispose()
+            if imageControl.Source |> isNull then
+                vm.LoadIcon() |> Task.map (fun bmp ->
+                    Dispatcher.UIThread.Post(fun _ ->
+                        match bmp with
+                        | null -> imageControl.Source <- fallbackBitmap
+                        | bmp ->
+                            bitmap <- Some bmp
+                            imageControl.Source <- bmp
+                    )
+                ) |> ignore
         )

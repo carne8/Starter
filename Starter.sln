@@ -9,8 +9,6 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Starter.ApplicationSearchEn
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Starter.SearchEngineBase", "Plugins\Starter.SearchEngineBase\Starter.SearchEngineBase.csproj", "{069CECF3-A564-4079-99E8-A19DD56A5201}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FileIconLoader", "Plugins\FileIconLoader\FileIconLoader.csproj", "{BBD4CE29-C4D9-4771-8247-2D0E9745CD2E}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -28,13 +26,10 @@ Global
 		{069CECF3-A564-4079-99E8-A19DD56A5201}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{069CECF3-A564-4079-99E8-A19DD56A5201}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{069CECF3-A564-4079-99E8-A19DD56A5201}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BBD4CE29-C4D9-4771-8247-2D0E9745CD2E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BBD4CE29-C4D9-4771-8247-2D0E9745CD2E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BBD4CE29-C4D9-4771-8247-2D0E9745CD2E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{069CECF3-A564-4079-99E8-A19DD56A5201}.Debug|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{8CCA533D-CFBC-41D7-ADA2-852796AAF427} = {868449BD-AD20-47F5-84F4-C3BEDBBF6349}
 		{069CECF3-A564-4079-99E8-A19DD56A5201} = {868449BD-AD20-47F5-84F4-C3BEDBBF6349}
-		{BBD4CE29-C4D9-4771-8247-2D0E9745CD2E} = {868449BD-AD20-47F5-84F4-C3BEDBBF6349}
 	EndGlobalSection
 EndGlobal

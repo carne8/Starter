@@ -7,6 +7,7 @@ open Avalonia
 let buildAvaloniaApp () =
     AppBuilder
         .Configure<App>()
+        .With(Win32PlatformOptions(WinUICompositionBackdropCornerRadius = 12f))
         .UsePlatformDetect()
         .LogToTrace()
 

@@ -13,7 +13,7 @@ module private Types =
     type Msg =
         | TextChanged of string
         | ClearResults
-        | ResultLoaded of searchEngineName: string * ISearchResult array
+        | ResultLoaded of searchEngineId: string * ISearchResult array
         | Validate of string * ISearchResult
 
     type Model =
@@ -36,7 +36,7 @@ module private Cmds =
                     try
                         let obs = se.Search(ct, model.Text)
                         let sub = obs |> Observable.subscribe (fun sr ->
-                            (se.Name, sr |> Seq.toArray)
+                            (se.Id, sr |> Seq.toArray)
                             |> Msg.ResultLoaded
                             |> dispatch
                         )
@@ -50,7 +50,7 @@ module private Cmds =
         Cmd.ofEffect (fun _ ->
             let se =
                 model.SearchEngines
-                |> List.find (fun x -> x.Name = seName)
+                |> List.find (fun x -> x.Id = seName)
 
             Task.Run(System.Action(fun () -> se.SearchResultSelected sr)) |> ignore
         )
@@ -122,12 +122,9 @@ module SearchEngineLoader =
         let path = Path.Combine(root, relativePath) |> Path.GetFullPath
 
         let loadContext = SearchEngineLoadContext path
-        let u =
-            path
-            |> AssemblyName.GetAssemblyName
-            |> loadContext.LoadFromAssemblyName
-
-        u
+        path
+        |> AssemblyName.GetAssemblyName
+        |> loadContext.LoadFromAssemblyName
 
     let private loadAssemblySearchEngines (assembly: Assembly) =
         let interfaceType = typeof<ISearchEngine>
@@ -156,8 +153,12 @@ module private State =
             |> Array.collect SearchEngineLoader.loadSearchEngines
             |> Array.toList
 
-        { Text = "Hello"
+        { Text = "Hello world !"
           Results = Array.empty
+          // Results = [|
+          //     for _ in 0..100 do
+          //       SearchResultViewModel.DesignVM
+          // |]
           SearchEngines = searchEngines
           SearchCTS = new CancellationTokenSource() },
         Cmd.none
@@ -175,14 +176,22 @@ module private State =
 
         | Msg.ClearResults -> { model with Results = Array.empty }, Cmd.none
         | Msg.ResultLoaded (seName, results) ->
+            let searchEngine = model.SearchEngines |> List.find (_.Id >> (=) seName)
+
             let newResultList =
                 Array.append
                     model.Results
-                    (results |> Array.map (fun r -> SearchResultViewModel(seName, r)))
+                    (results |> Array.map (fun result ->
+                        SearchResultViewModel(
+                            searchEngine.Id,
+                            searchEngine.DisplayName,
+                            result
+                        )
+                    ))
 
             { model with Results = newResultList }, Cmd.none
 
-        | Msg.Validate (se, sr) -> model, Cmds.validateResult model se sr
+        | Msg.Validate (seId, sr) -> model, Cmds.validateResult model seId sr
 
 type MainWindowViewModel() =
     inherit ReactiveElmishViewModel()
@@ -194,17 +203,13 @@ type MainWindowViewModel() =
         |> Program.mkStore
 
     let hideCommand = ReactiveCommand.Create(fun () -> ())
-    let focusDownCommand = ReactiveCommand.Create(fun () -> ())
-    let focusUpCommand = ReactiveCommand.Create(fun () -> ())
 
     member _.HideCommand = hideCommand
-    member _.FocusDownCommand = focusDownCommand
-    member _.FocusUpCommand = focusUpCommand
     member _.ValidateCommand(searchResult: SearchResultViewModel | null) =
         match searchResult with
         | null -> ()
         | searchResult ->
-            (searchResult.SearchEngineName,
+            (searchResult.SearchEngineId,
              searchResult.Result)
             |> Msg.Validate
             |> local.Dispatch
@@ -215,3 +220,5 @@ type MainWindowViewModel() =
     member _.Text
         with get () = local.Model.Text
         and set v = v |> Msg.TextChanged |> local.Dispatch
+
+    static member DesignVM = new MainWindowViewModel()

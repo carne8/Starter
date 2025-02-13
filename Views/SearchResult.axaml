@@ -3,11 +3,28 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Starter.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="60"
+             Design.DataContext="{Binding Source={x:Static vm:SearchResultViewModel.DesignVM}}"
              x:Class="Starter.Controls.SearchResultControl"
              x:DataType="vm:SearchResultViewModel">
-    <StackPanel Orientation="Horizontal">
-        <Image x:Name="Icon" Width="25" Height="25" Stretch="Uniform" />
-        <TextBlock Text="{Binding Name}" />
-    </StackPanel>
+
+    <Border HorizontalAlignment="Stretch" Padding="10, 10">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <Border CornerRadius="4" ClipToBounds="True">
+                <Image Name="Icon"
+                       VerticalAlignment="Center"
+                       Height="35"
+                       RenderOptions.BitmapInterpolationMode="HighQuality" />
+            </Border>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="{Binding Name}"
+                           FontWeight="SemiBold"
+                           FontSize="15"
+                           Foreground="{DynamicResource TextForeground}" />
+                <TextBlock Text="{Binding SearchEngineName}"
+                           FontSize="12"
+                           Foreground="{DynamicResource DescriptionForeground}" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
 </UserControl>

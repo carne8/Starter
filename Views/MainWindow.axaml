@@ -4,66 +4,110 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="using:Starter.Controls"
-        mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="200"
+        mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="420"
+        Design.DataContext="{Binding Source={x:Static vm:MainWindowViewModel.DesignVM}}"
         x:Class="Starter.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/avalonia-logo.ico"
         Title="Starter"
         SystemDecorations="None"
         Background="Transparent"
-        Width="300"
-        MinHeight="35"
+        TransparencyLevelHint="AcrylicBlur"
+        Width="400"
+        MinHeight="50"
         SizeToContent="Height"
         Topmost="True"
         ShowInTaskbar="False"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="CenterScreen"
+        RequestedThemeVariant="Dark">
 
-    <!-- <Design.DataContext> -->
-    <!--     <vm:MainWindowViewModel /> -->
-    <!-- </Design.DataContext> -->
+    <Window.Resources>
+        <CornerRadius x:Key="CornerRadius">12</CornerRadius>
+        <CornerRadius x:Key="TopCornerRadius">12, 0</CornerRadius>
+        <Thickness x:Key="SeparatorPadding">15, 0, 15, 0</Thickness>
+        <Thickness x:Key="ResultsPadding">8, 8, 8, 8</Thickness>
+    </Window.Resources>
 
-    <Window.KeyBindings>
-        <KeyBinding Command="{Binding HideCommand}" Gesture="Escape" />
-        <KeyBinding Command="{Binding FocusUpCommand}" Gesture="Up" />
-        <KeyBinding Command="{Binding FocusDownCommand}" Gesture="Down" />
-    </Window.KeyBindings>
+    <Window.Styles>
+        <Style Selector="TextBox#TextBox">
+            <Setter Property="CornerRadius" Value="{StaticResource TopCornerRadius}"/>
+            <Setter Property="FontSize" Value="20"/>
+        </Style>
 
-    <StackPanel>
-        <TextBox
-            x:Name="TextBox"
-            Margin="0, 0, 0, 5"
-            Watermark="Start anything..."
-            Text="{Binding Text}">
-            <TextBox.KeyBindings>
-                <KeyBinding
-                    Command="{Binding ValidateCommand}"
-                    CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
-                    Gesture="Enter"/>
-            </TextBox.KeyBindings>
-        </TextBox>
-        <Border
-            IsVisible="{Binding SearchResults.Length}"
-            Padding="{DynamicResource MenuFlyoutPresenterThemePadding}"
-            BorderBrush="{DynamicResource MenuFlyoutPresenterBorderBrush}"
-            Background="{DynamicResource MenuFlyoutPresenterBackground}"
-            BorderThickness="{DynamicResource MenuFlyoutPresenterBorderThemeThickness}"
-            CornerRadius="{DynamicResource OverlayCornerRadius}">
-            <ListBox
-                x:Name="ResultList"
-                ItemsSource="{Binding SearchResults}"
-                SelectionMode="Single"
-                MaxHeight="350">
+        <Style Selector="Border#Separator">
+            <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
+            <Setter Property="Height" Value="{StaticResource BorderThicknessInt}"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Margin" Value="{StaticResource SeparatorPadding}"/>
+        </Style>
+
+        <Style Selector="ListBox#ResultList">
+            <Setter Property="Padding" Value="{StaticResource ResultsPadding}"/>
+            <Setter Property="MaxHeight" Value="330"/>
+
+            <!-- All results -->
+            <Style Selector="^ > ListBoxItem">
+                <Setter Property="Margin" Value="0, 2"/>
+            </Style>
+
+            <!-- First result -->
+            <Style Selector="^ > ListBoxItem:nth-child(1)">
+                <Setter Property="Margin" Value="0, 0, 0, 2"/>
+            </Style>
+
+            <!-- Last result -->
+            <Style Selector="^ > ListBoxItem:nth-last-child(1)">
+                <Setter Property="Margin" Value="0, 2, 0, 0"/>
+            </Style>
+        </Style>
+    </Window.Styles>
+
+    <Border BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="{StaticResource BorderThickness}"
+            CornerRadius="{StaticResource CornerRadius}"
+            Background="{DynamicResource WindowBackground}">
+        <StackPanel>
+            <!-- Main text box -->
+            <TextBox Name="TextBox"
+                     Theme="{StaticResource CustomTextBoxTheme}"
+                     Watermark="Start anything..."
+                     Text="{Binding Text}">
+                <TextBox.KeyBindings>
+                    <KeyBinding
+                        Command="{Binding ValidateCommand}"
+                        CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
+                        Gesture="Enter"/>
+                </TextBox.KeyBindings>
+            </TextBox>
+
+            <!-- Separator -->
+            <Border Name="Separator"/>
+
+            <!-- Results -->
+            <ListBox Name="ResultList"
+                     ItemContainerTheme="{StaticResource CustomListBoxItem}"
+                     ItemsSource="{Binding SearchResults}"
+                     SelectionMode="AlwaysSelected"
+                     AutoScrollToSelectedItem="True">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+
                 <ListBox.KeyBindings>
-                    <KeyBinding Command="{Binding ValidateCommand}" Gesture="Enter" />
+                    <KeyBinding
+                        Command="{Binding ValidateCommand}"
+                        CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
+                        Gesture="Enter"/>
                 </ListBox.KeyBindings>
+
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <StackPanel Orientation="Horizontal">
-                            <controls:SearchResultControl DataContext="{Binding}"  />
-                        </StackPanel>
+                        <controls:SearchResultControl DataContext="{Binding}"  />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
-        </Border>
-    </StackPanel>
+        </StackPanel>
+    </Border>
 </Window>

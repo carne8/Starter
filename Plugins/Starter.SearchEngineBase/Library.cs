@@ -8,12 +8,13 @@ namespace Starter.SearchEngine;
 public interface ISearchResult
 {
     string Name { get; }
-    Avalonia.Media.Imaging.Bitmap? LoadIcon();
+    Task<Avalonia.Media.Imaging.Bitmap?> LoadIcon();
 }
 
 public interface ISearchEngine
 {
-    string Name { get; }
+    string Id { get; }
+    string DisplayName { get; }
     IObservable<IEnumerable<ISearchResult>> Search(CancellationToken cancellationToken, string query);
     void SearchResultSelected(ISearchResult selectedSearchResult);
 }
