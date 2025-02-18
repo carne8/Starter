@@ -13,8 +13,8 @@ open Vanara.PInvoke
 open Vanara.Windows.Shell
 
 open Starter.SearchEngine
-open IconHelper
 open Avalonia.Media.Imaging
+open IconHelper
 
 [<AutoOpen>]
 module Helpers =
@@ -172,22 +172,11 @@ type SearchResult =
 
 /// Indexes apps and cache their icon
 type AppIndexer() =
-    let applications = SortedList<string, SearchResult>()
-    let iconsCache = Dictionary<string, Bitmap>()
+    let applications = List<SearchResult>()
     let mutable indexingFinished = false
 
-    let cachedIconLoader name iconLoader () =
-        task {
-            match iconsCache.TryGetValue name with
-            | true, bitmap -> return bitmap
-            | false, _ ->
-              let bitmap = iconLoader()
-              iconsCache.TryAdd(name, bitmap) |> ignore
-              return bitmap
-        }
-
     let getAppIcon (targetPathOpt: string option) (app: ShellItem) =
-        // Icon from the Appx apps
+        // Icon for the Appx apps
         let packageIconOpt =
             app
             |> Package.ofShellItem
@@ -195,20 +184,20 @@ type AppIndexer() =
 
         let getShellIcon () =
             app.Images
-               .GetImage(SIZE(96, 96))
+               .GetImage(SIZE(96, 96),  ShellItemGetImageOptions.ResizeToFit)
                .ToAvaloniaBitmap()
 
         match packageIconOpt, targetPathOpt with
         | Some iconPath, _ -> new Bitmap(iconPath) // Found an icon associated with package
-        | None, Some linkPath when linkPath.EndsWith ".exe" || linkPath.EndsWith ".lnk" -> // Take the .exe/.lnk icon
-            IconHelper.getFileIcon linkPath
+        | None, Some filePath when filePath.EndsWith ".exe" -> // Take the .exe icon
+            IconHelper.getFileIcon filePath
             |> Option.defaultWith getShellIcon // Let the shell load the icon
         | _ ->
             getShellIcon() // Let the shell load the icon
 
-    let indexApps () = Task.Run<unit>(fun () -> task {
-        new ShellFolder(Shell32.KNOWNFOLDERID.FOLDERID_AppsFolder)
-        |> Seq.iter (fun app ->
+    let indexApps () = Task.Run(fun () ->
+        let appsFolder = new ShellFolder(Shell32.KNOWNFOLDERID.FOLDERID_AppsFolder)
+        for app in appsFolder do
             option {
                 let! name = app.Name |> Option.require (String.IsNullOrEmpty >> not)
                 let packageIdOpt = app |> ShellItem.Property.get "System.AppUserModel.ID"
@@ -223,23 +212,16 @@ type AppIndexer() =
                     | None, None -> None
 
                 app.Dispose()
-
-                iconsCache.Add(name, icon)
-                applications.TryAdd(
-                    name,
+                applications.Add(
                     { Name = name
                       ExecutionPath = executionPath
-                      LoadIcon = fun () -> task {
-                          match iconsCache.TryGetValue name with
-                          | true, icon -> return icon
-                          | false, _ -> return null
-                      } }
-                ) |> ignore
+                      LoadIcon = fun () -> Task.singleton icon }
+                )
             } |> ignore
-        )
 
+        applications.Sort(fun x y -> x.Name.CompareTo y.Name)
         indexingFinished <- true
-    })
+    )
 
     do indexApps() |> ignore
 
@@ -260,7 +242,7 @@ type ApplicationSearchEngine() =
             | None -> Observable.empty
             | Some apps ->
                 apps
-                |> Seq.choose (_.Value >> fun app ->
+                |> Seq.choose (fun app ->
                     match app.Name.Contains(query, StringComparison.OrdinalIgnoreCase) with
                     | true -> app :> ISearchResult |> Some
                     | false -> None

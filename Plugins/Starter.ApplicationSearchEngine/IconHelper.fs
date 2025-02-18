@@ -62,7 +62,7 @@ module IconHelper =
             failwith "Failed to retrieve icon info"
 
         match fileInfo.iIcon with
-        | 0 | 2 -> None
+        | 0 | 2 -> None // Avoid default icons
         | _ ->
             use hIcon = imageList.GetIcon(
                 fileInfo.iIcon,
