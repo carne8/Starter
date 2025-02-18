@@ -87,8 +87,7 @@
             <ListBox Name="ResultList"
                      ItemContainerTheme="{StaticResource CustomListBoxItem}"
                      ItemsSource="{Binding SearchResults}"
-                     SelectionMode="AlwaysSelected"
-                     AutoScrollToSelectedItem="True">
+                     SelectionMode="AlwaysSelected">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel />
