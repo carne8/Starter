@@ -8,8 +8,7 @@ open Avalonia.Markup.Xaml
 open Starter.ViewModels
 open Starter.Views
 
-open Native.Windows
-open Native.Windows.Api
+open Vanara.PInvoke
 
 type App() =
     inherit Application()
@@ -33,8 +32,8 @@ type App() =
                 User32.RegisterHotKey(
                     platformHandle.Handle,
                     0, // Hotkey id
-                    HOT_KEY_MODIFIERS.MOD_ALT,
-                    KeyCode.VkSpace |> uint
+                    User32.HotKeyModifiers.MOD_ALT,
+                    User32.VK.VK_SPACE |> uint
                 ) |> ignore
         | _ -> ()
 

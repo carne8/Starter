@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType>Exe</OutputType>
         <TargetFramework>net9.0</TargetFramework>
@@ -16,10 +16,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="Libs/Native/Windows/KeyCode.fs" />
-        <Compile Include="Libs/Native/Windows/WindowsApi.fs" />
-        <Compile Include="Features/Shortcuts.fs" />
-
         <!-- View Models -->
         <Compile Include="ViewModels\ViewModelBase.fs" />
         <Compile Include="ViewModels\SearchResultViewModel.fs" />
@@ -54,7 +50,7 @@
         <PackageReference Include="FsToolkit.ErrorHandling.TaskResult" Version="4.18.0" />
         <PackageReference Include="ReactiveElmish.Avalonia" Version="1.4.0" />
         <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
-<!--        <PackageReference Include="System.Data.OleDb" Version="9.0.1" />-->
+        <PackageReference Include="Vanara.PInvoke.User32" Version="4.0.6" />
     </ItemGroup>
 
     <ItemGroup>

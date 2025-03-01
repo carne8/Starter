@@ -1,12 +1,13 @@
 namespace Starter.Views
 
-open Avalonia.Input
-open Avalonia.VisualTree
 open Starter
+open System
 open Avalonia
+open Avalonia.Input
 open Avalonia.Controls
 open Avalonia.Markup.Xaml
-open System
+open Avalonia.VisualTree
+open Vanara.PInvoke
 
 [<AutoOpen>]
 module Helpers =
@@ -24,7 +25,7 @@ type MainWindow () as this =
     let wndProcCallback =
         Win32Properties.CustomWndProcHookCallback(
             fun (_hWnd: nativeint) (msg: uint32) (_wParam: nativeint) (_lParam: nativeint) _ ->
-                if msg = uint Native.Windows.Api.WINDOW_MESSAGE.WM_HOTKEY then
+                if msg = uint User32.WindowMessage.WM_HOTKEY then
                     this.Show()
                 0
         )
