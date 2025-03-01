@@ -184,13 +184,13 @@ type AppIndexer() =
 
         let getShellIcon () =
             app.Images
-               .GetImage(SIZE(96, 96),  ShellItemGetImageOptions.ResizeToFit)
+               .GetImage(SIZE(35, 35),  ShellItemGetImageOptions.ResizeToFit) // TODO: Pass the size of the icon from the host program
                .ToAvaloniaBitmap()
 
         match packageIconOpt, targetPathOpt with
         | Some iconPath, _ -> new Bitmap(iconPath) // Found an icon associated with package
-        | None, Some filePath when filePath.EndsWith ".exe" -> // Take the .exe icon
-            IconHelper.getFileIcon filePath
+        | None, Some filePath when filePath.ToLowerInvariant().EndsWith ".exe" -> // Take the .exe icon
+            IconHelper.getFileIcon (Avalonia.PixelSize(35, 35)) filePath
             |> Option.defaultWith getShellIcon // Let the shell load the icon
         | _ ->
             getShellIcon() // Let the shell load the icon
@@ -203,7 +203,7 @@ type AppIndexer() =
                 let packageIdOpt = app |> ShellItem.Property.get "System.AppUserModel.ID"
                 let targetPathOpt = app |> ShellItem.Property.get "System.Link.TargetParsingPath"
 
-                let icon = app |> getAppIcon targetPathOpt
+                let icon = app |> getAppIcon targetPathOpt // TODO: Load icons only when needed
 
                 let! executionPath =
                     match packageIdOpt, targetPathOpt with

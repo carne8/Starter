@@ -1,8 +1,11 @@
 module Starter.ApplicationSearchEngine.IconHelper
 
+#nowarn 9
+
 open System
 open System.IO
 open System.Runtime.InteropServices
+open Microsoft.FSharp.NativeInterop
 open Vanara.PInvoke
 
 type Gdi32.SafeHBITMAP with
@@ -34,7 +37,7 @@ type Gdi32.SafeHBITMAP with
             | _ ->
                 new Avalonia.Media.Imaging.Bitmap(
                     Avalonia.Platform.PixelFormat.Bgra8888,
-                    Avalonia.Platform.AlphaFormat.Premul,
+                    Avalonia.Platform.AlphaFormat.Unpremul,
                     unmanagedData, size, dpi, stride
                 )
         finally
@@ -42,12 +45,15 @@ type Gdi32.SafeHBITMAP with
 
 type User32.SafeHICON with
     member this.ToAvaloniaBitmap() =
+        /// Warning: this method does not dispose the current HICON
         use hBitmap = this.ToHBITMAP()
         hBitmap.ToAvaloniaBitmap()
 
 module IconHelper =
-    let getFileIcon (filePath: string) =
-        let imageList = Shell32.SHGetImageList Shell32.SHIL.SHIL_EXTRALARGE
+    open FsToolkit.ErrorHandling
+
+    let private getFileHIcon imageListSize (filePath: string) =
+        let imageList = Shell32.SHGetImageList imageListSize
         let mutable fileInfo = Shell32.SHFILEINFO()
 
         let res = Shell32.SHGetFileInfo(
@@ -55,7 +61,7 @@ module IconHelper =
             FileAttributes.None,
             &fileInfo,
             sizeof<Shell32.SHFILEINFO>,
-            Shell32.SHGFI.SHGFI_SYSICONINDEX
+            Shell32.SHGFI.SHGFI_ICON ||| Shell32.SHGFI.SHGFI_LARGEICON
         )
 
         if res = IntPtr.Zero then
@@ -72,3 +78,25 @@ module IconHelper =
             match hIcon.IsNull with
             | true -> None
             | false -> hIcon.ToAvaloniaBitmap() |> Some
+
+    let private isValidIcon (bitmap: Avalonia.Media.Imaging.Bitmap) =
+        // Some .exe files doesn't have high resolution icon
+        // In these cases, the returned image using the JUMBO image list is mainly empty
+        // If the bottom half of the icon is empty (transparent), it is invalid
+
+        let rect = Avalonia.PixelRect(0, bitmap.PixelSize.Height / 2, bitmap.PixelSize.Width, bitmap.PixelSize.Height / 2)
+        let pixels = Array.zeroCreate<byte> (rect.Width * bitmap.Format.Value.BitsPerPixel / 8 * rect.Height)
+        use pixelsPtr = fixed pixels
+        bitmap.CopyPixels(rect, NativePtr.toNativeInt pixelsPtr, pixels.Length, rect.Width * bitmap.Format.Value.BitsPerPixel / 8)
+
+        pixels |> Array.exists ((<>) 0uy)
+
+    let getFileIcon desiredSize (filePath: string) =
+        option {
+            use! jumboIcon = getFileHIcon Shell32.SHIL.SHIL_JUMBO filePath
+
+            match isValidIcon jumboIcon with
+            | true ->
+                return jumboIcon.CreateScaledBitmap(desiredSize, Avalonia.Media.Imaging.BitmapInterpolationMode.HighQuality)
+            | false -> return! getFileHIcon Shell32.SHIL.SHIL_EXTRALARGE filePath
+        }
