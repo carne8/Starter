@@ -6,7 +6,6 @@
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
         <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-	<!-- <PublishAot>true</PublishAot> -->
     </PropertyGroup>
 
     <ItemGroup>
@@ -16,6 +15,16 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Platform interop -->
+        <Compile Include="PlatformInterop\PlatformInterop.fs" />
+        <Compile Include="PlatformInterop\Windows.fs" />
+        <Compile Include="PlatformInterop\Linux.fs" />
+        <Compile Include="PlatformInterop\PlatformInteropFactory.fs" />
+        
+        <!-- Config -->
+        <Content Include="Configuration\config.yml" />
+        <Compile Include="Configuration\Config.fs" />
+
         <!-- View Models -->
         <Compile Include="ViewModels\ViewModelBase.fs" />
         <Compile Include="ViewModels\SearchResultViewModel.fs" />
@@ -47,9 +56,11 @@
         </PackageReference>
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
         <PackageReference Include="FluentAvaloniaUI" Version="2.2.0" />
+        <PackageReference Include="FSharp.Configuration" Version="2.0.0" />
         <PackageReference Include="FsToolkit.ErrorHandling.TaskResult" Version="4.18.0" />
         <PackageReference Include="ReactiveElmish.Avalonia" Version="1.4.0" />
         <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
+        <PackageReference Include="Vanara.PInvoke.Shell32" Version="4.0.6" />
         <PackageReference Include="Vanara.PInvoke.User32" Version="4.0.6" />
     </ItemGroup>
 

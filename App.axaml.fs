@@ -6,6 +6,7 @@ open Avalonia.Data.Core.Plugins
 open Avalonia.Markup.Xaml
 
 open Starter.ViewModels
+open Starter.PlatformInterop
 open Starter.Views
 
 open Vanara.PInvoke
@@ -24,6 +25,26 @@ type App() =
 
         match this.ApplicationLifetime with
         | :? IClassicDesktopStyleApplicationLifetime ->
+            let config =
+                match Config.getConfig().Result with
+                | Error Config.LoadConfigError.CannotRetrieveProcessPath -> failwith "Cannot retrieve process path"
+                | Error Config.LoadConfigError.ConfigFileNotFound ->
+                    printfn "Config file not found, creating one"
+                    let emptyConfig = Config.Configuration(firstStart = true)
+                    let saveTask = emptyConfig |> Config.saveConfig
+
+                    match saveTask.Result with
+                    | Error Config.SaveConfigError.CannotRetrieveProcessPath -> failwith "Cannot retrieve process path while saving"
+                    | Ok () -> emptyConfig
+                | Ok config -> config
+
+            let platformInterop = PlatformInteropFactory.GetPlatformInterop()
+
+            if config.firstStart then
+                printfn "Enable launch at startup"
+                platformInterop.EnableLaunchAtStartup()
+                config.firstStart <- false
+
             let window = MainWindow(DataContext = new MainWindowViewModel())
 
             match window.TryGetPlatformHandle() with
