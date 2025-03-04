@@ -18,7 +18,7 @@
 
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
-            <SolidColorBrush x:Key="PlaceholderForeground">#CCCCCC</SolidColorBrush> <!-- TODO -->
+            <SolidColorBrush x:Key="PlaceholderForeground" Color="#95000000"/>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
             <SolidColorBrush x:Key="PlaceholderForeground">#CCCCCC</SolidColorBrush>
@@ -29,6 +29,7 @@
     <!-- Derived of ListBoxStyles.axaml from https://github.com/amwx/FluentAvalonia -->
     <ControlTheme x:Key="CustomTextBoxTheme" TargetType="TextBox">
         <Setter Property="FontFamily" Value="{StaticResource JetBrainsMono}" />
+        <Setter Property="FontWeight" Value="DemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource TextForeground}" />
         <Setter Property="Template">
             <ControlTemplate>

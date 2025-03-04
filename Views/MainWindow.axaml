@@ -18,8 +18,7 @@
         SizeToContent="Height"
         Topmost="True"
         ShowInTaskbar="False"
-        WindowStartupLocation="CenterScreen"
-        RequestedThemeVariant="Dark">
+        WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
         <CornerRadius x:Key="CornerRadius">12</CornerRadius>
@@ -62,10 +61,10 @@
         </Style>
     </Window.Styles>
 
-    <Border BorderBrush="{DynamicResource BorderBrush}"
-            BorderThickness="{StaticResource BorderThickness}"
+    <Border Background="{DynamicResource WindowBackground}"
             CornerRadius="{StaticResource CornerRadius}"
-            Background="{DynamicResource WindowBackground}">
+            BorderBrush="{DynamicResource BorderBrush}"
+            BorderThickness="{StaticResource BorderThickness}">
         <StackPanel>
             <!-- Main text box -->
             <TextBox Name="TextBox"

@@ -19,7 +19,7 @@ type LoadConfigError =
     | ConfigFileNotFound
 
 let getConfig () =
-    taskResult {
+    result {
         // Retrieve config path
         let! procPath =
             Environment.ProcessPath
@@ -30,7 +30,7 @@ let getConfig () =
         do! File.Exists configPath |> Result.requireTrue LoadConfigError.ConfigFileNotFound
 
         // Load config
-        let! rawConfig = configPath |> File.ReadAllTextAsync
+        let rawConfig = configPath |> File.ReadAllText
         let config = Configuration()
         config.LoadText rawConfig
 
@@ -42,7 +42,7 @@ type SaveConfigError =
     | CannotRetrieveProcessPath
 
 let saveConfig (config: Configuration) =
-    taskResult {
+    result {
         // Retrieve config path
         let! procPath =
             Environment.ProcessPath

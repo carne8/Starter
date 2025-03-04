@@ -15,7 +15,7 @@
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
             <SolidColorBrush x:Key="CustomListBoxItemBackground">Transparent</SolidColorBrush>
-            <SolidColorBrush x:Key="CustomListBoxItemBackgroundSelected">rgba(255, 255, 255, 0.2)</SolidColorBrush>
+            <SolidColorBrush x:Key="CustomListBoxItemBackgroundSelected">rgba(119, 119, 119, 0.2)</SolidColorBrush>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
             <SolidColorBrush x:Key="CustomListBoxItemBackground">Transparent</SolidColorBrush>
