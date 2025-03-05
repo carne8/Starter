@@ -1,4 +1,4 @@
-﻿namespace Starter.ApplicationSearchEngine
+namespace Starter.ApplicationSearchEngine
 
 open System
 open System.Diagnostics
@@ -31,8 +31,9 @@ type Application =
         member this.LoadIcon() = this.LoadIcon()
 
 /// Indexes apps and cache their icon
-/// App score based on https://github.com/ajeetdsouza/zoxide/wiki/Algorithm#frecency
+/// App score based on https://github.com/ajeetdsouza/zoxide/wiki/Algorithm
 type AppIndexer() =
+    static let MaxAge = 10_000.
     let applications = List<Application>()
     let mutable indexingFinished = false
 
@@ -114,7 +115,34 @@ type AppIndexer() =
             )
             :?> ISearchResult seq
 
-    member _.IncreaseAppScore(app: Application) =
+    member this.CheckMaxAging() =
+        let totalScore =
+            applications
+            |> Seq.sumBy (
+                _.Score
+                >> Option.map fst
+                >> Option.defaultValue 0
+            )
+            |> float
+
+        if totalScore > MaxAge then
+            let k = (0.9 * MaxAge) / totalScore
+
+            for idx in 0..applications.Count-1 do
+                let app = applications[idx]
+
+                match app.Score with
+                | None -> ()
+                | Some (score, d) ->
+                    let newScore =
+                        match float score * k |> Math.Round |> int with
+                        | 0 -> None
+                        | newScore -> Some (newScore, d)
+
+                    applications.RemoveAt idx
+                    applications.Insert(idx, { app with Score = newScore })
+
+    member this.IncreaseAppScore(app: Application) =
         let i = applications.IndexOf app
 
         let newScore =
@@ -126,6 +154,7 @@ type AppIndexer() =
 
         applications.RemoveAt i
         applications.Insert(i, newApp)
+        this.CheckMaxAging()
 
 
 type ApplicationSearchEngine() =
