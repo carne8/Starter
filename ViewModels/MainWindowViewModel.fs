@@ -1,11 +1,14 @@
 ﻿namespace Starter.ViewModels
 
+open Starter.Features
+open Starter.SearchEngine
+
+open System.Threading
+open System.Windows.Input
+
 open ReactiveUI
 open ReactiveElmish
 open ReactiveElmish.Avalonia
-open Starter.SearchEngine
-open System.Threading
-open System.Windows.Input
 
 [<AutoOpen>]
 module private Types =
@@ -52,7 +55,9 @@ module private Cmds =
                 model.SearchEngines
                 |> Array.find (fun x -> x.Id = seName)
 
-            Task.Run(System.Action(fun () -> se.SearchResultSelected sr)) |> ignore
+            System.Action(fun () -> se.SearchResultSelected sr)
+            |> Task.Run
+            |> ignore
         )
 //     open System.Data.OleDb
 //     open System.Threading.Tasks
@@ -80,71 +85,6 @@ module private Cmds =
 //
 //     open Elmish
 
-module SearchEngineLoader =
-    open System
-    open System.IO
-    open System.Reflection
-    open System.Runtime.Loader
-
-    type SearchEngineLoadContext(dllPath) =
-        inherit AssemblyLoadContext()
-
-        let resolver = AssemblyDependencyResolver dllPath
-
-        let isSharedAssembly (assemblyName: AssemblyName) =
-            match assemblyName.Name with
-            | null -> false
-            | assemblyName ->
-                Constants.SharedAssemblies |> Seq.contains assemblyName
-
-        override this.Load(assemblyName: AssemblyName): Assembly | null =
-            match assemblyName |> isSharedAssembly with
-            | true -> Assembly.Load assemblyName
-            | false ->
-                let assemblyPath = resolver.ResolveAssemblyToPath assemblyName
-                match assemblyPath with
-                | null -> null
-                | assemblyPath -> this.LoadFromAssemblyPath assemblyPath
-
-        override this.LoadUnmanagedDll(unmanagedDllName) =
-            let libraryPath = resolver.ResolveUnmanagedDllToPath unmanagedDllName
-            match libraryPath with
-            | null -> IntPtr.Zero
-            | libraryPath -> this.LoadUnmanagedDllFromPath libraryPath
-
-    let private loadSearchEngineAssembly relativePath =
-        let root =
-            AppContext.BaseDirectory
-            |> Path.GetDirectoryName
-            |> Path.GetDirectoryName
-            |> Path.GetDirectoryName
-            |> Path.GetDirectoryName
-        let path = Path.Combine(root, relativePath) |> Path.GetFullPath
-
-        let loadContext = SearchEngineLoadContext path
-        path
-        |> AssemblyName.GetAssemblyName
-        |> loadContext.LoadFromAssemblyName
-
-    let private loadAssemblySearchEngines (libPath: string) (assembly: Assembly) =
-        let interfaceType = typeof<SearchEngine>
-
-        assembly.GetTypes()
-        |> Array.choose (fun type' ->
-            if interfaceType.IsAssignableFrom type' then
-                let libDirectory = libPath |> Path.GetDirectoryName
-
-                Activator.CreateInstance(type', libDirectory)
-                :?> SearchEngine
-                |> Some
-            else
-                None
-        )
-
-    let loadSearchEngines libPath =
-        let assembly = loadSearchEngineAssembly libPath
-        assembly |> loadAssemblySearchEngines libPath
-
 module private State =
     open Elmish
 
@@ -154,7 +94,7 @@ module private State =
                 __SOURCE_DIRECTORY__,
                 "../Plugins/Starter.ApplicationSearchEngine/bin/Debug/net9.0/Starter.ApplicationSearchEngine.dll"
             ) |]
-            |> Array.collect SearchEngineLoader.loadSearchEngines
+            |> Array.collect SearchEngineLoading.loadSearchEngines
 
         { Text = "Hello world !"
           Results = Array.empty

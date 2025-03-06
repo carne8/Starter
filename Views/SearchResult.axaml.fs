@@ -22,7 +22,10 @@ type SearchResultControl () as this =
     member this.InitializeComponent() =
         AvaloniaXamlLoader.Load this
         this.Loaded.Add(fun _ ->
-            let vm = this.DataContext :?> SearchResultViewModel
+            let vm =
+                match this.DataContext with
+                | null -> failwith "No DataContext attached"
+                | dc -> dc :?> SearchResultViewModel
             name <- vm.Name
 
             let imageControl = this.Get<Image> "Icon"

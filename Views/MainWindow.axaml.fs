@@ -32,7 +32,10 @@ type MainWindow () as this =
 
     do this.InitializeComponent()
 
-    member this.ViewModel = this.DataContext :?> ViewModels.MainWindowViewModel
+    member this.ViewModel =
+        match this.DataContext with
+        | null -> failwith "No DataContext attached"
+        | dc -> dc :?> ViewModels.MainWindowViewModel
     member this.TextBox = this.Get<TextBox> "TextBox"
     member this.ResultList = this.Get<ListBox> "ResultList"
 

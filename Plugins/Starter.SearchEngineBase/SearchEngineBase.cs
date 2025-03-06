@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
+#pragma warning disable CS9113 // Parameter unread
+
 namespace Starter.SearchEngine;
 
 public interface ISearchResult

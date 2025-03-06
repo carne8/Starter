@@ -1,4 +1,4 @@
-namespace Starter.PlatformInterop
+namespace Starter.Features.PlatformInterop
 
 open System
 

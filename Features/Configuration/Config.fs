@@ -1,4 +1,4 @@
-module Starter.Config
+module Starter.Features.Config
 
 open System
 open System.IO

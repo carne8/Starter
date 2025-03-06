@@ -6,8 +6,9 @@ open Avalonia.Data.Core.Plugins
 open Avalonia.Markup.Xaml
 
 open Starter.ViewModels
-open Starter.PlatformInterop
 open Starter.Views
+open Starter.Features
+open Starter.Features.PlatformInterop
 
 open Vanara.PInvoke
 

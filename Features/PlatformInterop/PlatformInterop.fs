@@ -1,4 +1,4 @@
-namespace Starter.PlatformInterop
+namespace Starter.Features.PlatformInterop
 
 [<AbstractClass>]
 type PlatformInterop() =

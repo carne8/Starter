@@ -16,14 +16,15 @@
 
     <ItemGroup>
         <!-- Platform interop -->
-        <Compile Include="PlatformInterop\PlatformInterop.fs" />
-        <Compile Include="PlatformInterop\Windows.fs" />
-        <Compile Include="PlatformInterop\Linux.fs" />
-        <Compile Include="PlatformInterop\PlatformInteropFactory.fs" />
+        <Compile Include="Features\PlatformInterop\PlatformInterop.fs" />
+        <Compile Include="Features\PlatformInterop\Windows.fs" />
+        <Compile Include="Features\PlatformInterop\Linux.fs" />
+        <Compile Include="Features\PlatformInterop\PlatformInteropFactory.fs" />
         
         <!-- Config -->
-        <Content Include="Configuration\config.yml" />
-        <Compile Include="Configuration\Config.fs" />
+        <Content Include="Features\Configuration\config.yml" />
+        <Compile Include="Features\Configuration\Config.fs" />
+        <Compile Include="Features\SearchEngineLoading.fs" />
 
         <!-- View Models -->
         <Compile Include="ViewModels\ViewModelBase.fs" />
