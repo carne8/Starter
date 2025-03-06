@@ -19,7 +19,7 @@ module private Types =
     type Model =
         { Text: string
           Results: SearchResultViewModel array
-          SearchEngines: ISearchEngine list
+          SearchEngines: SearchEngine array
           SearchCTS: CancellationTokenSource }
 
 module private Cmds =
@@ -34,7 +34,7 @@ module private Cmds =
             Task.Run<unit>(fun () -> task {
                 for se in model.SearchEngines do
                     try
-                        let obs = se.Search(ct, model.Text)
+                        let obs = se.Search(model.Text, ct)
                         let sub = obs |> Observable.subscribe (fun sr ->
                             (se.Id, sr |> Seq.toArray)
                             |> Msg.ResultLoaded
@@ -50,7 +50,7 @@ module private Cmds =
         Cmd.ofEffect (fun _ ->
             let se =
                 model.SearchEngines
-                |> List.find (fun x -> x.Id = seName)
+                |> Array.find (fun x -> x.Id = seName)
 
             Task.Run(System.Action(fun () -> se.SearchResultSelected sr)) |> ignore
         )
@@ -126,32 +126,35 @@ module SearchEngineLoader =
         |> AssemblyName.GetAssemblyName
         |> loadContext.LoadFromAssemblyName
 
-    let private loadAssemblySearchEngines (assembly: Assembly) =
-        let interfaceType = typeof<ISearchEngine>
+    let private loadAssemblySearchEngines (libPath: string) (assembly: Assembly) =
+        let interfaceType = typeof<SearchEngine>
 
         assembly.GetTypes()
         |> Array.choose (fun type' ->
             if interfaceType.IsAssignableFrom type' then
-                Activator.CreateInstance(type')
-                :?> ISearchEngine
+                let libDirectory = libPath |> Path.GetDirectoryName
+
+                Activator.CreateInstance(type', libDirectory)
+                :?> SearchEngine
                 |> Some
             else
                 None
         )
 
     let loadSearchEngines libPath =
-        libPath
-        |> loadSearchEngineAssembly
-        |> loadAssemblySearchEngines
+        let assembly = loadSearchEngineAssembly libPath
+        assembly |> loadAssemblySearchEngines libPath
 
 module private State =
     open Elmish
 
     let init () =
         let searchEngines =
-            [| "Plugins/Starter.ApplicationSearchEngine/bin/Debug/net9.0/Starter.ApplicationSearchEngine.dll" |]
+            [| System.IO.Path.Combine(
+                __SOURCE_DIRECTORY__,
+                "../Plugins/Starter.ApplicationSearchEngine/bin/Debug/net9.0/Starter.ApplicationSearchEngine.dll"
+            ) |]
             |> Array.collect SearchEngineLoader.loadSearchEngines
-            |> Array.toList
 
         { Text = "Hello world !"
           Results = Array.empty
@@ -176,9 +179,9 @@ module private State =
 
         | Msg.ClearResults -> { model with Results = Array.empty }, Cmd.none
         | Msg.ResultLoaded (seName, results) ->
-            let searchEngine = model.SearchEngines |> List.find (_.Id >> (=) seName)
+            let searchEngine = model.SearchEngines |> Array.find (_.Id >> (=) seName)
 
-            let newResultList =
+            let newResultArray =
                 Array.append
                     model.Results
                     (results |> Array.map (fun result ->
@@ -189,7 +192,7 @@ module private State =
                         )
                     ))
 
-            { model with Results = newResultList }, Cmd.none
+            { model with Results = newResultArray }, Cmd.none
 
         | Msg.Validate (seId, sr) -> model, Cmds.validateResult model seId sr
 

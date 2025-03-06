@@ -11,12 +11,12 @@ public interface ISearchResult
     Task<Avalonia.Media.Imaging.Bitmap?> LoadIcon();
 }
 
-public interface ISearchEngine
+public abstract class SearchEngine(string pluginPath)
 {
-    string Id { get; }
-    string DisplayName { get; }
-    IObservable<IEnumerable<ISearchResult>> Search(CancellationToken cancellationToken, string query);
-    void SearchResultSelected(ISearchResult selectedSearchResult);
+    public abstract string Id { get; }
+    public abstract string DisplayName { get; }
+    public abstract IObservable<IEnumerable<ISearchResult>> Search(string query, CancellationToken cancellationToken);
+    public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
 }
 
 public static class Constants

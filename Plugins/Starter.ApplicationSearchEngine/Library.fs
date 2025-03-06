@@ -2,6 +2,7 @@ namespace Starter.ApplicationSearchEngine
 
 open System
 open System.Diagnostics
+open System.IO
 open System.Threading.Tasks
 open System.Collections.Generic
 
@@ -13,6 +14,10 @@ open Vanara.Windows.Shell
 open Starter.SearchEngine
 open Avalonia.Media.Imaging
 open IconHelper
+
+[<RequireQualifiedAccess>]
+type private FileNames =
+    static member AppScores = "app.scores"
 
 [<RequireQualifiedAccess>]
 type ExecutionPath =
@@ -32,8 +37,9 @@ type Application =
 
 /// Indexes apps and cache their icon
 /// App score based on https://github.com/ajeetdsouza/zoxide/wiki/Algorithm
-type AppIndexer() =
+type AppIndexer(scoresFilePath) =
     static let MaxAge = 10_000.
+
     let applications = List<Application>()
     let mutable indexingFinished = false
 
@@ -57,9 +63,10 @@ type AppIndexer() =
         | _ ->
             getShellIcon() // Let the shell load the icon
 
-    let indexApps () = Task.Run(fun () ->
-        let appsFolder = new ShellFolder(Shell32.KNOWNFOLDERID.FOLDERID_AppsFolder)
-        for app in appsFolder do
+    let getApps (savedScores: IDictionary<string, _>) =
+        use appsFolder = new ShellFolder(Shell32.KNOWNFOLDERID.FOLDERID_AppsFolder)
+
+        appsFolder |> Seq.choose (fun app ->
             option {
                 let! name = app.Name |> Option.require (String.IsNullOrEmpty >> not)
                 let packageIdOpt = app |> ShellItem.Property.get "System.AppUserModel.ID"
@@ -73,21 +80,29 @@ type AppIndexer() =
                     | _, Some linkPath -> ExecutionPath.ExeFile linkPath |> Some
                     | None, None -> None
 
+                let score =
+                    match savedScores.TryGetValue app.ParsingName with
+                    | false, _ -> None
+                    | true, score -> Some score
+
                 app.Dispose()
+                return
+                    { Id = app.ParsingName
+                      Name = name
+                      Score = score
+                      ExecutionPath = executionPath
+                      LoadIcon = fun () -> Task.singleton icon }
+            }
+        )
 
-                { Id = app.ParsingName
-                  Name = name
-                  Score = None
-                  ExecutionPath = executionPath
-                  LoadIcon = fun () -> Task.singleton icon }
-                |> applications.Add
-            } |> ignore
+    do
+        Task.Run<unit>(fun () -> task {
+            let! savedScores = ScoresSaver.readFromFile scoresFilePath
+            let apps = getApps savedScores |> Seq.sortBy _.Name
 
-        applications.Sort(fun app1 app2 -> app1.Name.CompareTo app2.Name)
-        indexingFinished <- true
-    )
-
-    do indexApps() |> ignore
+            applications.AddRange apps
+            indexingFinished <- true
+        }) |> ignore
 
     member _.FindApp(query: string) =
         match indexingFinished with
@@ -142,8 +157,8 @@ type AppIndexer() =
                     applications.RemoveAt idx
                     applications.Insert(idx, { app with Score = newScore })
 
-    member this.IncreaseAppScore(app: Application) =
-        let i = applications.IndexOf app
+    member this.IncreaseAppScore(app: Application) = task {
+        let appIdx = applications.IndexOf app
 
         let newScore =
             app.Score
@@ -152,37 +167,47 @@ type AppIndexer() =
 
         let newApp = { app with Score = Some newScore }
 
-        applications.RemoveAt i
-        applications.Insert(i, newApp)
+        // Save new scores
+        do! applications
+            |> Seq.choose (fun app ->
+                match app.Score with
+                | None -> None
+                | Some s -> Some (app.Id, newScore)
+            )
+            |> dict
+            |> ScoresSaver.writeToFile scoresFilePath
+
+        applications.RemoveAt appIdx
+        applications.Insert(appIdx, newApp)
         this.CheckMaxAging()
+    }
 
+type ApplicationSearchEngine(pluginPath) =
+    inherit SearchEngine(pluginPath)
+    let indexer = Path.Combine(pluginPath, FileNames.AppScores) |> AppIndexer
 
-type ApplicationSearchEngine() =
-    let indexer = AppIndexer()
+    override _.Id = nameof ApplicationSearchEngine
+    override _.DisplayName = "Application"
 
-    interface ISearchEngine with
-        member _.Id = nameof ApplicationSearchEngine
-        member _.DisplayName = "Application"
+    override _.Search(query, _ct) =
+        query
+        |> indexer.FindApp
+        |> Observable.single
 
-        member _.Search(_ct, query) =
-            query
-            |> indexer.FindApp
-            |> Observable.single
+    override _.SearchResultSelected(searchResult) =
+        match searchResult with
+        | :? Application as sr ->
+            indexer.IncreaseAppScore sr |> ignore
 
-        member _.SearchResultSelected(searchResult) =
-            match searchResult with
-            | :? Application as sr ->
-                indexer.IncreaseAppScore sr
+            let execStr =
+                match sr.ExecutionPath with
+                | ExecutionPath.ExeFile path -> path
+                | ExecutionPath.PackageId pkgId -> $"shell:AppsFolder\\{pkgId}"
 
-                let execStr =
-                    match sr.ExecutionPath with
-                    | ExecutionPath.ExeFile path -> path
-                    | ExecutionPath.PackageId pkgId -> $"shell:AppsFolder\\{pkgId}"
-
-                ProcessStartInfo(
-                    FileName = execStr,
-                    UseShellExecute = true
-                )
-                |> Process.Start
-                |> ignore
-            | _ -> ()
+            ProcessStartInfo(
+                FileName = execStr,
+                UseShellExecute = true
+            )
+            |> Process.Start
+            |> ignore
+        | _ -> ()
