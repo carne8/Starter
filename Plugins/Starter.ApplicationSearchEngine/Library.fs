@@ -3,6 +3,7 @@ namespace Starter.ApplicationSearchEngine
 open System
 open System.Diagnostics
 open System.IO
+open System.Threading
 open System.Threading.Tasks
 open System.Collections.Generic
 
@@ -41,7 +42,7 @@ type AppIndexer(scoresFilePath) =
     static let MaxAge = 10_000.
 
     let applications = List<Application>()
-    let mutable indexingFinished = false
+    let mutable indexingFinished = TaskCompletionSource()
 
     let getAppIcon (targetPathOpt: string option) (app: ShellItem) =
         // Icon for the Appx apps
@@ -97,17 +98,19 @@ type AppIndexer(scoresFilePath) =
 
     do
         Task.Run<unit>(fun () -> task {
-            let! savedScores = ScoresSaver.readFromFile scoresFilePath
-            let apps = getApps savedScores |> Seq.sortBy _.Name
+            try
+                let! savedScores = ScoresSaver.readFromFile scoresFilePath
+                let apps = getApps savedScores |> Seq.sortBy _.Name
 
-            applications.AddRange apps
-            indexingFinished <- true
+                applications.AddRange apps
+                indexingFinished.SetResult()
+            with e ->
+                indexingFinished.SetException e
         }) |> ignore
 
-    member _.FindApp(query: string) =
-        match indexingFinished with
-        | false -> Seq.empty
-        | true ->
+    member _.FindApp(query: string) = task {
+        do! indexingFinished.Task
+        return
             applications
             |> Seq.choose (fun app ->
                 match app.Name.Contains(query, StringComparison.OrdinalIgnoreCase) with
@@ -128,7 +131,7 @@ type AppIndexer(scoresFilePath) =
                         else s / 4.
                     f, app.Name.ToLowerInvariant(), d
             )
-            :?> ISearchResult seq
+    }
 
     member this.CheckMaxAging() =
         let totalScore =
@@ -159,7 +162,6 @@ type AppIndexer(scoresFilePath) =
 
     member this.IncreaseAppScore(app: Application) = task {
         let appIdx = applications.IndexOf app
-
         let newScore =
             app.Score
             |> Option.map (fun (s, _) -> s+1, DateTimeOffset.Now)
@@ -167,19 +169,20 @@ type AppIndexer(scoresFilePath) =
 
         let newApp = { app with Score = Some newScore }
 
+        // Apply changes
+        applications.RemoveAt appIdx
+        applications.Insert(appIdx, newApp)
+        this.CheckMaxAging()
+
         // Save new scores
         do! applications
             |> Seq.choose (fun app ->
                 match app.Score with
                 | None -> None
-                | Some s -> Some (app.Id, newScore)
+                | Some s -> Some (app.Id, s)
             )
             |> dict
             |> ScoresSaver.writeToFile scoresFilePath
-
-        applications.RemoveAt appIdx
-        applications.Insert(appIdx, newApp)
-        this.CheckMaxAging()
     }
 
 type ApplicationSearchEngine(pluginPath) =
@@ -190,9 +193,28 @@ type ApplicationSearchEngine(pluginPath) =
     override _.DisplayName = "Application"
 
     override _.Search(query, _ct) =
-        query
-        |> indexer.FindApp
-        |> Observable.single
+        { new IObservable<ISearchResult seq> with
+            member _.Subscribe (observer: IObserver<ISearchResult seq>) =
+                let cts = new CancellationTokenSource()
+
+                Task.Run<unit>(
+                    fun () -> task {
+                        try
+                            let! apps = indexer.FindApp query
+                            apps
+                            :?> ISearchResult seq
+                            |> observer.OnNext
+                        with exn ->
+                            exn |> observer.OnError
+                    },
+                    cts.Token
+                ) |> ignore
+
+                { new IDisposable with
+                    member _.Dispose() =
+                        cts.Cancel()
+                        cts.Dispose() }
+        }
 
     override _.SearchResultSelected(searchResult) =
         match searchResult with

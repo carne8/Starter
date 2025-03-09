@@ -23,5 +23,5 @@ public abstract class SearchEngine(string pluginPath)
 
 public static class Constants
 {
-    public static readonly string[] SharedAssemblies = [ "Avalonia.Base" ];
+    public static readonly string[] SharedAssemblies = ["Avalonia.Base"];
 }

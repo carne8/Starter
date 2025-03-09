@@ -19,6 +19,6 @@ let readFromFile filePath =
         try
             use file = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Read)
             return! MemoryPackSerializer.DeserializeAsync<Scores> file
-        with
-        | _ -> return Dictionary<_, _>()
+        with _ ->
+            return Dictionary<_, _>()
     }
