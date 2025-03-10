@@ -19,8 +19,8 @@ module Helpers =
                 )
             ) |> ignore
 
-type MainWindow () as this =
-    inherit Window ()
+type MainWindow() as this =
+    inherit Window()
 
     let wndProcCallback =
         Win32Properties.CustomWndProcHookCallback(

@@ -13,7 +13,7 @@ public interface ISearchResult
     Task<Avalonia.Media.Imaging.Bitmap?> LoadIcon();
 }
 
-public abstract class SearchEngine(string pluginPath)
+public abstract class SearchEngineBase(string pluginPath)
 {
     public abstract string Id { get; }
     public abstract string DisplayName { get; }

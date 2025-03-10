@@ -186,7 +186,7 @@ type AppIndexer(scoresFilePath) =
     }
 
 type ApplicationSearchEngine(pluginPath) =
-    inherit SearchEngine(pluginPath)
+    inherit SearchEngineBase(pluginPath)
     let indexer = Path.Combine(pluginPath, FileNames.AppScores) |> AppIndexer
 
     override _.Id = nameof ApplicationSearchEngine

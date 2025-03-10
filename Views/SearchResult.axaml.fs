@@ -9,7 +9,7 @@ open Avalonia.Markup.Xaml
 open Avalonia.Media.Imaging
 open FsToolkit.ErrorHandling
 
-type SearchResultControl () as this =
+type SearchResultControl() as this =
     inherit UserControl()
 
     let mutable bitmap: Bitmap option = None

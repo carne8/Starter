@@ -3,7 +3,7 @@ namespace Starter.ViewModels
 open Starter.ViewModels
 open Starter.SearchEngine
 
-type FakeSR =
+type private FakeSR =
     { Name: string }
     interface ISearchResult with
         member this.Name = this.Name

@@ -1,5 +1,6 @@
-﻿namespace Starter.ViewModels
+namespace Starter.ViewModels
 
+open Starter
 open Starter.Features
 open Starter.SearchEngine
 
@@ -22,7 +23,7 @@ module private Types =
     type Model =
         { Text: string
           Results: SearchResultViewModel array
-          SearchEngines: SearchEngine array
+          SearchEngines: SearchEngineBase array
           SearchCTS: CancellationTokenSource }
 
 module private Cmds =
@@ -118,8 +119,8 @@ module private State =
             newModel, Cmds.computeResults newModel
 
         | Msg.ClearResults -> { model with Results = Array.empty }, Cmd.none
-        | Msg.ResultLoaded (seName, results) ->
-            let searchEngine = model.SearchEngines |> Array.find (_.Id >> (=) seName)
+        | Msg.ResultLoaded (seId, results) ->
+            let searchEngine = model.SearchEngines |> Array.find (_.Id >> (=) seId)
 
             let newResultArray =
                 Array.append

@@ -55,7 +55,7 @@ let private loadSearchEngineAssembly relativePath =
 
 /// Loads search engines in an assembly
 let private loadAssemblySearchEngines (libPath: string) (assembly: Assembly) =
-    let interfaceType = typeof<SearchEngine>
+    let interfaceType = typeof<SearchEngineBase>
 
     assembly.GetTypes()
     |> Array.choose (fun type' ->
@@ -66,7 +66,7 @@ let private loadAssemblySearchEngines (libPath: string) (assembly: Assembly) =
             | null -> None
             | searchEngine ->
                 searchEngine
-                :?> SearchEngine
+                :?> SearchEngineBase
                 |> Some
         else
             None
