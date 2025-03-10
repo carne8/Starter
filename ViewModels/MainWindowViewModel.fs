@@ -104,6 +104,49 @@ module private Cmds =
             |> ignore
         )
 
+[<RequireQualifiedAccess>]
+module InternalSearchEngines =
+    type SettingsSearchResult =
+        { Name: string }
+
+        interface ISearchResult with
+            member this.Name = this.Name
+            member this.LoadIcon() = task { return null }
+
+    type SettingsSearchEngine() =
+        inherit SearchEngineBase("")
+
+        static let id = System.Guid.NewGuid() |> string
+        static let matchingStrings = [| "Options"; "Settings" |]
+
+        let mutable window = Views.Settings(DataContext = SettingsViewModel())
+
+        override this.DisplayName = "Settings"
+        override this.Id = id
+        override this.Search(query, _) =
+            { new System.IObservable<_> with
+                member _.Subscribe(obs) =
+                    matchingStrings
+                    |> Seq.choose (fun s ->
+                        match s.ToLower().Contains(query) with
+                        | false -> None
+                        | true -> Some ({ Name = s } :> ISearchResult)
+                    )
+                    |> obs.OnNext
+
+                    { new System.IDisposable with
+                        member _.Dispose() = () }
+            }
+
+        override this.SearchResultSelected _ =
+            Avalonia.Threading.Dispatcher.UIThread.Post(fun _ ->
+                try
+                    window.Show()
+                with _ ->
+                    window <- Views.Settings(DataContext = SettingsViewModel())
+                    window.Show()
+            )
+
 module private State =
     let getResultSortIdx (scores: ScoresSaver.Scores) (result: SearchResultViewModel) =
         match scores.TryGetValue result.Result.Id with

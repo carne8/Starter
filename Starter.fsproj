@@ -30,13 +30,20 @@
         <!-- View Models -->
         <Compile Include="ViewModels\ViewModelBase.fs" />
         <Compile Include="ViewModels\SearchResultViewModel.fs" />
-        <Compile Include="ViewModels\MainWindowViewModel.fs" />
+        <Compile Include="ViewModels\SettingsViewModel.fs" />
 
         <!-- Views -->
         <Compile Include="Views\SearchResult.axaml.fs">
             <DependentUpon>SearchResult.axaml</DependentUpon>
             <SubType>Code</SubType>
         </Compile>
+        <Compile Include="Views\Settings.axaml.fs">
+            <DependentUpon>Settings.axaml</DependentUpon>
+            <SubType>Code</SubType>
+        </Compile>
+        
+        <!-- Main view/view model -->
+        <Compile Include="ViewModels\MainWindowViewModel.fs" />
         <Compile Include="Views\MainWindow.axaml.fs">
           <DependentUpon>MainWindow.axaml</DependentUpon>
           <SubType>Code</SubType>
