@@ -1,93 +1,132 @@
 namespace Starter.ViewModels
 
-open Starter
+open Starter.ApplicationSearchEngine
 open Starter.Features
 open Starter.SearchEngine
 
+open System
 open System.Threading
 open System.Windows.Input
+open System.Collections.Generic
+open System.Threading.Tasks
 
+open Elmish
 open ReactiveUI
 open ReactiveElmish
 open ReactiveElmish.Avalonia
+
+module private Constants =
+    let [<Literal>] ScoresFile = "result.scores"
+    let [<Literal>] ScoresMaxAging = 10_000
 
 [<AutoOpen>]
 module private Types =
     [<RequireQualifiedAccess>]
     type Msg =
+        | ScoresLoaded of ScoresSaver.Scores
         | TextChanged of string
-        | ClearResults
-        | ResultLoaded of searchEngineId: string * ISearchResult array
-        | Validate of string * ISearchResult
+        | ResultLoaded of SearchResultViewModel array
+        | Validate of SearchResultViewModel
 
     type Model =
         { Text: string
+          Scores: ScoresSaver.Scores option
           Results: SearchResultViewModel array
-          SearchEngines: SearchEngineBase array
+          SearchEngines: IDictionary<string, SearchEngineBase>
           SearchCTS: CancellationTokenSource }
 
 module private Cmds =
-    open Elmish
-    open System.Threading.Tasks
-
     let computeResults model =
         Cmd.ofEffect (fun dispatch ->
-            Msg.ClearResults |> dispatch
             let ct = model.SearchCTS.Token
-
-            Task.Run<unit>(fun () -> task {
-                for se in model.SearchEngines do
-                    try
-                        let obs = se.Search(model.Text, ct)
-                        let sub = obs |> Observable.subscribe (fun sr ->
-                            (se.Id, sr |> Seq.toArray)
-                            |> Msg.ResultLoaded
-                            |> dispatch
+            for kv in model.SearchEngines do
+                let searchEngine = kv.Value
+                try
+                    let obs = searchEngine.Search(model.Text, ct)
+                    let sub = obs |> Observable.subscribe (fun results ->
+                        results
+                        |> Seq.map (fun result ->
+                            SearchResultViewModel(
+                                searchEngine.Id,
+                                searchEngine.DisplayName,
+                                result
+                            )
                         )
+                        |> Seq.toArray
+                        |> Msg.ResultLoaded
+                        |> dispatch
+                    )
 
-                        ct.Register(fun _ -> sub.Dispose()) |> ignore
-                    with e -> printfn "%s" e.Message
-            }) |> ignore
+                    ct.Register(fun _ -> sub.Dispose()) |> ignore
+                with e -> printfn "%s" e.Message
         )
 
-    let validateResult (model: Model) (seName: string) sr =
-        Cmd.ofEffect (fun _ ->
-            let se =
-                model.SearchEngines
-                |> Array.find (fun x -> x.Id = seName)
+    let loadScores () =
+        Cmd.ofEffect (fun dispatch ->
+            task {
+                let! scores = Constants.ScoresFile |> ScoresSaver.readFromFile
+                scores |> Msg.ScoresLoaded |> dispatch
+            } |> ignore
+        )
 
-            System.Action(fun () -> se.SearchResultSelected sr)
+    let private checkScoresMaxAging maxAge (scores: ScoresSaver.Scores) =
+        let totalScore =
+            scores
+            |> Seq.sumBy (_.Value >> fst)
+            |> float
+
+        if totalScore > maxAge then
+            let k = (0.9 * maxAge) / totalScore
+
+            for kv in scores do
+                let score, lastAccessDate = kv.Value
+                let newScore = float score * k |> Math.Round |> int
+
+                match newScore with
+                | 0 -> scores.Remove kv.Key |> ignore
+                | _ -> scores[kv.Key] <- newScore, lastAccessDate
+
+    let saveScores (scores: ScoresSaver.Scores) =
+        Cmd.ofEffect (fun _ ->
+            checkScoresMaxAging Constants.ScoresMaxAging scores
+
+            scores
+            |> ScoresSaver.writeToFile Constants.ScoresFile
+            |> ignore
+        )
+
+    let validateResult (model: Model) (result: SearchResultViewModel) =
+        Cmd.ofEffect (fun _ ->
+            let se = model.SearchEngines[result.SearchEngineId]
+
+            Action(fun () -> se.SearchResultSelected result.Result)
             |> Task.Run
             |> ignore
         )
-//     open System.Data.OleDb
-//     open System.Threading.Tasks
-//
-//     let t =
-//         task {
-//             let query = $"""SELECT TOP 10 System.ItemName, System.ItemPathDisplay FROM SystemIndex WHERE
-//                 System.ItemPathDisplay LIKE 'D:\%%'
-//                 AND System.ItemName LIKE '%%{model.Text}%%'
-//                 ORDER BY System.DateModified DESC
-//             """
-//                 // AND System.ItemPathDisplay NOT LIKE '%%\.%%'
-//             use connection = new OleDbConnection("Provider=Search.CollatorDSO.1;Extended Properties='Application=Windows';")
-//             do! connection.OpenAsync()
-//
-//             use command = new OleDbCommand(query, connection)
-//             use! reader = command.ExecuteReaderAsync()
-//
-//             while! reader.ReadAsync() do
-//                   // Path = reader["System.ItemPathDisplay"] }
-//                 { Name = reader["System.ItemPathDisplay"] :?> string }
-//                 |> Msg.ResultLoaded
-//                 |> dispatch
-//         } :> Task
-//
-//     open Elmish
 
 module private State =
-    open Elmish
+    let getResultSortIdx (scores: ScoresSaver.Scores) (result: SearchResultViewModel) =
+        match scores.TryGetValue result.Result.Id with
+        | false, _ -> 0., result.Name.ToLowerInvariant(), TimeSpan.MaxValue
+        | true, (score, lastAccessDate) ->
+            let d = DateTimeOffset.Now - lastAccessDate
+            let s = float -score // That way, the highest score will be the first item of the array
+
+            let f =
+                if d.TotalHours < 1 then s * 4.
+                elif d.TotalDays < 1 then s * 2.
+                elif d.TotalDays < 7 then s / 2.
+                else s / 4.
+
+            f, result.Name.ToLowerInvariant(), d
+
+    let increaseAppScore (scores: ScoresSaver.Scores) (resultId: string) =
+        match scores.TryGetValue resultId with
+        | true, (prevScore, _) ->
+            scores[resultId] <- prevScore + 1, DateTimeOffset.Now
+        | false, _ ->
+            scores.Add(resultId, (1, DateTimeOffset.Now))
+
 
     let init () =
         let searchEngines =
@@ -96,46 +135,57 @@ module private State =
                 "../Plugins/Starter.ApplicationSearchEngine/bin/Debug/net9.0/Starter.ApplicationSearchEngine.dll"
             ) |]
             |> Array.collect SearchEngineLoading.loadSearchEngines
+            |> Array.map (fun searchEngine -> searchEngine.Id, searchEngine)
+            |> dict
 
         { Text = "Hello world !"
+          Scores = None
           Results = Array.empty
-          // Results = [|
-          //     for _ in 0..100 do
-          //       SearchResultViewModel.DesignVM
-          // |]
           SearchEngines = searchEngines
           SearchCTS = new CancellationTokenSource() },
-        Cmd.none
+        Cmds.loadScores()
 
     let update msg model =
         match msg with
+        | Msg.ScoresLoaded scores ->
+            { model with Scores = Some scores },
+            Cmd.ofMsg (Msg.ResultLoaded Array.empty) // Re-sort results
+
         | Msg.TextChanged text ->
             model.SearchCTS.Cancel() // Cancel current query
 
             let newModel =
                 { model with
                     Text = text
-                    SearchCTS = new CancellationTokenSource() }
+                    SearchCTS = new CancellationTokenSource()
+                    Results = Array.empty }
             newModel, Cmds.computeResults newModel
 
-        | Msg.ClearResults -> { model with Results = Array.empty }, Cmd.none
-        | Msg.ResultLoaded (seId, results) ->
-            let searchEngine = model.SearchEngines |> Array.find (_.Id >> (=) seId)
+        | Msg.ResultLoaded results ->
+            let newResults =
+                match model.Scores with
+                | None -> results |> Array.append model.Results
+                | Some scores ->
+                    results
+                    |> Array.append model.Results
+                    |> Array.sortBy (getResultSortIdx scores)
 
-            let newResultArray =
-                Array.append
-                    model.Results
-                    (results |> Array.map (fun result ->
-                        SearchResultViewModel(
-                            searchEngine.Id,
-                            searchEngine.DisplayName,
-                            result
-                        )
-                    ))
+            { model with Results = newResults },
+            Cmd.none
 
-            { model with Results = newResultArray }, Cmd.none
+        | Msg.Validate result ->
+            // Increase app score
+            model.Scores |> Option.iter (fun scores ->
+                increaseAppScore scores result.Result.Id
+            )
 
-        | Msg.Validate (seId, sr) -> model, Cmds.validateResult model seId sr
+            model, Cmd.batch [
+                model.Scores
+                |> Option.map Cmds.saveScores
+                |> Option.defaultValue Cmd.none
+
+                Cmds.validateResult model result
+            ]
 
 type MainWindowViewModel() =
     inherit ReactiveElmishViewModel()
@@ -153,8 +203,7 @@ type MainWindowViewModel() =
         match searchResult with
         | null -> ()
         | searchResult ->
-            (searchResult.SearchEngineId,
-             searchResult.Result)
+            searchResult
             |> Msg.Validate
             |> local.Dispatch
 

@@ -1,11 +1,11 @@
 namespace Starter.ViewModels
 
-open Starter.ViewModels
 open Starter.SearchEngine
 
 type private FakeSR =
     { Name: string }
     interface ISearchResult with
+        member this.Id = ""
         member this.Name = this.Name
         member this.LoadIcon() = task { return null }
 
