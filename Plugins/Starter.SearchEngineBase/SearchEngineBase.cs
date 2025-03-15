@@ -9,6 +9,7 @@ namespace Starter.SearchEngine;
 
 public interface ISearchResult
 {
+    string Id { get; }
     string Name { get; }
     Task<Avalonia.Media.Imaging.Bitmap?> LoadIcon();
 }

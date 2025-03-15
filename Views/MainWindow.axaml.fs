@@ -63,7 +63,7 @@ type MainWindow() as this =
         this.Activated.Add (fun _ ->
             this.TextBox.Focus() |> ignore
             this.TextBox.SelectAll()
-            this.ResultList.Selection.Select 1 // Reset selection
+            this.ResultList.Selection.Select 0 // Reset selection
         )
         // this.Deactivated.Add (fun _ -> this.Hide())
 

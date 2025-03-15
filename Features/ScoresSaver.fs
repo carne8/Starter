@@ -1,8 +1,8 @@
 module Starter.ApplicationSearchEngine.ScoresSaver
 
 open System
-open System.Collections.Generic
 open System.IO
+open System.Collections.Generic
 open MemoryPack
 
 [<MemoryPackable>]
@@ -18,7 +18,12 @@ let readFromFile filePath =
     task {
         try
             use file = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Read)
-            return! MemoryPackSerializer.DeserializeAsync<Scores> file
+            let! scores = MemoryPackSerializer.DeserializeAsync<Scores> file
+
+            match scores with
+            | null -> return Dictionary() :> IDictionary<_, _>
+            | scores -> return scores
+
         with _ ->
-            return Dictionary<_, _>()
+            return Dictionary()
     }

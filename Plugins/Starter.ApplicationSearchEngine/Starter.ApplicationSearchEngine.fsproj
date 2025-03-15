@@ -17,7 +17,6 @@
     <Compile Include="Helpers.fs" />
     <Compile Include="IconHelper.fs" />
     <Compile Include="WindowsPackage.fs" />
-    <Compile Include="ScoresSaver.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>
 
