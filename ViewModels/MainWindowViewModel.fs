@@ -1,8 +1,8 @@
 namespace Starter.ViewModels
 
-open Starter.ApplicationSearchEngine
 open Starter.Features
 open Starter.SearchEngine
+open Starter.Features.InternalSearchEngines
 
 open System
 open System.Threading
@@ -129,12 +129,21 @@ module private State =
 
 
     let init () =
+        let config =
+            match Config.getConfig() with
+            | Error _ -> failwith "Error"
+            | Ok r ->
+                match r with
+                | null -> failwith "Error"
+                | r -> r
+
         let searchEngines =
             [| System.IO.Path.Combine(
                 __SOURCE_DIRECTORY__,
                 "../Plugins/Starter.ApplicationSearchEngine/bin/Debug/net9.0/Starter.ApplicationSearchEngine.dll"
             ) |]
             |> Array.collect SearchEngineLoading.loadSearchEngines
+            |> Array.append [| SettingsSearchEngine(fun _ -> config) |]
             |> Array.map (fun searchEngine -> searchEngine.Id, searchEngine)
             |> dict
 

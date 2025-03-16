@@ -10,21 +10,24 @@ type Windows() =
 
     static let StartupLink = "Starter.lnk"
 
-    override _.EnableLaunchAtStartup() =
+    override _.ToggleLaunchAtStartup(enable) =
         let startupFolder =
             Environment.SpecialFolder.Startup
             |> Environment.GetFolderPath
 
         let startupFile = Path.Combine(startupFolder, StartupLink)
-        let processFile = Environment.ProcessPath
 
-        match File.Exists startupFile with
-        | true -> ()
+        match enable with
         | false ->
-            let shortcut = Shell32.CShellLinkW() |> unbox<Shell32.IShellLinkW>
-            shortcut.SetPath processFile
-            shortcut.SetDescription "Starter"
-            shortcut.SetWorkingDirectory (Path.GetDirectoryName processFile)
-            shortcut.SetIconLocation(processFile, 0)
+            if File.Exists startupFile then File.Delete startupFile
+        | true ->
+            let processFile = Environment.ProcessPath
 
-            (shortcut :?> IPersistFile).Save(startupFile, true)
+            if not <| File.Exists startupFile then
+                let shortcut = Shell32.CShellLinkW() |> unbox<Shell32.IShellLinkW>
+                shortcut.SetPath processFile
+                shortcut.SetDescription "Starter"
+                shortcut.SetWorkingDirectory (Path.GetDirectoryName processFile)
+                shortcut.SetIconLocation(processFile, 0)
+
+                (shortcut :?> IPersistFile).Save(startupFile, true)

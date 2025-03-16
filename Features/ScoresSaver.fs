@@ -1,4 +1,4 @@
-module Starter.ApplicationSearchEngine.ScoresSaver
+module Starter.Features.ScoresSaver
 
 open System
 open System.IO
