@@ -2,8 +2,40 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="using:FluentAvalonia.UI.Controls"
+        xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+        xmlns:vm="using:Starter.ViewModels"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Starter.Views.Settings"
-        Title="Settings">
-    Welcome to Avalonia!
+        x:DataType="vm:SettingsViewModel"
+        Title="Settings"
+        Width="900"
+        Height="650"
+        TransparencyLevelHint="Mica"
+        Background="Transparent"
+        ExtendClientAreaToDecorationsHint="True">
+
+    <DockPanel LastChildFill="True">
+        <Border DockPanel.Dock="Top" Height="30" Padding="10, 0, 0, 0" IsHitTestVisible="False">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock VerticalAlignment="Center">Starter Settings</TextBlock>
+            </StackPanel>
+        </Border>
+        <ScrollViewer>
+            <StackPanel Margin="20">
+                <TextBlock Classes="title1" Margin="4, 0, 0, 24">Settings</TextBlock>
+
+                <ui:SettingsExpander Header="Launch at startup">
+                    <ui:SettingsExpander.IconSource>
+                        <ic:SymbolIconSource Symbol="History"/>
+                    </ui:SettingsExpander.IconSource>
+                    <ui:SettingsExpander.Footer>
+                        <ToggleSwitch IsChecked="{Binding LaunchAtStartup}"/>
+                    </ui:SettingsExpander.Footer>
+                </ui:SettingsExpander>
+            </StackPanel>
+        </ScrollViewer>
+        <!-- <ui:NavigationView IsSettingsVisible="False"> -->
+        <!-- </ui:NavigationView> -->
+    </DockPanel>
 </Window>

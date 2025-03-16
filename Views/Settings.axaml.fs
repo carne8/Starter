@@ -1,5 +1,6 @@
 namespace Starter.Views
 
+open Avalonia
 open Avalonia.Controls
 open Avalonia.Markup.Xaml
 
@@ -10,3 +11,6 @@ type Settings() as this =
 
     member this.InitializeComponent() =
         AvaloniaXamlLoader.Load this
+        #if DEBUG
+        this.AttachDevTools()
+        #endif

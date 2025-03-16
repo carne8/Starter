@@ -22,8 +22,6 @@
 
     <Application.Styles>
         <sty:FluentAvaloniaTheme PreferSystemTheme="True" PreferUserAccentColor="True" />
-        <Style Selector="TextBlock">
-            <Setter Property="FontFamily" Value="{StaticResource JetBrainsMono}" />
-        </Style>
+        <StyleInclude Source="/Styles/FontStyle.axaml"/>
     </Application.Styles>
 </Application>

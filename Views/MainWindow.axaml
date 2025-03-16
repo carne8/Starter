@@ -28,6 +28,10 @@
     </Window.Resources>
 
     <Window.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource JetBrainsMono}" />
+        </Style>
+
         <Style Selector="TextBox#TextBox">
             <Setter Property="CornerRadius" Value="{StaticResource TopCornerRadius}"/>
             <Setter Property="FontSize" Value="20"/>
