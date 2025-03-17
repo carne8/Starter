@@ -5,7 +5,7 @@
         xmlns:ui="using:FluentAvalonia.UI.Controls"
         xmlns:ic="using:FluentIcons.Avalonia.Fluent"
         xmlns:vm="using:Starter.ViewModels"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
         x:Class="Starter.Views.Settings"
         x:DataType="vm:SettingsViewModel"
         Title="Settings"
@@ -17,20 +17,48 @@
 
     <DockPanel LastChildFill="True">
         <Border DockPanel.Dock="Top" Height="30" Padding="10, 0, 0, 0" IsHitTestVisible="False">
-            <StackPanel Orientation="Horizontal">
+            <StackPanel Spacing="10" Orientation="Horizontal">
+                <ic:SymbolIcon FontSize="16" Symbol="Flash" />
                 <TextBlock VerticalAlignment="Center">Starter Settings</TextBlock>
             </StackPanel>
         </Border>
+
+        <Border DockPanel.Dock="Bottom"
+                Padding="14"
+                BorderBrush="{DynamicResource ThemeBorderMidBrush}"
+                BorderThickness="1">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Classes="accent" Command="{Binding Save}">Save</Button>
+            </StackPanel>
+        </Border>
+
         <ScrollViewer>
             <StackPanel Margin="20">
                 <TextBlock Classes="title1" Margin="4, 0, 0, 24">Settings</TextBlock>
 
+                <!-- Launch at startup -->
                 <ui:SettingsExpander Header="Launch at startup">
                     <ui:SettingsExpander.IconSource>
                         <ic:SymbolIconSource Symbol="History"/>
                     </ui:SettingsExpander.IconSource>
                     <ui:SettingsExpander.Footer>
                         <ToggleSwitch IsChecked="{Binding LaunchAtStartup}"/>
+                    </ui:SettingsExpander.Footer>
+                </ui:SettingsExpander>
+
+                <!-- Background -->
+                <ui:SettingsExpander Header="Background transparency">
+                    <ui:SettingsExpander.IconSource>
+                        <ic:SymbolIconSource Symbol="Sparkle"/>
+                    </ui:SettingsExpander.IconSource>
+                    <ui:SettingsExpander.Footer>
+                        <ComboBox SelectedIndex="{Binding SelectedBackgroundIdx}" ItemsSource="{Binding Backgrounds}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
                     </ui:SettingsExpander.Footer>
                 </ui:SettingsExpander>
             </StackPanel>

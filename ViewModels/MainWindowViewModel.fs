@@ -5,6 +5,7 @@ open Starter.SearchEngine
 open Starter.Features.InternalSearchEngines
 
 open System
+open System.Reactive.Linq
 open System.Threading
 open System.Windows.Input
 open System.Collections.Generic
@@ -24,6 +25,8 @@ module private Types =
     [<RequireQualifiedAccess>]
     type Msg =
         | ScoresLoaded of ScoresSaver.Scores
+        | ConfigChanged of Config.Configuration
+
         | TextChanged of string
         | ResultLoaded of SearchResultViewModel array
         | Validate of SearchResultViewModel
@@ -31,11 +34,28 @@ module private Types =
     type Model =
         { Text: string
           Scores: ScoresSaver.Scores option
+          Config: Config.Configuration
           Results: SearchResultViewModel array
           SearchEngines: IDictionary<string, SearchEngineBase>
           SearchCTS: CancellationTokenSource }
 
 module private Cmds =
+    let subscribeToConfigChanges (settingsSE: SettingsSearchEngine) =
+        Cmd.ofEffect (fun dispatch ->
+            settingsSE.Configuration
+            |> Observable.subscribe (fun config ->
+                config
+                |> Msg.ConfigChanged
+                |> dispatch
+
+                config
+                |> Config.saveConfig
+                |> ignore
+            )
+            |> ignore
+
+        )
+
     let computeResults model =
         Cmd.ofEffect (fun dispatch ->
             let ct = model.SearchCTS.Token
@@ -128,14 +148,8 @@ module private State =
             scores.Add(resultId, (1, DateTimeOffset.Now))
 
 
-    let init () =
-        let config =
-            match Config.getConfig() with
-            | Error _ -> failwith "Error"
-            | Ok r ->
-                match r with
-                | null -> failwith "Error"
-                | r -> r
+    let init config () =
+        let settingsSearchEngine = SettingsSearchEngine config
 
         let searchEngines =
             [| System.IO.Path.Combine(
@@ -143,22 +157,30 @@ module private State =
                 "../Plugins/Starter.ApplicationSearchEngine/bin/Debug/net9.0/Starter.ApplicationSearchEngine.dll"
             ) |]
             |> Array.collect SearchEngineLoading.loadSearchEngines
-            |> Array.append [| SettingsSearchEngine(fun _ -> config) |]
+            |> Array.append [| settingsSearchEngine |]
             |> Array.map (fun searchEngine -> searchEngine.Id, searchEngine)
             |> dict
 
         { Text = "Hello world !"
           Scores = None
+          Config = config
           Results = Array.empty
           SearchEngines = searchEngines
           SearchCTS = new CancellationTokenSource() },
-        Cmds.loadScores()
+        Cmd.batch [
+            Cmds.subscribeToConfigChanges settingsSearchEngine
+            Cmds.loadScores()
+        ]
 
     let update msg model =
         match msg with
         | Msg.ScoresLoaded scores ->
             { model with Scores = Some scores },
             Cmd.ofMsg (Msg.ResultLoaded Array.empty) // Re-sort results
+
+        | Msg.ConfigChanged newConfig ->
+            printfn "Config changed: %A" newConfig
+            { model with Config = newConfig }, Cmd.none
 
         | Msg.TextChanged text ->
             model.SearchCTS.Cancel() // Cancel current query
@@ -199,11 +221,23 @@ module private State =
 type MainWindowViewModel() =
     inherit ReactiveElmishViewModel()
 
+    let config =
+        match Config.getConfig() with
+        | Error _ -> failwith "Error"
+        | Ok r ->
+            match r with
+            | null -> failwith "Error"
+            | r -> r
+
     let local =
         Program.mkAvaloniaProgram
-            State.init
+            (State.init config)
             State.update
         |> Program.mkStore
+
+    do local.Observable
+        |> Observable.subscribe (printfn "%A")
+        |> ignore
 
     let hideCommand = ReactiveCommand.Create(fun () -> ())
 
@@ -217,6 +251,9 @@ type MainWindowViewModel() =
             |> local.Dispatch
 
         (hideCommand :> ICommand).Execute()
+
+    member _.BaseConfig = config
+    member _.Config = local.Observable |> Observable.map _.Config
 
     member this.SearchResults = this.Bind(local, _.Results)
     member _.Text

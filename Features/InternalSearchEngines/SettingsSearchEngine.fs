@@ -12,13 +12,16 @@ type SettingsSearchResult =
         member this.LoadIcon() = task { return null }
 
 
-type SettingsSearchEngine(getConfig: unit -> Configuration) =
+type SettingsSearchEngine(baseConfig: Configuration) =
     inherit SearchEngineBase("")
 
     static let id = System.Guid.NewGuid() |> string
     static let matchingStrings = [| "Options"; "Settings" |]
 
-    let mutable window = Views.Settings()
+    let settingsViewModel = new ViewModels.SettingsViewModel(baseConfig)
+    let mutable window = Views.Settings(DataContext = settingsViewModel)
+
+    member _.Configuration = settingsViewModel.Configuration
 
     override this.DisplayName = "Settings"
     override this.Id = id
@@ -39,18 +42,10 @@ type SettingsSearchEngine(getConfig: unit -> Configuration) =
 
     override this.SearchResultSelected _ =
         Avalonia.Threading.Dispatcher.UIThread.Post(fun _ ->
-            let vm = new ViewModels.SettingsViewModel(getConfig())
             try
-                window.DataContext <- vm
                 window.Show()
             with _ ->
-                // Dispose old view model
-                window.DataContext
-                :?> ViewModels.SettingsViewModel
-                :> System.IDisposable
-                |> _.Dispose()
-
                 // Create new window
-                window <- Views.Settings(DataContext = vm)
+                window <- Views.Settings(DataContext = (window.DataContext :?> ViewModels.SettingsViewModel))
                 window.Show()
         )

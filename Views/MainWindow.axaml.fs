@@ -1,5 +1,6 @@
 namespace Starter.Views
 
+open System.Collections.Generic
 open Starter
 open System
 open Avalonia
@@ -7,6 +8,7 @@ open Avalonia.Input
 open Avalonia.Controls
 open Avalonia.Markup.Xaml
 open Avalonia.VisualTree
+open Starter.Features
 open Vanara.PInvoke
 
 [<AutoOpen>]
@@ -47,8 +49,22 @@ type MainWindow() as this =
 
         Win32Properties.AddWndProcHookCallback(this, wndProcCallback)
 
+        let applyTransparency background =
+            this.TransparencyLevelHint <-
+                match background with
+                | Config.Background.Acrylic -> [| WindowTransparencyLevel.AcrylicBlur |].AsReadOnly()
+                | Config.Background.Mica -> [| WindowTransparencyLevel.Mica |].AsReadOnly()
+                | Config.Background.None -> [| WindowTransparencyLevel.None |].AsReadOnly()
+
         this.Loaded.Add(fun _ ->
             this.SetupKeyboardShortcuts()
+
+            this.ViewModel.BaseConfig.Background |> applyTransparency
+
+            this.ViewModel.Config
+            |> Observable.subscribe (_.Background >> applyTransparency)
+            |> ignore
+
             // match Application.Current with
             // | null -> ()
             // | app ->

@@ -12,7 +12,6 @@
         Title="Starter"
         SystemDecorations="None"
         Background="Transparent"
-        TransparencyLevelHint="AcrylicBlur"
         Width="400"
         MinHeight="50"
         SizeToContent="Height"
@@ -44,6 +43,13 @@
             <Setter Property="Margin" Value="{StaticResource SeparatorPadding}"/>
         </Style>
 
+        <Style Selector=":is(Window)[ActualTransparencyLevel=AcrylicBlur] Border#WindowBackground">
+            <Setter Property="Background" Value="{DynamicResource WindowBackground}"/>
+        </Style>
+        <Style Selector=":is(Window)[ActualTransparencyLevel=Transparent] Border#WindowBackground">
+            <Setter Property="Background" Value="{DynamicResource DefaultBackgroundColor}"/>
+        </Style>
+
         <Style Selector="ListBox#ResultList">
             <Setter Property="Padding" Value="{StaticResource ResultsPadding}"/>
             <Setter Property="MaxHeight" Value="330"/>
@@ -65,7 +71,7 @@
         </Style>
     </Window.Styles>
 
-    <Border Background="{DynamicResource WindowBackground}"
+    <Border Name="WindowBackground"
             CornerRadius="{StaticResource CornerRadius}"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="{StaticResource BorderThickness}">
