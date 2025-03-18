@@ -33,7 +33,7 @@ type Application =
         member this.LoadIcon() = this.LoadIcon()
 
 type AppIndexer() =
-    let applications = List<Application>()
+    let mutable applications = Array.empty<Application>
     let indexingFinished = TaskCompletionSource()
 
     let getAppIcon (targetPathOpt: string option) (app: ShellItem) =
@@ -85,17 +85,20 @@ type AppIndexer() =
     do
         Task.Run<unit>(fun () -> task {
             try
-                let apps = getApps() |> Seq.sortBy _.Name
+                let apps =
+                    getApps()
+                    |> Seq.sortBy _.Name
+                    |> Seq.toArray
 
-                applications.AddRange apps
+                applications <- apps
                 indexingFinished.SetResult()
             with e ->
                 indexingFinished.SetException e
         }) |> ignore
 
-    member _.FindApp(query: string) = task {
-        do! indexingFinished.Task
-        return applications |> Seq.filter _.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
+    member _.FindApp(query: string, ct: CancellationToken) = task {
+        do! indexingFinished.Task.WaitAsync ct
+        return applications |> Array.filter _.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
     }
 
 type ApplicationSearchEngine(pluginPath) =
@@ -105,28 +108,24 @@ type ApplicationSearchEngine(pluginPath) =
     override _.Id = nameof ApplicationSearchEngine
     override _.DisplayName = "Application"
 
-    override _.Search(query, _ct) =
-        { new IObservable<ISearchResult seq> with
-            member _.Subscribe (observer: IObserver<ISearchResult seq>) =
-                let cts = new CancellationTokenSource()
-
+    override _.Search(query, ct) =
+        { new IObservable<ISearchResult array> with
+            member _.Subscribe (observer: IObserver<ISearchResult array>) =
                 Task.Run<unit>(
                     fun () -> task {
                         try
-                            let! apps = indexer.FindApp query
+                            let! apps = indexer.FindApp(query, ct)
                             apps
-                            :?> ISearchResult seq
+                            |> unbox<ISearchResult array>
                             |> observer.OnNext
                         with exn ->
                             exn |> observer.OnError
                     },
-                    cts.Token
+                    ct
                 ) |> ignore
 
-                { new IDisposable with
-                    member _.Dispose() =
-                        cts.Cancel()
-                        cts.Dispose() }
+                { new IDisposable with member _.Dispose() = () }
+                // Disposing is already handled by the cancellation token
         }
 
     override _.SearchResultSelected(searchResult) =

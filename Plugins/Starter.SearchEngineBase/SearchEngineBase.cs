@@ -18,7 +18,7 @@ public abstract class SearchEngineBase(string pluginPath)
 {
     public abstract string Id { get; }
     public abstract string DisplayName { get; }
-    public abstract IObservable<IEnumerable<ISearchResult>> Search(string query, CancellationToken cancellationToken);
+    public abstract IObservable<ISearchResult[]> Search(string query, CancellationToken cancellationToken);
     public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
 }
 

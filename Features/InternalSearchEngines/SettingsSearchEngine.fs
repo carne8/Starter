@@ -19,7 +19,10 @@ type SettingsSearchEngine(baseConfig: Configuration) =
     static let matchingStrings = [| "Options"; "Settings" |]
 
     let settingsViewModel = new ViewModels.SettingsViewModel(baseConfig)
-    let mutable window = Views.Settings(DataContext = settingsViewModel)
+    let mutable window =
+        Avalonia.Threading.Dispatcher.UIThread.Invoke(fun _ ->
+            Views.Settings(DataContext = settingsViewModel)
+        )
 
     member _.Configuration = settingsViewModel.Configuration
 
@@ -29,7 +32,7 @@ type SettingsSearchEngine(baseConfig: Configuration) =
         { new System.IObservable<_> with
             member _.Subscribe(obs) =
                 matchingStrings
-                |> Seq.choose (fun s ->
+                |> Array.choose (fun s ->
                     match s.ToLower().Contains(query) with
                     | false -> None
                     | true -> Some ({ Name = s } :> ISearchResult)
@@ -46,6 +49,11 @@ type SettingsSearchEngine(baseConfig: Configuration) =
                 window.Show()
             with _ ->
                 // Create new window
-                window <- Views.Settings(DataContext = (window.DataContext :?> ViewModels.SettingsViewModel))
+                let previousDataContext =
+                    match window.DataContext with
+                    | null -> failwith "Should not happen"
+                    | dc -> dc :?> ViewModels.SettingsViewModel
+
+                window <- Views.Settings(DataContext = previousDataContext)
                 window.Show()
         )

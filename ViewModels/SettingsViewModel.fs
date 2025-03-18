@@ -4,6 +4,7 @@ open System
 open System.Reactive.Subjects
 open Starter.Features.Config
 open Starter.Features.PlatformInterop
+open ReactiveUI
 
 type SettingsViewModel(baseConfig: Configuration) =
     inherit ViewModelBase()
@@ -23,14 +24,11 @@ type SettingsViewModel(baseConfig: Configuration) =
     member _.Configuration = configObs
     member _.Save() = configObs.OnNext config
 
-    override this.OnPropertyChanged e =
-        base.OnPropertyChanged(e)
-
     // --- Settings bindings ---
     member this.LaunchAtStartup
         with get () = config.LaunchAtStartup
         and set v =
-            this.SetProperty(&config, { config with LaunchAtStartup = v }) |> ignore
+            this.RaiseAndSetIfChanged(&config, { config with LaunchAtStartup = v }) |> ignore
             platform.ToggleLaunchAtStartup v
 
     member this.Backgrounds = transparencyHints |> fst
@@ -38,4 +36,4 @@ type SettingsViewModel(baseConfig: Configuration) =
         with get () = transparencyHints |> snd |> Array.findIndex ((=) config.Background)
         and set v =
             let v' = transparencyHints |> snd |> Array.item v
-            this.SetProperty(&config, { config with Background = v' }) |> ignore
+            this.RaiseAndSetIfChanged(&config, { config with Background = v' }) |> ignore

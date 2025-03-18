@@ -1,25 +1,16 @@
 namespace Starter.Views
 
-open System.Collections.Generic
 open Starter
-open System
+open Starter.Features
+
+open System.Collections.Generic
+open Vanara.PInvoke
+
 open Avalonia
 open Avalonia.Input
 open Avalonia.Controls
 open Avalonia.Markup.Xaml
 open Avalonia.VisualTree
-open Starter.Features
-open Vanara.PInvoke
-
-[<AutoOpen>]
-module Helpers =
-    type IObservable<'a> with
-        member this.SubscribeOnUIThread(f) =
-            this.Subscribe(fun value ->
-                Threading.Dispatcher.UIThread.Post(fun _ ->
-                    f value
-                )
-            ) |> ignore
 
 type MainWindow() as this =
     inherit Window()
@@ -49,31 +40,27 @@ type MainWindow() as this =
 
         Win32Properties.AddWndProcHookCallback(this, wndProcCallback)
 
-        let applyTransparency background =
-            this.TransparencyLevelHint <-
-                match background with
-                | Config.Background.Acrylic -> [| WindowTransparencyLevel.AcrylicBlur |].AsReadOnly()
-                | Config.Background.Mica -> [| WindowTransparencyLevel.Mica |].AsReadOnly()
-                | Config.Background.None -> [| WindowTransparencyLevel.None |].AsReadOnly()
-
         this.Loaded.Add(fun _ ->
             this.SetupKeyboardShortcuts()
 
-            this.ViewModel.BaseConfig.Background |> applyTransparency
-
             this.ViewModel.Config
-            |> Observable.subscribe (_.Background >> applyTransparency)
+            |> Observable.subscribe (fun config ->
+                this.TransparencyLevelHint <-
+                    match config.Background with
+                    | Config.Background.Acrylic -> [| WindowTransparencyLevel.AcrylicBlur |].AsReadOnly()
+                    | Config.Background.Mica -> [| WindowTransparencyLevel.Mica |].AsReadOnly()
+                    | Config.Background.None -> [| WindowTransparencyLevel.None |].AsReadOnly()
+            )
             |> ignore
 
-            // match Application.Current with
-            // | null -> ()
-            // | app ->
-            //     let x = this.TryFindResource("UIWindowBackgroundBrushActive")
-            //     x |> printfn "%A"
-            //     app.Resources["UIWindowBorderColorActive"] <-
-            //         match this.PlatformSettings with
-            //         | null -> Media.Colors.Transparent
-            //         | platformSettings -> platformSettings.GetColorValues().AccentColor1
+            this.ViewModel.SearchResults
+            |> Observable.subscribe (fun results ->
+                Threading.Dispatcher.UIThread.Post(
+                    (fun _ -> this.ResultList.ItemsSource <- results),
+                    Threading.DispatcherPriority.Input
+                )
+            )
+            |> ignore
         )
 
         this.Activated.Add (fun _ ->
@@ -81,7 +68,7 @@ type MainWindow() as this =
             this.TextBox.SelectAll()
             this.ResultList.Selection.Select 0 // Reset selection
         )
-        // this.Deactivated.Add (fun _ -> this.Hide())
+        this.Deactivated.Add (fun _ -> this.Hide())
 
     member private this.SetupKeyboardShortcuts() =
         // Add hide key binding
@@ -91,8 +78,13 @@ type MainWindow() as this =
         )
         |> this.KeyBindings.Add
 
-        // Subscribe to hide command
-        this.ViewModel.HideCommand.SubscribeOnUIThread(fun _ -> this.Hide())
+        this.ViewModel.HideCommand
+        |> Observable.subscribe (fun _ ->
+            Threading.Dispatcher.UIThread.Post(fun _ ->
+                this.Hide()
+            )
+        )
+        |> ignore
 
         // Set keyboard navigation
         let r = this.ResultList

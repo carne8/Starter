@@ -14,6 +14,7 @@
                 <Image Name="Icon"
                        VerticalAlignment="Center"
                        Height="35"
+                       Width="35"
                        RenderOptions.BitmapInterpolationMode="HighQuality" />
             </Border>
             <StackPanel VerticalAlignment="Center">

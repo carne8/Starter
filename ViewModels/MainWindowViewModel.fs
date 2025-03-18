@@ -1,130 +1,23 @@
 namespace Starter.ViewModels
 
 open Starter.Features
-open Starter.SearchEngine
 open Starter.Features.InternalSearchEngines
 
 open System
-open System.Reactive.Linq
 open System.Threading
 open System.Windows.Input
 open System.Collections.Generic
-open System.Threading.Tasks
+open System.Reactive.Subjects
 
-open Elmish
 open ReactiveUI
-open ReactiveElmish
-open ReactiveElmish.Avalonia
+open FsToolkit.ErrorHandling
 
 module private Constants =
     let [<Literal>] ScoresFile = "result.scores"
     let [<Literal>] ScoresMaxAging = 10_000
 
-[<AutoOpen>]
-module private Types =
-    [<RequireQualifiedAccess>]
-    type Msg =
-        | ScoresLoaded of ScoresSaver.Scores
-        | ConfigChanged of Config.Configuration
-
-        | TextChanged of string
-        | ResultLoaded of SearchResultViewModel array
-        | Validate of SearchResultViewModel
-
-    type Model =
-        { Text: string
-          Scores: ScoresSaver.Scores option
-          Config: Config.Configuration
-          Results: SearchResultViewModel array
-          SearchEngines: IDictionary<string, SearchEngineBase>
-          SearchCTS: CancellationTokenSource }
-
-module private Cmds =
-    let subscribeToConfigChanges (settingsSE: SettingsSearchEngine) =
-        Cmd.ofEffect (fun dispatch ->
-            settingsSE.Configuration
-            |> Observable.subscribe (fun config ->
-                config
-                |> Msg.ConfigChanged
-                |> dispatch
-
-                config
-                |> Config.saveConfig
-                |> ignore
-            )
-            |> ignore
-
-        )
-
-    let computeResults model =
-        Cmd.ofEffect (fun dispatch ->
-            let ct = model.SearchCTS.Token
-            for kv in model.SearchEngines do
-                let searchEngine = kv.Value
-                try
-                    let obs = searchEngine.Search(model.Text, ct)
-                    let sub = obs |> Observable.subscribe (fun results ->
-                        results
-                        |> Seq.map (fun result ->
-                            SearchResultViewModel(
-                                searchEngine.Id,
-                                searchEngine.DisplayName,
-                                result
-                            )
-                        )
-                        |> Seq.toArray
-                        |> Msg.ResultLoaded
-                        |> dispatch
-                    )
-
-                    ct.Register(fun _ -> sub.Dispose()) |> ignore
-                with e -> printfn "%s" e.Message
-        )
-
-    let loadScores () =
-        Cmd.ofEffect (fun dispatch ->
-            task {
-                let! scores = Constants.ScoresFile |> ScoresSaver.readFromFile
-                scores |> Msg.ScoresLoaded |> dispatch
-            } |> ignore
-        )
-
-    let private checkScoresMaxAging maxAge (scores: ScoresSaver.Scores) =
-        let totalScore =
-            scores
-            |> Seq.sumBy (_.Value >> fst)
-            |> float
-
-        if totalScore > maxAge then
-            let k = (0.9 * maxAge) / totalScore
-
-            for kv in scores do
-                let score, lastAccessDate = kv.Value
-                let newScore = float score * k |> Math.Round |> int
-
-                match newScore with
-                | 0 -> scores.Remove kv.Key |> ignore
-                | _ -> scores[kv.Key] <- newScore, lastAccessDate
-
-    let saveScores (scores: ScoresSaver.Scores) =
-        Cmd.ofEffect (fun _ ->
-            checkScoresMaxAging Constants.ScoresMaxAging scores
-
-            scores
-            |> ScoresSaver.writeToFile Constants.ScoresFile
-            |> ignore
-        )
-
-    let validateResult (model: Model) (result: SearchResultViewModel) =
-        Cmd.ofEffect (fun _ ->
-            let se = model.SearchEngines[result.SearchEngineId]
-
-            Action(fun () -> se.SearchResultSelected result.Result)
-            |> Task.Run
-            |> ignore
-        )
-
-module private State =
+/// App score based on https://github.com/ajeetdsouza/zoxide/wiki/Algorithm
+module private Scores =
     let getResultSortIdx (scores: ScoresSaver.Scores) (result: SearchResultViewModel) =
         match scores.TryGetValue result.Result.Id with
         | false, _ -> 0., result.Name.ToLowerInvariant(), TimeSpan.MaxValue
@@ -147,81 +40,27 @@ module private State =
         | false, _ ->
             scores.Add(resultId, (1, DateTimeOffset.Now))
 
+    let checkScoresMaxAging maxAge (scores: ScoresSaver.Scores) =
+        let totalScore =
+            scores
+            |> Seq.sumBy (_.Value >> fst)
+            |> float
 
-    let init config () =
-        let settingsSearchEngine = SettingsSearchEngine config
+        if totalScore > maxAge then
+            let k = (0.9 * maxAge) / totalScore
 
-        let searchEngines =
-            [| System.IO.Path.Combine(
-                __SOURCE_DIRECTORY__,
-                "../Plugins/Starter.ApplicationSearchEngine/bin/Debug/net9.0/Starter.ApplicationSearchEngine.dll"
-            ) |]
-            |> Array.collect SearchEngineLoading.loadSearchEngines
-            |> Array.append [| settingsSearchEngine |]
-            |> Array.map (fun searchEngine -> searchEngine.Id, searchEngine)
-            |> dict
+            for kv in scores do
+                let score, lastAccessDate = kv.Value
+                let newScore = float score * k |> Math.Round |> int
 
-        { Text = "Hello world !"
-          Scores = None
-          Config = config
-          Results = Array.empty
-          SearchEngines = searchEngines
-          SearchCTS = new CancellationTokenSource() },
-        Cmd.batch [
-            Cmds.subscribeToConfigChanges settingsSearchEngine
-            Cmds.loadScores()
-        ]
-
-    let update msg model =
-        match msg with
-        | Msg.ScoresLoaded scores ->
-            { model with Scores = Some scores },
-            Cmd.ofMsg (Msg.ResultLoaded Array.empty) // Re-sort results
-
-        | Msg.ConfigChanged newConfig ->
-            printfn "Config changed: %A" newConfig
-            { model with Config = newConfig }, Cmd.none
-
-        | Msg.TextChanged text ->
-            model.SearchCTS.Cancel() // Cancel current query
-
-            let newModel =
-                { model with
-                    Text = text
-                    SearchCTS = new CancellationTokenSource()
-                    Results = Array.empty }
-            newModel, Cmds.computeResults newModel
-
-        | Msg.ResultLoaded results ->
-            let newResults =
-                match model.Scores with
-                | None -> results |> Array.append model.Results
-                | Some scores ->
-                    results
-                    |> Array.append model.Results
-                    |> Array.sortBy (getResultSortIdx scores)
-
-            { model with Results = newResults },
-            Cmd.none
-
-        | Msg.Validate result ->
-            // Increase app score
-            model.Scores |> Option.iter (fun scores ->
-                increaseAppScore scores result.Result.Id
-            )
-
-            model, Cmd.batch [
-                model.Scores
-                |> Option.map Cmds.saveScores
-                |> Option.defaultValue Cmd.none
-
-                Cmds.validateResult model result
-            ]
+                match newScore with
+                | 0 -> scores.Remove kv.Key |> ignore
+                | _ -> scores[kv.Key] <- newScore, lastAccessDate
 
 type MainWindowViewModel() =
-    inherit ReactiveElmishViewModel()
+    inherit ViewModelBase()
 
-    let config =
+    let baseConfig =
         match Config.getConfig() with
         | Error _ -> failwith "Error"
         | Ok r ->
@@ -229,35 +68,104 @@ type MainWindowViewModel() =
             | null -> failwith "Error"
             | r -> r
 
-    let local =
-        Program.mkAvaloniaProgram
-            (State.init config)
-            State.update
-        |> Program.mkStore
+    // ---
+    let config = new BehaviorSubject<_>(baseConfig)
+    let settingsSearchEngine = SettingsSearchEngine config.Value
+    let searchEngines =
+        [| System.IO.Path.Combine(
+            __SOURCE_DIRECTORY__,
+            "../Plugins/Starter.ApplicationSearchEngine/bin/Debug/net9.0/Starter.ApplicationSearchEngine.dll"
+        ) |]
+        |> Array.collect SearchEngineLoading.loadSearchEngines
+        |> Array.append [| settingsSearchEngine |]
+        |> Array.map (fun searchEngine -> searchEngine.Id, searchEngine)
+        |> dict
+    let mutable resultScores = None
 
-    do local.Observable
-        |> Observable.subscribe (printfn "%A")
+    // State
+    let searchResults = new BehaviorSubject<SearchResultViewModel array>(Array.empty)
+    let mutable sortedSearchResults: IObservable<_> = searchResults
+    let mutable text = "Starter"
+    let mutable searchCts = new CancellationTokenSource()
+
+    let onTextChanged newText =
+        searchCts.Cancel()
+        searchCts <- new CancellationTokenSource()
+        let resultsList = List<_>() // Store all results for the current query
+
+        for kv in searchEngines do
+            let searchEngine = kv.Value
+            try
+                let obs = searchEngine.Search(newText, searchCts.Token)
+                let sub = obs |> Observable.subscribe (fun results ->
+                    results
+                    |> Array.map (fun result ->
+                        SearchResultViewModel(
+                            searchEngine.Id,
+                            searchEngine.DisplayName,
+                            result
+                        )
+                    )
+                    |> resultsList.AddRange
+
+                    resultsList.ToArray()
+                    |> searchResults.OnNext
+                )
+
+                searchCts.Token.Register(fun _ -> sub.Dispose()) |> ignore
+            with e -> printfn "Search engine query failed (%s): %s" searchEngine.DisplayName e.Message
+
+    let validateResult (result: SearchResultViewModel) =
+        task {
+            match resultScores with
+            | None -> ()
+            | Some scores ->
+                Scores.increaseAppScore scores result.Result.Id
+                Scores.checkScoresMaxAging Constants.ScoresMaxAging scores
+
+                // Save to file
+                scores
+                |> ScoresSaver.writeToFile Constants.ScoresFile
+                |> ignore
+
+            let se = searchEngines[result.SearchEngineId]
+            se.SearchResultSelected result.Result
+        }
+
+    do
+        sortedSearchResults |> Observable.subscribe (printfn "%A") |> ignore
+
+        // Sync config changes with the settings search engine (and the settings page)
+        settingsSearchEngine.Configuration
+        |> Observable.subscribe config.OnNext
+        |> ignore
+
+        // Load result scores
+        Constants.ScoresFile
+        |> ScoresSaver.readFromFile
+        |> Task.map (fun scores ->
+            resultScores <- Some scores
+            sortedSearchResults <- searchResults |> Observable.map (Array.sortBy (Scores.getResultSortIdx scores))
+            searchResults.Value |> searchResults.OnNext // Sort already loaded results
+        )
         |> ignore
 
     let hideCommand = ReactiveCommand.Create(fun () -> ())
-
     member _.HideCommand = hideCommand
+
     member _.ValidateCommand(searchResult: SearchResultViewModel | null) =
         match searchResult with
         | null -> ()
-        | searchResult ->
-            searchResult
-            |> Msg.Validate
-            |> local.Dispatch
-
+        | searchResult -> searchResult |> validateResult |> ignore
         (hideCommand :> ICommand).Execute()
 
-    member _.BaseConfig = config
-    member _.Config = local.Observable |> Observable.map _.Config
+    member _.Config = config
 
-    member this.SearchResults = this.Bind(local, _.Results)
+    member this.SearchResults = sortedSearchResults
     member _.Text
-        with get () = local.Model.Text
-        and set v = v |> Msg.TextChanged |> local.Dispatch
+        with get () = text
+        and set v = text <- v; onTextChanged v
 
-    static member DesignVM = new MainWindowViewModel()
+    #if DEBUG
+    static member DesignVM = MainWindowViewModel()
+    #endif

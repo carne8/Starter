@@ -5,9 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:controls="using:Starter.Controls"
         mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="420"
-        Design.DataContext="{Binding Source={x:Static vm:MainWindowViewModel.DesignVM}}"
         x:Class="Starter.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
+        Design.DataContext="{Binding Source={x:Static vm:MainWindowViewModel.DesignVM}}"
         Icon="/Assets/avalonia-logo.ico"
         Title="Starter"
         SystemDecorations="None"
@@ -93,9 +93,9 @@
             <Border Name="Separator"/>
 
             <!-- Results -->
+            <!-- ItemsSource is bound from code-behind -->
             <ListBox Name="ResultList"
                      ItemContainerTheme="{StaticResource CustomListBoxItem}"
-                     ItemsSource="{Binding SearchResults}"
                      SelectionMode="AlwaysSelected">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
