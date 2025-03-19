@@ -133,8 +133,6 @@ type MainWindowViewModel() =
         }
 
     do
-        sortedSearchResults |> Observable.subscribe (printfn "%A") |> ignore
-
         // Sync config changes with the settings search engine (and the settings page)
         settingsSearchEngine.Configuration
         |> Observable.subscribe config.OnNext

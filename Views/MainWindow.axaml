@@ -53,21 +53,6 @@
         <Style Selector="ListBox#ResultList">
             <Setter Property="Padding" Value="{StaticResource ResultsPadding}"/>
             <Setter Property="MaxHeight" Value="330"/>
-
-            <!-- All results -->
-            <Style Selector="^ > ListBoxItem">
-                <Setter Property="Margin" Value="0, 2"/>
-            </Style>
-
-            <!-- First result -->
-            <Style Selector="^ > ListBoxItem:nth-child(1)">
-                <Setter Property="Margin" Value="0, 0, 0, 2"/>
-            </Style>
-
-            <!-- Last result -->
-            <Style Selector="^ > ListBoxItem:nth-last-child(1)">
-                <Setter Property="Margin" Value="0, 2, 0, 0"/>
-            </Style>
         </Style>
     </Window.Styles>
 
@@ -99,7 +84,7 @@
                      SelectionMode="AlwaysSelected">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <StackPanel />
+                        <StackPanel Spacing="4" />
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
 
