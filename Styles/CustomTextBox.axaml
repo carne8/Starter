@@ -24,7 +24,7 @@
             <SolidColorBrush x:Key="PlaceholderForeground">#CCCCCC</SolidColorBrush>
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
-    <Thickness x:Key="TextPadding">18, 15, 0, 16</Thickness>
+    <Thickness x:Key="TextPadding">18, 14, 15, 15</Thickness>
 
     <!-- Derived of ListBoxStyles.axaml from https://github.com/amwx/FluentAvalonia -->
     <ControlTheme x:Key="CustomTextBoxTheme" TargetType="TextBox">
@@ -42,7 +42,8 @@
                         HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
                         VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
                         IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
-                        AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}">
+                        AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+                        Height="27">
                         <Panel>
                             <TextBlock Name="PART_Watermark"
                                        VerticalAlignment="Center"
