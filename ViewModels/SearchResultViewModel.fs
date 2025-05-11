@@ -7,7 +7,7 @@ type private FakeSR =
     interface ISearchResult with
         member this.Id = ""
         member this.Name = this.Name
-        member this.LoadIcon() = task { return null }
+        member this.LoadIcon() = null
 
 type SearchResultViewModel(seId: string, seName: string, sr: ISearchResult) =
     member _.Result = sr

@@ -25,7 +25,7 @@ type Application =
     { Id: string
       Name: string
       ExecutionPath: ExecutionPath
-      LoadIcon: unit -> Task<Bitmap> }
+      LoadIcon: unit -> Bitmap }
 
     interface ISearchResult with
         member this.Id = this.Id
@@ -78,7 +78,7 @@ type AppIndexer() =
                     { Id = app.ParsingName
                       Name = name
                       ExecutionPath = executionPath
-                      LoadIcon = fun () -> Task.singleton icon }
+                      LoadIcon = fun () -> icon }
             }
         )
 

@@ -2,18 +2,17 @@ namespace Starter.ViewModels
 
 open Starter.Features
 open Starter.Features.InternalSearchEngines
+open Starter.Features.ResultScoreDb
 
-open System
 open System.Threading
 open System.Windows.Input
-open System.Collections.Generic
 open System.Reactive.Subjects
 
 open ReactiveUI
 open FsToolkit.ErrorHandling
 
 module private Constants =
-    let [<Literal>] ScoresFile = "result.scores"
+    let [<Literal>] ScoresFile = "result-scores.db"
     let [<Literal>] ScoresMaxAging = 10_000
 
 /// App score based on https://github.com/ajeetdsouza/zoxide/wiki/Algorithm
@@ -80,7 +79,7 @@ type MainWindowViewModel() =
         |> Array.append [| settingsSearchEngine |]
         |> Array.map (fun searchEngine -> searchEngine.Id, searchEngine)
         |> dict
-    let mutable resultScores = None
+    let mutable resultScoreDb = None
 
     // State
     let searchResults = new BehaviorSubject<SearchResultViewModel array>(Array.empty)
@@ -117,15 +116,15 @@ type MainWindowViewModel() =
 
     let validateResult (result: SearchResultViewModel) =
         task {
-            match resultScores with
+            match resultScoreDb with
             | None -> ()
             | Some scores ->
-                Scores.increaseAppScore scores result.Result.Id
-                Scores.checkScoresMaxAging Constants.ScoresMaxAging scores
+                ScoreDb.increaseAppScore scores result.Result.Id
+                ScoreDb.runMaxAgingPolicy Constants.ScoresMaxAging scores
 
-                // Save to file
+                // Save changes to file
                 scores
-                |> ScoresSaver.writeToFile Constants.ScoresFile
+                |> ScoreDb.writeToFile Constants.ScoresFile
                 |> ignore
 
             let se = searchEngines[result.SearchEngineId]
@@ -140,9 +139,9 @@ type MainWindowViewModel() =
 
         // Load result scores
         Constants.ScoresFile
-        |> ScoresSaver.readFromFile
+        |> ScoreDb.readFromFile
         |> Task.map (fun scores ->
-            resultScores <- Some scores
+            resultScoreDb <- Some scores
             sortedSearchResults <- searchResults |> Observable.map (Array.sortBy (Scores.getResultSortIdx scores))
             searchResults.Value |> searchResults.OnNext // Sort already loaded results
         )

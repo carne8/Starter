@@ -2,12 +2,10 @@ namespace Starter.Controls
 
 open System
 open Avalonia.Platform
-open Avalonia.Threading
 open Starter.ViewModels
 open Avalonia.Controls
 open Avalonia.Markup.Xaml
 open Avalonia.Media.Imaging
-open FsToolkit.ErrorHandling
 
 type SearchResultControl() as this =
     inherit UserControl()
@@ -21,23 +19,19 @@ type SearchResultControl() as this =
 
     member this.InitializeComponent() =
         AvaloniaXamlLoader.Load this
-        this.Loaded.Add(fun _ ->
-            let vm =
-                match this.DataContext with
-                | null -> failwith "No DataContext attached"
-                | dc -> dc :?> SearchResultViewModel
-            name <- vm.Name
+        this.DataContextChanged.Add(fun _ ->
+            match this.DataContext with
+            | null -> ()
+            | dc ->
+                let vm = dc :?> SearchResultViewModel
+                name <- vm.Name
 
-            let imageControl = this.Get<Image> "Icon"
+                let imageControl = this.Get<Image> "Icon"
 
-            if imageControl.Source |> isNull then
-                vm.LoadIcon() |> Task.map (fun bmp ->
-                    Dispatcher.UIThread.Post(fun _ ->
-                        match bmp with
-                        | null -> imageControl.Source <- fallbackBitmap
-                        | bmp ->
-                            bitmap <- Some bmp
-                            imageControl.Source <- bmp
-                    )
-                ) |> ignore
+                if imageControl.Source |> isNull then
+                    match vm.LoadIcon() with
+                    | null -> imageControl.Source <- fallbackBitmap
+                    | bmp ->
+                        bitmap <- Some bmp
+                        imageControl.Source <- bmp
         )

@@ -9,7 +9,7 @@ type SettingsSearchResult =
     interface ISearchResult with
         member this.Id = ""
         member this.Name = this.Name
-        member this.LoadIcon() = task { return null }
+        member this.LoadIcon() = null
 
 
 type SettingsSearchEngine(baseConfig: Configuration) =

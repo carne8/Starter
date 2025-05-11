@@ -11,7 +11,7 @@ public interface ISearchResult
 {
     string Id { get; }
     string Name { get; }
-    Task<Avalonia.Media.Imaging.Bitmap?> LoadIcon();
+    Avalonia.Media.Imaging.Bitmap LoadIcon();
 }
 
 public abstract class SearchEngineBase(string pluginPath)

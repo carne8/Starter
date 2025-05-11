@@ -24,7 +24,7 @@ type App() =
 
         match this.ApplicationLifetime with
         | :? IClassicDesktopStyleApplicationLifetime ->
-            let window = MainWindow(DataContext = new MainWindowViewModel())
+            let window = MainWindow(DataContext = MainWindowViewModel())
 
             match window.TryGetPlatformHandle() with
             | null -> failwith "Failed to retrieve window platform handle"
@@ -35,6 +35,9 @@ type App() =
                     User32.HotKeyModifiers.MOD_ALT,
                     User32.VK.VK_SPACE |> uint
                 ) |> ignore
+            #if DEBUG
+            printfn "Launched"
+            #endif
         | _ -> ()
 
         base.OnFrameworkInitializationCompleted()
