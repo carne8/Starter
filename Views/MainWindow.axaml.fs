@@ -53,14 +53,7 @@ type MainWindow() as this =
             )
             |> ignore
 
-            this.ViewModel.SearchResults
-            |> Observable.subscribe (fun results ->
-                Threading.Dispatcher.UIThread.Post(
-                    (fun _ -> this.ResultList.ItemsSource <- results),
-                    Threading.DispatcherPriority.Input
-                )
-            )
-            |> ignore
+            this.ResultList.ItemsSource <- this.ViewModel.SearchResults
         )
 
         this.Activated.Add (fun _ ->
@@ -68,7 +61,9 @@ type MainWindow() as this =
             this.TextBox.SelectAll()
             this.ResultList.Selection.Select 0 // Reset selection
         )
+        #if DEBUG
         this.Deactivated.Add (fun _ -> this.Hide())
+        #endif
 
     member private this.SetupKeyboardShortcuts() =
         // Add hide key binding

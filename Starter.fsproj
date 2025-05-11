@@ -20,12 +20,12 @@
         <Compile Include="Features\PlatformInterop\Windows.fs" />
         <Compile Include="Features\PlatformInterop\Linux.fs" />
         <Compile Include="Features\PlatformInterop\PlatformInteropFactory.fs" />
-        
+
         <!-- Features -->
         <Compile Include="Features\Configuration\Config.fs" />
         <Compile Include="Features\SearchEngineLoading.fs" />
-        <Compile Include="Features\ResultScoresDatabase.fs" />
-        
+        <Compile Include="Features\ResultScoreDatabase.fs" />
+        <Compile Include="Features\ObservableList.fs" />
 
         <!-- View / View Models -->
         <Compile Include="ViewModels\ViewModelBase.fs" />

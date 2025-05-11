@@ -3,6 +3,7 @@ namespace Starter.ViewModels
 open Starter.Features
 open Starter.Features.InternalSearchEngines
 open Starter.Features.ResultScoreDb
+open Starter.Features.CustomCollections
 
 open System.Threading
 open System.Windows.Input
@@ -14,47 +15,6 @@ open FsToolkit.ErrorHandling
 module private Constants =
     let [<Literal>] ScoresFile = "result-scores.db"
     let [<Literal>] ScoresMaxAging = 10_000
-
-/// App score based on https://github.com/ajeetdsouza/zoxide/wiki/Algorithm
-module private Scores =
-    let getResultSortIdx (scores: ScoresSaver.Scores) (result: SearchResultViewModel) =
-        match scores.TryGetValue result.Result.Id with
-        | false, _ -> 0., result.Name.ToLowerInvariant(), TimeSpan.MaxValue
-        | true, (score, lastAccessDate) ->
-            let d = DateTimeOffset.Now - lastAccessDate
-            let s = float -score // That way, the highest score will be the first item of the array
-
-            let f =
-                if d.TotalHours < 1 then s * 4.
-                elif d.TotalDays < 1 then s * 2.
-                elif d.TotalDays < 7 then s / 2.
-                else s / 4.
-
-            f, result.Name.ToLowerInvariant(), d
-
-    let increaseAppScore (scores: ScoresSaver.Scores) (resultId: string) =
-        match scores.TryGetValue resultId with
-        | true, (prevScore, _) ->
-            scores[resultId] <- prevScore + 1, DateTimeOffset.Now
-        | false, _ ->
-            scores.Add(resultId, (1, DateTimeOffset.Now))
-
-    let checkScoresMaxAging maxAge (scores: ScoresSaver.Scores) =
-        let totalScore =
-            scores
-            |> Seq.sumBy (_.Value >> fst)
-            |> float
-
-        if totalScore > maxAge then
-            let k = (0.9 * maxAge) / totalScore
-
-            for kv in scores do
-                let score, lastAccessDate = kv.Value
-                let newScore = float score * k |> Math.Round |> int
-
-                match newScore with
-                | 0 -> scores.Remove kv.Key |> ignore
-                | _ -> scores[kv.Key] <- newScore, lastAccessDate
 
 type MainWindowViewModel() =
     inherit ViewModelBase()
@@ -82,15 +42,14 @@ type MainWindowViewModel() =
     let mutable resultScoreDb = None
 
     // State
-    let searchResults = new BehaviorSubject<SearchResultViewModel array>(Array.empty)
-    let mutable sortedSearchResults: IObservable<_> = searchResults
+    let mutable searchResults = ObservableList<SearchResultViewModel>(50)
     let mutable text = "Starter"
     let mutable searchCts = new CancellationTokenSource()
 
     let onTextChanged newText =
         searchCts.Cancel()
         searchCts <- new CancellationTokenSource()
-        let resultsList = List<_>() // Store all results for the current query
+        searchResults.Clear()
 
         for kv in searchEngines do
             let searchEngine = kv.Value
@@ -105,14 +64,12 @@ type MainWindowViewModel() =
                             result
                         )
                     )
-                    |> resultsList.AddRange
-
-                    resultsList.ToArray()
-                    |> searchResults.OnNext
+                    |> searchResults.AddRange
+                    resultScoreDb |> Option.iter (fun scoreDb -> searchResults.Sort(SearchResultViewModel.CompareTwo scoreDb))
                 )
 
                 searchCts.Token.Register(fun _ -> sub.Dispose()) |> ignore
-            with e -> printfn "Search engine query failed (%s): %s" searchEngine.DisplayName e.Message
+            with e -> printfn $"Search engine query failed ({searchEngine.DisplayName}): {e.Message}"
 
     let validateResult (result: SearchResultViewModel) =
         task {
@@ -140,10 +97,11 @@ type MainWindowViewModel() =
         // Load result scores
         Constants.ScoresFile
         |> ScoreDb.readFromFile
-        |> Task.map (fun scores ->
-            resultScoreDb <- Some scores
-            sortedSearchResults <- searchResults |> Observable.map (Array.sortBy (Scores.getResultSortIdx scores))
-            searchResults.Value |> searchResults.OnNext // Sort already loaded results
+        |> Task.map (fun scoreDb ->
+            resultScoreDb <- Some scoreDb
+
+            // Sort already loaded results
+            searchResults.Sort(SearchResultViewModel.CompareTwo scoreDb)
         )
         |> ignore
 
@@ -158,7 +116,7 @@ type MainWindowViewModel() =
 
     member _.Config = config
 
-    member this.SearchResults = sortedSearchResults
+    member this.SearchResults = searchResults
     member _.Text
         with get () = text
         and set v = text <- v; onTextChanged v
