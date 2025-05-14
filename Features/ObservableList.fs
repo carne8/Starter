@@ -1,5 +1,7 @@
 ﻿namespace Starter.Features.CustomCollections
 
+#nowarn 3261 // Disable nullness warning
+
 open System
 open System.Collections
 open System.Collections.Generic

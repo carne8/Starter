@@ -5,7 +5,6 @@ open Starter.Features
 open Starter.Features.InternalSearchEngines
 open Starter.Features.ResultScores
 open Starter.Features.CustomCollections
-open Starter.SearchEngine
 
 open System.IO
 open System.Threading

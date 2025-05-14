@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <OutputType>WinExe</OutputType>
+        <OutputType>Exe</OutputType>
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
@@ -13,46 +13,50 @@
         <Folder Include="Models\" />
         <AvaloniaResource Include="Assets\**" />
     </ItemGroup>
-
+    
+    <!-- Features -->
     <ItemGroup>
         <!-- Platform interop -->
         <Compile Include="Features\PlatformInterop\PlatformInterop.fs" />
         <Compile Include="Features\PlatformInterop\Windows.fs" />
         <Compile Include="Features\PlatformInterop\Linux.fs" />
         <Compile Include="Features\PlatformInterop\PlatformInteropFactory.fs" />
-
-        <!-- Features -->
+        
+        <!-- Config-->
         <Compile Include="Features\Configuration\Config.fs" />
+        
+        <!-- Internal search engines -->
+        <Compile Include="Features\InternalSearchEngines\Settings\SettingsViewModel.fs" />
+        <Compile Include="Features\InternalSearchEngines\Settings\Settings.axaml.fs">
+          <DependentUpon>Settings.axaml</DependentUpon>
+          <SubType>Code</SubType>
+        </Compile>
+        <Compile Include="Features\InternalSearchEngines\Settings\SettingsSearchEngine.fs" />
+        
+        <!-- Others -->
         <Compile Include="Features\SearchEngineLoading.fs" />
         <Compile Include="Features\ResultScores.fs" />
         <Compile Include="Features\ObservableList.fs" />
         <Compile Include="Features\Constants.fs" />
+    </ItemGroup>
 
-        <!-- View / View Models -->
+    <ItemGroup>
+        <!-- View models -->
         <Compile Include="ViewModels\ViewModelBase.fs" />
         <Compile Include="ViewModels\SearchResultViewModel.fs" />
-        <Compile Include="ViewModels\SettingsViewModel.fs" />
+        <Compile Include="ViewModels\MainWindowViewModel.fs" />
 
         <!-- Views -->
         <Compile Include="Views\SearchResult.axaml.fs">
             <DependentUpon>SearchResult.axaml</DependentUpon>
             <SubType>Code</SubType>
         </Compile>
-        <Compile Include="Views\Settings.axaml.fs">
-            <DependentUpon>Settings.axaml</DependentUpon>
-            <SubType>Code</SubType>
-        </Compile>
-
-        <!-- Internal search engines -->
-        <Compile Include="Features\InternalSearchEngines\SettingsSearchEngine.fs" />
-
-        <!-- Main view/view model -->
-        <Compile Include="ViewModels\MainWindowViewModel.fs" />
         <Compile Include="Views\MainWindow.axaml.fs">
           <DependentUpon>MainWindow.axaml</DependentUpon>
           <SubType>Code</SubType>
         </Compile>
 
+        <!-- Entry point -->
         <Compile Include="ViewLocator.fs" />
         <Compile Include="App.axaml.fs" />
         <Compile Include="Program.fs" />
