@@ -33,8 +33,7 @@ type Application =
         member this.LoadIcon() = this.LoadIcon()
 
 type AppIndexer() =
-    let mutable applications = Array.empty<Application>
-    let indexingFinished = TaskCompletionSource()
+    let applications = TaskCompletionSource<Application array>()
 
     let getAppIcon (targetPathOpt: string option) (app: ShellItem) =
         // Icon for the Appx apps
@@ -90,44 +89,21 @@ type AppIndexer() =
                     |> Seq.sortBy _.Name
                     |> Seq.toArray
 
-                applications <- apps
-                indexingFinished.SetResult()
+                applications.SetResult apps
             with e ->
-                indexingFinished.SetException e
+                applications.SetException e
         }) |> ignore
 
-    member _.FindApp(query: string, ct: CancellationToken) = task {
-        do! indexingFinished.Task.WaitAsync ct
-        return applications |> Array.filter _.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
-    }
+    member _.Apps = applications.Task
 
 type ApplicationSearchEngine(pluginPath) =
-    inherit SearchEngineBase(pluginPath)
+    inherit StaticSearchEngine(pluginPath)
     let indexer = AppIndexer()
 
     override _.Id = nameof ApplicationSearchEngine
     override _.DisplayName = "Application"
 
-    override _.Search(query, ct) =
-        { new IObservable<ISearchResult array> with
-            member _.Subscribe (observer: IObserver<ISearchResult array>) =
-                Task.Run<unit>(
-                    fun () -> task {
-                        try
-                            let! apps = indexer.FindApp(query, ct)
-                            apps
-                            |> unbox<ISearchResult array>
-                            |> observer.OnNext
-                        with exn ->
-                            exn |> observer.OnError
-                    },
-                    ct
-                ) |> ignore
-
-                { new IDisposable with member _.Dispose() = () }
-                // Disposing is already handled by the cancellation token
-        }
-
+    override _.LoadResults() = indexer.Apps |> Task.map unbox<ISearchResult array>
     override _.SearchResultSelected(searchResult) =
         match searchResult with
         | :? Application as sr ->

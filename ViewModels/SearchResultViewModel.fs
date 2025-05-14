@@ -1,7 +1,7 @@
 namespace Starter.ViewModels
 
 open Starter.SearchEngine
-open Starter.Features.ResultScoreDb
+open Starter.Features.ResultScores
 
 type private FakeSR =
     { Name: string }
@@ -10,18 +10,37 @@ type private FakeSR =
         member this.Name = this.Name
         member this.LoadIcon() = null
 
-type SearchResultViewModel(seId: string, seName: string, sr: ISearchResult) =
-    member _.Result = sr
-    member _.SearchEngineId = seId
-    member _.SearchEngineName = seName
+type SearchResultViewModel =
+    { SearchResult: ISearchResult
+      SearchEngineId: string
+      SearchEngineName: string
+      FuzzyMatchResult: Fusil.Fusil.FuzzyResult option }
 
-    // Bindings
-    member _.Name = sr.Name
-    member _.LoadIcon() = sr.LoadIcon()
+    static member DesignVM =
+        { SearchResult = { Name = "Zen Browser" }
+          SearchEngineId = "fake"
+          SearchEngineName = "Fake search engine"
+          FuzzyMatchResult = None }
 
-    static member CompareTwo resultScoreDb (sr1: SearchResultViewModel) (sr2: SearchResultViewModel) =
-        let s1, d1 = sr1.Result.Id |> ScoreDb.getResultScore resultScoreDb
-        let s2, d2 = sr2.Result.Id |> ScoreDb.getResultScore resultScoreDb
-        compare (s1, sr1.Name, d1) (s2, sr2.Name, d2)
+    static member create (se: ISearchEngine) fuzzyMatchResult (sr: ISearchResult) =
+        { SearchResult = sr
+          SearchEngineId = se.Id
+          SearchEngineName = se.DisplayName
+          FuzzyMatchResult = fuzzyMatchResult }
 
-    static member DesignVM = SearchResultViewModel("fake", "Fake search engine", { Name = "Zen Browser" })
+    static member mapForComparison resultScoreDb (sr: SearchResultViewModel) =
+        let struct (usageScore, d) = sr.SearchResult.Id |> ScoreDb.getResultScore resultScoreDb
+        let fuzzyMatchScore =
+            match sr.FuzzyMatchResult with
+            | Some fuzzyResult -> float fuzzyResult.Score
+            | None -> 0.
+
+        -(fuzzyMatchScore + (2. * usageScore)),
+        d,
+        sr.Name.Length,
+        sr.Name
+
+and SearchResultViewModel with
+    // UI Bindings
+    member this.Name : string = this.SearchResult.Name
+    member this.LoadIcon() = this.SearchResult.LoadIcon()

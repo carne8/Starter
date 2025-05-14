@@ -24,8 +24,9 @@
         <!-- Features -->
         <Compile Include="Features\Configuration\Config.fs" />
         <Compile Include="Features\SearchEngineLoading.fs" />
-        <Compile Include="Features\ResultScoreDatabase.fs" />
+        <Compile Include="Features\ResultScores.fs" />
         <Compile Include="Features\ObservableList.fs" />
+        <Compile Include="Features\Constants.fs" />
 
         <!-- View / View Models -->
         <Compile Include="ViewModels\ViewModelBase.fs" />
@@ -70,6 +71,7 @@
         <PackageReference Include="FluentAvaloniaUI" Version="2.3.0" />
         <PackageReference Include="FluentIcons.Avalonia.Fluent" Version="1.1.292" />
         <PackageReference Include="FsToolkit.ErrorHandling.TaskResult" Version="4.18.0" />
+        <PackageReference Include="Fusil" Version="1.0.6" />
         <PackageReference Include="MemoryPack" Version="1.21.4" />
         <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
         <PackageReference Include="System.Reactive" Version="6.0.1" />

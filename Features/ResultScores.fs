@@ -1,4 +1,4 @@
-module Starter.Features.ResultScoreDb
+module Starter.Features.ResultScores
 
 // App score based on https://github.com/ajeetdsouza/zoxide/wiki/Algorithm
 open System
@@ -10,12 +10,10 @@ open MemoryPack
 type ScoreDbEntry =
     { AccessCount: int
       LastAccessTime: DateTimeOffset }
-    
+
     static member computeScore (scoreDbEntry: ScoreDbEntry) =
         let d = DateTimeOffset.Now - scoreDbEntry.LastAccessTime
-        
-        // Negate in order to put the highest access count as the first element while an ascending sort
-        let s = float -scoreDbEntry.AccessCount
+        let s = float scoreDbEntry.AccessCount
 
         let f =
             if d.TotalHours < 1 then s * 4.
@@ -23,7 +21,7 @@ type ScoreDbEntry =
             elif d.TotalDays < 7 then s / 2.
             else s / 4.
 
-        f, d
+        struct (f, d)
 
 [<MemoryPackable>]
 type ScoreDb = IDictionary<string, ScoreDbEntry>
@@ -36,6 +34,19 @@ module ScoreDb =
         }
 
     let readFromFile filePath =
+        match filePath |> File.Exists with
+        | false -> Dictionary() :> IDictionary<_, _>
+        | true ->
+            let bytes = filePath |> File.ReadAllBytes
+            let scores =
+                try MemoryPackSerializer.Deserialize<ScoreDb> bytes
+                with _ -> null
+
+            match scores with
+            | null -> Dictionary() :> IDictionary<_, _>
+            | scores -> scores
+
+    let readFromFileAsync filePath =
         task {
             try
                 use file = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Read)
@@ -48,7 +59,7 @@ module ScoreDb =
             with _ ->
                 return Dictionary()
         }
-        
+
     // Remove excessive entries from the database
     // Behaviour documented (and copied) here: https://github.com/ajeetdsouza/zoxide/wiki/Algorithm#aging
     let runMaxAgingPolicy maxAge (scores: ScoreDb) =
@@ -74,11 +85,11 @@ module ScoreDb =
     /// Returns useful data for sorting results
     let getResultScore (scores: ScoreDb) resultId =
         match scores.TryGetValue resultId with
-        | false, _ -> 0., TimeSpan.MaxValue
+        | false, _ -> struct (0., TimeSpan.MaxValue)
         | true, resultScore -> resultScore |> ScoreDbEntry.computeScore
-    
+
     /// Increase app score in the database
-    let increaseAppScore (scores: ScoreDb) (resultId: string) =
+    let increaseAppScore (resultId: string) (scores: ScoreDb) =
         match scores.TryGetValue resultId with
         | true, prevResultScore ->
             scores[resultId] <-

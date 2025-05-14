@@ -61,7 +61,7 @@ type MainWindow() as this =
             this.TextBox.SelectAll()
             this.ResultList.Selection.Select 0 // Reset selection
         )
-        #if DEBUG
+        #if !DEBUG
         this.Deactivated.Add (fun _ -> this.Hide())
         #endif
 

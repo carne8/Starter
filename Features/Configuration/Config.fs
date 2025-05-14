@@ -1,13 +1,8 @@
 module Starter.Features.Config
 
-open System
 open System.IO
 open FsToolkit.ErrorHandling
 open Thoth.Json.Net
-
-[<RequireQualifiedAccess>]
-type private FileNames =
-    static member ConfigFile = "Starter-config.json"
 
 [<RequireQualifiedAccess>]
 type Background =
@@ -57,40 +52,20 @@ type Configuration =
                 |> Option.defaultValue Background.Mica }
         )
 
-let getConfig () =
+// Read the config from the config file or return the default config
+// May return Error only if it failed to decode the config file
+let getConfig configPath =
     result {
-        // Retrieve config path
-        let! procPath =
-            Environment.ProcessPath
-            |> Result.requireNotNull ()
-            |> Result.map Path.GetDirectoryName
-
-        let configPath = Path.Combine(procPath, FileNames.ConfigFile)
-
         match File.Exists configPath with
         | false -> return Configuration.Default
         | true ->
             // Load config
             let json = configPath |> File.ReadAllText
-            let config = Decode.fromString Configuration.decoder json
-
-            match config with
-            | Ok config -> return config
-            | Error err ->
-                printfn "Failed to decode configuration: %A" err
-                return Configuration.Default
+            return! Decode.fromString Configuration.decoder json
     }
 
-let saveConfig (config: Configuration) =
+let saveConfig configPath (config: Configuration) =
     taskResult {
-        // Retrieve config path
-        let! procPath =
-            Environment.ProcessPath
-            |> Result.requireNotNull ()
-            |> Result.map Path.GetDirectoryName
-
-        let configPath = Path.Combine(procPath, FileNames.ConfigFile)
-
         // Encode config
         let json =
             config

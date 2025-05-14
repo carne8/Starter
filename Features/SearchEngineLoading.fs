@@ -8,7 +8,7 @@ open System.Runtime.Loader
 open Starter.SearchEngine
 open FsToolkit.ErrorHandling
 
-type SearchEngineLoadContext(dllPath) =
+type private SearchEngineLoadContext(dllPath) =
     inherit AssemblyLoadContext()
 
     let resolver = AssemblyDependencyResolver dllPath
@@ -35,7 +35,7 @@ type SearchEngineLoadContext(dllPath) =
         | libraryPath -> this.LoadUnmanagedDllFromPath libraryPath
 
 /// Loads an assembly
-let private loadSearchEngineAssembly relativePath =
+let private loadAssembly relativePath =
     let root =
         AppContext.BaseDirectory
         |> Path.GetDirectoryName
@@ -45,35 +45,53 @@ let private loadSearchEngineAssembly relativePath =
         |> Option.bind (Path.GetDirectoryName >> Option.ofNull)
 
     root |> Option.map (fun root ->
-        let path = Path.Combine(root, relativePath) |> Path.GetFullPath
+        let assemblyPath = Path.Combine(root, relativePath) |> Path.GetFullPath
+        let assemblyDir =
+            match assemblyPath |> Path.GetDirectoryName with
+            | null -> failwith "Incorrect assembly directory"
+            | dir -> dir
 
-        let loadContext = SearchEngineLoadContext path
-        path
+        let loadContext = SearchEngineLoadContext assemblyPath
+
+        assemblyDir,
+        assemblyPath
         |> AssemblyName.GetAssemblyName
         |> loadContext.LoadFromAssemblyName
     )
 
-/// Loads search engines in an assembly
-let private loadAssemblySearchEngines (libPath: string) (assembly: Assembly) =
-    let interfaceType = typeof<SearchEngineBase>
+/// Loads search engines from an assembly
+let private loadAssemblySearchEngines<'SearchEngineKind> (libDir: string, assembly: Assembly) =
+    let expectedType = typeof<'SearchEngineKind>
 
     assembly.GetTypes()
     |> Array.choose (fun type' ->
-        if interfaceType.IsAssignableFrom type' then
-            let libDirectory = libPath |> Path.GetDirectoryName
+        if expectedType.IsAssignableFrom type' then
+            let libDirectory = libDir |> Path.GetDirectoryName
 
             match Activator.CreateInstance(type', libDirectory) with
             | null -> None
             | searchEngine ->
                 searchEngine
-                :?> SearchEngineBase
+                |> unbox<'SearchEngineKind>
                 |> Some
         else
             None
     )
 
-/// Loads search engines from a DLL
-let loadSearchEngines libPath =
-    loadSearchEngineAssembly libPath
-    |> Option.map (loadAssemblySearchEngines libPath)
-    |> Option.defaultValue Array.empty
+/// Load all search engines in a directory (not recursive)
+let loadSearchEngineFromDirectory directoryPath =
+    let assemblies =
+        Directory.GetFiles(directoryPath, "*SearchEngine.dll")
+        |> Array.choose loadAssembly
+
+    let staticSEs = assemblies |> Array.collect loadAssemblySearchEngines<StaticSearchEngine>
+    let dynamicSEs = assemblies |> Array.collect loadAssemblySearchEngines<DynamicSearchEngine>
+
+    let searchEngineDict =
+        Array.append
+            (staticSEs |> unbox<ISearchEngine array>)
+            (dynamicSEs |> unbox<ISearchEngine array>)
+        |> Array.map (fun se -> se.Id, se)
+        |> dict
+
+    staticSEs, dynamicSEs, searchEngineDict

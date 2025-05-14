@@ -41,8 +41,12 @@ type ObservableList<'T>(capacity: int) =
         member this.IsSynchronized = (list :> IList).IsSynchronized
         member this.SyncRoot = (list :> IList).SyncRoot
 
+    #if DEBUG
+    member this.List = list
+    #endif
+
     member this.AddRange(range) = list.AddRange(range)
     member this.Clear() = list.Clear()
-    member this.Sort(comparison: Comparison<'T>) =
-        list.Sort(comparison)
+    member this.Sort(f) =
+        list.Sort(Comparison<'T>(fun e1 e2 -> compare (f e1) (f e2)))
         collectionChanged.Trigger(this, NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset))

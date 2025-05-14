@@ -5,6 +5,7 @@ open Avalonia.Controls.ApplicationLifetimes
 open Avalonia.Data.Core.Plugins
 open Avalonia.Markup.Xaml
 
+open Starter.Features
 open Starter.ViewModels
 open Starter.Views
 
@@ -24,8 +25,20 @@ type App() =
 
         match this.ApplicationLifetime with
         | :? IClassicDesktopStyleApplicationLifetime ->
-            let window = MainWindow(DataContext = MainWindowViewModel())
 
+            // Load config
+            let config =
+                match Config.getConfig Constants.ConfigFile with
+                | Error e -> failwithf "Failed to decode configuration: %A" e
+                | Ok config -> config
+
+            // Load result scores
+            let resultScoreDb = Constants.ResultScoresFile |> ResultScores.ScoreDb.readFromFile
+
+            // Create the window
+            let window = MainWindow(DataContext = MainWindowViewModel(config, resultScoreDb))
+
+            // Register hotkey // TODO: Move to platform interop
             match window.TryGetPlatformHandle() with
             | null -> failwith "Failed to retrieve window platform handle"
             | platformHandle ->
@@ -35,6 +48,7 @@ type App() =
                     User32.HotKeyModifiers.MOD_ALT,
                     User32.VK.VK_SPACE |> uint
                 ) |> ignore
+
             #if DEBUG
             printfn "Launched"
             #endif
