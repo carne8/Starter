@@ -13,8 +13,6 @@ type SearchResultControl() as this =
     let mutable bitmap: Bitmap option = None
     static let fallbackBitmap = new Bitmap(AssetLoader.Open <| Uri "avares://Starter/Assets/avalonia-logo.ico")
 
-    let mutable name = ""
-
     do this.InitializeComponent()
 
     member this.InitializeComponent() =
@@ -24,10 +22,13 @@ type SearchResultControl() as this =
             | null -> ()
             | dc ->
                 let vm = dc :?> SearchResultViewModel
-                name <- vm.Name
 
+                // Set text
+                let textControl = this.Get<TextBlock> "TextBlock"
+                textControl.Inlines <- vm.Inlines
+
+                // Set icon
                 let imageControl = this.Get<Image> "Icon"
-
                 if imageControl.Source |> isNull then
                     match vm.LoadIcon() with
                     | null -> imageControl.Source <- fallbackBitmap

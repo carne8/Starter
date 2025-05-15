@@ -84,14 +84,5 @@ let loadSearchEngineFromDirectory directoryPath =
         Directory.GetFiles(directoryPath, "*SearchEngine.dll")
         |> Array.choose loadAssembly
 
-    let staticSEs = assemblies |> Array.collect loadAssemblySearchEngines<StaticSearchEngine>
-    let dynamicSEs = assemblies |> Array.collect loadAssemblySearchEngines<DynamicSearchEngine>
-
-    let searchEngineDict =
-        Array.append
-            (staticSEs |> unbox<ISearchEngine array>)
-            (dynamicSEs |> unbox<ISearchEngine array>)
-        |> Array.map (fun se -> se.Id, se)
-        |> dict
-
-    staticSEs, dynamicSEs, searchEngineDict
+    assemblies |> Array.collect loadAssemblySearchEngines<StaticSearchEngine>,
+    assemblies |> Array.collect loadAssemblySearchEngines<DynamicSearchEngine>

@@ -9,11 +9,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Folder Include="Assets\Fonts\" />
-        <Folder Include="Models\" />
         <AvaloniaResource Include="Assets\**" />
     </ItemGroup>
-    
+
+    <ItemGroup>
+        <ProjectReference Include="Plugins\Starter.SearchEngineBase\Starter.SearchEngineBase.csproj" />
+    </ItemGroup>
+
     <!-- Features -->
     <ItemGroup>
         <!-- Platform interop -->
@@ -21,18 +23,18 @@
         <Compile Include="Features\PlatformInterop\Windows.fs" />
         <Compile Include="Features\PlatformInterop\Linux.fs" />
         <Compile Include="Features\PlatformInterop\PlatformInteropFactory.fs" />
-        
+
         <!-- Config-->
         <Compile Include="Features\Configuration\Config.fs" />
-        
+
         <!-- Internal search engines -->
         <Compile Include="Features\InternalSearchEngines\Settings\SettingsViewModel.fs" />
         <Compile Include="Features\InternalSearchEngines\Settings\Settings.axaml.fs">
-          <DependentUpon>Settings.axaml</DependentUpon>
-          <SubType>Code</SubType>
+            <DependentUpon>Settings.axaml</DependentUpon>
+            <SubType>Code</SubType>
         </Compile>
         <Compile Include="Features\InternalSearchEngines\Settings\SettingsSearchEngine.fs" />
-        
+
         <!-- Others -->
         <Compile Include="Features\SearchEngineLoading.fs" />
         <Compile Include="Features\ResultScores.fs" />
@@ -52,8 +54,8 @@
             <SubType>Code</SubType>
         </Compile>
         <Compile Include="Views\MainWindow.axaml.fs">
-          <DependentUpon>MainWindow.axaml</DependentUpon>
-          <SubType>Code</SubType>
+            <DependentUpon>MainWindow.axaml</DependentUpon>
+            <SubType>Code</SubType>
         </Compile>
 
         <!-- Entry point -->
@@ -62,6 +64,18 @@
         <Compile Include="Program.fs" />
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="Fusil" Version="1.0.6" />
+        <PackageReference Include="MemoryPack" Version="1.21.4" />
+        <PackageReference Include="FsToolkit.ErrorHandling.TaskResult" Version="4.18.0" />
+        <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
+        <PackageReference Include="System.Reactive" Version="6.0.1" />
+        <PackageReference Include="Thoth.Json.Net" Version="12.0.0" />
+        <PackageReference Include="Vanara.PInvoke.Shell32" Version="4.1.1" />
+        <PackageReference Include="Vanara.PInvoke.User32" Version="4.1.1" />
+    </ItemGroup>
+
+    <!-- Avalonia related packages -->
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="11.2.5" />
         <PackageReference Include="Avalonia.Desktop" Version="11.2.5" />
@@ -74,17 +88,5 @@
         </PackageReference>
         <PackageReference Include="FluentAvaloniaUI" Version="2.3.0" />
         <PackageReference Include="FluentIcons.Avalonia.Fluent" Version="1.1.292" />
-        <PackageReference Include="FsToolkit.ErrorHandling.TaskResult" Version="4.18.0" />
-        <PackageReference Include="Fusil" Version="1.0.6" />
-        <PackageReference Include="MemoryPack" Version="1.21.4" />
-        <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
-        <PackageReference Include="System.Reactive" Version="6.0.1" />
-        <PackageReference Include="Thoth.Json.Net" Version="12.0.0" />
-        <PackageReference Include="Vanara.PInvoke.Shell32" Version="4.1.1" />
-        <PackageReference Include="Vanara.PInvoke.User32" Version="4.1.1" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="Plugins\Starter.SearchEngineBase\Starter.SearchEngineBase.csproj" />
     </ItemGroup>
 </Project>

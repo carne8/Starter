@@ -5,6 +5,7 @@ open Starter.Features
 open Starter.Features.InternalSearchEngines
 open Starter.Features.ResultScores
 open Starter.Features.CustomCollections
+open Starter.SearchEngine
 
 open System.IO
 open System.Threading
@@ -12,6 +13,7 @@ open System.Threading.Tasks
 open System.Windows.Input
 open System.Reactive.Subjects
 
+open Avalonia.Threading
 open ReactiveUI
 open FsToolkit.ErrorHandling
 
@@ -24,16 +26,21 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
 
     // Search engines loading
     let settingsSearchEngine = SettingsSearchEngine config.Value
-    let staticSearchEngines, _dynamicSearchEngines, searchEngines =
+    let staticSearchEngines, dynamicSearchEngines =
         Path.Combine(__SOURCE_DIRECTORY__, "../Plugins/Starter.ApplicationSearchEngine/bin/Debug/net9.0/")
         |> SearchEngineLoading.loadSearchEngineFromDirectory
 
         // Add settings search engine
-        |> fun (staticSEs, dynamicSEs, searchEngines) ->
-            searchEngines.Add(settingsSearchEngine.Id, settingsSearchEngine)
+        |> fun (staticSEs, dynamicSEs) ->
             staticSEs |> Array.append [| settingsSearchEngine |],
-            dynamicSEs,
-            searchEngines
+            dynamicSEs
+
+    let searchEngines =
+        Array.append
+            (staticSearchEngines |> unbox<ISearchEngine array>)
+            (dynamicSearchEngines |> unbox<ISearchEngine array>)
+        |> Array.map (fun se -> se.Id, se)
+        |> dict
 
     // State
     let staticSearchResults = new BehaviorSubject<SearchResultViewModel array>(Array.empty)
@@ -51,47 +58,18 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
         let staticResultSubscription =
             staticSearchResults |> Observable.subscribe (fun staticResults ->
                 let filteredResults =
-                    staticResults |> Array.choose (fun srVm ->
+                    staticResults |> Array.filter (fun srVm ->
                         match Fusil.fuzzyMatch false true true fusilSlab query srVm.Name with
-                        | Some fusilResult when fusilResult.Score > 0s -> Some { srVm with FuzzyMatchResult = Some fusilResult }
-                        | _ -> None
+                        | Some fusilResult when fusilResult.Score > 0s ->
+                            srVm.SetFuzzyResult fusilResult
+                            true
+                        | _ -> false
                     )
 
                 filteredResults |> searchResults.AddRange
                 searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
-
-                // System.Console.Clear()
-                // printfn "Displaying the static results"
-                // searchResults.List |> Seq.iter (fun (r: SearchResultViewModel) ->
-                //     printfn "%s: %i -> %f"
-                //         r.Name
-                //         r.FuzzyMatchResult.Value.Score
-                //         (r
-                //          |> SearchResultViewModel.mapForComparison resultScoreDb
-                //          |> fun (x, _, _, _) -> x)
-                // )
             )
         searchCts.Token.Register(fun _ -> staticResultSubscription.Dispose()) |> ignore
-
-        // Load dynamic results
-        // for searchEngine in dynamicSearchEngines do
-        //     try
-        //         let obs = searchEngine.Search(newText, searchCts.Token)
-        //         let sub = obs |> Observable.subscribe (fun results ->
-        //             results
-        //             |> Array.map (fun result ->
-        //                 SearchResultViewModel(
-        //                     searchEngine.Id,
-        //                     searchEngine.DisplayName,
-        //                     result
-        //                 )
-        //             )
-        //             |> searchResults.AddRange
-        //             resultScoreDb |> Option.iter (fun scoreDb -> searchResults.Sort(SearchResultViewModel.CompareTwo scoreDb))
-        //         )
-        //
-        //         searchCts.Token.Register(fun _ -> sub.Dispose()) |> ignore
-            // with e -> printfn $"Search engine query failed ({searchEngine.DisplayName}): {e.Message}"
 
     let validateResult (result: SearchResultViewModel) =
         task {
@@ -124,20 +102,24 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
 
         // Load static results
         task {
+            let loadSearchEngineResults (se: StaticSearchEngine) =
+                se.LoadResults() |> Task.bind (fun results ->
+                    Dispatcher.UIThread
+                        .InvokeAsync(fun () -> results |> Array.map (SearchResultViewModel.create se))
+                        .GetTask()
+                )
+
             let! resultVMs =
                 staticSearchEngines
-                |> Array.Parallel.map (fun se ->
-                    se.LoadResults()
-                    |> Task.map (Array.map (SearchResultViewModel.create se None))
-                )
+                |> Array.Parallel.map loadSearchEngineResults
                 |> Task.WhenAll
                 |> Task.map Array.concat
 
             resultVMs |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
-
-            staticSearchResults.OnNext resultVMs
-        }
-        |> ignore
+            Dispatcher.UIThread.Post(fun () ->
+                staticSearchResults.OnNext resultVMs
+            )
+        } |> ignore
 
     let hideCommand = ReactiveCommand.Create(fun () -> ())
     member _.HideCommand = hideCommand
