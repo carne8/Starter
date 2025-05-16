@@ -56,13 +56,13 @@
         </Style>
     </Window.Styles>
 
-    <Border Name="WindowBackground"
+    <Border x:Name="WindowBackground"
             CornerRadius="{StaticResource CornerRadius}"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="{StaticResource BorderThickness}">
         <StackPanel>
             <!-- Main text box -->
-            <TextBox Name="TextBox"
+            <TextBox x:Name="TextBox"
                      Theme="{StaticResource CustomTextBoxTheme}"
                      Watermark="Start anything..."
                      Text="{Binding Text}">
@@ -75,11 +75,11 @@
             </TextBox>
 
             <!-- Separator -->
-            <Border Name="Separator"/>
+            <Border x:Name="Separator"/>
 
             <!-- Results -->
             <!-- ItemsSource is bound from code-behind -->
-            <ListBox Name="ResultList"
+            <ListBox x:Name="ResultList"
                      ItemContainerTheme="{StaticResource CustomListBoxItem}"
                      SelectionMode="AlwaysSelected">
                 <ListBox.ItemsPanel>
