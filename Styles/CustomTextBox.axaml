@@ -6,9 +6,9 @@
             <Border Background="Black" Padding="50">
                 <StackPanel Spacing="5">
                     <TextBox Theme="{StaticResource CustomTextBoxTheme}" />
-                    <TextBox/>
-                    <TextBox Theme="{StaticResource CustomTextBoxTheme}" Text="Hello Down thereeeeeeeeeee"/>
-                    <TextBox Text="Hello Down there"/>
+                    <TextBox />
+                    <TextBox Theme="{StaticResource CustomTextBoxTheme}" Text="Hello Down thereeeeeeeeeee" />
+                    <TextBox Text="Hello Down there" />
                     <TextBox Theme="{StaticResource CustomTextBoxTheme}" Watermark="Watermark" />
                     <TextBox Watermark="Watermark" />
                 </StackPanel>
@@ -18,15 +18,15 @@
 
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
-            <SolidColorBrush x:Key="PlaceholderForeground" Color="#95000000"/>
+            <SolidColorBrush x:Key="PlaceholderForeground" Color="#666666" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
-            <SolidColorBrush x:Key="PlaceholderForeground">#CCCCCC</SolidColorBrush>
+            <SolidColorBrush x:Key="PlaceholderForeground" Color="#CCCCCC" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
     <Thickness x:Key="TextPadding">18, 14, 15, 15</Thickness>
 
-    <!-- Derived of ListBoxStyles.axaml from https://github.com/amwx/FluentAvalonia -->
+    <!-- Derived of TextBoxStyles.axaml from https://github.com/amwx/FluentAvalonia -->
     <ControlTheme x:Key="CustomTextBoxTheme" TargetType="TextBox">
         <Setter Property="FontFamily" Value="{StaticResource JetBrainsMono}" />
         <Setter Property="FontWeight" Value="DemiBold" />
@@ -45,14 +45,15 @@
                         AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
                         Height="27">
                         <Panel>
-                            <TextBlock Name="PART_Watermark"
+                            <TextBlock x:Name="PART_Watermark"
                                        VerticalAlignment="Center"
                                        Foreground="{DynamicResource PlaceholderForeground}"
+                                       FontWeight="Regular"
                                        Text="{TemplateBinding Watermark}"
                                        TextWrapping="{TemplateBinding TextWrapping}"
                                        IsVisible="{TemplateBinding Text, Converter={x:Static StringConverters.IsNullOrEmpty}}"
                                        HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
-                            <TextPresenter Name="PART_TextPresenter"
+                            <TextPresenter x:Name="PART_TextPresenter"
                                            VerticalAlignment="Center"
                                            Text="{TemplateBinding Text, Mode=TwoWay}"
                                            CaretIndex="{TemplateBinding CaretIndex}"
