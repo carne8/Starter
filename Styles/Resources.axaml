@@ -21,13 +21,13 @@
             <Color x:Key="DefaultBackgroundColor">#242424</Color>
             <SolidColorBrush x:Key="WindowBackground">#B2232323</SolidColorBrush>
 
-            <LinearGradientBrush x:Key="BorderBrush" StartPoint="0%,0%" EndPoint="100%,100%" Opacity="0.2">
-                <GradientStop Color="#675858" Offset="0.0"/>
-                <GradientStop Color="#403F3F" Offset="1.0"/>
+            <LinearGradientBrush x:Key="BorderBrush" StartPoint="0%,0%" EndPoint="100%,100%" Opacity="0.6">
+                <GradientStop Color="#3f3f3f" Offset="0.0"/>
+                <GradientStop Color="#3f3f3f" Offset="1.0"/>
             </LinearGradientBrush>
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
-    <Thickness x:Key="BorderThickness">2</Thickness>
-    <x:Double x:Key="BorderThicknessInt">2</x:Double>
+    <Thickness x:Key="BorderThickness">1</Thickness>
+    <x:Double x:Key="BorderThicknessInt">1</x:Double>
 </ResourceDictionary>

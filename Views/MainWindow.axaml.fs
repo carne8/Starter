@@ -99,7 +99,11 @@ type MainWindow() as this =
             match newSelectedIdx with
             | None -> ()
             | Some newSelectedIdx ->
-                if newSelectedIdx = r.ItemCount - 1 then // Scroll to bottom to preserve the bottom padding of the listbox
+                if newSelectedIdx = 0 then // Scroll to top to preserve the top padding
+                    r.GetVisualDescendants()
+                    |> Seq.tryFind (fun visual -> visual.Name = "PART_ScrollViewer")
+                    |> Option.iter (fun visual -> (visual :?> ScrollViewer).ScrollToHome())
+                elif newSelectedIdx = r.ItemCount - 1 then // Scroll to bottom to preserve the bottom padding of the listbox
                     r.GetVisualDescendants()
                     |> Seq.tryFind (fun visual -> visual.Name = "PART_ScrollViewer")
                     |> Option.iter (fun visual -> (visual :?> ScrollViewer).ScrollToEnd())

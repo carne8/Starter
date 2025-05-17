@@ -13,7 +13,6 @@ type SettingsSearchResult =
         member this.Name = this.Name
         member this.LoadIcon() = null
 
-
 type SettingsSearchEngine(baseConfig: Configuration) =
     inherit StaticSearchEngine("")
 

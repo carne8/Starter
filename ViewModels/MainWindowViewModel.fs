@@ -1,6 +1,5 @@
 namespace Starter.ViewModels
 
-open Fusil
 open Starter.Features
 open Starter.Features.InternalSearchEngines
 open Starter.Features.ResultScores
@@ -13,6 +12,8 @@ open System.Threading.Tasks
 open System.Windows.Input
 open System.Reactive.Subjects
 
+open Fusil
+open Fusil.TextNormalization
 open Avalonia.Threading
 open ReactiveUI
 open FsToolkit.ErrorHandling
@@ -51,10 +52,13 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
     let onTextChanged (newText: string) =
         searchCts.Cancel()
         searchCts <- new CancellationTokenSource()
-        searchResults.Clear()
 
         // Load static results
-        let query = newText.ToCharArray()
+        let query =
+            newText
+            |> String.normalize
+            |> Array.map System.Text.Rune.ToLowerInvariant
+
         let staticResultSubscription =
             staticSearchResults |> Observable.subscribe (fun staticResults ->
                 let filteredResults =
@@ -66,6 +70,7 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
                         | _ -> false
                     )
 
+                searchResults.Clear()
                 filteredResults |> searchResults.AddRange
                 searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
             )
@@ -101,25 +106,22 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
         |> ignore
 
         // Load static results
-        task {
-            let loadSearchEngineResults (se: StaticSearchEngine) =
-                se.LoadResults() |> Task.bind (fun results ->
-                    Dispatcher.UIThread
-                        .InvokeAsync(fun () -> results |> Array.map (SearchResultViewModel.create se))
-                        .GetTask()
+        for se in staticSearchEngines do
+            Task.Run<unit>(fun () -> task {
+                let! results = se.LoadResults()
+
+                // SearchResultViewModel instantiation must happen on UI thread in order to create span controls
+                // Also staticSearchResults.OnNext must happen on UI thread
+                Dispatcher.UIThread.Post(fun () ->
+                    let newStaticResults =
+                        results
+                        |> Array.map (SearchResultViewModel.create se)
+                        |> Array.append staticSearchResults.Value
+
+                    newStaticResults |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
+                    staticSearchResults.OnNext newStaticResults
                 )
-
-            let! resultVMs =
-                staticSearchEngines
-                |> Array.Parallel.map loadSearchEngineResults
-                |> Task.WhenAll
-                |> Task.map Array.concat
-
-            resultVMs |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
-            Dispatcher.UIThread.Post(fun () ->
-                staticSearchResults.OnNext resultVMs
-            )
-        } |> ignore
+            }) |> ignore
 
     let hideCommand = ReactiveCommand.Create(fun () -> ())
     member _.HideCommand = hideCommand

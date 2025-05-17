@@ -24,7 +24,7 @@
             <SolidColorBrush x:Key="PlaceholderForeground" Color="#CCCCCC" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
-    <Thickness x:Key="TextPadding">18, 14, 15, 15</Thickness>
+    <Thickness x:Key="TextPadding">15, 14, 15, 15</Thickness>
 
     <!-- Derived of TextBoxStyles.axaml from https://github.com/amwx/FluentAvalonia -->
     <ControlTheme x:Key="CustomTextBoxTheme" TargetType="TextBox">
