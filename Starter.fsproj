@@ -53,6 +53,10 @@
             <DependentUpon>SearchResult.axaml</DependentUpon>
             <SubType>Code</SubType>
         </Compile>
+        <Compile Include="Views\SearchEnginePill.axaml.fs">
+          <DependentUpon>SearchEnginePill.axaml</DependentUpon>
+          <SubType>Code</SubType>
+        </Compile>
         <Compile Include="Views\MainWindow.axaml.fs">
             <DependentUpon>MainWindow.axaml</DependentUpon>
             <SubType>Code</SubType>

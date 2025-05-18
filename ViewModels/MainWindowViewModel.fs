@@ -16,7 +16,6 @@ open Fusil
 open Fusil.TextNormalization
 open Avalonia.Threading
 open ReactiveUI
-open FsToolkit.ErrorHandling
 
 type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: ResultScores.ScoreDb) =
     inherit ViewModelBase()
@@ -48,6 +47,7 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
     let mutable searchResults = ObservableList<SearchResultViewModel>(50)
     let mutable text = "starter"
     let mutable searchCts = new CancellationTokenSource()
+    let mutable singleSearchEngineMode = new BehaviorSubject<ISearchEngine option>(Some settingsSearchEngine)
 
     let onTextChanged (newText: string) =
         searchCts.Cancel()
@@ -138,6 +138,8 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
     member _.Text
         with get () = text
         and set v = text <- v; onTextChanged v
+
+    member this.SingleSearchEngineMode = singleSearchEngineMode
 
     #if DEBUG
     static member DesignVM = MainWindowViewModel(Config.Configuration.Default, Array.empty |> dict)

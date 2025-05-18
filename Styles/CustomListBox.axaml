@@ -15,11 +15,11 @@
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
             <SolidColorBrush x:Key="CustomListBoxItemBackground">Transparent</SolidColorBrush>
-            <SolidColorBrush x:Key="CustomListBoxItemBackgroundSelected">rgba(119, 119, 119, 0.2)</SolidColorBrush>
+            <SolidColorBrush x:Key="CustomListBoxItemBackgroundSelected">rgba(180, 180, 180, 0.2)</SolidColorBrush>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
             <SolidColorBrush x:Key="CustomListBoxItemBackground">Transparent</SolidColorBrush>
-            <SolidColorBrush x:Key="CustomListBoxItemBackgroundSelected">rgba(192, 192, 192, 0.2)</SolidColorBrush>
+            <SolidColorBrush x:Key="CustomListBoxItemBackgroundSelected">rgba(200, 200, 200, 0.2)</SolidColorBrush>
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
     <CornerRadius x:Key="CustomListViewItemCornerRadius">12</CornerRadius>

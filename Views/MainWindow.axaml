@@ -23,6 +23,9 @@
         <CornerRadius x:Key="CornerRadius">12</CornerRadius>
         <CornerRadius x:Key="TopCornerRadius">12, 0</CornerRadius>
         <Thickness x:Key="ResultsPadding">8, 8, 8, 8</Thickness>
+        <Thickness x:Key="SeparatorPadding">15, 0, 15, 0</Thickness>
+        <Thickness x:Key="SearchEnginePillMargin">15, 0, 0, 0</Thickness>
+        <Thickness x:Key="TextBoxMargin">0, 14, 15, 15</Thickness>
     </Window.Resources>
 
     <Window.Styles>
@@ -39,6 +42,7 @@
             <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
             <Setter Property="Height" Value="{StaticResource BorderThicknessInt}"/>
             <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="Margin" Value="{StaticResource SeparatorPadding}"/>
         </Style>
 
         <Style Selector=":is(Window)[ActualTransparencyLevel=AcrylicBlur] Border#WindowBackground">
@@ -60,17 +64,23 @@
             BorderThickness="{StaticResource BorderThickness}">
         <StackPanel>
             <!-- Main text box -->
-            <TextBox x:Name="TextBox"
-                     Theme="{StaticResource CustomTextBoxTheme}"
-                     Watermark="Start anything..."
-                     Text="{Binding Text}">
-                <TextBox.KeyBindings>
-                    <KeyBinding
-                        Command="{Binding ValidateCommand}"
-                        CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
-                        Gesture="Enter"/>
-                </TextBox.KeyBindings>
-            </TextBox>
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <controls:SearchEnginePill x:Name="SearchEnginePill"
+                                           Margin="{StaticResource SearchEnginePillMargin}"
+                                           IsVisible="False" />
+                <TextBox x:Name="TextBox"
+                         Theme="{StaticResource CustomTextBoxTheme}"
+                         Watermark="Start anything..."
+                         Text="{Binding Text}"
+                         Margin="{StaticResource TextBoxMargin}">
+                    <TextBox.KeyBindings>
+                        <KeyBinding
+                            Command="{Binding ValidateCommand}"
+                            CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
+                            Gesture="Enter"/>
+                    </TextBox.KeyBindings>
+                </TextBox>
+            </StackPanel>
 
             <!-- Separator -->
             <Border x:Name="Separator"/>

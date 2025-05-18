@@ -102,6 +102,7 @@ type ApplicationSearchEngine(pluginPath) =
 
     override _.Id = nameof ApplicationSearchEngine
     override _.DisplayName = "Application"
+    override _.Icon = null
 
     override _.LoadResults() = indexer.Apps |> Task.map unbox<ISearchResult array>
     override _.SearchResultSelected(searchResult) =

@@ -24,7 +24,6 @@
             <SolidColorBrush x:Key="PlaceholderForeground" Color="#CCCCCC" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
-    <Thickness x:Key="TextPadding">15, 14, 15, 15</Thickness>
 
     <!-- Derived of TextBoxStyles.axaml from https://github.com/amwx/FluentAvalonia -->
     <ControlTheme x:Key="CustomTextBoxTheme" TargetType="TextBox">
@@ -33,38 +32,34 @@
         <Setter Property="Foreground" Value="{DynamicResource TextForeground}" />
         <Setter Property="Template">
             <ControlTemplate>
-                <Border Background="{DynamicResource BackgroundBrush}"
-                        BorderBrush="{TemplateBinding BorderBrush}"
-                        BorderThickness="{TemplateBinding BorderThickness}"
-                        CornerRadius="{TemplateBinding CornerRadius}"
-                        Padding="{StaticResource TextPadding}">
-                    <ScrollViewer
-                        HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
-                        VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
-                        IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
-                        AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
-                        Height="27">
-                        <Panel>
-                            <TextBlock x:Name="PART_Watermark"
+                <ScrollViewer
+                    HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                    VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
+                    IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
+                    AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+                    Height="27">
+                    <Panel>
+                        <TextBlock x:Name="PART_Watermark"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource PlaceholderForeground}"
+                                   FontWeight="Regular"
+                                   Text="{TemplateBinding Watermark}"
+                                   TextWrapping="{TemplateBinding TextWrapping}"
+                                   IsVisible="{TemplateBinding Text, Converter={x:Static StringConverters.IsNullOrEmpty}}"
+                                   HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                   LineHeight="27" />
+                        <TextPresenter x:Name="PART_TextPresenter"
                                        VerticalAlignment="Center"
-                                       Foreground="{DynamicResource PlaceholderForeground}"
-                                       FontWeight="Regular"
-                                       Text="{TemplateBinding Watermark}"
-                                       TextWrapping="{TemplateBinding TextWrapping}"
-                                       IsVisible="{TemplateBinding Text, Converter={x:Static StringConverters.IsNullOrEmpty}}"
-                                       HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" />
-                            <TextPresenter x:Name="PART_TextPresenter"
-                                           VerticalAlignment="Center"
-                                           Text="{TemplateBinding Text, Mode=TwoWay}"
-                                           CaretIndex="{TemplateBinding CaretIndex}"
-                                           CaretBrush="{DynamicResource TextForeground}"
-                                           SelectionStart="{TemplateBinding SelectionStart}"
-                                           SelectionEnd="{TemplateBinding SelectionEnd}"
-                                           SelectionBrush="{DynamicResource TextControlSelectionHighlightColor}"
-                                           SelectionForegroundBrush="{DynamicResource TextOnAccentFillColorSelectedTextBrush}" />
-                        </Panel>
-                    </ScrollViewer>
-                </Border>
+                                       Text="{TemplateBinding Text, Mode=TwoWay}"
+                                       CaretIndex="{TemplateBinding CaretIndex}"
+                                       CaretBrush="{DynamicResource TextForeground}"
+                                       SelectionStart="{TemplateBinding SelectionStart}"
+                                       SelectionEnd="{TemplateBinding SelectionEnd}"
+                                       SelectionBrush="{DynamicResource TextControlSelectionHighlightColor}"
+                                       SelectionForegroundBrush="{DynamicResource TextOnAccentFillColorSelectedTextBrush}"
+                                       LineHeight="27" />
+                    </Panel>
+                </ScrollViewer>
             </ControlTemplate>
         </Setter>
 
