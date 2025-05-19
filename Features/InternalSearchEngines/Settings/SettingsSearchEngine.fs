@@ -1,9 +1,10 @@
-﻿module Starter.Features.InternalSearchEngines
+module Starter.Features.InternalSearchEngines
 
+open Avalonia.Media.Imaging
 open FsToolkit.ErrorHandling
 open Starter
-open Starter.Features.Config
 open Starter.SearchEngine
+open Starter.ViewModels
 
 type SettingsSearchResult =
     { Id: string
@@ -13,17 +14,17 @@ type SettingsSearchResult =
         member this.Name = this.Name
         member this.LoadIcon() = null
 
-type SettingsSearchEngine(baseConfig: Configuration) =
+type SettingsSearchEngine(config, searchEngines) =
     inherit StaticSearchEngine("")
 
-    static let id = System.Guid.NewGuid() |> string
+    static let id = nameof SettingsSearchEngine
     static let matchingString = "Options"
 
-    let settingsViewModel = new ViewModels.SettingsViewModel(baseConfig)
-    let mutable window =
-        Avalonia.Threading.Dispatcher.UIThread.Invoke(fun _ ->
-            Views.Settings(DataContext = settingsViewModel)
-        )
+    let settingsViewModel = new SettingsViewModel(config, searchEngines)
+    let mutable window : Views.Settings option = None
+    // Create the window only when opening is requested
+    // This allows the view model to load the search engines correctly
+    // (else, the settings search engine (the current one) doesn't appear in the settings)
 
     member _.Configuration = settingsViewModel.Configuration
 
@@ -38,14 +39,9 @@ type SettingsSearchEngine(baseConfig: Configuration) =
     override this.SearchResultSelected _ =
         Avalonia.Threading.Dispatcher.UIThread.Post(fun _ ->
             try
-                window.Show()
+                window.Value.Show()
             with _ ->
                 // Create new window
-                let previousDataContext =
-                    match window.DataContext with
-                    | null -> failwith "Should not happen"
-                    | dc -> dc :?> ViewModels.SettingsViewModel
-
-                window <- Views.Settings(DataContext = previousDataContext)
-                window.Show()
+                window <- Some <| Views.Settings(DataContext = settingsViewModel)
+                window.Value.Show()
         )

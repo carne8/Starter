@@ -33,7 +33,7 @@
         </Border>
 
         <ScrollViewer>
-            <StackPanel Margin="20">
+            <StackPanel Margin="20" Spacing="5">
                 <TextBlock Classes="title1" Margin="4, 0, 0, 24">Settings</TextBlock>
 
                 <!-- Launch at startup -->
@@ -60,6 +60,25 @@
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                     </ui:SettingsExpander.Footer>
+                </ui:SettingsExpander>
+
+                <!-- Search engine prefixes -->
+                <ui:SettingsExpander Header="Search engine activation prefixes"
+                                     ItemsSource="{Binding SearchEnginePrefixes}">
+                    <ui:SettingsExpander.IconSource>
+                        <ic:SymbolIconSource Symbol="Keyboard"/>
+                    </ui:SettingsExpander.IconSource>
+
+                    <ui:SettingsExpander.ItemTemplate>
+                        <DataTemplate DataType="vm:SearchEnginePrefixViewModel">
+                            <ui:SettingsExpanderItem>
+                                <TextBlock Text="{Binding Name}" />
+                                <ui:SettingsExpanderItem.Footer>
+                                    <TextBox Text="{Binding Prefix}"/>
+                                </ui:SettingsExpanderItem.Footer>
+                            </ui:SettingsExpanderItem>
+                        </DataTemplate>
+                    </ui:SettingsExpander.ItemTemplate>
                 </ui:SettingsExpander>
             </StackPanel>
         </ScrollViewer>

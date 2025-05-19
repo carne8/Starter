@@ -1,12 +1,13 @@
 namespace Starter.ViewModels
 
-open System
 open Starter.Features
 open Starter.Features.InternalSearchEngines
 open Starter.Features.ResultScores
 open Starter.Features.CustomCollections
 open Starter.SearchEngine
 
+open System
+open System.Collections.Generic
 open System.IO
 open System.Threading
 open System.Threading.Tasks
@@ -26,22 +27,17 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
     let fusilSlab = Slab.createDefault()
 
     // Search engines loading
-    let settingsSearchEngine = SettingsSearchEngine config.Value
     let staticSearchEngines, dynamicSearchEngines =
         Path.Combine(__SOURCE_DIRECTORY__, "../Plugins/Starter.ApplicationSearchEngine/bin/Debug/net9.0/")
         |> SearchEngineLoading.loadSearchEngineFromDirectory
-
-        // Add settings search engine
-        |> fun (staticSEs, dynamicSEs) ->
-            staticSEs |> Array.append [| settingsSearchEngine |],
-            dynamicSEs
+        |> fun (staticSEs, dynamicSEs) -> staticSEs |> List, dynamicSEs |> List
 
     let searchEngines =
-        Array.append
-            (staticSearchEngines |> unbox<ISearchEngine array>)
-            (dynamicSearchEngines |> unbox<ISearchEngine array>)
-        |> Array.map (fun se -> se.Id, se)
-        |> dict
+        Seq.append
+            (staticSearchEngines |> unbox<ISearchEngine seq>)
+            (dynamicSearchEngines |> unbox<ISearchEngine seq>)
+        |> Seq.map (fun se -> KeyValuePair(se.Id, se))
+        |> Dictionary
 
     // State
     let staticSearchResults = new BehaviorSubject<SearchResultViewModel array>(Array.empty)
@@ -117,6 +113,11 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
         }
 
     do
+        // Load settings search engine
+        let settingsSearchEngine = SettingsSearchEngine(config.Value, searchEngines)
+        staticSearchEngines.Add(settingsSearchEngine)
+        searchEngines.Add(settingsSearchEngine.Id, settingsSearchEngine)
+
         // Sync config changes with the settings search engine (and the settings page)
         // Save config to a file when it changes
         settingsSearchEngine.Configuration
