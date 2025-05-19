@@ -34,10 +34,16 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
 
     let searchEngines =
         Seq.append
-            (staticSearchEngines |> unbox<ISearchEngine seq>)
-            (dynamicSearchEngines |> unbox<ISearchEngine seq>)
+            (staticSearchEngines |> Seq.cast<ISearchEngine>)
+            (dynamicSearchEngines |> Seq.cast<ISearchEngine>)
         |> Seq.map (fun se -> KeyValuePair(se.Id, se))
         |> Dictionary
+
+    let searchEngineFromPrefix = new BehaviorSubject<_>(Array.empty |> dict) // Bound to searchEngines in `do`
+
+    // Commands (to interact with view)
+    let hideCommand = ReactiveCommand.Create(fun () -> ())
+    let emptyTextBoxCommand = ReactiveCommand.Create(fun () -> ())
 
     // State
     let staticSearchResults = new BehaviorSubject<SearchResultViewModel array>(Array.empty)
@@ -47,6 +53,15 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
     let mutable singleSearchEngineMode = new BehaviorSubject<ISearchEngine option>(None)
 
     let onTextChanged (newText: string) =
+        match searchEngineFromPrefix.Value.TryGetValue newText with
+        | false, _ -> ()
+        | true, se ->
+            se
+            :> ISearchEngine
+            |> Some
+            |> singleSearchEngineMode.OnNext
+            (emptyTextBoxCommand :> ICommand).Execute()
+
         searchCts.Cancel()
         searchCts <- new CancellationTokenSource()
         let bindToCts (sub: IDisposable) = searchCts.Token.Register(fun _ -> sub.Dispose()) |> ignore
@@ -62,11 +77,11 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
             match singleSe with
             | Some (:? DynamicSearchEngine as se) -> // TODO: Load dynamic results
                 se.Search(newText, searchCts.Token)
-                |> Observable.subscribe (fun r -> printfn "Dynamic results: %A" r)
+                |> Observable.subscribe (printfn "Dynamic results: %A")
                 |> bindToCts
             | _ ->
                 let isSearchEngineActivated seId =
-                    match singleSearchEngineMode.Value with
+                    match singleSe with
                     | None -> true
                     | Some se -> se.Id = seId
 
@@ -118,6 +133,21 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
         staticSearchEngines.Add(settingsSearchEngine)
         searchEngines.Add(settingsSearchEngine.Id, settingsSearchEngine)
 
+        // Sync searchEngineFromPrefix with config
+        config
+        |> Observable.subscribe (fun config ->
+            config.SearchEnginePrefixes
+            |> Map.toSeq
+            |> Seq.choose (fun (k, v) ->
+                match searchEngines.TryGetValue k with
+                | false, _ -> None
+                | true, se -> Some (v, se)
+            )
+            |> dict
+            |> searchEngineFromPrefix.OnNext
+        )
+        |> ignore
+
         // Sync config changes with the settings search engine (and the settings page)
         // Save config to a file when it changes
         settingsSearchEngine.Configuration
@@ -146,8 +176,12 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
                 )
             }) |> ignore
 
-    let hideCommand = ReactiveCommand.Create(fun () -> ())
     member _.HideCommand = hideCommand
+    member _.EmptyTextBoxCommand = emptyTextBoxCommand
+    member _.ResetSingleSearchEngineMode() =
+        match singleSearchEngineMode.Value with
+        | None -> ()
+        | Some _ -> singleSearchEngineMode.OnNext None
 
     member _.ValidateCommand(searchResult: SearchResultViewModel | null) =
         match searchResult with

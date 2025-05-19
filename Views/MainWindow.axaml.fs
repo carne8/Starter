@@ -5,10 +5,12 @@ open Starter.Controls
 open Starter.Features
 
 open System.Collections.Generic
+open System.Windows.Input
 open Vanara.PInvoke
 
 open Avalonia
 open Avalonia.Input
+open Avalonia.Interactivity
 open Avalonia.Controls
 open Avalonia.Markup.Xaml
 open Avalonia.VisualTree
@@ -76,6 +78,13 @@ type MainWindow() as this =
                     this.SearchEnginePill.IsVisible <- true
             )
             |> ignore
+
+            // Subscribe to commands
+            this.ViewModel.EmptyTextBoxCommand
+            |> Observable.subscribe (fun _ ->
+                Threading.Dispatcher.UIThread.Post(fun _ -> this.TextBox.Clear())
+            )
+            |> ignore
         )
 
         this.Activated.Add (fun _ ->
@@ -89,13 +98,7 @@ type MainWindow() as this =
         #endif
 
     member private this.SetupKeyboardShortcuts() =
-        // Add hide key binding
-        KeyBinding(
-            Command = this.ViewModel.HideCommand,
-            Gesture = KeyGesture.Parse "Escape"
-        )
-        |> this.KeyBindings.Add
-
+        // Subscribe to hide command
         this.ViewModel.HideCommand
         |> Observable.subscribe (fun _ ->
             Threading.Dispatcher.UIThread.Post(fun _ ->
@@ -104,31 +107,52 @@ type MainWindow() as this =
         )
         |> ignore
 
+        // Add escape key binding
+        let onEscape = // Run when "Escape" is pressed
+            ReactiveUI.ReactiveCommand.Create(fun () ->
+                if this.ViewModel.SingleSearchEngineMode.Value.IsSome then
+                    this.ViewModel.ResetSingleSearchEngineMode()
+                else
+                    (this.ViewModel.HideCommand :> ICommand).Execute()
+            )
+
+        KeyBinding(
+            Command = onEscape,
+            Gesture = KeyGesture.Parse "Escape"
+        )
+        |> this.KeyBindings.Add
+
         // Set keyboard navigation
         let r = this.ResultList
-        this.TextBox.KeyDown.Add(fun e ->
-            let newSelectedIdx =
-                match e.Key.ToNavigationDirection() |> Option.ofNullable with
-                | Some NavigationDirection.Up ->
-                    (r.SelectedIndex - 1)
-                    |> max 0
-                    |> Some
-                | Some NavigationDirection.Down ->
-                    (r.SelectedIndex + 1)
-                    |> min (r.ItemCount - 1)
-                    |> Some
-                | _ -> None
+        let d = System.EventHandler<KeyEventArgs>(fun _ e ->
+            match e.PhysicalKey = PhysicalKey.Backspace with
+            | true ->
+                if this.ViewModel.SingleSearchEngineMode.Value.IsSome then
+                    this.ViewModel.ResetSingleSearchEngineMode()
+            | false ->
+                let newSelectedIdx =
+                    match e.Key.ToNavigationDirection() |> Option.ofNullable with
+                    | Some NavigationDirection.Up ->
+                        (r.SelectedIndex - 1)
+                        |> max 0
+                        |> Some
+                    | Some NavigationDirection.Down ->
+                        (r.SelectedIndex + 1)
+                        |> min (r.ItemCount - 1)
+                        |> Some
+                    | _ -> None
 
-            match newSelectedIdx with
-            | None -> ()
-            | Some newSelectedIdx ->
-                if newSelectedIdx = 0 then
-                    // Scroll to top to preserve the top padding
-                    this.ResultListScrollViewer.Value.ScrollToHome()
-                elif newSelectedIdx = r.ItemCount - 1 then
-                    // Scroll to bottom to preserve the bottom padding of the listbox
-                    this.ResultListScrollViewer.Value.ScrollToEnd()
+                match newSelectedIdx with
+                | None -> ()
+                | Some newSelectedIdx ->
+                    if newSelectedIdx = 0 then
+                        // Scroll to top to preserve the top padding
+                        this.ResultListScrollViewer.Value.ScrollToHome()
+                    elif newSelectedIdx = r.ItemCount - 1 then
+                        // Scroll to bottom to preserve the bottom padding of the listbox
+                        this.ResultListScrollViewer.Value.ScrollToEnd()
 
-                r.Selection.SelectedIndex <- newSelectedIdx
-                e.Handled <- true
+                    r.Selection.SelectedIndex <- newSelectedIdx
+                    e.Handled <- true
         )
+        this.TextBox.AddHandler(InputElement.KeyDownEvent, d, RoutingStrategies.Tunnel)
