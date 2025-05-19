@@ -2,8 +2,11 @@ namespace Starter.ViewModels
 
 open Starter.SearchEngine
 open Starter.Features.ResultScores
+
 open Avalonia.Media
+open Avalonia.Media.Imaging
 open Avalonia.Controls.Documents
+open Avalonia.Platform
 
 type SearchResultViewModel(
     searchResult: ISearchResult,
@@ -11,8 +14,14 @@ type SearchResultViewModel(
     searchEngineName: string
     ) =
 
+    static let fallbackBitmap = new Bitmap(AssetLoader.Open <| System.Uri "avares://Starter/Assets/avalonia-logo.ico")
+
     let inlineCollection = InlineCollection()
     let mutable fuzzyMatchResult: Fusil.Fusil.FuzzyResult option = None
+    let icon =
+        lazy match searchResult.LoadIcon() with
+             | null -> fallbackBitmap
+             | bmp -> bmp
 
     do
         inlineCollection.EnsureCapacity(searchResult.Name.Length)
@@ -60,7 +69,6 @@ type SearchResultViewModel(
         sr.Name.Length,
         sr.Name
 
-and SearchResultViewModel with
     // UI Bindings
     member this.Name : string = this.SearchResult.Name
-    member this.LoadIcon() = this.SearchResult.LoadIcon()
+    member this.Icon = icon.Value
