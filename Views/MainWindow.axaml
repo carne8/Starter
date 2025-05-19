@@ -92,7 +92,7 @@
                      SelectionMode="AlwaysSelected">
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <StackPanel Spacing="4" />
+                        <VirtualizingStackPanel />
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
 
@@ -102,6 +102,16 @@
                         CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
                         Gesture="Enter"/>
                 </ListBox.KeyBindings>
+
+                <!-- Add spacing between items -->
+                <ListBox.Styles>
+                    <Style Selector="ListBoxItem">
+                        <Setter Property="Margin" Value="0, 4, 0, 0" />
+                    </Style>
+                    <Style Selector="ListBoxItem:nth-child(1)"> <!-- Why is the of the first one 1 ?! -->
+                        <Setter Property="Margin" Value="0, 0, 0, 0" />
+                    </Style>
+                </ListBox.Styles>
 
                 <ListBox.ItemTemplate>
                     <DataTemplate>

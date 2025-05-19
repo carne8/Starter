@@ -123,6 +123,7 @@ type MainWindow() as this =
         |> this.KeyBindings.Add
 
         // Set keyboard navigation
+        // -> The goal is to be able to navigate in the listbox without losing the focus on the textbox
         let r = this.ResultList
         let d = System.EventHandler<KeyEventArgs>(fun _ e ->
             match e.PhysicalKey = PhysicalKey.Backspace with
