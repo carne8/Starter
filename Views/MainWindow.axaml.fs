@@ -126,11 +126,16 @@ type MainWindow() as this =
         // -> The goal is to be able to navigate in the listbox without losing the focus on the textbox
         let r = this.ResultList
         let d = System.EventHandler<KeyEventArgs>(fun _ e ->
-            match e.PhysicalKey = PhysicalKey.Backspace with
-            | true ->
+            match e.PhysicalKey with
+            | PhysicalKey.Backspace ->
                 if this.ViewModel.SingleSearchEngineMode.Value.IsSome then
                     this.ViewModel.ResetSingleSearchEngineMode()
-            | false ->
+                    e.Handled <- true
+
+            | PhysicalKey.Tab -> // Prevent changing focus
+                e.Handled <- true
+
+            | _ ->
                 let newSelectedIdx =
                     match e.Key.ToNavigationDirection() |> Option.ofNullable with
                     | Some NavigationDirection.Up ->
