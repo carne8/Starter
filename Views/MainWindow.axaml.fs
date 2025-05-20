@@ -128,7 +128,7 @@ type MainWindow() as this =
         let d = System.EventHandler<KeyEventArgs>(fun _ e ->
             match e.PhysicalKey with
             | PhysicalKey.Backspace ->
-                if this.ViewModel.SingleSearchEngineMode.Value.IsSome then
+                if this.ViewModel.SingleSearchEngineMode.Value.IsSome && this.TextBox.Text = "" then
                     this.ViewModel.ResetSingleSearchEngineMode()
                     e.Handled <- true
 
