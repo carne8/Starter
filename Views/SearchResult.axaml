@@ -22,7 +22,7 @@
                            FontSize="15"
                            Foreground="{DynamicResource TextForeground}"
                            Inlines="{Binding Inlines}" />
-                <TextBlock Text="{Binding SearchEngineName}"
+                <TextBlock Text="{Binding SearchResult.Description}"
                            FontSize="12"
                            FontWeight="Medium"
                            Foreground="{DynamicResource DescriptionForeground}" />

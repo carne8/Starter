@@ -170,7 +170,7 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
 
                     newStaticResults |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
                     staticSearchResults.OnNext newStaticResults
-                    printfn "%s results loaded" se.DisplayName
+                    printfn "%s results loaded" se.Name
                 )
             }) |> ignore
 

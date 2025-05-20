@@ -12,13 +12,15 @@ public interface ISearchResult
 {
     string Id { get; }
     string Name { get; }
+    string Description { get; }
     Bitmap? LoadIcon();
 }
 
 public interface ISearchEngine
 {
     public string Id { get; }
-    public string DisplayName { get; }
+    public string Name { get; }
+    public string ShortName { get; }
     public Bitmap? Icon { get; }
     public void SearchResultSelected(ISearchResult selectedSearchResult);
 }
@@ -31,7 +33,8 @@ public interface ISearchEngine
 public abstract class StaticSearchEngine(string pluginPath) : ISearchEngine
 {
     public abstract string Id { get; }
-    public abstract string DisplayName { get; }
+    public abstract string Name { get; }
+    public abstract string ShortName { get; }
     public abstract Bitmap? Icon { get; }
     public abstract Task<ISearchResult[]> LoadResults();
     public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
@@ -45,7 +48,8 @@ public abstract class StaticSearchEngine(string pluginPath) : ISearchEngine
 public abstract class DynamicSearchEngine(string pluginPath) : ISearchEngine
 {
     public abstract string Id { get; }
-    public abstract string DisplayName { get; }
+    public abstract string Name { get; }
+    public abstract string ShortName { get; }
     public abstract Bitmap? Icon { get; }
     public abstract IObservable<ISearchResult[]> Search(string query, CancellationToken cancellationToken);
     public abstract void SearchResultSelected(ISearchResult selectedSearchResult);

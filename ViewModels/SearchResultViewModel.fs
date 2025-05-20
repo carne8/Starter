@@ -10,8 +10,7 @@ open Avalonia.Platform
 
 type SearchResultViewModel(
     searchResult: ISearchResult,
-    searchEngineId: string,
-    searchEngineName: string
+    searchEngineId: string
     ) =
 
     static let fallbackBitmap = new Bitmap(AssetLoader.Open <| System.Uri "avares://Starter/Assets/avalonia-logo.ico")
@@ -32,7 +31,6 @@ type SearchResultViewModel(
 
     member _.SearchResult = searchResult
     member _.SearchEngineId = searchEngineId
-    member _.SearchEngineName = searchEngineName
     member _.FuzzyMatchResult = fuzzyMatchResult
     member _.Inlines = inlineCollection
 
@@ -49,13 +47,13 @@ type SearchResultViewModel(
         { new ISearchResult with
             member this.Id = ""
             member this.Name = "Zen Browser"
+            member this.Description = "Application"
             member this.LoadIcon() = null },
-        "fake",
-        "Fake search engine"
+        "fake"
     )
 
     static member create (se: ISearchEngine) (sr: ISearchResult) =
-        SearchResultViewModel(sr, se.Id, se.DisplayName)
+        SearchResultViewModel(sr, se.Id)
 
     static member mapForComparison resultScoreDb (sr: SearchResultViewModel) =
         let struct (usageScore, d) = sr.SearchResult.Id |> ScoreDb.getResultScore resultScoreDb

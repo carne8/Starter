@@ -47,7 +47,7 @@ type SettingsViewModel(baseConfig: Configuration, searchEngines: IDictionary<str
                     config.SearchEnginePrefixes
                     |> Map.tryFind kv.Key
                     |> Option.defaultValue String.Empty
-                let vm = SearchEnginePrefixViewModel(kv.Value.DisplayName, prefix)
+                let vm = SearchEnginePrefixViewModel(kv.Value.ShortName, prefix)
 
                 vm.Changed.Subscribe(fun _ ->
                     let newMap =

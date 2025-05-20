@@ -9,9 +9,11 @@ open Starter.ViewModels
 type SettingsSearchResult =
     { Id: string
       Name: string }
+
     interface ISearchResult with
         member this.Id = this.Id
         member this.Name = this.Name
+        member this.Description = "Starter settings"
         member this.LoadIcon() = null
 
 type SettingsSearchEngine(config, searchEngines) =
@@ -28,8 +30,10 @@ type SettingsSearchEngine(config, searchEngines) =
 
     member _.Configuration = settingsViewModel.Configuration
 
-    override this.DisplayName = "Settings"
+    override this.Name = "Options"
+    override this.ShortName = "Options"
     override this.Id = id
+    override this.Icon = null // TODO: Add an icon
     override this.LoadResults() =
         { Id = "starter-options"; Name = matchingString }
         :> ISearchResult

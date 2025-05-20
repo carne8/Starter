@@ -30,6 +30,7 @@ type Application =
     interface ISearchResult with
         member this.Id = this.Id
         member this.Name = this.Name
+        member this.Description = "Application"
         member this.LoadIcon() = this.LoadIcon()
 
 type AppIndexer() =
@@ -101,7 +102,8 @@ type ApplicationSearchEngine(pluginPath) =
     let indexer = AppIndexer()
 
     override _.Id = nameof ApplicationSearchEngine
-    override _.DisplayName = "Application"
+    override _.Name = "Application"
+    override _.ShortName = "Apps"
     override _.Icon = null
 
     override _.LoadResults() = indexer.Apps |> Task.map unbox<ISearchResult array>

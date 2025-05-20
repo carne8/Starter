@@ -20,7 +20,7 @@
                        FontSize="16"
                        FontWeight="Bold"
                        Foreground="{DynamicResource SearchEnginePillForeground}"
-                       Text="{Binding DisplayName}"
+                       Text="{Binding ShortName}"
                        VerticalAlignment="Center"
                        LineHeight="17" />
         </StackPanel>
