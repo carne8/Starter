@@ -20,8 +20,6 @@ open Avalonia.Threading
 open ReactiveUI
 
 type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: ResultScores.ScoreDb) =
-    inherit ViewModelBase()
-
     // ---
     let config = new BehaviorSubject<_>(baseConfig)
     let fusilSlab = Slab.createDefault()
@@ -47,7 +45,7 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
 
     // State
     let staticSearchResults = new BehaviorSubject<SearchResultViewModel array>(Array.empty)
-    let mutable searchResults = ObservableList<SearchResultViewModel>(50)
+    let searchResults = ObservableList<SearchResultViewModel>(100)
     let mutable text = "starter"
     let mutable searchCts = new CancellationTokenSource()
     let mutable singleSearchEngineMode = new BehaviorSubject<ISearchEngine option>(None)

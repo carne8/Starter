@@ -34,27 +34,27 @@
         </Style>
 
         <Style Selector="TextBox#TextBox">
-            <Setter Property="CornerRadius" Value="{StaticResource TopCornerRadius}"/>
-            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="CornerRadius" Value="{StaticResource TopCornerRadius}" />
+            <Setter Property="FontSize" Value="20" />
         </Style>
 
         <Style Selector="Border#Separator">
-            <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
-            <Setter Property="Height" Value="{StaticResource BorderThicknessInt}"/>
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="Margin" Value="{StaticResource SeparatorPadding}"/>
+            <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="Height" Value="{StaticResource BorderThicknessInt}" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Margin" Value="{StaticResource SeparatorPadding}" />
         </Style>
 
         <Style Selector=":is(Window)[ActualTransparencyLevel=AcrylicBlur] Border#WindowBackground">
-            <Setter Property="Background" Value="{DynamicResource WindowBackground}"/>
+            <Setter Property="Background" Value="{DynamicResource WindowBackground}" />
         </Style>
         <Style Selector=":is(Window)[ActualTransparencyLevel=Transparent] Border#WindowBackground">
-            <Setter Property="Background" Value="{DynamicResource DefaultBackgroundColor}"/>
+            <Setter Property="Background" Value="{DynamicResource DefaultBackgroundColor}" />
         </Style>
 
         <Style Selector="ListBox#ResultList">
-            <Setter Property="Padding" Value="{StaticResource ResultsPadding}"/>
-            <Setter Property="MaxHeight" Value="330"/>
+            <Setter Property="Padding" Value="{StaticResource ResultsPadding}" />
+            <Setter Property="MaxHeight" Value="330" />
         </Style>
     </Window.Styles>
 
@@ -77,19 +77,21 @@
                         <KeyBinding
                             Command="{Binding ValidateCommand}"
                             CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
-                            Gesture="Enter"/>
+                            Gesture="Enter" />
                     </TextBox.KeyBindings>
                 </TextBox>
             </StackPanel>
 
             <!-- Separator -->
-            <Border x:Name="Separator"/>
+            <Border x:Name="Separator"
+                    IsVisible="{Binding SearchResults.Count}" /> <!-- Hide when empty -->
 
             <!-- Results -->
             <!-- ItemsSource is bound from code-behind -->
             <ListBox x:Name="ResultList"
                      ItemContainerTheme="{StaticResource CustomListBoxItem}"
-                     SelectionMode="AlwaysSelected">
+                     SelectionMode="AlwaysSelected"
+                     IsVisible="{Binding SearchResults.Count}"> <!-- Hide when empty -->
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
                         <VirtualizingStackPanel />
@@ -100,7 +102,7 @@
                     <KeyBinding
                         Command="{Binding ValidateCommand}"
                         CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
-                        Gesture="Enter"/>
+                        Gesture="Enter" />
                 </ListBox.KeyBindings>
 
                 <!-- Add spacing between items -->
@@ -115,7 +117,7 @@
 
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <controls:SearchResultControl DataContext="{Binding}"  />
+                        <controls:SearchResultControl DataContext="{Binding}" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

@@ -36,10 +36,10 @@ type MainWindow() as this =
     member this.SearchEnginePill = this.Get<SearchEnginePill> "SearchEnginePill"
 
     member this.ResultList = this.Get<ListBox> "ResultList"
-    member this.ResultListScrollViewer =
-        lazy (this.ResultList.GetVisualDescendants()
-              |> Seq.find (fun visual -> visual.Name = "PART_ScrollViewer")
-              :?> ScrollViewer)
+    member this.ResultListScrollViewer() =
+        this.ResultList.GetVisualDescendants()
+        |> Seq.find (fun visual -> visual.Name = "PART_ScrollViewer")
+        :?> ScrollViewer
 
     member private this.InitializeComponent() =
         AvaloniaXamlLoader.Load(this)
@@ -91,7 +91,8 @@ type MainWindow() as this =
             this.TextBox.Focus() |> ignore
             this.TextBox.SelectAll()
             this.ResultList.Selection.Select 0 // Reset selection
-            this.ResultListScrollViewer.Value.ScrollToHome() // Scroll to top to preserve the top padding
+            if this.ResultList.ItemCount <> 0 then
+                this.ResultListScrollViewer().ScrollToHome() // Scroll to top to preserve the top padding
         )
         #if !DEBUG
         this.Deactivated.Add (fun _ -> this.Hide())
@@ -135,7 +136,7 @@ type MainWindow() as this =
             | PhysicalKey.Tab -> // Prevent changing focus
                 e.Handled <- true
 
-            | _ ->
+            | _ when this.ViewModel.SearchResults.List.Count <> 0 ->
                 let newSelectedIdx =
                     match e.Key.ToNavigationDirection() |> Option.ofNullable with
                     | Some NavigationDirection.Up ->
@@ -151,14 +152,15 @@ type MainWindow() as this =
                 match newSelectedIdx with
                 | None -> ()
                 | Some newSelectedIdx ->
+                    // Scroll to top or bottom to preserve the paddings
+                    let scrollViewer = this.ResultListScrollViewer()
                     if newSelectedIdx = 0 then
-                        // Scroll to top to preserve the top padding
-                        this.ResultListScrollViewer.Value.ScrollToHome()
+                        scrollViewer.ScrollToHome()
                     elif newSelectedIdx = r.ItemCount - 1 then
-                        // Scroll to bottom to preserve the bottom padding of the listbox
-                        this.ResultListScrollViewer.Value.ScrollToEnd()
+                        scrollViewer.ScrollToEnd()
 
                     r.Selection.SelectedIndex <- newSelectedIdx
                     e.Handled <- true
+            | _ -> ()
         )
         this.TextBox.AddHandler(InputElement.KeyDownEvent, d, RoutingStrategies.Tunnel)
