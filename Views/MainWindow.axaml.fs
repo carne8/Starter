@@ -136,7 +136,7 @@ type MainWindow() as this =
             | PhysicalKey.Tab -> // Prevent changing focus
                 e.Handled <- true
 
-            | _ when this.ViewModel.SearchResults.List.Count <> 0 ->
+            | _ when this.ViewModel.SearchResults.Count <> 0 ->
                 let newSelectedIdx =
                     match e.Key.ToNavigationDirection() |> Option.ofNullable with
                     | Some NavigationDirection.Up ->
