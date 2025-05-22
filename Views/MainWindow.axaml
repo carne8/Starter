@@ -87,10 +87,10 @@
                     IsVisible="{Binding SearchResults.Count}" /> <!-- Hide when empty -->
 
             <!-- Results -->
-            <!-- ItemsSource is bound from code-behind -->
             <ListBox x:Name="ResultList"
                      ItemContainerTheme="{StaticResource CustomListBoxItem}"
                      SelectionMode="AlwaysSelected"
+                     ItemsSource="{Binding SearchResults}"
                      IsVisible="{Binding SearchResults.Count}"> <!-- Hide when empty -->
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>

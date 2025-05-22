@@ -1,0 +1,62 @@
+﻿module Starter.UrlSearchEngine
+
+open System
+open System.Text.RegularExpressions
+open FSharp.Control.Reactive
+open Starter.SearchEngine
+
+[<Literal>]
+let uriRegexString = """(?:(?<scheme>[a-z][a-z0-9+.-]+)://)?(?:(?<user>[^@]+@)?(?<host>(?:[a-z0-9.\-_~]+\.+[a-z0-9.\-_~]{2,})|localhost)(?::(?<port>\d+))?)(?<path>(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])+(?:\/(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])*)*|(?:\/(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])+)*)?(?<query>\?(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?(?<fragment>\#(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?"""
+
+type SearchResult =
+    { Uri: Uri }
+
+    interface ISearchResult with
+        member this.Id = this.Uri.AbsoluteUri
+        member this.Name = "Open link"
+        member this.Description = $"Open: {this.Uri.AbsoluteUri}"
+        member this.LoadIcon() = null
+
+type UrlSearchEngine(pluginPath) =
+    inherit DynamicSearchEngine(pluginPath)
+
+    let regex = Regex uriRegexString
+
+    let tryParseUri (match': Match) =
+        match match'.Success with
+        | false -> None
+        | true ->
+            let s =
+                match match'.Groups.TryGetValue "scheme" with
+                | true, s when s.Value <> "" -> match'.Value
+                | _ -> "https://" + match'.Value
+
+            match Uri.TryCreate(s, UriKind.Absolute) with
+            | false, _ -> None
+            | true, uri -> Some uri
+
+    override this.Id = nameof UrlSearchEngine
+    override this.Name = "Link search engine"
+    override this.ShortName = "Link"
+    override this.Icon = null
+    override this.ImportantResults = false
+
+    override this.Search(query, cancellationToken) =
+        query
+        |> regex.Matches
+        |> Seq.collect (
+            tryParseUri
+            >> Option.map (fun uri ->
+                match uri.Host with
+                | "localhost" ->
+                    [| { Uri = uri } :> ISearchResult
+                       { Uri = Uri("https://localhost:8080") }
+                       { Uri = Uri("https://localhost:5174") } |]
+                | _ -> [| { Uri = uri } |]
+            )
+            >> Option.defaultValue Array.empty
+        )
+        |> Seq.toArray,
+        Observable.empty
+
+    override this.SearchResultSelected(selectedSearchResult) = failwith "todo"

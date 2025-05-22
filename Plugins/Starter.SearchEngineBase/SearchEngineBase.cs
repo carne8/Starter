@@ -51,7 +51,14 @@ public abstract class DynamicSearchEngine(string pluginPath) : ISearchEngine
     public abstract string Name { get; }
     public abstract string ShortName { get; }
     public abstract Bitmap? Icon { get; }
-    public abstract IObservable<ISearchResult[]> Search(string query, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Indicate if the result from this search engine should be shown in
+    /// the first results (like for the calculator search engine) or if they
+    /// should be shown in the last results (like for the URL search engine)
+    /// </summary>
+    public abstract bool ImportantResults { get; }
+    public abstract (ISearchResult[], IObservable<ISearchResult[]>) Search(string query, CancellationToken cancellationToken);
     public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
 }
 

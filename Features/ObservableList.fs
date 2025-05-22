@@ -50,7 +50,7 @@ type ObservableList<'T>(capacity: int) =
     member this.Count = list.Count
     member this.AddRange(range) = list.AddRange(range)
     member this.Clear() = list.Clear()
-    member this.Sort(f) =
-        list.Sort(Comparison<'T>(fun e1 e2 -> compare (f e1) (f e2)))
+    member this.Sort(f) = list.Sort(Comparison<'T>(fun e1 e2 -> compare (f e1) (f e2)))
+    member this.NotifyChanges() =
         collectionChanged.Trigger(this, NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset))
         propertyChanged.Trigger(this, PropertyChangedEventArgs("Count"))

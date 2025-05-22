@@ -8,7 +8,13 @@ open Avalonia.Media.Imaging
 open Avalonia.Controls.Documents
 open Avalonia.Platform
 
+type SearchResultPosition =
+    | Important = 0s
+    | Normal = 1s
+    | Low = 2s
+
 type SearchResultViewModel(
+    pos: SearchResultPosition,
     searchResult: ISearchResult,
     searchEngineId: string
     ) =
@@ -29,6 +35,7 @@ type SearchResultViewModel(
             searchResult.Name[i] |> string |> span.Inlines.Add
             span |> inlineCollection.Add
 
+    member _.Position = pos
     member _.SearchResult = searchResult
     member _.SearchEngineId = searchEngineId
     member _.FuzzyMatchResult = fuzzyMatchResult
@@ -44,6 +51,7 @@ type SearchResultViewModel(
                 inlineCollection[i].FontWeight <- FontWeight.Regular
 
     static member DesignVM = SearchResultViewModel(
+        SearchResultPosition.Normal,
         { new ISearchResult with
             member this.Id = ""
             member this.Name = "Zen Browser"
@@ -52,8 +60,8 @@ type SearchResultViewModel(
         "fake"
     )
 
-    static member create (se: ISearchEngine) (sr: ISearchResult) =
-        SearchResultViewModel(sr, se.Id)
+    static member create pos (se: ISearchEngine) (sr: ISearchResult) =
+        SearchResultViewModel(pos, sr, se.Id)
 
     static member mapForComparison resultScoreDb (sr: SearchResultViewModel) =
         let struct (usageScore, d) = sr.SearchResult.Id |> ScoreDb.getResultScore resultScoreDb
@@ -62,6 +70,7 @@ type SearchResultViewModel(
             | Some fuzzyResult -> float fuzzyResult.Score
             | None -> 0.
 
+        sr.Position,
         -(fuzzyMatchScore + (2. * usageScore)),
         d,
         sr.Name.Length,

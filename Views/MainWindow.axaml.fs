@@ -63,9 +63,6 @@ type MainWindow() as this =
             )
             |> ignore
 
-            // Bind search results
-            this.ResultList.ItemsSource <- this.ViewModel.SearchResults
-
             // Bind single-search-engine pill
             this.ViewModel.SingleSearchEngineMode
             |> Observable.subscribe (fun singleSeMode ->

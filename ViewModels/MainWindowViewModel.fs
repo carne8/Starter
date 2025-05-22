@@ -24,7 +24,7 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
     let config = new BehaviorSubject<_>(baseConfig)
     let fusilSlab = Slab.createDefault()
 
-    // Search engines loading
+    // --- Search engines loading
     let staticSearchEngines, dynamicSearchEngines =
         Path.Combine(__SOURCE_DIRECTORY__, "../Plugins/Starter.ApplicationSearchEngine/bin/Debug/net9.0/")
         |> SearchEngineLoading.loadSearchEngineFromDirectory
@@ -39,72 +39,113 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
 
     let searchEngineFromPrefix = new BehaviorSubject<_>(Array.empty |> dict) // Bound to searchEngines in `do`
 
-    // Commands (to interact with view)
+    // --- Commands (to interact with view)
     let hideCommand = ReactiveCommand.Create(fun () -> ())
     let emptyTextBoxCommand = ReactiveCommand.Create(fun () -> ())
 
-    // State
+    // --- State
+    /// Static results pre-loaded
     let staticSearchResults = new BehaviorSubject<SearchResultViewModel array>(Array.empty)
+    /// Results matching to the current query
     let searchResults = ObservableList<SearchResultViewModel>(100)
     let mutable text = "starter"
     let mutable searchCts = new CancellationTokenSource()
     let mutable singleSearchEngineMode = new BehaviorSubject<ISearchEngine option>(None)
 
+    let subscribeToDynamicSearchEngine (ct: CancellationToken) query (se: DynamicSearchEngine) =
+        try
+            let struct (instantResults, obs) = se.Search(query, searchCts.Token)
+
+            let srPos =
+                match se.ImportantResults with
+                | true -> SearchResultPosition.Important
+                | false -> SearchResultPosition.Low
+
+            obs
+            |> Observable.subscribe (fun results ->
+                Dispatcher.UIThread.Post(fun () ->
+                    results
+                    |> Array.map (SearchResultViewModel.create srPos se)
+                    |> searchResults.AddRange
+                    searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
+                    searchResults.NotifyChanges()
+                )
+            )
+            |> fun sub -> ct.Register(fun () -> sub.Dispose())
+            |> ignore
+
+            instantResults
+            |> Array.map (SearchResultViewModel.create srPos se)
+            |> searchResults.AddRange
+        with _ -> () // TODO: Add error / logs
+
     let onTextChanged (newText: string) =
+        // Cancel previous search
+        searchCts.Cancel()
+        searchCts <- new CancellationTokenSource()
+
         match searchEngineFromPrefix.Value.TryGetValue newText with
-        | false, _ -> ()
         | true, se ->
-            se
-            :> ISearchEngine
+            // Update the single search-engine-mode
+            se :> ISearchEngine
             |> Some
             |> singleSearchEngineMode.OnNext
             (emptyTextBoxCommand :> ICommand).Execute()
 
-        searchCts.Cancel()
-        searchCts <- new CancellationTokenSource()
-        let bindToCts (sub: IDisposable) = searchCts.Token.Register(fun _ -> sub.Dispose()) |> ignore
+            // Clear the results (as the textbox is empty)
+            searchResults.Clear()
+            searchResults.NotifyChanges()
 
-        let query =
-            newText
-            |> String.normalize
-            |> Array.map System.Text.Rune.ToLowerInvariant
+        | false, _ ->
+            let bindToCts (sub: IDisposable) = searchCts.Token.Register(fun _ -> sub.Dispose()) |> ignore
 
-        let fuzzyMatch = Fusil.fuzzyMatch false true true fusilSlab query
+            let query =
+                newText
+                |> String.normalize
+                |> Array.map System.Text.Rune.ToLowerInvariant
 
-        singleSearchEngineMode.Subscribe(fun singleSe ->
-            match singleSe with
-            | Some (:? DynamicSearchEngine as se) -> // TODO: Load dynamic results
-                se.Search(newText, searchCts.Token)
-                |> Observable.subscribe (printfn "Dynamic results: %A")
-                |> bindToCts
-            | _ ->
-                let isSearchEngineActivated seId =
-                    match singleSe with
-                    | None -> true
-                    | Some se -> se.Id = seId
+            let fuzzyMatch = Fusil.fuzzyMatch false true true fusilSlab query
 
-                staticSearchResults.Subscribe(fun staticResults ->
-                    let filteredResults =
-                        staticResults |> Array.filter (fun srVm ->
-                            if srVm.SearchEngineId |> isSearchEngineActivated |> not then
-                                false
-                            else
-                                srVm.Name
-                                |> fuzzyMatch
-                                |> function
-                                    | Some fusilResult when fusilResult.Score > 0s ->
-                                        srVm.SetFuzzyResult fusilResult
-                                        true
-                                    | _ -> false
+            singleSearchEngineMode.Subscribe(fun singleSe ->
+                match singleSe with
+                | Some (:? DynamicSearchEngine as se) ->
+                    searchResults.Clear()
+                    se |> subscribeToDynamicSearchEngine searchCts.Token newText
+                | _ ->
+                    let isSearchEngineActivated seId =
+                        match singleSe with
+                        | None -> true
+                        | Some se -> se.Id = seId
+
+                    staticSearchResults.Subscribe(fun staticResults ->
+                        searchResults.Clear()
+
+                        dynamicSearchEngines |> Seq.iter (fun se ->
+                            if se.Id |> isSearchEngineActivated then
+                                se |> subscribeToDynamicSearchEngine searchCts.Token newText
                         )
 
-                    searchResults.Clear()
-                    filteredResults |> searchResults.AddRange
-                    searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
-                )
-                |> bindToCts
-        )
-        |> bindToCts
+                        let filteredResults =
+                            staticResults |> Array.filter (fun srVm ->
+                                if srVm.SearchEngineId |> isSearchEngineActivated |> not then
+                                    false
+                                else
+                                    srVm.Name
+                                    |> fuzzyMatch
+                                    |> function
+                                        | Some fusilResult when fusilResult.Score > 0s ->
+                                            srVm.SetFuzzyResult fusilResult
+                                            true
+                                        | _ -> false
+                            )
+
+                        filteredResults |> searchResults.AddRange
+                        searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
+                        searchResults.NotifyChanges()
+                    )
+                    |> bindToCts
+            )
+            |> bindToCts
 
     let validateResult (result: SearchResultViewModel) =
         task {
@@ -126,6 +167,15 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
         }
 
     do
+        // TEMP search engine loading
+        Path.Combine(__SOURCE_DIRECTORY__, "../Plugins/Starter.UrlSearchEngine/bin/Debug/net9.0/")
+        |> SearchEngineLoading.loadSearchEngineFromDirectory
+        |> fun (staticSEs, dynamicSEs) ->
+            staticSearchEngines.AddRange staticSEs
+            dynamicSearchEngines.AddRange dynamicSEs
+            staticSEs |> Seq.iter (fun se -> searchEngines.Add(se.Id, se))
+            dynamicSEs |> Seq.iter (fun se -> searchEngines.Add(se.Id, se))
+
         // Load settings search engine
         let settingsSearchEngine = SettingsSearchEngine(config.Value, searchEngines)
         staticSearchEngines.Add(settingsSearchEngine)
@@ -158,14 +208,14 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
         // Load static results
         for se in staticSearchEngines do
             Task.Run<unit>(fun () -> task {
-                let! results = se.LoadResults()
+                let! results = se.LoadResults() // TODO: Handle errors
 
                 // SearchResultViewModel instantiation must happen on UI thread in order to create span controls
                 // Also staticSearchResults.OnNext must happen on UI thread
                 Dispatcher.UIThread.Post(fun () ->
                     let newStaticResults =
                         results
-                        |> Array.map (SearchResultViewModel.create se)
+                        |> Array.map (SearchResultViewModel.create SearchResultPosition.Normal se)
                         |> Array.append staticSearchResults.Value
 
                     newStaticResults |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
