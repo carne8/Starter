@@ -1,13 +1,16 @@
 namespace Starter.Views
 
 open Starter
+open Starter.Controls
 open Starter.Features
 
 open System.Collections.Generic
+open System.Windows.Input
 open Vanara.PInvoke
 
 open Avalonia
 open Avalonia.Input
+open Avalonia.Interactivity
 open Avalonia.Controls
 open Avalonia.Markup.Xaml
 open Avalonia.VisualTree
@@ -30,7 +33,13 @@ type MainWindow() as this =
         | null -> failwith "No DataContext attached"
         | dc -> dc :?> ViewModels.MainWindowViewModel
     member this.TextBox = this.Get<TextBox> "TextBox"
+    member this.SearchEnginePill = this.Get<SearchEnginePill> "SearchEnginePill"
+
     member this.ResultList = this.Get<ListBox> "ResultList"
+    member this.ResultListScrollViewer() =
+        this.ResultList.GetVisualDescendants()
+        |> Seq.find (fun visual -> visual.Name = "PART_ScrollViewer")
+        :?> ScrollViewer
 
     member private this.InitializeComponent() =
         AvaloniaXamlLoader.Load(this)
@@ -43,6 +52,7 @@ type MainWindow() as this =
         this.Loaded.Add(fun _ ->
             this.SetupKeyboardShortcuts()
 
+            // Bind background kind
             this.ViewModel.Config
             |> Observable.subscribe (fun config ->
                 this.TransparencyLevelHint <-
@@ -53,26 +63,43 @@ type MainWindow() as this =
             )
             |> ignore
 
+            // Bind search results
             this.ResultList.ItemsSource <- this.ViewModel.SearchResults
+
+            // Bind single-search-engine pill
+            this.ViewModel.SingleSearchEngineMode
+            |> Observable.subscribe (fun singleSeMode ->
+                match singleSeMode with
+                | None ->
+                    this.SearchEnginePill.IsVisible <- false
+                    this.SearchEnginePill.DataContext <- null
+                | Some se ->
+                    this.SearchEnginePill.DataContext <- se
+                    this.SearchEnginePill.IsVisible <- true
+            )
+            |> ignore
+
+            // Subscribe to commands
+            this.ViewModel.EmptyTextBoxCommand
+            |> Observable.subscribe (fun _ ->
+                Threading.Dispatcher.UIThread.Post(fun _ -> this.TextBox.Clear())
+            )
+            |> ignore
         )
 
         this.Activated.Add (fun _ ->
             this.TextBox.Focus() |> ignore
             this.TextBox.SelectAll()
             this.ResultList.Selection.Select 0 // Reset selection
+            if this.ResultList.ItemCount <> 0 then
+                this.ResultListScrollViewer().ScrollToHome() // Scroll to top to preserve the top padding
         )
         #if !DEBUG
         this.Deactivated.Add (fun _ -> this.Hide())
         #endif
 
     member private this.SetupKeyboardShortcuts() =
-        // Add hide key binding
-        KeyBinding(
-            Command = this.ViewModel.HideCommand,
-            Gesture = KeyGesture.Parse "Escape"
-        )
-        |> this.KeyBindings.Add
-
+        // Subscribe to hide command
         this.ViewModel.HideCommand
         |> Observable.subscribe (fun _ ->
             Threading.Dispatcher.UIThread.Post(fun _ ->
@@ -81,29 +108,59 @@ type MainWindow() as this =
         )
         |> ignore
 
-        // Set keyboard navigation
-        let r = this.ResultList
-        this.TextBox.KeyDown.Add(fun e ->
-            let newSelectedIdx =
-                match e.Key.ToNavigationDirection() |> Option.ofNullable with
-                | Some NavigationDirection.Up ->
-                    (r.SelectedIndex - 1)
-                    |> max 0
-                    |> Some
-                | Some NavigationDirection.Down ->
-                    (r.SelectedIndex + 1)
-                    |> min (r.ItemCount - 1)
-                    |> Some
-                | _ -> None
+        // Add escape key binding
+        let onEscape = // Run when "Escape" is pressed
+            ReactiveUI.ReactiveCommand.Create(fun () ->
+                if this.ViewModel.SingleSearchEngineMode.Value.IsSome then
+                    this.ViewModel.ResetSingleSearchEngineMode()
+                else
+                    (this.ViewModel.HideCommand :> ICommand).Execute()
+            )
 
-            match newSelectedIdx with
-            | None -> ()
-            | Some newSelectedIdx ->
-                if newSelectedIdx = r.ItemCount - 1 then // Scroll to bottom to preserve the bottom padding of the listbox
-                    r.GetVisualDescendants()
-                    |> Seq.tryFind (fun visual -> visual.Name = "PART_ScrollViewer")
-                    |> Option.iter (fun visual -> (visual :?> ScrollViewer).ScrollToEnd())
-
-                r.Selection.SelectedIndex <- newSelectedIdx
-                e.Handled <- true
+        KeyBinding(
+            Command = onEscape,
+            Gesture = KeyGesture.Parse "Escape"
         )
+        |> this.KeyBindings.Add
+
+        // Set keyboard navigation
+        // -> The goal is to be able to navigate in the listbox without losing the focus on the textbox
+        let r = this.ResultList
+        let d = System.EventHandler<KeyEventArgs>(fun _ e ->
+            match e.PhysicalKey with
+            | PhysicalKey.Backspace ->
+                if this.ViewModel.SingleSearchEngineMode.Value.IsSome && this.TextBox.Text = "" then
+                    this.ViewModel.ResetSingleSearchEngineMode()
+                    e.Handled <- true
+
+            | PhysicalKey.Tab -> // Prevent changing focus
+                e.Handled <- true
+
+            | _ when this.ViewModel.SearchResults.Count <> 0 ->
+                let newSelectedIdx =
+                    match e.Key.ToNavigationDirection() |> Option.ofNullable with
+                    | Some NavigationDirection.Up ->
+                        (r.SelectedIndex - 1)
+                        |> max 0
+                        |> Some
+                    | Some NavigationDirection.Down ->
+                        (r.SelectedIndex + 1)
+                        |> min (r.ItemCount - 1)
+                        |> Some
+                    | _ -> None
+
+                match newSelectedIdx with
+                | None -> ()
+                | Some newSelectedIdx ->
+                    // Scroll to top or bottom to preserve the paddings
+                    let scrollViewer = this.ResultListScrollViewer()
+                    if newSelectedIdx = 0 then
+                        scrollViewer.ScrollToHome()
+                    elif newSelectedIdx = r.ItemCount - 1 then
+                        scrollViewer.ScrollToEnd()
+
+                    r.Selection.SelectedIndex <- newSelectedIdx
+                    e.Handled <- true
+            | _ -> ()
+        )
+        this.TextBox.AddHandler(InputElement.KeyDownEvent, d, RoutingStrategies.Tunnel)

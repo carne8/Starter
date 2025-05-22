@@ -26,30 +26,33 @@ type Background =
         )
 
 type Configuration =
-    { LaunchAtStartup: bool
-      Background: Background }
+    { Background: Background
+      SearchEnginePrefixes: Map<string, string> }
 
     static member Default =
-        { LaunchAtStartup = false
-          Background = Background.Mica }
+        { Background = Background.Mica
+          SearchEnginePrefixes = Map.empty }
 
     static member encoder config =
         Encode.object [
-            if config.LaunchAtStartup <> Configuration.Default.LaunchAtStartup then
-                "launchAtStartup", Encode.bool config.LaunchAtStartup
-
             if config.Background <> Configuration.Default.Background then
                 "background", Background.encoder config.Background
+
+            "searchEnginePrefixes",
+            config.SearchEnginePrefixes
+            |> Map.map (fun _ v -> v |> Encode.string)
+            |> Encode.dict
         ]
 
     static member decoder: Decoder<Configuration> =
         Decode.object (fun get ->
-            { LaunchAtStartup =
-                get.Optional.Field "launchAtStartup" Decode.bool
-                |> Option.defaultValue false
-              Background =
+            { Background =
                 get.Optional.Field "background" Background.decoder
-                |> Option.defaultValue Background.Mica }
+                |> Option.defaultValue Background.Mica
+              SearchEnginePrefixes =
+                Decode.dict Decode.string
+                |> get.Optional.Field "searchEnginePrefixes"
+                |> Option.defaultValue Map.empty }
         )
 
 // Read the config from the config file or return the default config

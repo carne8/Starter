@@ -22,8 +22,10 @@
     <Window.Resources>
         <CornerRadius x:Key="CornerRadius">12</CornerRadius>
         <CornerRadius x:Key="TopCornerRadius">12, 0</CornerRadius>
-        <Thickness x:Key="SeparatorPadding">15, 0, 15, 0</Thickness>
         <Thickness x:Key="ResultsPadding">8, 8, 8, 8</Thickness>
+        <Thickness x:Key="SeparatorPadding">15, 0, 15, 0</Thickness>
+        <Thickness x:Key="SearchEnginePillMargin">-3, 0, 0, 0</Thickness>
+        <Thickness x:Key="TextBoxMargin">0, 14, 15, 15</Thickness>
     </Window.Resources>
 
     <Window.Styles>
@@ -32,27 +34,27 @@
         </Style>
 
         <Style Selector="TextBox#TextBox">
-            <Setter Property="CornerRadius" Value="{StaticResource TopCornerRadius}"/>
-            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="CornerRadius" Value="{StaticResource TopCornerRadius}" />
+            <Setter Property="FontSize" Value="20" />
         </Style>
 
         <Style Selector="Border#Separator">
-            <Setter Property="Background" Value="{DynamicResource BorderBrush}"/>
-            <Setter Property="Height" Value="{StaticResource BorderThicknessInt}"/>
-            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-            <Setter Property="Margin" Value="{StaticResource SeparatorPadding}"/>
+            <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="Height" Value="{StaticResource BorderThicknessInt}" />
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
+            <Setter Property="Margin" Value="{StaticResource SeparatorPadding}" />
         </Style>
 
         <Style Selector=":is(Window)[ActualTransparencyLevel=AcrylicBlur] Border#WindowBackground">
-            <Setter Property="Background" Value="{DynamicResource WindowBackground}"/>
+            <Setter Property="Background" Value="{DynamicResource WindowBackground}" />
         </Style>
         <Style Selector=":is(Window)[ActualTransparencyLevel=Transparent] Border#WindowBackground">
-            <Setter Property="Background" Value="{DynamicResource DefaultBackgroundColor}"/>
+            <Setter Property="Background" Value="{DynamicResource DefaultBackgroundColor}" />
         </Style>
 
         <Style Selector="ListBox#ResultList">
-            <Setter Property="Padding" Value="{StaticResource ResultsPadding}"/>
-            <Setter Property="MaxHeight" Value="330"/>
+            <Setter Property="Padding" Value="{StaticResource ResultsPadding}" />
+            <Setter Property="MaxHeight" Value="330" />
         </Style>
     </Window.Styles>
 
@@ -62,29 +64,37 @@
             BorderThickness="{StaticResource BorderThickness}">
         <StackPanel>
             <!-- Main text box -->
-            <TextBox x:Name="TextBox"
-                     Theme="{StaticResource CustomTextBoxTheme}"
-                     Watermark="Start anything..."
-                     Text="{Binding Text}">
-                <TextBox.KeyBindings>
-                    <KeyBinding
-                        Command="{Binding ValidateCommand}"
-                        CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
-                        Gesture="Enter"/>
-                </TextBox.KeyBindings>
-            </TextBox>
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="18, 0, 0, 0">
+                <controls:SearchEnginePill x:Name="SearchEnginePill"
+                                           Margin="{StaticResource SearchEnginePillMargin}"
+                                           IsVisible="False" />
+                <TextBox x:Name="TextBox"
+                         Theme="{StaticResource CustomTextBoxTheme}"
+                         Watermark="Start anything..."
+                         Text="{Binding Text}"
+                         Margin="{StaticResource TextBoxMargin}">
+                    <TextBox.KeyBindings>
+                        <KeyBinding
+                            Command="{Binding ValidateCommand}"
+                            CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
+                            Gesture="Enter" />
+                    </TextBox.KeyBindings>
+                </TextBox>
+            </StackPanel>
 
             <!-- Separator -->
-            <Border x:Name="Separator"/>
+            <Border x:Name="Separator"
+                    IsVisible="{Binding SearchResults.Count}" /> <!-- Hide when empty -->
 
             <!-- Results -->
             <!-- ItemsSource is bound from code-behind -->
             <ListBox x:Name="ResultList"
                      ItemContainerTheme="{StaticResource CustomListBoxItem}"
-                     SelectionMode="AlwaysSelected">
+                     SelectionMode="AlwaysSelected"
+                     IsVisible="{Binding SearchResults.Count}"> <!-- Hide when empty -->
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <StackPanel Spacing="4" />
+                        <VirtualizingStackPanel />
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
 
@@ -92,12 +102,22 @@
                     <KeyBinding
                         Command="{Binding ValidateCommand}"
                         CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
-                        Gesture="Enter"/>
+                        Gesture="Enter" />
                 </ListBox.KeyBindings>
+
+                <!-- Add spacing between items -->
+                <ListBox.Styles>
+                    <Style Selector="ListBoxItem">
+                        <Setter Property="Margin" Value="0, 4, 0, 0" />
+                    </Style>
+                    <Style Selector="ListBoxItem:nth-child(1)"> <!-- Why is the of the first one 1 ?! -->
+                        <Setter Property="Margin" Value="0, 0, 0, 0" />
+                    </Style>
+                </ListBox.Styles>
 
                 <ListBox.ItemTemplate>
                     <DataTemplate>
-                        <controls:SearchResultControl DataContext="{Binding}"  />
+                        <controls:SearchResultControl DataContext="{Binding}" />
                     </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>

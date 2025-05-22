@@ -2,17 +2,25 @@ namespace Starter.ViewModels
 
 open Starter.SearchEngine
 open Starter.Features.ResultScores
+
 open Avalonia.Media
+open Avalonia.Media.Imaging
 open Avalonia.Controls.Documents
+open Avalonia.Platform
 
 type SearchResultViewModel(
     searchResult: ISearchResult,
-    searchEngineId: string,
-    searchEngineName: string
+    searchEngineId: string
     ) =
+
+    static let fallbackBitmap = new Bitmap(AssetLoader.Open <| System.Uri "avares://Starter/Assets/avalonia-logo.ico")
 
     let inlineCollection = InlineCollection()
     let mutable fuzzyMatchResult: Fusil.Fusil.FuzzyResult option = None
+    let icon =
+        lazy match searchResult.LoadIcon() with
+             | null -> fallbackBitmap
+             | bmp -> bmp
 
     do
         inlineCollection.EnsureCapacity(searchResult.Name.Length)
@@ -23,7 +31,6 @@ type SearchResultViewModel(
 
     member _.SearchResult = searchResult
     member _.SearchEngineId = searchEngineId
-    member _.SearchEngineName = searchEngineName
     member _.FuzzyMatchResult = fuzzyMatchResult
     member _.Inlines = inlineCollection
 
@@ -40,13 +47,13 @@ type SearchResultViewModel(
         { new ISearchResult with
             member this.Id = ""
             member this.Name = "Zen Browser"
+            member this.Description = "Application"
             member this.LoadIcon() = null },
-        "fake",
-        "Fake search engine"
+        "fake"
     )
 
     static member create (se: ISearchEngine) (sr: ISearchResult) =
-        SearchResultViewModel(sr, se.Id, se.DisplayName)
+        SearchResultViewModel(sr, se.Id)
 
     static member mapForComparison resultScoreDb (sr: SearchResultViewModel) =
         let struct (usageScore, d) = sr.SearchResult.Id |> ScoreDb.getResultScore resultScoreDb
@@ -60,7 +67,6 @@ type SearchResultViewModel(
         sr.Name.Length,
         sr.Name
 
-and SearchResultViewModel with
     // UI Bindings
     member this.Name : string = this.SearchResult.Name
-    member this.LoadIcon() = this.SearchResult.LoadIcon()
+    member this.Icon = icon.Value

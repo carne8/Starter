@@ -14,13 +14,15 @@
                        VerticalAlignment="Center"
                        Height="35"
                        Width="35"
-                       RenderOptions.BitmapInterpolationMode="HighQuality" />
+                       RenderOptions.BitmapInterpolationMode="HighQuality"
+                       Source="{Binding Icon}" />
             </Border>
             <StackPanel VerticalAlignment="Center">
                 <TextBlock x:Name="TextBlock"
                            FontSize="15"
-                           Foreground="{DynamicResource TextForeground}" />
-                <TextBlock Text="{Binding SearchEngineName}"
+                           Foreground="{DynamicResource TextForeground}"
+                           Inlines="{Binding Inlines}" />
+                <TextBlock Text="{Binding SearchResult.Description}"
                            FontSize="12"
                            FontWeight="Medium"
                            Foreground="{DynamicResource DescriptionForeground}" />
