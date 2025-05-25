@@ -37,11 +37,11 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
         |> Seq.map (fun se -> KeyValuePair(se.Id, se))
         |> Dictionary
 
-    let searchEngineFromPrefix = new BehaviorSubject<_>(Array.empty |> dict) // Bound to searchEngines in `do`
+    let searchEngineFromPrefix = new BehaviorSubject<(string * ISearchEngine) array>(Array.empty) // Bound to searchEngines in `do`
 
     // --- Commands (to interact with view)
     let hideCommand = ReactiveCommand.Create(fun () -> ())
-    let emptyTextBoxCommand = ReactiveCommand.Create(fun () -> ())
+    let clearTextBoxCommand = new Subject<int>()
 
     // --- State
     /// Static results pre-loaded
@@ -84,19 +84,19 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
         searchCts.Cancel()
         searchCts <- new CancellationTokenSource()
 
-        match searchEngineFromPrefix.Value.TryGetValue newText with
-        | true, se ->
+        match searchEngineFromPrefix.Value |> Array.tryFind (fst >> newText.StartsWith) with
+        | Some (prefix, se) ->
             // Update the single search-engine-mode
-            se :> ISearchEngine
+            se
             |> Some
             |> singleSearchEngineMode.OnNext
-            (emptyTextBoxCommand :> ICommand).Execute()
+            clearTextBoxCommand.OnNext(prefix.Length)
 
             // Clear the results (as the textbox is empty)
             searchResults.Clear()
             searchResults.NotifyChanges()
 
-        | false, _ ->
+        | None ->
             let bindToCts (sub: IDisposable) = searchCts.Token.Register(fun _ -> sub.Dispose()) |> ignore
 
             let query =
@@ -191,7 +191,7 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
                 | false, _ -> None
                 | true, se -> Some (v, se)
             )
-            |> dict
+            |> Seq.toArray
             |> searchEngineFromPrefix.OnNext
         )
         |> ignore
@@ -208,24 +208,28 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
         // Load static results
         for se in staticSearchEngines do
             Task.Run<unit>(fun () -> task {
-                let! results = se.LoadResults() // TODO: Handle errors
+                try
+                    let! results = se.LoadResults() // TODO: Handle errors
 
-                // SearchResultViewModel instantiation must happen on UI thread in order to create span controls
-                // Also staticSearchResults.OnNext must happen on UI thread
-                Dispatcher.UIThread.Post(fun () ->
-                    let newStaticResults =
-                        results
-                        |> Array.map (SearchResultViewModel.create SearchResultPosition.Normal se)
-                        |> Array.append staticSearchResults.Value
 
-                    newStaticResults |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
-                    staticSearchResults.OnNext newStaticResults
-                    printfn "%s results loaded" se.Name
-                )
+                    // SearchResultViewModel instantiation must happen on UI thread in order to create span controls
+                    // Also staticSearchResults.OnNext must happen on UI thread
+                    Dispatcher.UIThread.Post(fun () ->
+                        let newStaticResults =
+                            results
+                            |> Array.map (SearchResultViewModel.create SearchResultPosition.Normal se)
+                            |> Array.append staticSearchResults.Value
+
+                        newStaticResults |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
+                        staticSearchResults.OnNext newStaticResults
+                        printfn "%s results loaded" se.Name
+                    )
+                with e ->
+                    printfn "%A" e
             }) |> ignore
 
     member _.HideCommand = hideCommand
-    member _.EmptyTextBoxCommand = emptyTextBoxCommand
+    member _.ClearTextBoxCommand = clearTextBoxCommand
     member _.ResetSingleSearchEngineMode() =
         match singleSearchEngineMode.Value with
         | None -> ()

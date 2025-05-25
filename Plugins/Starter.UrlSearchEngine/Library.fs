@@ -1,9 +1,11 @@
-﻿module Starter.UrlSearchEngine
+module Starter.UrlSearchEngine
+
+open Starter.SearchEngine
 
 open System
 open System.Text.RegularExpressions
 open FSharp.Control.Reactive
-open Starter.SearchEngine
+open FluentAvalonia.UI.Controls
 
 [<Literal>]
 let uriRegexString = """(?:(?<scheme>[a-z][a-z0-9+.-]+)://)?(?:(?<user>[^@]+@)?(?<host>(?:[a-z0-9.\-_~]+\.+[a-z0-9.\-_~]{2,})|localhost)(?::(?<port>\d+))?)(?<path>(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])+(?:\/(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])*)*|(?:\/(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])+)*)?(?<query>\?(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?(?<fragment>\#(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?"""
@@ -15,7 +17,7 @@ type SearchResult =
         member this.Id = this.Uri.AbsoluteUri
         member this.Name = "Open link"
         member this.Description = $"Open: {this.Uri.AbsoluteUri}"
-        member this.LoadIcon() = null
+        member this.Icon = StarterIconSource.Empty
 
 type UrlSearchEngine(pluginPath) =
     inherit DynamicSearchEngine(pluginPath)
@@ -38,7 +40,7 @@ type UrlSearchEngine(pluginPath) =
     override this.Id = nameof UrlSearchEngine
     override this.Name = "Link search engine"
     override this.ShortName = "Link"
-    override this.Icon = null
+    override this.Icon = StarterIconSource(Symbol.Globe)
     override this.ImportantResults = false
 
     override this.Search(query, cancellationToken) =

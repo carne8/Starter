@@ -2,18 +2,14 @@ namespace Starter.ApplicationSearchEngine
 
 open System
 open System.Diagnostics
-open System.IO
-open System.Threading
 open System.Threading.Tasks
-open System.Collections.Generic
 
-open FSharp.Control.Reactive
 open FsToolkit.ErrorHandling
 open Vanara.PInvoke
 open Vanara.Windows.Shell
+open Avalonia.Media.Imaging
 
 open Starter.SearchEngine
-open Avalonia.Media.Imaging
 open IconHelper
 
 [<RequireQualifiedAccess>]
@@ -25,13 +21,13 @@ type Application =
     { Id: string
       Name: string
       ExecutionPath: ExecutionPath
-      LoadIcon: unit -> Bitmap }
+      LoadIcon: unit -> StarterIconSource }
 
     interface ISearchResult with
         member this.Id = this.Id
         member this.Name = this.Name
         member this.Description = "Application"
-        member this.LoadIcon() = this.LoadIcon()
+        member this.Icon = this.LoadIcon()
 
 type AppIndexer() =
     let applications = TaskCompletionSource<Application array>()
@@ -65,7 +61,10 @@ type AppIndexer() =
                 let packageIdOpt = app |> ShellItem.Property.get "System.AppUserModel.ID"
                 let targetPathOpt = app |> ShellItem.Property.get "System.Link.TargetParsingPath"
 
-                let icon = app |> getAppIcon targetPathOpt // TODO: Load icons only when needed
+                let icon = // TODO: Load icons only when needed
+                    app
+                    |> getAppIcon targetPathOpt
+                    |> fun bmp -> StarterIconSource(bmp)
 
                 let! executionPath =
                     match packageIdOpt, targetPathOpt with
@@ -104,7 +103,7 @@ type ApplicationSearchEngine(pluginPath) =
     override _.Id = nameof ApplicationSearchEngine
     override _.Name = "Application"
     override _.ShortName = "Apps"
-    override _.Icon = null
+    override _.Icon = StarterIconSource.Empty
 
     override _.LoadResults() = indexer.Apps |> Task.map unbox<ISearchResult array>
     override _.SearchResultSelected(searchResult) =

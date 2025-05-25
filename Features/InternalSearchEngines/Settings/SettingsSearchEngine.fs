@@ -1,10 +1,11 @@
 module Starter.Features.InternalSearchEngines
 
-open Avalonia.Media.Imaging
-open FsToolkit.ErrorHandling
 open Starter
 open Starter.SearchEngine
 open Starter.ViewModels
+
+open FluentAvalonia.UI.Controls
+open FsToolkit.ErrorHandling
 
 type SettingsSearchResult =
     { Id: string
@@ -14,7 +15,7 @@ type SettingsSearchResult =
         member this.Id = this.Id
         member this.Name = this.Name
         member this.Description = "Starter settings"
-        member this.LoadIcon() = null
+        member this.Icon = StarterIconSource(Symbol.Settings)
 
 type SettingsSearchEngine(config, searchEngines) =
     inherit StaticSearchEngine("")
@@ -33,7 +34,7 @@ type SettingsSearchEngine(config, searchEngines) =
     override this.Name = "Options"
     override this.ShortName = "Options"
     override this.Id = id
-    override this.Icon = null // TODO: Add an icon
+    override this.Icon = StarterIconSource(Symbol.Settings)
     override this.LoadResults() =
         { Id = "starter-options"; Name = matchingString }
         :> ISearchResult

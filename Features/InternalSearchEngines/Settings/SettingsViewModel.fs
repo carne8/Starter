@@ -4,17 +4,23 @@ open System
 open System.Reactive.Subjects
 open System.Collections.Generic
 open ReactiveUI
+open FluentAvalonia.UI.Controls
 
 open Starter.Features.Config
 open Starter.Features.PlatformInterop
 open Starter.SearchEngine
 
-type SearchEnginePrefixViewModel(seName: string, prefix: string) =
+type SearchEnginePrefixViewModel(se: ISearchEngine, prefix: string) =
     inherit ReactiveObject()
 
     let mutable prefix = prefix
+    let icon =
+        match se.Icon.Symbol.HasValue with
+        | false -> ImageIconSource(Source = se.Icon.SourceImage) :> IconSource
+        | true -> SymbolIconSource(Symbol = se.Icon.Symbol.Value)
 
-    member this.Name = seName
+    member this.Icon = icon
+    member this.Name = se.Name
     member this.Prefix
         with get () = prefix
         and set v = this.RaiseAndSetIfChanged(&prefix, v) |> ignore
@@ -47,21 +53,25 @@ type SettingsViewModel(baseConfig: Configuration, searchEngines: IDictionary<str
                     config.SearchEnginePrefixes
                     |> Map.tryFind kv.Key
                     |> Option.defaultValue String.Empty
-                let vm = SearchEnginePrefixViewModel(kv.Value.ShortName, prefix)
+                try
+                    let vm = SearchEnginePrefixViewModel(kv.Value, prefix)
 
-                vm.Changed.Subscribe(fun _ ->
-                    let newMap =
-                        config.SearchEnginePrefixes |> Map.change kv.Key (
-                            match vm.Prefix with
-                            | "" -> fun _ -> None
-                            | s -> fun _ -> Some s
-                        )
+                    vm.Changed.Subscribe(fun _ ->
+                        let newMap =
+                            config.SearchEnginePrefixes |> Map.change kv.Key (
+                                match vm.Prefix with
+                                | "" -> fun _ -> None
+                                | s -> fun _ -> Some s
+                            )
 
-                    config <- { config with SearchEnginePrefixes = newMap }
-                )
-                |> disposables.Add
+                        config <- { config with SearchEnginePrefixes = newMap }
+                    )
+                    |> disposables.Add
 
-                vm
+                    vm
+                with e ->
+                    printfn "%A" e
+                    failwith "AAA"
             )
             |> Seq.toArray
 

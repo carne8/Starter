@@ -3,6 +3,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Starter.ViewModels"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
              mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="60"
              Design.DataContext="{Binding Source={x:Static vm:SearchResultViewModel.DesignVM}}"
              x:Class="Starter.Controls.SearchResultControl"
@@ -10,12 +11,10 @@
     <Border HorizontalAlignment="Stretch" Padding="10, 10">
         <StackPanel Orientation="Horizontal" Spacing="10">
             <Border CornerRadius="4" ClipToBounds="True">
-                <Image x:Name="Icon"
-                       VerticalAlignment="Center"
-                       Height="35"
-                       Width="35"
-                       RenderOptions.BitmapInterpolationMode="HighQuality"
-                       Source="{Binding Icon}" />
+                <ui:IconSourceElement VerticalAlignment="Center"
+                                      Height="35"
+                                      Width="35"
+                                      IconSource="{Binding Icon}" />
             </Border>
             <StackPanel VerticalAlignment="Center">
                 <TextBlock x:Name="TextBlock"

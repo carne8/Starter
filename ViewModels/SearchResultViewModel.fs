@@ -4,9 +4,8 @@ open Starter.SearchEngine
 open Starter.Features.ResultScores
 
 open Avalonia.Media
-open Avalonia.Media.Imaging
 open Avalonia.Controls.Documents
-open Avalonia.Platform
+open FluentAvalonia.UI.Controls
 
 type SearchResultPosition =
     | Important = 0s
@@ -19,14 +18,15 @@ type SearchResultViewModel(
     searchEngineId: string
     ) =
 
-    static let fallbackBitmap = new Bitmap(AssetLoader.Open <| System.Uri "avares://Starter/Assets/avalonia-logo.ico")
+    // TODO: Remove
+    // static let fallbackBitmap = new Bitmap(AssetLoader.Open <| System.Uri "avares://Starter/Assets/avalonia-logo.ico")
 
     let inlineCollection = InlineCollection()
     let mutable fuzzyMatchResult: Fusil.Fusil.FuzzyResult option = None
     let icon =
-        lazy match searchResult.LoadIcon() with
-             | null -> fallbackBitmap
-             | bmp -> bmp
+        match searchResult.Icon.Symbol.HasValue with
+        | false -> ImageIconSource(Source = searchResult.Icon.SourceImage) :> IconSource
+        | true -> SymbolIconSource(Symbol = searchResult.Icon.Symbol.Value, FontSize = 35)
 
     do
         inlineCollection.EnsureCapacity(searchResult.Name.Length)
@@ -56,7 +56,7 @@ type SearchResultViewModel(
             member this.Id = ""
             member this.Name = "Zen Browser"
             member this.Description = "Application"
-            member this.LoadIcon() = null },
+            member this.Icon = StarterIconSource.Empty },
         "fake"
     )
 
@@ -78,4 +78,4 @@ type SearchResultViewModel(
 
     // UI Bindings
     member this.Name : string = this.SearchResult.Name
-    member this.Icon = icon.Value
+    member this.Icon = icon

@@ -1,28 +1,38 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Avalonia.Media.Imaging;
+using Avalonia.Media;
+using FluentAvalonia.UI.Controls;
 
 #pragma warning disable CS9113 // Parameter unread
 
 namespace Starter.SearchEngine;
+
+public class StarterIconSource()
+{
+    public static StarterIconSource Empty = new();
+    public StarterIconSource(IImage image) : this() => SourceImage = image;
+    public StarterIconSource(Symbol symbol) : this() => Symbol = symbol;
+
+    public IImage? SourceImage;
+    public Symbol? Symbol;
+}
 
 public interface ISearchResult
 {
     string Id { get; }
     string Name { get; }
     string Description { get; }
-    Bitmap? LoadIcon();
+    StarterIconSource Icon { get; }
 }
 
 public interface ISearchEngine
 {
-    public string Id { get; }
-    public string Name { get; }
-    public string ShortName { get; }
-    public Bitmap? Icon { get; }
-    public void SearchResultSelected(ISearchResult selectedSearchResult);
+    string Id { get; }
+    string Name { get; }
+    string ShortName { get; }
+    StarterIconSource Icon { get; }
+    void SearchResultSelected(ISearchResult selectedSearchResult);
 }
 
 /// <summary>
@@ -35,7 +45,7 @@ public abstract class StaticSearchEngine(string pluginPath) : ISearchEngine
     public abstract string Id { get; }
     public abstract string Name { get; }
     public abstract string ShortName { get; }
-    public abstract Bitmap? Icon { get; }
+    public abstract StarterIconSource Icon { get; }
     public abstract Task<ISearchResult[]> LoadResults();
     public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
 }
@@ -50,7 +60,7 @@ public abstract class DynamicSearchEngine(string pluginPath) : ISearchEngine
     public abstract string Id { get; }
     public abstract string Name { get; }
     public abstract string ShortName { get; }
-    public abstract Bitmap? Icon { get; }
+    public abstract StarterIconSource Icon { get; }
 
     /// <summary>
     /// Indicate if the result from this search engine should be shown in
@@ -64,5 +74,8 @@ public abstract class DynamicSearchEngine(string pluginPath) : ISearchEngine
 
 public static class Constants
 {
-    public static readonly string[] SharedAssemblies = ["Avalonia.Base"];
+    public static readonly string[] SharedAssemblies = [
+        "Avalonia.Base",
+        "FluentAvalonia"
+    ];
 }

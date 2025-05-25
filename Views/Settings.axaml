@@ -71,7 +71,7 @@
 
                     <ui:SettingsExpander.ItemTemplate>
                         <DataTemplate DataType="vm:SearchEnginePrefixViewModel">
-                            <ui:SettingsExpanderItem>
+                            <ui:SettingsExpanderItem IconSource="{Binding Icon}">
                                 <TextBlock Text="{Binding Name}" />
                                 <ui:SettingsExpanderItem.Footer>
                                     <TextBox Text="{Binding Prefix}"/>

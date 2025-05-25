@@ -77,9 +77,15 @@ type MainWindow() as this =
             |> ignore
 
             // Subscribe to commands
-            this.ViewModel.EmptyTextBoxCommand
-            |> Observable.subscribe (fun _ ->
-                Threading.Dispatcher.UIThread.Post(fun _ -> this.TextBox.Clear())
+            this.ViewModel.ClearTextBoxCommand
+            |> Observable.subscribe (fun prefixLength ->
+                Threading.Dispatcher.UIThread.Post(fun () ->
+                    this.TextBox.Text <-
+                        match this.TextBox.Text with
+                        | null -> ""
+                        | s -> s.Substring(prefixLength)
+                    this.TextBox.CaretIndex <- this.TextBox.CaretIndex - prefixLength
+                )
             )
             |> ignore
         )
