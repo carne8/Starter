@@ -1,5 +1,6 @@
 module Starter.UrlSearchEngine
 
+open System.Diagnostics
 open Starter.SearchEngine
 
 open System
@@ -17,7 +18,7 @@ type SearchResult =
         member this.Id = this.Uri.AbsoluteUri
         member this.Name = "Open link"
         member this.Description = $"Open: {this.Uri.AbsoluteUri}"
-        member this.Icon = StarterIconSource.Empty
+        member this.Icon = StarterIconSource(Symbol.Globe)
 
 type UrlSearchEngine(pluginPath) =
     inherit DynamicSearchEngine(pluginPath)
@@ -61,4 +62,13 @@ type UrlSearchEngine(pluginPath) =
         |> Seq.toArray,
         Observable.empty
 
-    override this.SearchResultSelected(selectedSearchResult) = failwith "todo"
+    override this.SearchResultSelected(searchResult) =
+        match searchResult with
+        | :? SearchResult as sr ->
+            ProcessStartInfo(
+                FileName = sr.Uri.AbsoluteUri,
+                UseShellExecute = true
+            )
+            |> Process.Start
+            |> ignore
+        | _ -> ()
