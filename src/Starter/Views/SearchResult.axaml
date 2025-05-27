@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Starter.ViewModels"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="60"
+             Design.DataContext="{Binding Source={x:Static vm:SearchResultViewModel.DesignVM}}"
+             x:Class="Starter.Controls.SearchResultControl"
+             x:DataType="vm:SearchResultViewModel">
+    <Border HorizontalAlignment="Stretch" Padding="10, 10">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+            <Border CornerRadius="4" ClipToBounds="True">
+                <ui:IconSourceElement VerticalAlignment="Center"
+                                      Height="35"
+                                      Width="35"
+                                      IconSource="{Binding Icon}" />
+            </Border>
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock x:Name="TextBlock"
+                           FontSize="15"
+                           Foreground="{DynamicResource TextForeground}"
+                           Inlines="{Binding Inlines}" />
+                <TextBlock Text="{Binding SearchResult.Description}"
+                           FontSize="12"
+                           FontWeight="Medium"
+                           Foreground="{DynamicResource DescriptionForeground}" />
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</UserControl>

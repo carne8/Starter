@@ -1,0 +1,83 @@
+<ResourceDictionary
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Design.PreviewWith>
+        <ThemeVariantScope RequestedThemeVariant="Dark">
+            <Border Background="Black" Padding="50">
+                <StackPanel Spacing="5">
+                    <TextBox Theme="{StaticResource CustomTextBoxTheme}" />
+                    <TextBox />
+                    <TextBox Theme="{StaticResource CustomTextBoxTheme}" Text="Hello Down thereeeeeeeeeee" />
+                    <TextBox Text="Hello Down there" />
+                    <TextBox Theme="{StaticResource CustomTextBoxTheme}" Watermark="Watermark" />
+                    <TextBox Watermark="Watermark" />
+                </StackPanel>
+            </Border>
+        </ThemeVariantScope>
+    </Design.PreviewWith>
+
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="PlaceholderForeground" Color="#666666" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="PlaceholderForeground" Color="#CCCCCC" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!-- Derived of TextBoxStyles.axaml from https://github.com/amwx/FluentAvalonia -->
+    <ControlTheme x:Key="CustomTextBoxTheme" TargetType="TextBox">
+        <Setter Property="FontFamily" Value="{StaticResource JetBrainsMono}" />
+        <Setter Property="FontWeight" Value="DemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource TextForeground}" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <ScrollViewer
+                    HorizontalScrollBarVisibility="{TemplateBinding (ScrollViewer.HorizontalScrollBarVisibility)}"
+                    VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
+                    IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
+                    AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
+                    Height="27">
+                    <Panel>
+                        <TextBlock x:Name="PART_Watermark"
+                                   VerticalAlignment="Center"
+                                   Foreground="{DynamicResource PlaceholderForeground}"
+                                   FontWeight="Regular"
+                                   Text="{TemplateBinding Watermark}"
+                                   TextWrapping="{TemplateBinding TextWrapping}"
+                                   IsVisible="{TemplateBinding Text, Converter={x:Static StringConverters.IsNullOrEmpty}}"
+                                   HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                   LineHeight="27" />
+                        <TextPresenter x:Name="PART_TextPresenter"
+                                       VerticalAlignment="Center"
+                                       Text="{TemplateBinding Text, Mode=TwoWay}"
+                                       CaretIndex="{TemplateBinding CaretIndex}"
+                                       CaretBrush="{DynamicResource TextForeground}"
+                                       SelectionStart="{TemplateBinding SelectionStart}"
+                                       SelectionEnd="{TemplateBinding SelectionEnd}"
+                                       SelectionBrush="{DynamicResource TextControlSelectionHighlightColor}"
+                                       SelectionForegroundBrush="{DynamicResource TextOnAccentFillColorSelectedTextBrush}"
+                                       LineHeight="27" />
+                    </Panel>
+                </ScrollViewer>
+            </ControlTemplate>
+        </Setter>
+
+        <!-- PointerOver State-->
+        <Style Selector="^:pointerover">
+            <Setter Property="Foreground" Value="{DynamicResource TextControlForegroundPointerOver}" />
+            <!-- <Style Selector="^ /template/ TextBlock#PART_Watermark"> -->
+            <!--     <Setter Property="Foreground" Value="{DynamicResource TextControlPlaceholderForegroundPointerOver}" /> -->
+            <!-- </Style> -->
+        </Style>
+
+        <!-- Focused State -->
+        <Style Selector="^:focus">
+            <Setter Property="Foreground" Value="{DynamicResource TextControlForegroundFocused}" />
+            <!-- <Style Selector="^ /template/ TextBlock#PART_Watermark"> -->
+            <!--     <Setter Property="Foreground" Value="{DynamicResource TextControlPlaceholderForegroundFocused}" /> -->
+            <!-- </Style> -->
+        </Style>
+    </ControlTheme>
+
+</ResourceDictionary>
