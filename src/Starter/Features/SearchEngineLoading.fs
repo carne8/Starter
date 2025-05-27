@@ -86,3 +86,9 @@ let loadSearchEngineFromDirectory directoryPath =
 
     assemblies |> Array.collect loadAssemblySearchEngines<StaticSearchEngine>,
     assemblies |> Array.collect loadAssemblySearchEngines<DynamicSearchEngine>
+
+// /// Precompile methods for a dynamic search engine
+// let prepareSearchEngine (se: DynamicSearchEngine) =
+//     se.GetType()
+//       .GetMethods(BindingFlags.Public ||| BindingFlags.Instance)
+//     |> Array.iter (_.MethodHandle >> RuntimeHelpers.PrepareMethod)

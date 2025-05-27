@@ -4,9 +4,12 @@
         <TargetFramework>net9.0</TargetFramework>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <EnableDynamicLoading>true</EnableDynamicLoading>
+        <PublishTrimmed>true</PublishTrimmed>
+        <PublishReadyToRun>true</PublishReadyToRun>
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include=".\Starter.UrlSearchEngine.Regex\Starter.UrlSearchEngine.Regex.csproj" />
         <ProjectReference Include="..\Starter.SearchEngineBase\Starter.SearchEngineBase.csproj">
             <Private>false</Private>
             <ExcludeAssets>runtime</ExcludeAssets>

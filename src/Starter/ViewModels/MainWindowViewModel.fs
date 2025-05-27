@@ -183,6 +183,10 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
         |> dict
         |> searchEngines.OnNext
 
+        // TODO: First use of search engines is slow, but RuntimeHelpers.PrepareMethod doesn't work (HELP wanted)
+        // Precompile search engine methods
+        // dynamicSearchEngines |> Seq.iter SearchEngineLoading.prepareSearchEngine
+
         // Sync searchEngineFromPrefix with config
         config
         |> Observable.subscribe (fun config ->

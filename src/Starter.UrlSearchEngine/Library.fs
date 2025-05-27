@@ -1,15 +1,13 @@
 module Starter.UrlSearchEngine
 
-open System.Diagnostics
+open Starter.UrlSearchEngine.Regex
 open Starter.SearchEngine
 
 open System
+open System.Diagnostics
 open System.Text.RegularExpressions
 open FSharp.Control.Reactive
 open FluentAvalonia.UI.Controls
-
-[<Literal>]
-let uriRegexString = """(?:(?<scheme>[a-z][a-z0-9+.-]+)://)?(?:(?<user>[^@]+@)?(?<host>(?:[a-z0-9.\-_~]+\.+[a-z0-9.\-_~]{2,})|localhost)(?::(?<port>\d+))?)(?<path>(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])+(?:\/(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])*)*|(?:\/(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@])+)*)?(?<query>\?(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?(?<fragment>\#(?:[a-z0-9-._~]|%[a-f0-9]|[!$&'()*+,;=:@]|[/?])+)?"""
 
 type SearchResult =
     { Uri: Uri }
@@ -23,7 +21,7 @@ type SearchResult =
 type UrlSearchEngine(pluginPath) =
     inherit DynamicSearchEngine(pluginPath)
 
-    let regex = Regex uriRegexString
+    let regex = UriRegex.Regex()
 
     let tryParseUri (match': Match) =
         match match'.Success with
@@ -38,16 +36,20 @@ type UrlSearchEngine(pluginPath) =
             | false, _ -> None
             | true, uri -> Some uri
 
+    do  // Warm-up the regex for faster first result
+        regex.Matches "" |> ignore
+
     override this.Id = nameof UrlSearchEngine
     override this.Name = "Link search engine"
     override this.ShortName = "Link"
     override this.Icon = StarterIconSource(Symbol.Globe)
     override this.ImportantResults = false
 
-    override this.Search(query, cancellationToken) =
+    override this.Search(query, _cancellationToken) =
         query
         |> regex.Matches
-        |> Seq.collect (
+        |> Seq.toArray
+        |> Array.collect (
             tryParseUri
             >> Option.map (fun uri ->
                 match uri.Host with
@@ -58,8 +60,7 @@ type UrlSearchEngine(pluginPath) =
                 | _ -> [| { Uri = uri } |]
             )
             >> Option.defaultValue Array.empty
-        )
-        |> Seq.toArray,
+        ),
         Observable.empty
 
     override this.SearchResultSelected(searchResult) =
