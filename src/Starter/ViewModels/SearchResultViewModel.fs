@@ -17,31 +17,17 @@ type SearchResultViewModel(
     searchEngineId: string
     ) =
 
-    let inlineCollection = InlineCollection()
     let mutable fuzzyMatchResult: Fusil.Fusil.FuzzyResult option = None
+    let mutable accentuationMap = Array.empty<bool>
     let icon = searchResult.Icon |> StarterIconSource.buildWithFontSize 35
-
-    do
-        inlineCollection.EnsureCapacity(searchResult.Name.Length)
-        for i = 0 to searchResult.Name.Length-1 do
-            let span = Span()
-            searchResult.Name[i] |> string |> span.Inlines.Add
-            span |> inlineCollection.Add
 
     member _.Position = pos
     member _.SearchResult = searchResult
     member _.SearchEngineId = searchEngineId
     member _.FuzzyMatchResult = fuzzyMatchResult
-    member _.Inlines = inlineCollection
-
-    member _.SetFuzzyResult fuzzyResult =
-        fuzzyMatchResult <- Some fuzzyResult
-
-        for i = 0 to searchResult.Name.Length-1 do
-            if fuzzyResult.MatchingPositions[i] then
-                inlineCollection[i].FontWeight <- FontWeight.ExtraBold
-            else
-                inlineCollection[i].FontWeight <- FontWeight.Regular
+    member _.AccentuationMap
+        with get () = accentuationMap
+        and set v = accentuationMap <- v
 
     static member DesignVM = SearchResultViewModel(
         SearchResultPosition.Normal,

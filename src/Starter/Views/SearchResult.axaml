@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Starter.ViewModels"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
+             xmlns:controls="using:Starter.Controls"
              mc:Ignorable="d" d:DesignWidth="300" d:DesignHeight="60"
              Design.DataContext="{Binding Source={x:Static vm:SearchResultViewModel.DesignVM}}"
              x:Class="Starter.Controls.SearchResultControl"
@@ -17,10 +18,11 @@
                                       IconSource="{Binding Icon}" />
             </Border>
             <StackPanel VerticalAlignment="Center">
-                <TextBlock x:Name="TextBlock"
-                           FontSize="15"
-                           Foreground="{DynamicResource TextForeground}"
-                           Inlines="{Binding Inlines}" />
+                <controls:AccentuatedTextBlock FontSize="15"
+                                               Foreground="{DynamicResource TextForeground}"
+                                               Text="{Binding Name}"
+                                               AccentuationMap="{Binding AccentuationMap}"
+                                               FontFamily="{StaticResource JetBrainsMono}" />
                 <TextBlock Text="{Binding SearchResult.Description}"
                            FontSize="12"
                            FontWeight="Medium"

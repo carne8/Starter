@@ -123,13 +123,11 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
                                 if srVm.SearchEngineId |> isSearchEngineActivated |> not then
                                     false
                                 else
-                                    srVm.Name
-                                    |> fuzzyMatch
-                                    |> function
-                                        | Some fusilResult when fusilResult.Score > 0s ->
-                                            srVm.SetFuzzyResult fusilResult
-                                            true
-                                        | _ -> false
+                                    match srVm.Name |> fuzzyMatch with
+                                    | Some fusilResult when fusilResult.Score > 0s ->
+                                        srVm.AccentuationMap <- fusilResult.MatchingPositions
+                                        true
+                                    | _ -> false
                             )
 
                         filteredResults |> searchResults.AddRange

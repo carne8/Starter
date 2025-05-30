@@ -44,6 +44,9 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Custom Controls -->
+        <Compile Include="Controls\AccentuatedTextBlock.fs" />
+        
         <!-- View models -->
         <Compile Include="ViewModels\ViewModelBase.fs" />
         <Compile Include="ViewModels\SearchResultViewModel.fs" />
