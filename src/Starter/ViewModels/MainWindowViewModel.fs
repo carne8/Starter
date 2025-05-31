@@ -62,8 +62,7 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
                 searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
                 searchResults.NotifyChanges()
             )
-            |> fun sub -> ct.Register(fun () -> sub.Dispose())
-            |> ignore
+            |> disposeOnCancelled ct
 
             instantResults
             |> Array.map (SearchResultViewModel.create srPos se)
@@ -89,8 +88,6 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
             searchResults.NotifyChanges()
 
         | None ->
-            let bindToCts (sub: IDisposable) = searchCts.Token.Register(fun _ -> sub.Dispose()) |> ignore
-
             let query =
                 newText
                 |> String.normalize
@@ -133,9 +130,9 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
                         searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
                         searchResults.NotifyChanges()
                     )
-                    |> bindToCts
+                    |> disposeOnCancelled searchCts.Token
             )
-            |> bindToCts
+            |> disposeOnCancelled searchCts.Token
 
     // ReSharper disable once FSharpRedundantDotInIndexer
     let validateResult (result: SearchResultViewModel) =
@@ -224,8 +221,7 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
                         staticSearchResults.OnNext newStaticResults
                         printfn "%s results loaded" se.Name
                     )
-                with e ->
-                    printfn "%A" e
+                with e -> printfn "%A" e
             }) |> ignore
 
     member _.HideCommand = hideCommand

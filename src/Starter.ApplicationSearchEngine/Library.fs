@@ -47,7 +47,7 @@ type AppIndexer() =
         match packageIconOpt, targetPathOpt with
         | Some iconPath, _ -> new Bitmap(iconPath) // Found an icon associated with package
         | None, Some filePath when filePath.ToLowerInvariant().EndsWith ".exe" -> // Take the .exe icon
-            IconHelper.getFileIcon (Avalonia.PixelSize(35, 35)) filePath
+            IconHelper.getFileIcon (Avalonia.PixelSize(35*2, 35*2)) filePath
             |> Option.defaultWith getShellIcon // Let the shell load the icon
         | _ ->
             getShellIcon() // Let the shell load the icon

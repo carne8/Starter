@@ -15,8 +15,8 @@ public class StarterIconSource()
     public StarterIconSource(IImage image) : this() => SourceImage = image;
     public StarterIconSource(Symbol symbol) : this() => Symbol = symbol;
 
-    public IImage? SourceImage;
-    public Symbol? Symbol;
+    public readonly IImage? SourceImage;
+    public readonly Symbol? Symbol;
 }
 
 public interface ISearchResult

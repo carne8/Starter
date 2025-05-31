@@ -6,9 +6,9 @@ open FluentAvalonia.UI.Controls
 type SingleSearchEngineViewModel =
     { SearchEngine: ISearchEngine
       ShortName: string
-      Icon: IconSource }
+      Icon: IconSource | null }
 
     static member create (searchEngine: ISearchEngine) =
         { SearchEngine = searchEngine
           ShortName = searchEngine.ShortName
-          Icon = searchEngine.Icon |> StarterIconSource.build }
+          Icon = searchEngine.Icon |> StarterIconSource.buildWithFontSize 17 }
