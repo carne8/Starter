@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="logosandtypes_com"
+   data-name="logosandtypes com"
+   viewBox="0 0 22500 22500"
+   version="1.1"
+   width="22500"
+   height="22500"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <style
+       id="style1">
+      .cls-1 {
+        fill-rule: evenodd;
+      }
+
+      .cls-1, .cls-2 {
+        fill: #282b2f;
+      }
+
+      .cls-3 {
+        fill: none;
+      }
+    </style>
+  </defs>
+  <g
+     id="Layer_3"
+     data-name="Layer 3">
+    <g
+       id="Layer_3-2"
+       data-name="Layer 3-2">
+      <g
+         id="Layer_2"
+         data-name="Layer 2">
+        <path
+           id="Layer_3-3"
+           data-name="Layer 3-3"
+           class="cls-3"
+           d="M 0,0 H 150 V 150 H 0 Z" />
+      </g>
+    </g>
+  </g>
+  <path
+     class="cls-2"
+     d="m 125,2 -3.8,14.73 -14.57,3.76 v 1.5 l 14.57,3.76 3.8,14.73 h 1.42 l 3.8,-14.73 14.89,-3.84 V 20.57 L 130.22,16.73 126.42,2 Z"
+     id="path1"
+     style="fill:#ffffff;fill-opacity:1" />
+  <path
+     class="cls-1"
+     d="m 74.19,28.93 c 23.29,0 42.16,14.05 42.16,41.35 0,25.83 -16.68,39.64 -38.02,41.2 10.15,6.2 25.48,6.21 35.01,-1.89 l 2.98,1.61 -1.74,16.32 -1.23,1.55 C 96.42,134.05 79.66,128.85 68.77,111.36 48.04,109.35 32.02,95.62 32.02,70.27 32.02,42.97 50.9,28.92 74.18,28.92 Z m 0,75.36 c 14.96,0 22.15,-15.23 22.15,-34.01 0,-18.78 -6.23,-34.01 -22.15,-34.01 -15.92,0 -22.15,15.23 -22.15,34.01 0,18.78 6.41,34.01 22.15,34.01 z"
+     id="path2"
+     style="fill:#ffffff;fill-opacity:1" />
+</svg>

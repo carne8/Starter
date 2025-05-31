@@ -158,7 +158,8 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
         // Load search engines
         let pluginDirectories = // TODO: Change for production
             [| Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.UrlSearchEngine/bin/Debug/net9.0/")
-               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.ApplicationSearchEngine/bin/Debug/net9.0/") |]
+               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.ApplicationSearchEngine/bin/Debug/net9.0/")
+               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.WebSearchEngine/bin/Debug/net9.0/") |]
 
         pluginDirectories
         |> Array.map SearchEngineLoading.loadSearchEngineFromDirectory

@@ -24,6 +24,7 @@
                                                AccentuationMap="{Binding AccentuationMap}"
                                                FontFamily="{StaticResource JetBrainsMono}" />
                 <TextBlock Text="{Binding SearchResult.Description}"
+                           IsVisible="{Binding SearchResult.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                            FontSize="12"
                            FontWeight="Medium"
                            Foreground="{DynamicResource DescriptionForeground}" />

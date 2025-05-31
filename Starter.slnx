@@ -2,10 +2,11 @@
   <Folder Name="/Plugins/">
     <Project Path="src/Starter.ApplicationSearchEngine/Starter.ApplicationSearchEngine.fsproj" />
     <Project Path="src/Starter.SearchEngineBase/Starter.SearchEngineBase.csproj" />
+    <Project Path="src\Starter.WebSearchEngine\Starter.WebSearchEngine.fsproj" Type="Classic F#" />
   </Folder>
   <Folder Name="/Plugins/Starter.UrlSearchEngine/">
-    <Project Path="src/Starter.UrlSearchEngine/Starter.UrlSearchEngine.Regex/Starter.UrlSearchEngine.Regex.csproj" />
     <Project Path="src/Starter.UrlSearchEngine/Starter.UrlSearchEngine.fsproj" />
+    <Project Path="src/Starter.UrlSearchEngine/Starter.UrlSearchEngine.Regex/Starter.UrlSearchEngine.Regex.csproj" />
   </Folder>
   <Project Path="src/Starter/Starter.fsproj" />
 </Solution>

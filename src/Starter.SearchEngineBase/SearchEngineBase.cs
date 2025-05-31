@@ -21,7 +21,7 @@ public class StarterIconSource()
 
 public interface ISearchResult
 {
-    string Id { get; }
+    string? Id { get; }
     string Name { get; }
     string Description { get; }
     StarterIconSource Icon { get; }
@@ -77,6 +77,10 @@ public static class Constants
 {
     public static readonly string[] SharedAssemblies = [
         "Avalonia.Base",
-        "FluentAvalonia"
+        "FluentAvalonia",
+        "Svg.Controls.Skia.Avalonia",
+        "Svg.Custom",
+        "Svg.Model",
+        "Svg.Skia"
     ];
 }
