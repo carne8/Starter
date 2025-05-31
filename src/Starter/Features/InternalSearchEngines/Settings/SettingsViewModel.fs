@@ -1,12 +1,9 @@
 namespace Starter.ViewModels
 
 open System
-open System.Collections.ObjectModel
-open System.Reactive.Subjects
 open System.Collections.Generic
-open DynamicData
 open ReactiveUI
-open FluentAvalonia.UI.Controls
+open R3
 
 open Starter.Features.Config
 open Starter.Features.PlatformInterop
@@ -51,7 +48,7 @@ type SettingsViewModel(baseConfig: Configuration, searchEngines: IDictionary<str
         config <- { config with SearchEnginePrefixes = newMap }
 
     let sePrefixVms =
-        searchEngines |> Observable.map (Seq.map (fun kv ->
+        searchEngines.Select(Seq.map (fun (kv: KeyValuePair<_, _>) ->
             let prefix =
                 config.SearchEnginePrefixes
                 |> Map.tryFind kv.Key

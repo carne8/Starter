@@ -6,17 +6,19 @@ open Starter.SearchEngine
 open System
 open System.Diagnostics
 open System.Text.RegularExpressions
-open FSharp.Control.Reactive
 open FluentAvalonia.UI.Controls
+open R3
 
 type SearchResult =
     { Uri: Uri }
+
+    static let icon = StarterIconSource(Symbol.Globe)
 
     interface ISearchResult with
         member this.Id = this.Uri.AbsoluteUri
         member this.Name = "Open link"
         member this.Description = $"Open: {this.Uri.AbsoluteUri}"
-        member this.Icon = StarterIconSource(Symbol.Globe)
+        member this.Icon = icon
 
 type UrlSearchEngine(pluginPath) =
     inherit DynamicSearchEngine(pluginPath)
@@ -61,7 +63,7 @@ type UrlSearchEngine(pluginPath) =
             )
             >> Option.defaultValue Array.empty
         ),
-        Observable.empty
+        Observable.Empty()
 
     override this.SearchResultSelected(searchResult) =
         match searchResult with

@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Media;
 using FluentAvalonia.UI.Controls;
+using R3;
 
 #pragma warning disable CS9113 // Parameter unread
 
@@ -68,7 +69,7 @@ public abstract class DynamicSearchEngine(string pluginPath) : ISearchEngine
     /// should be shown in the last results (like for the URL search engine)
     /// </summary>
     public abstract bool ImportantResults { get; }
-    public abstract (ISearchResult[], IObservable<ISearchResult[]>) Search(string query, CancellationToken cancellationToken);
+    public abstract (ISearchResult[], Observable<ISearchResult[]>) Search(string query, CancellationToken cancellationToken);
     public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
 }
 

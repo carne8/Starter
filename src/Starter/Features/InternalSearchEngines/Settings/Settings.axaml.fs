@@ -7,6 +7,7 @@ open Avalonia.Markup.Xaml
 open Starter
 open System.Collections.Generic
 open FluentAvalonia.UI.Controls
+open R3
 
 type Settings() as this =
     inherit Window()
@@ -25,8 +26,7 @@ type Settings() as this =
             | :? ViewModels.SettingsViewModel as vm ->
                 let control = this.GetControl<SettingsExpander> "SearchEnginePrefixes"
 
-                vm.SearchEnginePrefixes
-                |> Observable.subscribe (fun vms ->
+                vm.SearchEnginePrefixes.Subscribe(fun vms ->
                     control.ItemsSource <- vms
                 )
                 |> disposables.Add

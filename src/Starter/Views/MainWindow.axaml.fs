@@ -14,6 +14,7 @@ open Avalonia.Interactivity
 open Avalonia.Controls
 open Avalonia.Markup.Xaml
 open Avalonia.VisualTree
+open R3
 
 type MainWindow() as this =
     inherit Window()
@@ -53,8 +54,7 @@ type MainWindow() as this =
             this.SetupKeyboardShortcuts()
 
             // Bind background kind
-            this.ViewModel.Config
-            |> Observable.subscribe (fun config ->
+            this.ViewModel.Config.Subscribe(fun config ->
                 this.TransparencyLevelHint <-
                     match config.Background with
                     | Config.Background.Acrylic -> [| WindowTransparencyLevel.AcrylicBlur |].AsReadOnly()
@@ -64,8 +64,7 @@ type MainWindow() as this =
             |> ignore
 
             // Bind single-search-engine pill
-            this.ViewModel.SingleSearchEngineMode
-            |> Observable.subscribe (fun singleSeMode ->
+            this.ViewModel.SingleSearchEngineMode.Subscribe(fun singleSeMode ->
                 match singleSeMode with
                 | None ->
                     this.SearchEnginePill.IsVisible <- false
@@ -78,15 +77,14 @@ type MainWindow() as this =
 
             // Subscribe to commands
             this.ViewModel.ClearTextBoxCommand
-            |> Observable.subscribe (fun prefixLength ->
-                Threading.Dispatcher.UIThread.Post(fun () ->
+                .ObserveOnUIThreadDispatcher()
+                .Subscribe(fun prefixLength ->
                     this.TextBox.Text <-
                         match this.TextBox.Text with
                         | null -> ""
                         | s -> s.Substring(prefixLength)
                     this.TextBox.CaretIndex <- this.TextBox.CaretIndex - prefixLength
                 )
-            )
             |> ignore
         )
 
@@ -103,8 +101,7 @@ type MainWindow() as this =
 
     member private this.SetupKeyboardShortcuts() =
         // Subscribe to hide command
-        this.ViewModel.HideCommand
-        |> Observable.subscribe (fun _ ->
+        this.ViewModel.HideCommand.Subscribe(fun _ ->
             Threading.Dispatcher.UIThread.Post(fun _ ->
                 this.Hide()
             )

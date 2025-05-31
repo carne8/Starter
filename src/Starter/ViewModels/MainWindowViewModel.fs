@@ -12,12 +12,12 @@ open System.IO
 open System.Threading
 open System.Threading.Tasks
 open System.Windows.Input
-open System.Reactive.Subjects
 
 open Fusil
 open Fusil.TextNormalization
 open Avalonia.Threading
 open ReactiveUI
+open R3
 
 type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: ResultScores.ScoreDb) =
     // ---
@@ -53,15 +53,14 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
                 | true -> SearchResultPosition.Important
                 | false -> SearchResultPosition.Low
 
-            obs
-            |> Observable.subscribe (fun results ->
-                Dispatcher.UIThread.Post(fun () ->
-                    results
-                    |> Array.map (SearchResultViewModel.create srPos se)
-                    |> searchResults.AddRange
-                    searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
-                    searchResults.NotifyChanges()
-                )
+            obs.ObserveOnUIThreadDispatcher()
+               .Subscribe(fun results ->
+                results
+                |> Array.map (SearchResultViewModel.create srPos se)
+                |> searchResults.AddRange
+
+                searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
+                searchResults.NotifyChanges()
             )
             |> fun sub -> ct.Register(fun () -> sub.Dispose())
             |> ignore
@@ -186,8 +185,7 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
         // dynamicSearchEngines |> Seq.iter SearchEngineLoading.prepareSearchEngine
 
         // Sync searchEngineFromPrefix with config
-        config
-        |> Observable.subscribe (fun config ->
+        config.Subscribe (fun config ->
             config.SearchEnginePrefixes
             |> Map.toSeq
             |> Seq.choose (fun (k, v) ->
@@ -202,8 +200,7 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
 
         // Sync config changes with the settings search engine (and the settings page)
         // Save config to a file when it changes
-        settingsSearchEngine.Configuration
-        |> Observable.subscribe (fun newConfig ->
+        settingsSearchEngine.Configuration.Subscribe(fun newConfig ->
             config.OnNext newConfig
             newConfig |> Config.saveConfig Constants.ConfigFile |> ignore
         )
