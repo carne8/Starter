@@ -100,6 +100,7 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
                 | Some { SearchEngine = :? DynamicSearchEngine as singleSe } ->
                     searchResults.Clear()
                     singleSe |> subscribeToDynamicSearchEngine searchCts.Token newText
+                    searchResults.NotifyChanges()
                 | _ ->
                     let isSearchEngineActivated seId =
                         match singleSe with
