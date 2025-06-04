@@ -34,7 +34,7 @@ public interface ISearchEngine
     string ShortName { get; }
     StarterIconSource Icon { get; }
     void SearchResultSelected(ISearchResult selectedSearchResult);
-    Control LoadSettingsControl();
+    Control? LoadSettingsControl();
     void SaveSettings();
 }
 
@@ -51,7 +51,7 @@ public abstract class StaticSearchEngine(string pluginPath) : ISearchEngine
     public abstract StarterIconSource Icon { get; }
     public abstract Task<ISearchResult[]> LoadResults();
     public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
-    public abstract Control LoadSettingsControl();
+    public abstract Control? LoadSettingsControl();
     public abstract void SaveSettings();
 }
 
@@ -75,7 +75,7 @@ public abstract class DynamicSearchEngine(string pluginPath) : ISearchEngine
     public abstract bool ImportantResults { get; }
     public abstract (ISearchResult[], Observable<ISearchResult[]>) Search(string query, CancellationToken cancellationToken);
     public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
-    public abstract Control LoadSettingsControl();
+    public abstract Control? LoadSettingsControl();
     public abstract void SaveSettings();
 }
 

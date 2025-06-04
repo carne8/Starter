@@ -76,5 +76,5 @@ type UrlSearchEngine(pluginPath) =
             |> ignore
         | _ -> ()
 
-    override this.LoadSettingsControl() = Avalonia.Controls.TextBlock(Text = "URLs hehe")
+    override this.LoadSettingsControl() = null
     override this.SaveSettings() = ()

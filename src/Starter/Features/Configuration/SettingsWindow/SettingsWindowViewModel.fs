@@ -16,11 +16,11 @@ type MenuItemVM =
       Name: string
       Control: Control }
 
-    static member create (se: ISearchEngine) =
+    static member create control (se: ISearchEngine) =
         { Id = se.Id
           Icon = se.Icon |> StarterIconSource.build
           Name = se.Name
-          Control = se.LoadSettingsControl() }
+          Control = control }
 
 type WindowViewModel(baseConfig, searchEngines: IDictionary<string, ISearchEngine> BehaviorSubject) =
     inherit ReactiveObject()
@@ -39,10 +39,15 @@ type WindowViewModel(baseConfig, searchEngines: IDictionary<string, ISearchEngin
         searchEngines.ObserveOnUIThreadDispatcher()
         |> Observable.subscribe (fun d ->
             d
-            |> Seq.map (fun kv ->
+            |> Seq.choose (fun kv ->
                 menuItems.Value
                 |> Array.tryFind (fun i -> i.Id = kv.Key)
-                |> Option.defaultWith (fun () -> kv.Value |> MenuItemVM.create)
+                |> Option.map Some
+                |> Option.defaultWith (fun () ->
+                    match kv.Value.LoadSettingsControl() with
+                    | null -> None
+                    | control -> kv.Value |> MenuItemVM.create control |> Some
+                )
             )
             |> Seq.sortBy _.Name
             |> Seq.append [ starterSettingsMenuItem ]

@@ -46,5 +46,5 @@ type SettingsSearchEngine(searchEngines) =
                 window.Show()
         )
 
-    override this.LoadSettingsControl() = Avalonia.Controls.TextBlock(Text = "Settings hehe")
+    override this.LoadSettingsControl() = null
     override this.SaveSettings() = () // Handled by SettingsWindowViewModel

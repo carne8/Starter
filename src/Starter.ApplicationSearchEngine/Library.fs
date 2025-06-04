@@ -122,5 +122,5 @@ type ApplicationSearchEngine(pluginPath) =
             |> Process.Start
             |> ignore
         | _ -> ()
-    override this.LoadSettingsControl() = Avalonia.Controls.TextBlock(Text = "Apps hehe")
+    override this.LoadSettingsControl() = null
     override this.SaveSettings() = ()
