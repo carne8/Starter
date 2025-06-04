@@ -24,3 +24,10 @@ let disposeOnCancelled (ct: CancellationToken) (d: IDisposable) =
     fun () -> d.Dispose()
     |> ct.Register
     |> ignore
+
+[<RequireQualifiedAccess>]
+module Observable =
+    open R3
+
+    let inline map ([<InlineIfLambda>] f: 'A -> 'B) (obs: Observable<'A>) : Observable<'B>  = obs.Select(f)
+    let inline subscribe ([<InlineIfLambda>] f: 'A -> unit) (obs: Observable<'A>)  = obs.Subscribe(f)

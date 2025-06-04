@@ -1,13 +1,17 @@
-namespace Starter.ViewModels
+namespace Starter.Features.Config.UI.StarterSettings
 
-open System
-open System.Collections.Generic
-open ReactiveUI
-open R3
-
+open Starter.Features
 open Starter.Features.Config
 open Starter.Features.PlatformInterop
 open Starter.SearchEngine
+
+open System
+open System.Collections.Generic
+
+open Avalonia.Controls
+open FluentAvalonia.UI.Controls
+open ReactiveUI
+open R3
 
 type SearchEnginePrefixViewModel(se: ISearchEngine, prefix: string, onPrefixChanged) =
     let icon = se.Icon |> StarterIconSource.build
@@ -18,8 +22,7 @@ type SearchEnginePrefixViewModel(se: ISearchEngine, prefix: string, onPrefixChan
         with get () = prefix
         and set v = v |> onPrefixChanged
 
-
-type SettingsViewModel(baseConfig: Configuration, searchEngines: IDictionary<string, ISearchEngine> BehaviorSubject) =
+type ViewModel(baseConfig: Configuration, searchEngines: IDictionary<string, ISearchEngine> BehaviorSubject) =
     inherit ReactiveObject() // Equivalent to ViewModelBase
 
     let mutable config = baseConfig
@@ -48,22 +51,24 @@ type SettingsViewModel(baseConfig: Configuration, searchEngines: IDictionary<str
         config <- { config with SearchEnginePrefixes = newMap }
 
     let sePrefixVms =
-        searchEngines.Select(Seq.map (fun (kv: KeyValuePair<_, _>) ->
-            let prefix =
-                config.SearchEnginePrefixes
-                |> Map.tryFind kv.Key
-                |> Option.defaultValue String.Empty
+        searchEngines.Select(
+            Seq.map (fun (kv: KeyValuePair<_, _>) ->
+                let prefix =
+                    config.SearchEnginePrefixes
+                    |> Map.tryFind kv.Key
+                    |> Option.defaultValue String.Empty
 
-            SearchEnginePrefixViewModel(
-                kv.Value,
-                prefix,
-                onPrefixChanged kv.Key
+                SearchEnginePrefixViewModel(
+                    kv.Value,
+                    prefix,
+                    onPrefixChanged kv.Key
+                )
             )
-        ))
+            >> Seq.toArray
+        )
 
     interface IDisposable with
-        override _.Dispose() =
-            configSaves.Dispose()
+        override _.Dispose() = configSaves.Dispose()
 
     member _.Configuration = configSaves
     member _.Save() = configSaves.OnNext config

@@ -1,0 +1,59 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+            xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+            xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+            xmlns:ui="using:FluentAvalonia.UI.Controls"
+            xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+            xmlns:vm="using:Starter.Features.Config.UI.StarterSettings"
+            mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
+            x:Class="Starter.Features.Config.UI.StarterSettings.StarterSettings"
+            x:DataType="vm:ViewModel">
+    <StackPanel Spacing="5">
+        <TextBlock Classes="title1" Margin="4, 0, 0, 24">Settings</TextBlock>
+
+        <!-- Launch at startup -->
+        <ui:SettingsExpander Header="Launch at startup">
+            <ui:SettingsExpander.IconSource>
+                <ic:SymbolIconSource Symbol="History"/>
+            </ui:SettingsExpander.IconSource>
+            <ui:SettingsExpander.Footer>
+                <ToggleSwitch IsChecked="{Binding LaunchAtStartup}"/>
+            </ui:SettingsExpander.Footer>
+        </ui:SettingsExpander>
+
+        <!-- Background -->
+        <ui:SettingsExpander Header="Background transparency">
+            <ui:SettingsExpander.IconSource>
+                <ic:SymbolIconSource Symbol="Sparkle"/>
+            </ui:SettingsExpander.IconSource>
+            <ui:SettingsExpander.Footer>
+                <ComboBox SelectedIndex="{Binding SelectedBackgroundIdx}" ItemsSource="{Binding Backgrounds}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </ui:SettingsExpander.Footer>
+        </ui:SettingsExpander>
+
+        <!-- Search engine prefixes -->
+        <ui:SettingsExpander x:Name="SearchEnginePrefixes" Header="Search engine activation prefixes">
+            <!-- ItemSource bound from code-behind -->
+            <ui:SettingsExpander.IconSource>
+                <ic:SymbolIconSource Symbol="Keyboard"/>
+            </ui:SettingsExpander.IconSource>
+
+            <ui:SettingsExpander.ItemTemplate>
+                <DataTemplate DataType="vm:SearchEnginePrefixViewModel">
+                    <ui:SettingsExpanderItem IconSource="{Binding Icon}">
+                        <TextBlock Text="{Binding Name}" />
+                        <ui:SettingsExpanderItem.Footer>
+                            <TextBox Text="{Binding Prefix}"/>
+                        </ui:SettingsExpanderItem.Footer>
+                    </ui:SettingsExpanderItem>
+                </DataTemplate>
+            </ui:SettingsExpander.ItemTemplate>
+        </ui:SettingsExpander>
+    </StackPanel>
+</UserControl>

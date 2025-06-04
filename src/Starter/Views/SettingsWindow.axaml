@@ -1,0 +1,61 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="using:FluentAvalonia.UI.Controls"
+        xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+        xmlns:vm="using:Starter.Features.Config.UI.SettingsWindow"
+        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
+        x:Class="Starter.Features.Config.UI.SettingsWindow.WindowControl"
+        x:DataType="vm:WindowViewModel"
+        Title="Settings"
+        Width="1050"
+        Height="700"
+        TransparencyLevelHint="Mica"
+        Background="Transparent"
+        ExtendClientAreaToDecorationsHint="True"
+        FontFamily="{StaticResource JetBrainsMono}">
+
+    <DockPanel LastChildFill="True">
+        <Border DockPanel.Dock="Top" Height="30" Padding="10, 5, 5, 0" IsHitTestVisible="False">
+            <StackPanel Spacing="10" Orientation="Horizontal">
+                <ic:SymbolIcon FontSize="16" Symbol="Flash" />
+                <TextBlock VerticalAlignment="Center">Starter Settings</TextBlock>
+            </StackPanel>
+        </Border>
+
+        <Panel>
+            <!-- Save button -->
+            <Border Margin="14"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Bottom"
+                    BorderBrush="{DynamicResource ThemeBorderMidBrush}"
+                    BorderThickness="1"
+                    ZIndex="1">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Classes="accent" Command="{Binding Save}">Save</Button>
+                </StackPanel>
+            </Border>
+
+            <ui:NavigationView x:Name="NavigationView"
+                               IsSettingsVisible="False"
+                               Margin="0, 20, 0, 0"
+                               CompactModeThresholdWidth="0"
+                               ExpandedModeThresholdWidth="900"
+                               SelectedItem="{Binding SelectedPage}">
+
+                <!-- Menu -->
+                <ui:NavigationView.MenuItemTemplate>
+                    <DataTemplate DataType="vm:MenuItemVM">
+                        <ui:NavigationViewItem IconSource="{Binding Icon}"
+                                               FontFamily="{StaticResource JetBrainsMono}"
+                                               Content="{Binding Name}" />
+                    </DataTemplate>
+                </ui:NavigationView.MenuItemTemplate>
+
+                <!-- Content -->
+                <Border Margin="20" Child="{Binding SelectedPage.Control}" />
+            </ui:NavigationView>
+        </Panel>
+    </DockPanel>
+</Window>

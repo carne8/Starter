@@ -6,6 +6,7 @@ open Avalonia.Data.Core.Plugins
 open Avalonia.Markup.Xaml
 
 open Starter.Features
+open Starter.Features.Config
 open Starter.ViewModels
 open Starter.Views
 
@@ -28,7 +29,7 @@ type App() =
 
             // Load config
             let config =
-                match Config.getConfig Constants.ConfigFile with
+                match Configuration.loadFromFile Constants.ConfigFile with
                 | Error e -> failwithf "Failed to decode configuration: %A" e
                 | Ok config -> config
 

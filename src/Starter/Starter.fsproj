@@ -27,13 +27,18 @@
 
         <!-- Config-->
         <Compile Include="Features\Configuration\Config.fs" />
-
-        <!-- Internal search engines -->
-        <Compile Include="Features\InternalSearchEngines\Settings\SettingsViewModel.fs" />
-        <Compile Include="Features\InternalSearchEngines\Settings\Settings.axaml.fs">
+        <Compile Include="Features\Configuration\StarterSettings\StarterSettingsViewModel.fs" />
+        <Compile Include="Features\Configuration\StarterSettings\StarterSettings.axaml.fs">
             <DependentUpon>Settings.axaml</DependentUpon>
             <SubType>Code</SubType>
         </Compile>
+        <Compile Include="Features\Configuration\SettingsWindow\SettingsWindowViewModel.fs" />
+        <Compile Include="Features\Configuration\SettingsWindow\SettingsWindow.axaml.fs">
+            <DependentUpon>Settings.axaml</DependentUpon>
+            <SubType>Code</SubType>
+        </Compile>
+
+        <!-- Internal search engines -->
         <Compile Include="Features\InternalSearchEngines\Settings\SettingsSearchEngine.fs" />
 
         <!-- Others -->

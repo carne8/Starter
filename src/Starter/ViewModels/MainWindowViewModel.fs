@@ -1,12 +1,12 @@
 namespace Starter.ViewModels
 
 open Starter.Features
+open Starter.Features.Config
 open Starter.Features.InternalSearchEngines
 open Starter.Features.ResultScores
 open Starter.Features.CustomCollections
 open Starter.SearchEngine
 
-open System
 open System.Collections.Generic
 open System.IO
 open System.Threading
@@ -19,7 +19,7 @@ open Avalonia.Threading
 open ReactiveUI
 open R3
 
-type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: ResultScores.ScoreDb) =
+type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.ScoreDb) =
     // ---
     let config = new BehaviorSubject<_>(baseConfig)
     let fusilSlab = Slab.createDefault()
@@ -199,11 +199,12 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
 
         // Sync config changes with the settings search engine (and the settings page)
         // Save config to a file when it changes
-        settingsSearchEngine.Configuration.Subscribe(fun newConfig ->
-            config.OnNext newConfig
-            newConfig |> Config.saveConfig Constants.ConfigFile |> ignore
-        )
-        |> ignore
+        // TODO
+        // settingsSearchEngine.Configuration.Subscribe(fun newConfig ->
+        //     config.OnNext newConfig
+        //     newConfig |> Config.saveConfig Constants.ConfigFile |> ignore
+        // )
+        // |> ignore
 
         // Load static results
         for se in staticSearchEngines do
@@ -249,5 +250,5 @@ type MainWindowViewModel(baseConfig: Config.Configuration, resultScoreDb: Result
     member this.SingleSearchEngineMode = singleSearchEngineMode
 
     #if DEBUG
-    static member DesignVM = MainWindowViewModel(Config.Configuration.Default, Array.empty |> dict)
+    static member DesignVM = MainWindowViewModel(Configuration.Default, Array.empty |> dict)
     #endif
