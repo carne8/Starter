@@ -21,5 +21,7 @@ type StarterSettings() as this =
 
                 let sub = vm.SearchEnginePrefixes.Subscribe(fun vms -> searchEnginePrefixes.ItemsSource <- vms)
                 this.Unloaded.Add(ignore >> sub.Dispose)
+
+                this.Loaded.Add(fun _ -> vm.OnOpened())
             | _ -> ()
         )

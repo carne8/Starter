@@ -20,13 +20,22 @@ type WindowControl() as this =
 
         this.DataContextChanged.Add(fun _ ->
             match this.DataContext with
-            | :? WindowViewModel as vm ->
-                let navigationView = this.GetControl<NavigationView> "NavigationView"
-                let sub = vm.MenuItems.Subscribe (fun vms -> navigationView.MenuItemsSource <- vms)
-                this.Unloaded.Add(fun _ -> sub.Dispose())
-
-                let contentControl = this.GetControl<Border> "ContentControl"
-                let sub = contentControl.Bind(Border.ChildProperty, Data.Binding("SelectedPage.Control"))
-                this.Unloaded.Add(fun _ -> sub.Dispose())
+            | :? WindowViewModel as vm -> this.DataContextLoaded(vm)
             | _ -> ()
+        )
+
+    member this.DataContextLoaded(vm: WindowViewModel) =
+        // Bind MenuItems
+        let navigationView = this.GetControl<NavigationView> "NavigationView"
+        let sub = vm.MenuItems.Subscribe(fun vms -> navigationView.MenuItemsSource <- vms)
+        this.Unloaded.Add(fun _ -> sub.Dispose())
+
+        // Bind settings control
+        let contentControl = this.GetControl<Border> "ContentControl"
+        let sub = contentControl.Bind(Border.ChildProperty, Data.Binding("SelectedPage.Control"))
+        this.Unloaded.Add(fun _ -> sub.Dispose())
+
+        // Open Starter settings by default
+        this.Activated.Add(fun _ ->
+            vm.SelectedPage <- vm.MenuItems.Value[0]
         )

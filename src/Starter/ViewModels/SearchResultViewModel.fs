@@ -3,9 +3,6 @@ namespace Starter.ViewModels
 open Starter.SearchEngine
 open Starter.Features.ResultScores
 
-open Avalonia.Media
-open Avalonia.Controls.Documents
-
 type SearchResultPosition =
     | Important = 0s
     | Normal = 1s

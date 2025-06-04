@@ -64,9 +64,3 @@ type WindowViewModel(baseConfig, searchEngines: IDictionary<string, ISearchEngin
     member this.SelectedPage
         with get () = selectedPage
         and set v = this.RaiseAndSetIfChanged(&selectedPage, v) |> ignore
-
-    member this.Save() =
-        if selectedPage.Id = starterSettingsMenuItem.Id then
-            starterSettingsVM.Save()
-        else
-            searchEngines.Value[selectedPage.Id].SaveSettings()

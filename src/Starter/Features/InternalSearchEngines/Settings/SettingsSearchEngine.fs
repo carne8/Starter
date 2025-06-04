@@ -18,7 +18,7 @@ type SettingsSearchResult =
 type SettingsSearchEngine(searchEngines) =
     inherit StaticSearchEngine("")
 
-    let vm = Config.UI.SettingsWindow.WindowViewModel(searchEngines)
+    let vm = new Config.UI.SettingsWindow.WindowViewModel(searchEngines)
     let mutable window = Config.UI.SettingsWindow.WindowControl(DataContext = vm)
 
     static let id = nameof SettingsSearchEngine
@@ -41,10 +41,10 @@ type SettingsSearchEngine(searchEngines) =
         Dispatcher.UIThread.Post(fun () ->
             try
                 window.Show()
+                window.Activate()
             with _ ->
                 window <- Config.UI.SettingsWindow.WindowControl(DataContext = vm)
                 window.Show()
         )
 
     override this.LoadSettingsControl() = null
-    override this.SaveSettings() = () // Handled by SettingsWindowViewModel

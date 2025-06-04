@@ -1,4 +1,4 @@
-﻿module Starter.WebSearchEngine
+module Starter.WebSearchEngine
 
 open System
 open System.Diagnostics
@@ -97,4 +97,3 @@ type WebSearchEngine(pluginPath) =
         | _ -> ()
 
     override this.LoadSettingsControl() = null
-    override this.SaveSettings() = ()

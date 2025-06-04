@@ -123,4 +123,3 @@ type ApplicationSearchEngine(pluginPath) =
             |> ignore
         | _ -> ()
     override this.LoadSettingsControl() = null
-    override this.SaveSettings() = ()

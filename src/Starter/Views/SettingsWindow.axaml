@@ -24,38 +24,23 @@
             </StackPanel>
         </Border>
 
-        <Panel>
-            <!-- Save button -->
-            <Border Margin="14"
-                    HorizontalAlignment="Right"
-                    VerticalAlignment="Bottom"
-                    BorderBrush="{DynamicResource ThemeBorderMidBrush}"
-                    BorderThickness="1"
-                    ZIndex="1">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Classes="accent" Command="{Binding Save}">Save</Button>
-                </StackPanel>
-            </Border>
+        <ui:NavigationView x:Name="NavigationView"
+                           IsSettingsVisible="False"
+                           Margin="0, 20, 0, 0"
+                           CompactModeThresholdWidth="0"
+                           ExpandedModeThresholdWidth="900"
+                           SelectedItem="{Binding SelectedPage}"> <!-- MenuItemsSource bound from code-behind -->
+            <!-- Menu -->
+            <ui:NavigationView.MenuItemTemplate>
+                <DataTemplate DataType="vm:MenuItemVM">
+                    <ui:NavigationViewItem IconSource="{Binding Icon}"
+                                           FontFamily="{StaticResource JetBrainsMono}"
+                                           Content="{Binding Name}" />
+                </DataTemplate>
+            </ui:NavigationView.MenuItemTemplate>
 
-            <ui:NavigationView x:Name="NavigationView"
-                               IsSettingsVisible="False"
-                               Margin="0, 20, 0, 0"
-                               CompactModeThresholdWidth="0"
-                               ExpandedModeThresholdWidth="900"
-                               SelectedItem="{Binding SelectedPage}"> <!-- MenuItemsSource bound from code-behind -->
-
-                <!-- Menu -->
-                <ui:NavigationView.MenuItemTemplate>
-                    <DataTemplate DataType="vm:MenuItemVM">
-                        <ui:NavigationViewItem IconSource="{Binding Icon}"
-                                               FontFamily="{StaticResource JetBrainsMono}"
-                                               Content="{Binding Name}" />
-                    </DataTemplate>
-                </ui:NavigationView.MenuItemTemplate>
-
-                <!-- Content -->
-                <Border x:Name="ContentControl" Margin="20" /> <!-- Child bound from code-behind (otherwise it doesn't work) -->
-            </ui:NavigationView>
-        </Panel>
+            <!-- Content -->
+            <Border x:Name="ContentControl" Margin="20" /> <!-- Child bound from code-behind (otherwise it doesn't work) -->
+        </ui:NavigationView>
     </DockPanel>
 </Window>

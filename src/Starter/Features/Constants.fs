@@ -17,3 +17,7 @@ let ProcessDirectory =
 let ConfigFile = Path.Combine(ProcessDirectory, "starter-config.json")
 let ResultScoresFile = Path.Combine(ProcessDirectory, "result-scores.db")
 let [<Literal>] ScoresMaxAging = 10_000
+
+module Platform =
+    module Windows =
+        let StartupFile = "Starter.lnk"

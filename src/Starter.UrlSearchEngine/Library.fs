@@ -77,4 +77,3 @@ type UrlSearchEngine(pluginPath) =
         | _ -> ()
 
     override this.LoadSettingsControl() = null
-    override this.SaveSettings() = ()
