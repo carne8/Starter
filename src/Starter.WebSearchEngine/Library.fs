@@ -97,3 +97,4 @@ type WebSearchEngine(pluginPath) =
         | _ -> ()
 
     override this.LoadSettingsControl() = Avalonia.Controls.TextBlock(Text = "Web search hehe")
+    override this.SaveSettings() = ()

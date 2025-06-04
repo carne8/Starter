@@ -1,5 +1,6 @@
 ﻿namespace Starter.Features.Config.UI.SettingsWindow
 
+open System
 open Starter.SearchEngine
 open Starter.Features.Config
 
@@ -31,22 +32,36 @@ type WindowViewModel(baseConfig, searchEngines: IDictionary<string, ISearchEngin
           Name = "Starter settings"
           Control = UI.StarterSettings.StarterSettings(DataContext = starterSettingsVM) }
 
-    let mutable selectedPage: MenuItemVM = starterSettingsMenuItem
+    let mutable selectedPage = starterSettingsMenuItem
+    let menuItems = new BehaviorSubject<_ array>(Array.empty)
 
-    // Search engine settings pages
-    let menuItems =
+    let sub =
         searchEngines.ObserveOnUIThreadDispatcher()
-        |> Observable.map (fun d ->
+        |> Observable.subscribe (fun d ->
             d
-            |> Seq.map (_.Value >> MenuItemVM.create)
+            |> Seq.map (fun kv ->
+                menuItems.Value
+                |> Array.tryFind (fun i -> i.Id = kv.Key)
+                |> Option.defaultWith (fun () -> kv.Value |> MenuItemVM.create)
+            )
             |> Seq.sortBy _.Name
             |> Seq.append [ starterSettingsMenuItem ]
             |> Seq.toArray
+            |> menuItems.OnNext
         )
+
+    interface IDisposable with
+        member _.Dispose() = sub.Dispose()
+
+    member this.Configuration = starterSettingsVM.Configuration
 
     member this.MenuItems = menuItems
     member this.SelectedPage
         with get () = selectedPage
         and set v = this.RaiseAndSetIfChanged(&selectedPage, v) |> ignore
 
-    member this.Save() = ()
+    member this.Save() =
+        if selectedPage.Id = starterSettingsMenuItem.Id then
+            starterSettingsVM.Save()
+        else
+            searchEngines.Value[selectedPage.Id].SaveSettings()

@@ -23,19 +23,20 @@ type SettingsSearchEngine(searchEngines) =
 
     static let id = nameof SettingsSearchEngine
     static let results: ISearchResult array =
-        [| { Id = "starter-settings"
+        [| { Id = "starter-options"
              Name = "Options" }
            { Id = "starter-settings"
              Name = "Settings" } |]
 
     static member StaticId = id
 
+    member this.Configuration = vm.Configuration
+
     override this.Name = "Options"
     override this.ShortName = "Options"
     override this.Id = id
     override this.Icon = StarterIconSource(Symbol.Settings)
     override this.LoadResults() = results |> Task.singleton
-    override this.LoadSettingsControl() = Avalonia.Controls.TextBlock(Text = "Settings hehe")
     override this.SearchResultSelected _ =
         Dispatcher.UIThread.Post(fun () ->
             try
@@ -44,3 +45,6 @@ type SettingsSearchEngine(searchEngines) =
                 window <- Config.UI.SettingsWindow.WindowControl(DataContext = vm)
                 window.Show()
         )
+
+    override this.LoadSettingsControl() = Avalonia.Controls.TextBlock(Text = "Settings hehe")
+    override this.SaveSettings() = () // Handled by SettingsWindowViewModel

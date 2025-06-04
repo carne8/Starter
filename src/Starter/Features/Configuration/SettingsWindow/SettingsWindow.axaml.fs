@@ -22,8 +22,11 @@ type WindowControl() as this =
             match this.DataContext with
             | :? WindowViewModel as vm ->
                 let navigationView = this.GetControl<NavigationView> "NavigationView"
+                let sub = vm.MenuItems.Subscribe (fun vms -> navigationView.MenuItemsSource <- vms)
+                this.Unloaded.Add(fun _ -> sub.Dispose())
 
-                let subscription = vm.MenuItems.Subscribe(fun vms -> navigationView.MenuItemsSource <- vms)
-                this.Closed.Add(ignore >> subscription.Dispose)
+                let contentControl = this.GetControl<Border> "ContentControl"
+                let sub = contentControl.Bind(Border.ChildProperty, Data.Binding("SelectedPage.Control"))
+                this.Unloaded.Add(fun _ -> sub.Dispose())
             | _ -> ()
         )

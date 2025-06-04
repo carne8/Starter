@@ -42,7 +42,7 @@
                                Margin="0, 20, 0, 0"
                                CompactModeThresholdWidth="0"
                                ExpandedModeThresholdWidth="900"
-                               SelectedItem="{Binding SelectedPage}">
+                               SelectedItem="{Binding SelectedPage}"> <!-- MenuItemsSource bound from code-behind -->
 
                 <!-- Menu -->
                 <ui:NavigationView.MenuItemTemplate>
@@ -54,7 +54,7 @@
                 </ui:NavigationView.MenuItemTemplate>
 
                 <!-- Content -->
-                <Border Margin="20" Child="{Binding SelectedPage.Control}" />
+                <Border x:Name="ContentControl" Margin="20" /> <!-- Child bound from code-behind (otherwise it doesn't work) -->
             </ui:NavigationView>
         </Panel>
     </DockPanel>

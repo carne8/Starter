@@ -199,12 +199,11 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
         // Sync config changes with the settings search engine (and the settings page)
         // Save config to a file when it changes
-        // TODO
-        // settingsSearchEngine.Configuration.Subscribe(fun newConfig ->
-        //     config.OnNext newConfig
-        //     newConfig |> Config.saveConfig Constants.ConfigFile |> ignore
-        // )
-        // |> ignore
+        settingsSearchEngine.Configuration.Subscribe(fun newConfig ->
+            config.OnNext newConfig
+            newConfig |> Configuration.save Constants.ConfigFile |> ignore
+        )
+        |> ignore
 
         // Load static results
         for se in staticSearchEngines do
