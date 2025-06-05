@@ -26,6 +26,7 @@ type App() =
 
         match this.ApplicationLifetime with
         | :? IClassicDesktopStyleApplicationLifetime ->
+            Configuration.ensurePluginsSymlinkExists()
 
             // Load config
             let config =

@@ -1,5 +1,6 @@
 namespace Starter.Features.Config
 
+open Starter.Features
 open System.IO
 open FsToolkit.ErrorHandling
 open Thoth.Json.Net
@@ -87,3 +88,17 @@ type Configuration =
 
             do! File.WriteAllTextAsync(filePath, json)
         }
+
+    static member ensurePluginsSymlinkExists () =
+        // Ensure plugins directory exists
+        if Constants.PluginsDirectory |> Directory.Exists |> not then
+            Constants.PluginsDirectory
+            |> Directory.CreateDirectory
+            |> ignore
+
+        // Ensure symlink exists
+        if Constants.PluginsSymlinkPath |> Directory.Exists |> not then
+            Directory.CreateSymbolicLink(
+                Constants.PluginsSymlinkPath,
+                Constants.PluginsDirectory
+            ) |> ignore
