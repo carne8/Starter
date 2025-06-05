@@ -29,6 +29,12 @@ type ScoreDb = IDictionary<string, ScoreDbEntry>
 module ScoreDb =
     let writeToFile filePath (scores: ScoreDb) =
         task {
+            // Create directory if it doesn't exist
+            if filePath |> File.Exists |> not then
+                match filePath |> Path.GetDirectoryName with
+                | null -> failwith "Invalid file path"
+                | fileDir -> fileDir |> Directory.CreateDirectory |> ignore
+
             use file = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Write)
             do! MemoryPackSerializer.SerializeAsync<ScoreDb>(file, scores)
         }

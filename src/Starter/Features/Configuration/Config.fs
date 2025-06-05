@@ -68,7 +68,7 @@ type Configuration =
                 | json -> return! Decode.fromString Configuration.decoder json
         }
 
-    static member save filePath (config: Configuration) =
+    static member save (filePath: string) (config: Configuration) =
         taskResult {
             // Encode config
             let json =
@@ -76,9 +76,14 @@ type Configuration =
                 |> Configuration.encoder
                 |> Encode.toString 2
 
+            // Create directory if it doesn't exist
+            match filePath |> Path.GetDirectoryName with
+            | null -> failwith "Invalid file path"
+            | fileDir -> fileDir |> Directory.CreateDirectory |> ignore
+
             // Save config
             if not <| File.Exists filePath then
-                File.Create filePath |> ignore
+                filePath |> File.Create |> ignore
 
             do! File.WriteAllTextAsync(filePath, json)
         }

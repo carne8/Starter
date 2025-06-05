@@ -4,18 +4,13 @@ module Starter.Features.Constants
 open System
 open System.IO
 
-let ProcessPath =
-    match Environment.ProcessPath with
-    | null -> failwith "Process path undefined"
-    | path -> path
+let ConfigDirectory =
+    Environment.SpecialFolder.ApplicationData
+    |> Environment.GetFolderPath
+    |> fun appDataDir -> Path.Combine(appDataDir, "Starter")
 
-let ProcessDirectory =
-    match ProcessPath |> Path.GetDirectoryName with
-    | null -> failwith "Process directory path undefined"
-    | path -> path
-
-let ConfigFile = Path.Combine(ProcessDirectory, "starter-config.json")
-let ResultScoresFile = Path.Combine(ProcessDirectory, "result-scores.db")
+let ConfigFile = Path.Combine(ConfigDirectory, "starter-config.json")
+let ResultScoresFile = Path.Combine(ConfigDirectory, "result-scores.db")
 let [<Literal>] ScoresMaxAging = 10_000
 
 module Platform =

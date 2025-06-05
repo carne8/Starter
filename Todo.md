@@ -1,8 +1,13 @@
 # Starter todo
-- [ ] Settings page for plugins
+- [ ] Plugins folder
+- [ ] Finish web search plugin
 - [ ] Ordering of results
-- [ ] Settings page corner radius
-- [ ] Show if launch at startup is enabled
+- [ ] Installer
+- [ ] Remove apps logs
+- [x] Config centralization
+- [x] Settings page for plugins
+- [x] Settings page corner radius (abandoned)
+- [x] Show if launch at startup is enabled
 
 ## Plugins
 - [ ] VSCode workspaces plugins

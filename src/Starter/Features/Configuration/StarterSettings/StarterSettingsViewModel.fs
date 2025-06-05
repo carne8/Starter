@@ -69,7 +69,7 @@ type ViewModel(baseConfig: Configuration, searchEngines: IDictionary<string, ISe
         override _.Dispose() = config.Dispose()
 
     member _.Configuration =
-        config.AsObservable().Debounce(TimeSpan.FromMilliseconds 100)
+        config.Skip(1).Debounce(TimeSpan.FromMilliseconds 100)
 
     // --- Settings bindings ---
 
