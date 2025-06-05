@@ -42,7 +42,7 @@ type UrlSearchEngine(pluginPath) =
         regex.Matches "" |> ignore
 
     override this.Id = nameof UrlSearchEngine
-    override this.Name = "Link search engine"
+    override this.Name = "Link opener"
     override this.ShortName = "Link"
     override this.Icon = StarterIconSource(Symbol.Globe)
     override this.ImportantResults = false
@@ -75,3 +75,5 @@ type UrlSearchEngine(pluginPath) =
             |> Process.Start
             |> ignore
         | _ -> ()
+
+    override this.LoadSettingsControl() = null

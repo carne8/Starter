@@ -2,32 +2,35 @@ namespace Starter.Features.PlatformInterop
 
 open System
 open System.IO
-open System.Runtime.InteropServices.ComTypes
-open Vanara.PInvoke
+open Vanara.Windows.Shell
+
+module Constants = Starter.Features.Constants.Platform.Windows
 
 type Windows() =
     inherit PlatformInterop()
 
-    static let StartupLink = "Starter.lnk"
+    static let startupFolder = Environment.SpecialFolder.Startup |> Environment.GetFolderPath
+    static let startupFile = Path.Combine(startupFolder, Constants.StartupFile)
+    static let processFile =
+        match Environment.ProcessPath with
+        | null -> failwith "No process path available"
+        | path -> path
 
     override _.ToggleLaunchAtStartup(enable) =
-        let startupFolder =
-            Environment.SpecialFolder.Startup
-            |> Environment.GetFolderPath
-
-        let startupFile = Path.Combine(startupFolder, StartupLink)
-
         match enable with
         | false ->
             if File.Exists startupFile then File.Delete startupFile
         | true ->
-            let processFile = Environment.ProcessPath
-
             if not <| File.Exists startupFile then
-                let shortcut = Shell32.CShellLinkW() |> unbox<Shell32.IShellLinkW>
-                shortcut.SetPath processFile
-                shortcut.SetDescription "Starter"
-                shortcut.SetWorkingDirectory (Path.GetDirectoryName processFile)
-                shortcut.SetIconLocation(processFile, 0)
+                use shortcut = new ShellLink(
+                    Constants.StartupFile,
+                    null,
+                    startupFolder,
+                    TargetPath = processFile,
+                    Description = "Starter",
+                    IconLocation = IconLocation(processFile, 0)
+                )
 
-                (shortcut :?> IPersistFile).Save(startupFile, true)
+                shortcut.SaveAs startupFile
+
+    override _.IsLaunchAtStartupEnabled() = File.Exists startupFile

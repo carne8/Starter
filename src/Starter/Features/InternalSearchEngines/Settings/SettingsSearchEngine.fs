@@ -1,9 +1,7 @@
 module Starter.Features.InternalSearchEngines
 
-open Starter
 open Starter.SearchEngine
-open Starter.ViewModels
-
+open Avalonia.Threading
 open FluentAvalonia.UI.Controls
 open FsToolkit.ErrorHandling
 
@@ -17,36 +15,36 @@ type SettingsSearchResult =
         member this.Description = "Starter settings"
         member this.Icon = StarterIconSource(Symbol.Settings)
 
-type SettingsSearchEngine(config, searchEngines) =
+type SettingsSearchEngine(searchEngines) =
     inherit StaticSearchEngine("")
 
+    let vm = new Config.UI.SettingsWindow.WindowViewModel(searchEngines)
+    let mutable window = Config.UI.SettingsWindow.WindowControl(DataContext = vm)
+
     static let id = nameof SettingsSearchEngine
-    static let matchingString = "Options"
+    static let results: ISearchResult array =
+        [| { Id = "starter-options"
+             Name = "Options" }
+           { Id = "starter-settings"
+             Name = "Settings" } |]
 
-    let settingsViewModel = new SettingsViewModel(config, searchEngines)
-    let mutable window : Views.Settings option = None
-    // Create the window only when opening is requested
-    // This allows the view model to load the search engines correctly
-    // (else, the settings search engine (the current one) doesn't appear in the settings)
+    static member StaticId = id
 
-    member _.Configuration = settingsViewModel.Configuration
+    member this.Configuration = vm.Configuration
 
     override this.Name = "Options"
     override this.ShortName = "Options"
     override this.Id = id
     override this.Icon = StarterIconSource(Symbol.Settings)
-    override this.LoadResults() =
-        { Id = "starter-options"; Name = matchingString }
-        :> ISearchResult
-        |> Array.singleton
-        |> Task.singleton
-
+    override this.LoadResults() = results |> Task.singleton
     override this.SearchResultSelected _ =
-        Avalonia.Threading.Dispatcher.UIThread.Post(fun _ ->
+        Dispatcher.UIThread.Post(fun () ->
             try
-                window.Value.Show()
+                window.Show()
+                window.Activate()
             with _ ->
-                // Create new window
-                window <- Some <| Views.Settings(DataContext = settingsViewModel)
-                window.Value.Show()
+                window <- Config.UI.SettingsWindow.WindowControl(DataContext = vm)
+                window.Show()
         )
+
+    override this.LoadSettingsControl() = null

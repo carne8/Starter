@@ -1,6 +1,6 @@
-﻿using System;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
+using Avalonia.Controls;
 using Avalonia.Media;
 using FluentAvalonia.UI.Controls;
 using R3;
@@ -34,6 +34,7 @@ public interface ISearchEngine
     string ShortName { get; }
     StarterIconSource Icon { get; }
     void SearchResultSelected(ISearchResult selectedSearchResult);
+    Control? LoadSettingsControl();
 }
 
 /// <summary>
@@ -49,6 +50,7 @@ public abstract class StaticSearchEngine(string pluginPath) : ISearchEngine
     public abstract StarterIconSource Icon { get; }
     public abstract Task<ISearchResult[]> LoadResults();
     public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
+    public abstract Control? LoadSettingsControl();
 }
 
 /// <summary>
@@ -71,12 +73,25 @@ public abstract class DynamicSearchEngine(string pluginPath) : ISearchEngine
     public abstract bool ImportantResults { get; }
     public abstract (ISearchResult[], Observable<ISearchResult[]>) Search(string query, CancellationToken cancellationToken);
     public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
+    public abstract Control? LoadSettingsControl();
 }
 
 public static class Constants
 {
     public static readonly string[] SharedAssemblies = [
         "Avalonia.Base",
+        "Avalonia.Controls",
+        "Avalonia.DesignerSupport",
+        "Avalonia.Dialogs",
+        "Avalonia",
+        "Avalonia.Markup",
+        "Avalonia.Markup.Xaml",
+        "Avalonia.Metal",
+        "Avalonia.MicroCom",
+        "Avalonia.OpenGL",
+        "Avalonia.Remote.Protocol",
+        "Avalonia.Skia",
+        "Avalonia.Vulkan",
         "FluentAvalonia",
         "Svg.Controls.Skia.Avalonia",
         "Svg.Custom",
