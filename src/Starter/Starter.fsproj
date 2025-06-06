@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
+        <OutputType Condition="'$(Configuration)' == 'Debug'">Exe</OutputType>
+        <OutputType Condition="'$(Configuration)' != 'Debug'">WinExe</OutputType>
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
@@ -19,7 +20,7 @@
     <!-- Features -->
     <ItemGroup>
         <Compile Include="Features\Constants.fs" />
-        
+
         <!-- Platform interop -->
         <Compile Include="Features\Helpers.fs" />
         <Compile Include="Features\PlatformInterop\PlatformInterop.fs" />
