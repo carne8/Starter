@@ -1,0 +1,36 @@
+name: Build Installer
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Build the installer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Install the .NET Core workload
+      - name: Install .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Build Starter
+        run: dotnet publish -c Release --self-contained -o ./build
+        working-directory: src/Starter
+
+      - name: Compile installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: src/Starter.Installer/starter-setup.iss
+          options: /O+
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows installer
+          path: src/Starter.Installer/Starter-setup.exe
