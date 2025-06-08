@@ -8,8 +8,11 @@ on:
 
 jobs:
   build:
-    name: Build the installer
+    name: Build the Windows installer
     runs-on: windows-latest
+    strategy:
+      matrix:
+        rid: [win-x64, win-x86, win-arm64]
     steps:
       - uses: actions/checkout@v4
 
@@ -20,14 +23,14 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Build Starter
-        run: dotnet publish -c Release --self-contained -o ./build
+        run: dotnet publish --configuration Release --self-contained --runtime ${{ matrix.rid }} -o ./build/${{ matrix.rid }}
         working-directory: src/Starter
 
       - name: Compile installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
         with:
           path: src/Starter.Installer/starter-setup.iss
-          options: /O+
+          options: /O+ /F"Starter-setup-${{ matrix.rid }}"
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
