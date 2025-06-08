@@ -4,7 +4,7 @@ on:
   push:
     branches: [ "main", "Add-windows-installer" ]
     tags:
-      - "v*.*.*"
+      - "*.*.*"
   pull_request:
     branches: [ "main" ]
 
@@ -50,14 +50,11 @@ jobs:
           name: Starter-build-${{ matrix.rid }}
           path: src/Starter/build
 
-      - name: Strip 'v' from tag
-        run: $VERSION="${{ github.ref_name }}" -replace 'v', ''
-
       - name: Compile installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
         with:
           path: src/Starter.Installer/starter-setup.iss
-          options: /O+ /F"Starter-setup-${{ matrix.rid }}" /DAppVersion=$VERSION
+          options: /O+ /F"Starter-setup-${{ matrix.rid }}" /DAppVersion=${{ github.ref_name }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4

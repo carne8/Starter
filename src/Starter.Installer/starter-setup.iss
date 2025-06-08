@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define AppName "Starter"
-#define AppVersion "1.0.0"
+;#define AppVersion "1.0.0"
 #define AppPublisher "Gaël Bouquain"
 #define AppUrl "https://github.com/carne8/Starter"
 #define AppExeName "Starter.exe"
