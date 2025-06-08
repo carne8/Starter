@@ -23,7 +23,7 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Build Starter
-        run: dotnet publish --configuration Release --self-contained --runtime ${{ matrix.rid }} -o ./build/${{ matrix.rid }}
+        run: dotnet publish --configuration Release --self-contained --runtime ${{ matrix.rid }} -o ./build
         working-directory: src/Starter
 
       - name: Compile installer
@@ -36,4 +36,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Windows installer
-          path: src/Starter.Installer/Starter-setup.exe
+          path: src/Starter.Installer/Starter-setup-${{ matrix.rid }}.exe
