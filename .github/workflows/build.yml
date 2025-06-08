@@ -7,16 +7,15 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-    name: Build the Windows installer
-    runs-on: windows-latest
+  build-starter:
+    name: Build Starter
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         rid: [win-x64, win-x86, win-arm64]
     steps:
       - uses: actions/checkout@v4
 
-      # Install the .NET Core workload
       - name: Install .NET Core
         uses: actions/setup-dotnet@v4
         with:
@@ -26,14 +25,36 @@ jobs:
         run: dotnet publish --configuration Release --self-contained --runtime ${{ matrix.rid }} -o ./build
         working-directory: src/Starter
 
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Starter build ${{ matrix.rid }}
+          path: src/Starter/build
+
+  build-windows-installer:
+    name: Build the Windows installer
+    runs-on: windows-latest
+    needs: build-starter
+    strategy:
+      matrix:
+        rid: [win-x64, win-x86, win-arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Starter build
+        uses: actions/download-artifact@v4
+        with:
+          name: Starter build ${{ matrix.rid }}
+          path: src/Starter/build
+
       - name: Compile installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
         with:
           path: src/Starter.Installer/starter-setup.iss
           options: /O+ /F"Starter-setup-${{ matrix.rid }}"
 
-      - name: Upload build artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Windows installer
+          name: Starter Windows installer ${{ matrix.rid }}
           path: src/Starter.Installer/Starter-setup-${{ matrix.rid }}.exe
