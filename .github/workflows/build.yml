@@ -36,6 +36,7 @@ jobs:
   build-windows-installer:
     name: Build the Windows installer
     needs: build-starter
+    if: github.ref_type == 'tag'
     runs-on: windows-latest
     strategy:
       matrix:
@@ -49,11 +50,14 @@ jobs:
           name: Starter-build-${{ matrix.rid }}
           path: src/Starter/build
 
+      - name: Strip 'v' from tag
+        run: $VERSION="${{ github.ref_name }}" -replace 'v', ''
+
       - name: Compile installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
         with:
           path: src/Starter.Installer/starter-setup.iss
-          options: /O+ /F"Starter-setup-${{ matrix.rid }}"
+          options: /O+ /F"Starter-setup-${{ matrix.rid }}" /DAppVersion=$VERSION
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -87,9 +91,12 @@ jobs:
       - run: zip -r starter-portable-linux-arm64.zip ./*
         working-directory: artifacts/Starter-build-linux-arm64
 
-      - run: zip -r starter-installer-win-x64.zip artifacts/Starter-windows-installer-win-x64/*
-      - run: zip -r starter-installer-win-x86.zip artifacts/Starter-windows-installer-win-x86/*
-      - run: zip -r starter-installer-win-arm64.zip artifacts/Starter-windows-installer-win-arm64/*
+      - run: zip -r starter-installer-win-x64.zip ./*
+        working-directory: artifacts/Starter-windows-installer-win-x64
+      - run: zip -r starter-installer-win-x86.zip ./*
+        working-directory: artifacts/Starter-windows-installer-win-x86
+      - run: zip -r starter-installer-win-arm64.zip ./*
+        working-directory: artifacts/Starter-windows-installer-win-arm64
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -99,4 +106,4 @@ jobs:
           draft: true
           files: |
             artifacts/Starter-build-*/starter-portable-*.zip
-            starter-installer-*.zip
+            artifacts/Starter-windows-installer-*/starter-installer-*.zip
