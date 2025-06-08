@@ -2,7 +2,7 @@ name: Build Installer
 
 on:
   push:
-    branches: [ "main", "Add-windows-installer" ]
+    branches: [ "main" ]
     tags:
       - "*.*.*"
   pull_request:
@@ -24,14 +24,26 @@ jobs:
           dotnet-version: 9.0.x
 
       - name: Build Starter
-        run: dotnet publish --configuration Release --self-contained --runtime ${{ matrix.rid }} -o ./build
+        run: dotnet publish --configuration Release --self-contained --runtime ${{ matrix.rid }} -o ../../build
         working-directory: src/Starter
+
+      - name: Build Apps plugin
+        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/ApplicationSearchEngine
+        working-directory: src/Starter.ApplicationSearchEngine
+
+      - name: Build Url plugin
+        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/UrlSearchEngine
+        working-directory: src/Starter.UrlSearchEngine
+
+      - name: Build Web plugin
+        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/WebSearchEngine
+        working-directory: src/Starter.WebSearchEngine
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Starter-build-${{ matrix.rid }}
-          path: src/Starter/build
+          path: build
 
   build-windows-installer:
     name: Build the Windows installer
