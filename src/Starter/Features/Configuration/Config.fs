@@ -96,6 +96,12 @@ type Configuration =
             |> Directory.CreateDirectory
             |> ignore
 
+        // Ensure starter config directory exists
+        if Constants.ConfigDirectory |> Directory.Exists |> not then
+            Constants.ConfigDirectory
+            |> Directory.CreateDirectory
+            |> ignore
+
         // Ensure symlink exists
         if Constants.PluginsSymlinkPath |> Directory.Exists |> not then
             Directory.CreateSymbolicLink(

@@ -1,0 +1,118 @@
+name: Build Installer
+
+on:
+  push:
+    branches: [ "main" ]
+    tags:
+      - "*.*.*"
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-starter:
+    name: Build Starter
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        rid: [win-x64, win-x86, win-arm64, linux-x64, linux-arm, linux-arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Build Starter
+        run: dotnet publish --configuration Release --self-contained --runtime ${{ matrix.rid }} -o ../../build
+        working-directory: src/Starter
+
+      - name: Build Apps plugin
+        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/ApplicationSearchEngine
+        working-directory: src/Starter.ApplicationSearchEngine
+
+      - name: Build Url plugin
+        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/UrlSearchEngine
+        working-directory: src/Starter.UrlSearchEngine
+
+      - name: Build Web plugin
+        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/WebSearchEngine
+        working-directory: src/Starter.WebSearchEngine
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Starter-build-${{ matrix.rid }}
+          path: build
+
+  build-windows-installer:
+    name: Build the Windows installer
+    needs: build-starter
+    if: github.ref_type == 'tag'
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        rid: [win-x64, win-x86, win-arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Starter build
+        uses: actions/download-artifact@v4
+        with:
+          name: Starter-build-${{ matrix.rid }}
+          path: src/Starter/build
+
+      - name: Compile installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: src/Starter.Installer/starter-setup.iss
+          options: /O+ /F"Starter-setup-${{ matrix.rid }}" /DAppVersion=${{ github.ref_name }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Starter-windows-installer-${{ matrix.rid }}
+          path: src/Starter.Installer/Starter-setup-${{ matrix.rid }}.exe
+
+  create-release:
+    name: Create release
+    needs: [build-starter, build-windows-installer]
+    if: github.ref_type == 'tag'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - run: zip -r starter-portable-win-x64.zip ./*
+        working-directory: artifacts/Starter-build-win-x64
+      - run: zip -r starter-portable-win-x86.zip ./*
+        working-directory: artifacts/Starter-build-win-x86
+      - run: zip -r starter-portable-win-arm64.zip ./*
+        working-directory: artifacts/Starter-build-win-arm64
+      - run: zip -r starter-portable-linux-x64.zip ./*
+        working-directory: artifacts/Starter-build-linux-x64
+      - run: zip -r starter-portable-linux-arm.zip ./*
+        working-directory: artifacts/Starter-build-linux-arm
+      - run: zip -r starter-portable-linux-arm64.zip ./*
+        working-directory: artifacts/Starter-build-linux-arm64
+
+      - run: zip -r starter-installer-win-x64.zip ./*
+        working-directory: artifacts/Starter-windows-installer-win-x64
+      - run: zip -r starter-installer-win-x86.zip ./*
+        working-directory: artifacts/Starter-windows-installer-win-x86
+      - run: zip -r starter-installer-win-arm64.zip ./*
+        working-directory: artifacts/Starter-windows-installer-win-arm64
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Release ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          draft: true
+          files: |
+            artifacts/Starter-build-*/starter-portable-*.zip
+            artifacts/Starter-windows-installer-*/starter-installer-*.zip

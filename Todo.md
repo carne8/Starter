@@ -1,9 +1,9 @@
 # Starter todo
-- [ ] Plugins folder
 - [ ] Finish web search plugin
 - [ ] Ordering of results
-- [ ] Installer
 - [ ] Remove apps logs
+- [x] Installer
+- [x] Plugins folder
 - [x] Config centralization
 - [x] Settings page for plugins
 - [x] Settings page corner radius (abandoned)
