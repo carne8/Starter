@@ -42,7 +42,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Starter-build-${{ matrix.rid }}
+          name: starter-build-${{ matrix.rid }}
           path: build
 
   build-windows-installer:
@@ -59,20 +59,20 @@ jobs:
       - name: Download Starter build
         uses: actions/download-artifact@v4
         with:
-          name: Starter-build-${{ matrix.rid }}
+          name: starter-build-${{ matrix.rid }}
           path: src/Starter/build
 
       - name: Compile installer
         uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
         with:
           path: src/Starter.Installer/starter-setup.iss
-          options: /O+ /F"Starter-setup-${{ matrix.rid }}" /DAppVersion=${{ github.ref_name }}
+          options: /O+ /F"starter-installer-${{ matrix.rid }}" /DAppVersion=${{ github.ref_name }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Starter-windows-installer-${{ matrix.rid }}
-          path: src/Starter.Installer/Starter-setup-${{ matrix.rid }}.exe
+          name: starter-installer-${{ matrix.rid }}
+          path: src/Starter.Installer/starter-installer-${{ matrix.rid }}.exe
 
   create-release:
     name: Create release
@@ -88,24 +88,17 @@ jobs:
           path: artifacts
 
       - run: zip -r starter-portable-win-x64.zip ./*
-        working-directory: artifacts/Starter-build-win-x64
+        working-directory: artifacts/starter-build-win-x64
       - run: zip -r starter-portable-win-x86.zip ./*
-        working-directory: artifacts/Starter-build-win-x86
+        working-directory: artifacts/starter-build-win-x86
       - run: zip -r starter-portable-win-arm64.zip ./*
-        working-directory: artifacts/Starter-build-win-arm64
+        working-directory: artifacts/starter-build-win-arm64
       - run: zip -r starter-portable-linux-x64.zip ./*
-        working-directory: artifacts/Starter-build-linux-x64
+        working-directory: artifacts/starter-build-linux-x64
       - run: zip -r starter-portable-linux-arm.zip ./*
-        working-directory: artifacts/Starter-build-linux-arm
+        working-directory: artifacts/starter-build-linux-arm
       - run: zip -r starter-portable-linux-arm64.zip ./*
-        working-directory: artifacts/Starter-build-linux-arm64
-
-      - run: zip -r starter-installer-win-x64.zip ./*
-        working-directory: artifacts/Starter-windows-installer-win-x64
-      - run: zip -r starter-installer-win-x86.zip ./*
-        working-directory: artifacts/Starter-windows-installer-win-x86
-      - run: zip -r starter-installer-win-arm64.zip ./*
-        working-directory: artifacts/Starter-windows-installer-win-arm64
+        working-directory: artifacts/starter-build-linux-arm64
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -114,5 +107,5 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           draft: true
           files: |
-            artifacts/Starter-build-*/starter-portable-*.zip
-            artifacts/Starter-windows-installer-*/starter-installer-*.zip
+            artifacts/starter-build-*/starter-portable-*.zip
+            artifacts/starter-installer-*/starter-installer-*.exe
