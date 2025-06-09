@@ -237,7 +237,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
         | None -> ()
         | Some _ -> singleSearchEngineMode.OnNext None
 
-    member _.ValidateCommand(searchResult: SearchResultViewModel | null) =
+    member _.ValidateResult(searchResult: SearchResultViewModel | null) =
         match searchResult with
         | null -> ()
         | searchResult -> searchResult |> validateResult |> ignore

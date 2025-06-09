@@ -1,5 +1,6 @@
 namespace Starter.Views
 
+open System
 open Starter
 open Starter.Controls
 open Starter.Features
@@ -120,6 +121,17 @@ type MainWindow() as this =
                     this.TextBox.CaretIndex <- this.TextBox.CaretIndex - prefixLength
                 )
             |> ignore
+
+            // Subscribe to pointer pressed events
+            this.ResultList.AddHandler(
+                InputElement.PointerPressedEvent,
+                EventHandler<PointerPressedEventArgs>(fun _ e ->
+                    match this.ResultList.SelectedItem with
+                    | :? ViewModels.SearchResultViewModel as searchResult -> this.ViewModel.ValidateResult searchResult
+                    | _ -> ()
+                ),
+                RoutingStrategies.Tunnel
+            )
         )
 
         this.Activated.Add (fun _ ->
