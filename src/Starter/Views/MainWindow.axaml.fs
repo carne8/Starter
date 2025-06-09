@@ -138,40 +138,45 @@ type MainWindow() as this =
         // -> The goal is to be able to navigate in the listbox without losing the focus on the textbox
         let r = this.ResultList
         let d = System.EventHandler<KeyEventArgs>(fun _ e ->
-            match e.PhysicalKey with
-            | PhysicalKey.Backspace ->
-                if this.ViewModel.SingleSearchEngineMode.Value.IsSome && this.TextBox.CaretIndex = 0 then
-                    this.ViewModel.ResetSingleSearchEngineMode()
-                    e.Handled <- true
+            let newSelectedIdx =
+                match e.PhysicalKey with
+                | PhysicalKey.Backspace ->
+                    if this.ViewModel.SingleSearchEngineMode.Value.IsSome && this.TextBox.CaretIndex = 0 then
+                        this.ViewModel.ResetSingleSearchEngineMode()
+                        e.Handled <- true
 
-            | PhysicalKey.Tab -> // Prevent changing focus
+                    None
+
+                | PhysicalKey.Tab when this.ViewModel.SearchResults.Count <> 0 ->
+                    match e.KeyModifiers &&& KeyModifiers.Shift = KeyModifiers.Shift with
+                    | true -> (r.SelectedIndex - 1) |> max 0 |> Some
+                    | _ -> (r.SelectedIndex + 1) |> min (r.ItemCount - 1) |> Some
+
+                | _ when this.ViewModel.SearchResults.Count <> 0 ->
+                        match e.Key.ToNavigationDirection() |> Option.ofNullable with
+                        | Some NavigationDirection.Up ->
+                            (r.SelectedIndex - 1)
+                            |> max 0
+                            |> Some
+                        | Some NavigationDirection.Down ->
+                            (r.SelectedIndex + 1)
+                            |> min (r.ItemCount - 1)
+                            |> Some
+                        | _ -> None
+
+                | _ -> None
+
+            match newSelectedIdx with
+            | None -> ()
+            | Some newSelectedIdx ->
+                // Scroll to top or bottom to preserve the paddings
+                let scrollViewer = this.ResultListScrollViewer()
+                if newSelectedIdx = 0 then
+                    scrollViewer.ScrollToHome()
+                elif newSelectedIdx = r.ItemCount - 1 then
+                    scrollViewer.ScrollToEnd()
+
+                r.Selection.SelectedIndex <- newSelectedIdx
                 e.Handled <- true
-
-            | _ when this.ViewModel.SearchResults.Count <> 0 ->
-                let newSelectedIdx =
-                    match e.Key.ToNavigationDirection() |> Option.ofNullable with
-                    | Some NavigationDirection.Up ->
-                        (r.SelectedIndex - 1)
-                        |> max 0
-                        |> Some
-                    | Some NavigationDirection.Down ->
-                        (r.SelectedIndex + 1)
-                        |> min (r.ItemCount - 1)
-                        |> Some
-                    | _ -> None
-
-                match newSelectedIdx with
-                | None -> ()
-                | Some newSelectedIdx ->
-                    // Scroll to top or bottom to preserve the paddings
-                    let scrollViewer = this.ResultListScrollViewer()
-                    if newSelectedIdx = 0 then
-                        scrollViewer.ScrollToHome()
-                    elif newSelectedIdx = r.ItemCount - 1 then
-                        scrollViewer.ScrollToEnd()
-
-                    r.Selection.SelectedIndex <- newSelectedIdx
-                    e.Handled <- true
-            | _ -> ()
         )
         this.TextBox.AddHandler(InputElement.KeyDownEvent, d, RoutingStrategies.Tunnel)
