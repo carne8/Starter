@@ -1,20 +1,19 @@
 # Starter todo
-- [x] Center window
-- [x] Change window width
-- [ ] Fix text box scrolling
-- [ ] Tab navigation
 - [ ] Change UI scaling
+- [ ] Improve start time
 
 - [ ] Add app logs
 - [ ] Add mouse click
-- [ ] Prevent starting 2 instances
 
 - [ ] Finish web search plugin
 - [ ] Ordering of results
 - [ ] Remove apps logs
 
-- [ ] Improve start time
-
+- [x] Center window
+- [x] Change window width
+- [x] Fix text box scrolling
+- [x] Tab navigation
+- [x] Prevent starting 2 instances
 - [x] Installer
 - [x] Plugins folder
 - [x] Config centralization
