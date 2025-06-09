@@ -1,5 +1,4 @@
 # Starter todo
-- [ ] Change UI scaling
 - [ ] Improve start time
 
 - [ ] Add app logs
@@ -9,6 +8,7 @@
 - [ ] Ordering of results
 - [ ] Remove apps logs
 
+- [x] Change UI scaling
 - [x] Center window
 - [x] Change window width
 - [x] Fix text box scrolling

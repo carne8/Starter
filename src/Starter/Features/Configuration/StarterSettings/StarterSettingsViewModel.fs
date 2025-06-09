@@ -101,3 +101,8 @@ type ViewModel(baseConfig: Configuration, searchEngines: IDictionary<string, ISe
 
     // Search engine prefixes
     member this.SearchEnginePrefixes = sePrefixVms
+
+    // Zoom mode activated
+    member this.ZoomedModeActivated
+        with get () = config.Value.ZoomedMode
+        and set v = config.OnNext <| { config.Value with ZoomedMode = v }

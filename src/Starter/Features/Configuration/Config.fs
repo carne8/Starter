@@ -28,11 +28,13 @@ type Background =
 
 type Configuration =
     { Background: Background
-      SearchEnginePrefixes: Map<string, string> }
+      SearchEnginePrefixes: Map<string, string>
+      ZoomedMode: bool }
 
     static member Default =
         { Background = Background.Mica
-          SearchEnginePrefixes = Map.empty }
+          SearchEnginePrefixes = Map.empty
+          ZoomedMode = false }
 
     static member encoder config =
         Encode.object [
@@ -43,6 +45,8 @@ type Configuration =
             config.SearchEnginePrefixes
             |> Map.map (fun _ v -> v |> Encode.string)
             |> Encode.dict
+
+            "zoomedMode", config.ZoomedMode |> Encode.bool
         ]
 
     static member decoder: Decoder<Configuration> =
@@ -53,7 +57,10 @@ type Configuration =
               SearchEnginePrefixes =
                 Decode.dict Decode.string
                 |> get.Optional.Field "searchEnginePrefixes"
-                |> Option.defaultValue Map.empty }
+                |> Option.defaultValue Map.empty
+              ZoomedMode =
+                get.Optional.Field "zoomedMode" Decode.bool
+                |> Option.defaultValue false }
         )
 
     // Read the config from the config file or return the default config

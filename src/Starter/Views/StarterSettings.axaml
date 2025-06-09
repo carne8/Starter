@@ -59,5 +59,15 @@
                 </DataTemplate>
             </ui:SettingsExpander.ItemTemplate>
         </ui:SettingsExpander>
+
+        <!-- Zoomed mode -->
+        <ui:SettingsExpander Header="Zoomed mode">
+            <ui:SettingsExpander.IconSource>
+                <ic:SymbolIconSource Symbol="ZoomIn" />
+            </ui:SettingsExpander.IconSource>
+            <ui:SettingsExpander.Footer>
+                <ToggleSwitch IsChecked="{Binding ZoomedModeActivated}" />
+            </ui:SettingsExpander.Footer>
+        </ui:SettingsExpander>
     </StackPanel>
 </UserControl>

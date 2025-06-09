@@ -19,6 +19,35 @@ open R3
 type MainWindow() as this =
     inherit Window()
 
+    static let normalResourceDictionary = ResourceDictionary()
+    static let zoomedResourceDictionary = ResourceDictionary()
+    static do
+        normalResourceDictionary.Add("CornerRadius", CornerRadius 12)
+        normalResourceDictionary.Add("TopCornerRadius", CornerRadius(12, 0))
+        normalResourceDictionary.Add("ResultsPadding", Thickness(7))
+        normalResourceDictionary.Add("SeparatorPadding", Thickness(13, 0))
+        normalResourceDictionary.Add("SearchEnginePillMargin", Thickness(-3, 0, 10, 0))
+        normalResourceDictionary.Add("TextBoxMargin", Thickness(0, 14, 13, 14))
+        normalResourceDictionary.Add("TextBoxFontSize", 18.)
+        normalResourceDictionary.Add("TextBoxLineHeight", 24.)
+        normalResourceDictionary.Add("GridMargin", Thickness(15, 0, 0, 0))
+        normalResourceDictionary.Add("SearchResultIconSize", 30.)
+        normalResourceDictionary.Add("SearchResultPadding", Thickness(10, 9))
+        normalResourceDictionary.Add("SearchResultFontSize", 13.)
+
+        zoomedResourceDictionary.Add("CornerRadius", CornerRadius 12)
+        zoomedResourceDictionary.Add("TopCornerRadius", CornerRadius(12, 0))
+        zoomedResourceDictionary.Add("ResultsPadding", Thickness(8))
+        zoomedResourceDictionary.Add("SeparatorPadding", Thickness(15, 0))
+        zoomedResourceDictionary.Add("SearchEnginePillMargin", Thickness(-3, 0, 10, 0))
+        zoomedResourceDictionary.Add("TextBoxMargin", Thickness(0, 14, 15, 15))
+        zoomedResourceDictionary.Add("TextBoxFontSize", 20.)
+        zoomedResourceDictionary.Add("TextBoxLineHeight", 27.)
+        zoomedResourceDictionary.Add("GridMargin", Thickness(18, 0, 0, 0))
+        zoomedResourceDictionary.Add("SearchResultIconSize", 35.)
+        zoomedResourceDictionary.Add("SearchResultPadding", Thickness(10, 10))
+        zoomedResourceDictionary.Add("SearchResultFontSize", 15.)
+
     let wndProcCallback =
         Win32Properties.CustomWndProcHookCallback(
             fun (_hWnd: nativeint) (msg: uint32) (_wParam: nativeint) (_lParam: nativeint) _ ->
@@ -53,13 +82,18 @@ type MainWindow() as this =
         this.Loaded.Add(fun _ ->
             this.SetupKeyboardShortcuts()
 
-            // Bind background kind
+            // Bind config changes
             this.ViewModel.Config.Subscribe(fun config ->
                 this.TransparencyLevelHint <-
                     match config.Background with
                     | Config.Background.Acrylic -> [| WindowTransparencyLevel.AcrylicBlur |].AsReadOnly()
                     | Config.Background.Mica -> [| WindowTransparencyLevel.Mica |].AsReadOnly()
                     | Config.Background.None -> [| WindowTransparencyLevel.None |].AsReadOnly()
+
+                this.Resources <-
+                    match config.ZoomedMode with
+                    | false -> normalResourceDictionary
+                    | true -> zoomedResourceDictionary
             )
             |> ignore
 
