@@ -89,6 +89,17 @@ type MainWindow() as this =
         )
 
         this.Activated.Add (fun _ ->
+            // Center window
+            match this.Screens.Primary with
+            | null -> failwith "No screen available. Can't center window"
+            | screen ->
+                this.Position <-
+                    PixelPoint(
+                        round ((float screen.WorkingArea.Width - (this.Width * screen.Scaling)) / 2.) |> int,
+                        float screen.WorkingArea.Height * (5./16.) |> int
+                    )
+
+            // Reset focus
             this.TextBox.Focus() |> ignore
             this.TextBox.SelectAll()
             this.ResultList.Selection.Select 0 // Reset selection

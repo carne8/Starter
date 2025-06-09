@@ -12,12 +12,12 @@
         Title="Starter"
         SystemDecorations="None"
         Background="Transparent"
-        Width="400"
+        Width="450"
         MinHeight="50"
         SizeToContent="Height"
         Topmost="True"
         ShowInTaskbar="False"
-        WindowStartupLocation="CenterScreen">
+        WindowStartupLocation="Manual">
 
     <Window.Resources>
         <CornerRadius x:Key="CornerRadius">12</CornerRadius>
