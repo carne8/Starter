@@ -123,20 +123,21 @@ type MainWindow() as this =
             |> ignore
 
             // Subscribe to pointer pressed events
-            let mutable mousePressedAnItem = false
-
             this.ResultList.AddHandler(
                 InputElement.PointerPressedEvent,
-                EventHandler<PointerPressedEventArgs>(fun _ e -> mousePressedAnItem <- true),
+                EventHandler<PointerPressedEventArgs>(fun s e ->
+                    e.GetPosition(this)
+                    |> this.GetVisualsAt
+                    |> Seq.tryFind (fun v -> v.DataContext :? ViewModels.SearchResultViewModel)
+                    |> Option.bind Option.ofObj
+                    |> Option.bind (_.DataContext >> Option.ofObj)
+                    |> Option.iter (fun dataContext ->
+                        dataContext
+                        :?>  ViewModels.SearchResultViewModel
+                        |> this.ViewModel.ValidateResult
+                    )
+                ),
                 RoutingStrategies.Tunnel
-            )
-            this.ResultList.SelectionChanged.Add(fun _ ->
-                if mousePressedAnItem then
-                    match this.ResultList.SelectedItem with
-                    | :? ViewModels.SearchResultViewModel as searchResult -> this.ViewModel.ValidateResult searchResult
-                    | _ -> ()
-
-                mousePressedAnItem <- false
             )
         )
 
