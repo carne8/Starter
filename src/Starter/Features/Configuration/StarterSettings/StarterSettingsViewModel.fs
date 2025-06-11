@@ -20,7 +20,7 @@ type SearchEnginePrefixViewModel(se: ISearchEngine, prefix: string, onPrefixChan
         with get () = prefix
         and set v = v |> onPrefixChanged
 
-type ViewModel(baseConfig: Configuration, searchEngines: IDictionary<string, ISearchEngine> BehaviorSubject) =
+type ViewModel(baseConfig: Configuration, searchEngines: Dictionary<string, ISearchEngine> BehaviorSubject) =
     inherit ReactiveObject() // Equivalent to ViewModelBase
 
     let config = new BehaviorSubject<Configuration>(baseConfig)

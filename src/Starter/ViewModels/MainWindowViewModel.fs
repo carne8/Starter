@@ -19,16 +19,48 @@ open Avalonia.Threading
 open ReactiveUI
 open R3
 
+type SearchEngines =
+    { Statics: List<StaticSearchEngine>
+      Dynamics: List<DynamicSearchEngine>
+      Dict: BehaviorSubject<Dictionary<string, ISearchEngine>> }
+
+    static member create () =
+        { Statics = List()
+          Dynamics = List()
+          Dict = new BehaviorSubject<_>(Dictionary()) }
+
+    static member loadFromDirectories (directories: string array) (searchEngines: SearchEngines) =
+        for dir in directories do
+            let statics, dynamics = dir |> SearchEngineLoading.loadSearchEngineFromDirectory
+            statics |> searchEngines.Statics.AddRange
+            dynamics |> searchEngines.Dynamics.AddRange
+
+            statics |> Seq.iter (fun s -> searchEngines.Dict.Value.Add(s.Id, s))
+            dynamics |> Seq.iter (fun s -> searchEngines.Dict.Value.Add(s.Id, s))
+
+        searchEngines.Dict.Value |> searchEngines.Dict.OnNext
+        searchEngines
+
+    static member addSearchEngine (se: ISearchEngine) (searchEngines: SearchEngines) =
+        match se with
+        | :? StaticSearchEngine as se -> searchEngines.Statics.Add se
+        | :? DynamicSearchEngine as se -> searchEngines.Dynamics.Add se
+        | _ -> ()
+
+        searchEngines.Dict.Value.Add(se.Id, se)
+        searchEngines.Dict.Value
+        |> searchEngines.Dict.OnNext
+
+        searchEngines
+
+
 type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.ScoreDb) =
     // ---
     let config = new BehaviorSubject<_>(baseConfig)
     let fusilSlab = Slab.createDefault()
 
     // --- Search engines store
-    let staticSearchEngines = List<StaticSearchEngine>()
-    let dynamicSearchEngines = List<DynamicSearchEngine>()
-    let mutable searchEngines = new BehaviorSubject<IDictionary<string, ISearchEngine>>(Array.empty |> dict)
-
+    let searchEngines = SearchEngines.create()
     let searchEngineFromPrefix = new BehaviorSubject<(string * ISearchEngine) array>(Array.empty) // Bound to searchEngines in `do`
 
     // --- Commands (to interact with view)
@@ -110,7 +142,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                     staticSearchResults.Subscribe(fun staticResults ->
                         searchResults.Clear()
 
-                        dynamicSearchEngines |> Seq.iter (fun se ->
+                        searchEngines.Dynamics |> Seq.iter (fun se ->
                             if se.Id |> isSearchEngineActivated then
                                 se |> subscribeToDynamicSearchEngine searchCts.Token newText
                         )
@@ -139,7 +171,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
     let validateResult (result: SearchResultViewModel) =
         task {
             // Send the result to the search engine
-            let se = searchEngines.Value.[result.SearchEngineId]
+            let se = searchEngines.Dict.Value[result.SearchEngineId]
             se.SearchResultSelected result.SearchResult
 
             // Increase score
@@ -166,22 +198,12 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
             Constants.PluginsDirectory |> Directory.GetDirectories
             #endif
 
-        pluginDirectories
-        |> Array.map SearchEngineLoading.loadSearchEngineFromDirectory
-        |> Array.unzip
-        |> fun (staticSEs, dynamicSEs) ->
-            staticSEs |> Array.concat |> staticSearchEngines.AddRange
-            dynamicSEs |> Array.concat |> dynamicSearchEngines.AddRange
+        let settingsSearchEngine = SettingsSearchEngine(config.Value, searchEngines.Dict)
 
-        let settingsSearchEngine = SettingsSearchEngine(config.Value, searchEngines)
-        settingsSearchEngine |> staticSearchEngines.Add
-
-        Seq.append
-            (staticSearchEngines |> Seq.cast<ISearchEngine>)
-            (dynamicSearchEngines |> Seq.cast<ISearchEngine>)
-        |> Seq.map (fun se -> se.Id, se)
-        |> dict
-        |> searchEngines.OnNext
+        searchEngines
+        |> SearchEngines.loadFromDirectories pluginDirectories
+        |> SearchEngines.addSearchEngine settingsSearchEngine
+        |> ignore
 
         // TODO: First use of search engines is slow, but RuntimeHelpers.PrepareMethod doesn't work (HELP wanted)
         // Precompile search engine methods
@@ -192,7 +214,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
             config.SearchEnginePrefixes
             |> Map.toSeq
             |> Seq.choose (fun (k, v) ->
-                match searchEngines.Value.TryGetValue k with
+                match searchEngines.Dict.Value.TryGetValue k with
                 | false, _ -> None
                 | true, se -> Some (v, se)
             )
@@ -210,7 +232,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
         |> ignore
 
         // Load static results
-        for se in staticSearchEngines do
+        for se in searchEngines.Statics do
             Task.Run<unit>(fun () -> task {
                 try
                     let! results = se.LoadResults() // TODO: Handle errors
