@@ -8,8 +8,8 @@
              mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
              x:Class="Starter.Features.Config.UI.StarterSettings.StarterSettings"
              x:DataType="vm:ViewModel">
-    <StackPanel Spacing="5">
-        <TextBlock Classes="title1" Margin="4, 0, 0, 24">Settings</TextBlock>
+    <StackPanel Spacing="4">
+        <TextBlock Classes="title1" Margin="0, 0, 0, 20">Settings</TextBlock>
 
         <!-- Launch at startup -->
         <ui:SettingsExpander Header="Launch at startup">
