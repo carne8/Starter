@@ -9,16 +9,16 @@
              Design.DataContext="{Binding Source={x:Static vm:SearchResultViewModel.DesignVM}}"
              x:Class="Starter.Controls.SearchResultControl"
              x:DataType="vm:SearchResultViewModel">
-    <Border HorizontalAlignment="Stretch" Padding="10, 10">
+    <Border HorizontalAlignment="Stretch" Padding="{DynamicResource SearchResultPadding}">
         <StackPanel Orientation="Horizontal" Spacing="10">
             <Border CornerRadius="4" ClipToBounds="True">
                 <ui:IconSourceElement VerticalAlignment="Center"
-                                      Height="35"
-                                      Width="35"
+                                      Height="{DynamicResource SearchResultIconSize}"
+                                      Width="{DynamicResource SearchResultIconSize}"
                                       IconSource="{Binding Icon}" />
             </Border>
             <StackPanel VerticalAlignment="Center">
-                <controls:AccentuatedTextBlock FontSize="15"
+                <controls:AccentuatedTextBlock FontSize="{DynamicResource SearchResultFontSize}"
                                                Foreground="{DynamicResource TextForeground}"
                                                Text="{Binding Name}"
                                                AccentuationMap="{Binding AccentuationMap}"

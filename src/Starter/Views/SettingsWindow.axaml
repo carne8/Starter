@@ -26,7 +26,6 @@
 
         <ui:NavigationView x:Name="NavigationView"
                            IsSettingsVisible="False"
-                           Margin="0, 20, 0, 0"
                            CompactModeThresholdWidth="0"
                            ExpandedModeThresholdWidth="900"
                            SelectedItem="{Binding SelectedPage}"> <!-- MenuItemsSource bound from code-behind -->

@@ -22,7 +22,7 @@ type MenuItemVM =
           Name = se.Name
           Control = control }
 
-type WindowViewModel(baseConfig, searchEngines: IDictionary<string, ISearchEngine> BehaviorSubject) =
+type WindowViewModel(baseConfig, searchEngines: Dictionary<string, ISearchEngine> BehaviorSubject) =
     inherit ReactiveObject()
 
     let starterSettingsVM = new UI.StarterSettings.ViewModel(baseConfig, searchEngines)

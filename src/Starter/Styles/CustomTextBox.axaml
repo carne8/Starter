@@ -37,7 +37,7 @@
                     VerticalScrollBarVisibility="{TemplateBinding (ScrollViewer.VerticalScrollBarVisibility)}"
                     IsScrollChainingEnabled="{TemplateBinding (ScrollViewer.IsScrollChainingEnabled)}"
                     AllowAutoHide="{TemplateBinding (ScrollViewer.AllowAutoHide)}"
-                    Height="27">
+                    Height="{TemplateBinding Height}">
                     <Panel>
                         <TextBlock x:Name="PART_Watermark"
                                    VerticalAlignment="Center"
@@ -47,7 +47,7 @@
                                    TextWrapping="{TemplateBinding TextWrapping}"
                                    IsVisible="{TemplateBinding Text, Converter={x:Static StringConverters.IsNullOrEmpty}}"
                                    HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                   LineHeight="27" />
+                                   LineHeight="{TemplateBinding Height}" />
                         <TextPresenter x:Name="PART_TextPresenter"
                                        VerticalAlignment="Center"
                                        Text="{TemplateBinding Text, Mode=TwoWay}"
@@ -57,7 +57,7 @@
                                        SelectionEnd="{TemplateBinding SelectionEnd}"
                                        SelectionBrush="{DynamicResource TextControlSelectionHighlightColor}"
                                        SelectionForegroundBrush="{DynamicResource TextOnAccentFillColorSelectedTextBrush}"
-                                       LineHeight="27" />
+                                       LineHeight="{TemplateBinding Height}" />
                     </Panel>
                 </ScrollViewer>
             </ControlTemplate>
