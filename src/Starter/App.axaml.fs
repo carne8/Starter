@@ -31,6 +31,7 @@ type App() =
 
             // Load config
             let config =
+                logger.Debug "Loading config"
                 match Configuration.loadFromFile Constants.ConfigFile with
                 | Error e ->
                     logger.Error $"Failed to decode configuration: {e}"

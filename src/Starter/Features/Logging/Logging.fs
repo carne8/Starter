@@ -9,9 +9,7 @@ let logs = observableSink.AsObservable()
 
 let logger =
     LoggerConfiguration()
-        #if DBUG
         .MinimumLevel.Debug()
-        #endif
         .WriteTo.Async(fun c ->
             c.File(
                 Constants.LogFilePath,
@@ -21,7 +19,7 @@ let logger =
             |> ignore
         )
         .WriteTo.Async(fun c -> c.Sink(observableSink) |> ignore)
-        #if DEBUG
+        #if DEBUG_LOGS
         .WriteTo.Console()
         #endif
         .CreateLogger()

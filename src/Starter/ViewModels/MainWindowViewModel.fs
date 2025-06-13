@@ -201,10 +201,12 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
         let settingsSearchEngine = SettingsSearchEngine(config.Value, searchEngines.Dict)
 
+        logger.Debug "Loading plugin assemblies"
         searchEngines
         |> SearchEngines.loadFromDirectories pluginDirectories
         |> SearchEngines.addSearchEngine settingsSearchEngine
         |> ignore
+        logger.Debug "Assemblies loaded"
 
         // TODO: First use of search engines is slow, but RuntimeHelpers.PrepareMethod doesn't work (HELP wanted)
         // Precompile search engine methods
