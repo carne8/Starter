@@ -3,6 +3,7 @@ namespace Starter.Features.Config
 open Starter.Features
 open System.IO
 open FsToolkit.ErrorHandling
+open Starter.Features.Logging
 open Thoth.Json.Net
 
 [<RequireQualifiedAccess>]
@@ -99,18 +100,21 @@ type Configuration =
     static member ensurePluginsSymlinkExists () =
         // Ensure plugins directory exists
         if Constants.PluginsDirectory |> Directory.Exists |> not then
+            logger.Debug "Plugins directory doesn't exist, creating it"
             Constants.PluginsDirectory
             |> Directory.CreateDirectory
             |> ignore
 
         // Ensure starter config directory exists
         if Constants.ConfigDirectory |> Directory.Exists |> not then
+            logger.Debug "Config directory doesn't exist, creating it"
             Constants.ConfigDirectory
             |> Directory.CreateDirectory
             |> ignore
 
         // Ensure symlink exists
         if Constants.PluginsSymlinkPath |> Directory.Exists |> not then
+            logger.Debug "Plugins symlink directory doesn't exist, creating it"
             Directory.CreateSymbolicLink(
                 Constants.PluginsSymlinkPath,
                 Constants.PluginsDirectory

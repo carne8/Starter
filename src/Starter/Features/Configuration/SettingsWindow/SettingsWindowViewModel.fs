@@ -1,6 +1,7 @@
 ﻿namespace Starter.Features.Config.UI.SettingsWindow
 
 open System
+open Starter.Features
 open Starter.SearchEngine
 open Starter.Features.Config
 
@@ -32,6 +33,13 @@ type WindowViewModel(baseConfig, searchEngines: Dictionary<string, ISearchEngine
           Name = "Starter settings"
           Control = UI.StarterSettings.StarterSettings(DataContext = starterSettingsVM) }
 
+    let logsVM = Logger.View.LogsViewModel()
+    let logsMenuItem =
+        { Id = "starter-logs"
+          Icon = SymbolIconSource(Symbol = Symbol.Document)
+          Name = "Logs"
+          Control = Logger.View.LogsView(DataContext = logsVM) }
+
     let mutable selectedPage = starterSettingsMenuItem
     let menuItems = new BehaviorSubject<_ array>(Array.empty)
 
@@ -50,7 +58,7 @@ type WindowViewModel(baseConfig, searchEngines: Dictionary<string, ISearchEngine
                 )
             )
             |> Seq.sortBy _.Name
-            |> Seq.append [ starterSettingsMenuItem ]
+            |> Seq.append [ starterSettingsMenuItem; logsMenuItem ]
             |> Seq.toArray
             |> menuItems.OnNext
         )

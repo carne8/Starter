@@ -4,6 +4,7 @@ open System
 open Starter
 open Starter.Controls
 open Starter.Features
+open Starter.Features.Logging
 
 open System.Collections.Generic
 open System.Windows.Input
@@ -144,7 +145,9 @@ type MainWindow() as this =
         this.Activated.Add (fun _ ->
             // Center window
             match this.Screens.Primary with
-            | null -> failwith "No screen available. Can't center window"
+            | null ->
+                logger.Error "No screen available. Can't center window"
+                failwith "No screen available. Can't center window"
             | screen ->
                 this.Position <-
                     PixelPoint(

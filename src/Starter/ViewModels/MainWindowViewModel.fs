@@ -3,6 +3,7 @@ namespace Starter.ViewModels
 open Starter.Features
 open Starter.Features.Config
 open Starter.Features.InternalSearchEngines
+open Starter.Features.Logging
 open Starter.Features.ResultScores
 open Starter.Features.CustomCollections
 open Starter.SearchEngine
@@ -247,9 +248,9 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
                         newStaticResults |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
                         staticSearchResults.OnNext newStaticResults
-                        printfn "%s results loaded" se.Name
+                        logger.Information $"{se.Name} results loaded: {results.Length} results"
                     )
-                with e -> printfn "%A" e
+                with e -> logger.Error $"{se.Name} failed to load results:\n{e.Message}"
             }) |> ignore
 
     member _.HideCommand = hideCommand
@@ -262,7 +263,10 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
     member _.ValidateResult(searchResult: SearchResultViewModel | null) =
         match searchResult with
         | null -> ()
-        | searchResult -> searchResult |> validateResult |> ignore
+        | searchResult ->
+            searchResult |> validateResult |> ignore
+            logger.Debug $"{searchResult.Name} selected"
+
         (hideCommand :> ICommand).Execute()
 
     member _.Config = config
