@@ -13,7 +13,13 @@
             </Label>
             <ComboBox x:Name="MinimumLevelComboBox"
                       SelectedItem="{Binding MinimumLevel}"
-                      ItemsSource="{Binding LogLevels}" />
+                      ItemsSource="{Binding LogLevels}">
+                <ComboBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock VerticalAlignment="Center" Text="{Binding}" />
+                    </DataTemplate>
+                </ComboBox.ItemTemplate>
+            </ComboBox>
         </StackPanel>
 
         <!-- Logs -->
@@ -22,7 +28,7 @@
                 BorderBrush="{DynamicResource ExpanderHeaderBorderBrush}"
                 BorderThickness="{DynamicResource ExpanderHeaderBorderThickness}"
                 CornerRadius="8">
-            <SelectableTextBlock Text="{Binding Text}" />
+            <SelectableTextBlock Inlines="{Binding Lines}" />
         </Border>
     </StackPanel>
 

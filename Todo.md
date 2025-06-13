@@ -1,6 +1,7 @@
 # Starter todo
-- [ ] Improve start time
 - [ ] Add app logs
+- [ ] Improve start time
+- [ ] Switch to FluentIcons instead of FluentAvalonia
 
 - [ ] Finish web search plugin
 - [ ] Ordering of results
