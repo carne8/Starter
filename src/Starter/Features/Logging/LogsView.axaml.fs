@@ -41,13 +41,13 @@ type LogsViewModel() as this =
         stringBuilder.Clear() |> ignore
         logs.Logs |> Seq.iter printLogEvent
 
-        stringBuilder.ToString() |> text.OnNext
+        stringBuilder.ToString().TrimEnd() |> text.OnNext
         this.RaisePropertyChanged(nameof this.Text)
 
     do
         logs.Subscribe(fun logEvent ->
             logEvent |> printLogEvent
-            stringBuilder.ToString() |> text.OnNext
+            stringBuilder.ToString().TrimEnd() |> text.OnNext
             this.RaisePropertyChanged(nameof this.Text)
         )
         |> ignore

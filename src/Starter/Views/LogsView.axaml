@@ -18,9 +18,9 @@
 
         <!-- Logs -->
         <Border Padding="10"
-                Background="#B3FFFFFF"
-                BorderBrush="#0F000000"
-                BorderThickness="{StaticResource BorderThickness}"
+                Background="{DynamicResource ExpanderHeaderBackground}"
+                BorderBrush="{DynamicResource ExpanderHeaderBorderBrush}"
+                BorderThickness="{DynamicResource ExpanderHeaderBorderThickness}"
                 CornerRadius="8">
             <SelectableTextBlock Text="{Binding Text}" />
         </Border>
