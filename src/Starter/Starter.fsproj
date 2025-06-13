@@ -23,7 +23,6 @@
         <Compile Include="Features\Helpers.fs" />
 
         <!-- Logging -->
-        <Compile Include="Features\Logging\ObservableSink.fs" />
         <Compile Include="Features\Logging\Logging.fs" />
         <Compile Include="Features\Logging\LogsView.axaml.fs" />
 

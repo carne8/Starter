@@ -33,12 +33,12 @@ type WindowViewModel(baseConfig, searchEngines: Dictionary<string, ISearchEngine
           Name = "Starter settings"
           Control = UI.StarterSettings.StarterSettings(DataContext = starterSettingsVM) }
 
-    let logsVM = Logger.View.LogsViewModel()
+    let logsVM = LoggingView.LogsViewModel()
     let logsMenuItem =
         { Id = "starter-logs"
           Icon = SymbolIconSource(Symbol = Symbol.Document)
           Name = "Logs"
-          Control = Logger.View.LogsView(DataContext = logsVM) }
+          Control = LoggingView.LogsView(DataContext = logsVM) }
 
     let mutable selectedPage = starterSettingsMenuItem
     let menuItems = new BehaviorSubject<_ array>(Array.empty)
@@ -73,4 +73,5 @@ type WindowViewModel(baseConfig, searchEngines: Dictionary<string, ISearchEngine
         with get () = selectedPage
         and set v = this.RaiseAndSetIfChanged(&selectedPage, v) |> ignore
 
-    member this.ResetSelectedPage() = this.SelectedPage <- this.MenuItems.Value[0]
+    member this.SelectSettingsPage() = this.SelectedPage <- starterSettingsMenuItem
+    member this.SelectLogsPage() = this.SelectedPage <- logsMenuItem
