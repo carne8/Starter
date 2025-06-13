@@ -19,7 +19,7 @@ let logger =
             |> ignore
         )
         .WriteTo.Async(fun c -> c.Sink(observableSink) |> ignore)
-        #if DEBUG_LOGS
+        #if DEBUG || DEBUG_LOGS
         .WriteTo.Console()
         #endif
         .CreateLogger()

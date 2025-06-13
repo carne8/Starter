@@ -34,8 +34,3 @@ type WindowControl() as this =
         let contentControl = this.GetControl<Border> "ContentControl"
         let sub = contentControl.Bind(Border.ChildProperty, Data.Binding("SelectedPage.Control"))
         this.Unloaded.Add(fun _ -> sub.Dispose())
-
-        // Open Starter settings by default // TODO: Run only when opened from Starter
-        this.Activated.Add(fun _ ->
-            vm.SelectedPage <- vm.MenuItems.Value[0]
-        )

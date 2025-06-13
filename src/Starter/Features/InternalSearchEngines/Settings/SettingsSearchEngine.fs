@@ -39,6 +39,7 @@ type SettingsSearchEngine(searchEngines) =
     override this.LoadResults() = results |> Task.singleton
     override this.SearchResultSelected _ =
         Dispatcher.UIThread.Post(fun () ->
+            vm.ResetSelectedPage()
             try
                 window.Show()
                 window.Activate()

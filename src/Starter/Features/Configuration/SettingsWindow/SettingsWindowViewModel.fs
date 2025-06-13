@@ -72,3 +72,5 @@ type WindowViewModel(baseConfig, searchEngines: Dictionary<string, ISearchEngine
     member this.SelectedPage
         with get () = selectedPage
         and set v = this.RaiseAndSetIfChanged(&selectedPage, v) |> ignore
+
+    member this.ResetSelectedPage() = this.SelectedPage <- this.MenuItems.Value[0]

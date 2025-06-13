@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
-        <OutputType Condition="'$(DefineConstants.Contains(DEBUG_LOGS))'">Exe</OutputType>
-        <OutputType Condition="'!$(DefineConstants.Contains(DEBUG_LOGS))'">WinExe</OutputType>
+        <OutputType Condition="'$(Configuration)' == 'Debug' Or $(DefineConstants.Contains(DEBUG_LOGS))">Exe</OutputType>
+        <OutputType Condition="'$(Configuration)' != 'Debug' And !$(DefineConstants.Contains(DEBUG_LOGS))">WinExe</OutputType>
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
@@ -93,7 +93,7 @@
         <PackageReference Include="Serilog" Version="4.3.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
         <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
-        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" Condition="'$(DefineConstants.Contains(DEBUG_LOGS))'" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" Condition="'$(Configuration)' == 'Debug' Or $(DefineConstants.Contains(DEBUG_LOGS))" />
         <PackageReference Include="System.Drawing.Common" Version="9.0.5" />
         <PackageReference Include="Thoth.Json.Net" Version="12.0.0" />
         <PackageReference Include="Vanara.PInvoke.Shell32" Version="4.1.3" />
