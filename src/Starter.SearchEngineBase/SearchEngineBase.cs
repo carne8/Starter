@@ -61,7 +61,7 @@ public abstract class DynamicSearchEngine(string pluginPath, Logger logger) : Se
     /// should be shown in the last results (like for the URL search engine)
     /// </summary>
     public abstract bool ImportantResults { get; }
-    public abstract (ISearchResult[], Observable<ISearchResult[]>) Search(string query, CancellationToken cancellationToken);
+    public abstract (ISearchResult[], Observable<ISearchResult[]>) Search(string query, CancellationToken cancellationToken, bool singleSearchEngineModeActivated);
 }
 
 public static class Constants

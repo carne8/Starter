@@ -47,7 +47,7 @@ type UrlSearchEngine(pluginPath, logger) =
     override this.Icon = StarterIconSource(Icon.Globe)
     override this.ImportantResults = false
 
-    override this.Search(query, _ct) =
+    override this.Search(query, _ct, _) =
         query
         |> regex.Matches
         |> Seq.toArray

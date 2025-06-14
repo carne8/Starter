@@ -60,7 +60,7 @@ let logger =
         )
         .WriteTo.Async(fun c -> c.Sink(observableSink) |> ignore)
         #if DEBUG || DEBUG_LOGS
-        .WriteTo.Console(outputTemplate = logTemplate)
+        .WriteTo.Console(outputTemplate = logTemplate, theme = Serilog.Sinks.SystemConsole.Themes.ConsoleTheme.None)
         #endif
         .CreateLogger()
         .ForContext("Context", "Starter")

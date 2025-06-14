@@ -79,7 +79,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
     let subscribeToDynamicSearchEngine (ct: CancellationToken) query (se: DynamicSearchEngine) =
         try
-            let struct (instantResults, obs) = se.Search(query, searchCts.Token)
+            let struct (instantResults, obs) = se.Search(query, searchCts.Token, singleSearchEngineMode.Value.IsSome)
 
             let srPos =
                 match se.ImportantResults with
