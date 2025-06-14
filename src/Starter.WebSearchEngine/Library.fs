@@ -92,7 +92,11 @@ type WebSearchEngine(pluginPath, logger) =
             try
                 let! json = httpClient.GetFromJsonAsync<JsonElement array>(url, ct)
                 let mutable enumerator = json[1].EnumerateArray()
-                return [| while enumerator.MoveNext() do enumerator.Current.GetString() |]
+                return
+                    [| while enumerator.MoveNext() do
+                        let s = enumerator.Current.GetString()
+                        if s <> query then
+                            s |]
             with
             | :? OperationCanceledException
             | :? TaskCanceledException -> return failwith "Task cancelled"
