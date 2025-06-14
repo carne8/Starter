@@ -1,12 +1,16 @@
 ﻿namespace Starter.Features.Config.UI.SettingsWindow
 
 open System
+open System.Collections.Generic
+open Starter.Features
 open Starter.SearchEngine
 open Starter.Features.Config
 
-open System.Collections.Generic
 open Avalonia.Controls
 open FluentAvalonia.UI.Controls
+open FluentIcons.Common
+open FluentIcons.Avalonia.Fluent
+
 open ReactiveUI
 open R3
 
@@ -16,21 +20,28 @@ type MenuItemVM =
       Name: string
       Control: Control }
 
-    static member create control (se: ISearchEngine) =
+    static member create control (se: SearchEngine) =
         { Id = se.Id
-          Icon = se.Icon |> StarterIconSource.build
+          Icon = se.Icon |> StarterIconSource.buildIconSource
           Name = se.Name
           Control = control }
 
-type WindowViewModel(baseConfig, searchEngines: Dictionary<string, ISearchEngine> BehaviorSubject) =
+type WindowViewModel(baseConfig, searchEngines: Dictionary<string, SearchEngine> BehaviorSubject) =
     inherit ReactiveObject()
 
     let starterSettingsVM = new UI.StarterSettings.ViewModel(baseConfig, searchEngines)
     let starterSettingsMenuItem =
         { Id = "starter-settings"
-          Icon = SymbolIconSource(Symbol = Symbol.Settings)
+          Icon = FluentIconSource(Icon = Icon.Settings, IconSize = IconSize.Size16)
           Name = "Starter settings"
           Control = UI.StarterSettings.StarterSettings(DataContext = starterSettingsVM) }
+
+    let logsVM = LoggingView.LogsViewModel()
+    let logsMenuItem =
+        { Id = "starter-logs"
+          Icon = FluentIconSource(Icon = Icon.DocumentText, IconSize = IconSize.Size16)
+          Name = "Logs"
+          Control = LoggingView.LogsView(DataContext = logsVM) }
 
     let mutable selectedPage = starterSettingsMenuItem
     let menuItems = new BehaviorSubject<_ array>(Array.empty)
@@ -50,7 +61,7 @@ type WindowViewModel(baseConfig, searchEngines: Dictionary<string, ISearchEngine
                 )
             )
             |> Seq.sortBy _.Name
-            |> Seq.append [ starterSettingsMenuItem ]
+            |> Seq.append [ starterSettingsMenuItem; logsMenuItem ]
             |> Seq.toArray
             |> menuItems.OnNext
         )
@@ -64,3 +75,6 @@ type WindowViewModel(baseConfig, searchEngines: Dictionary<string, ISearchEngine
     member this.SelectedPage
         with get () = selectedPage
         and set v = this.RaiseAndSetIfChanged(&selectedPage, v) |> ignore
+
+    member this.SelectSettingsPage() = this.SelectedPage <- starterSettingsMenuItem
+    member this.SelectLogsPage() = this.SelectedPage <- logsMenuItem

@@ -26,6 +26,9 @@ let ProcessDirectory =
 let PluginsDirectory = Path.Combine(ProcessDirectory, "Plugins")
 let PluginsSymlinkPath = Path.Combine(ConfigDirectory, "Plugins")
 
+let LogFilePath = Path.Combine(ConfigDirectory, "Logs", "log.txt")
+// let LogFilename () = $"logs-{DateTimeOffset.Now:``yyyy-MM-ddTHH-mm-ss``}.txt"
+
 module Platform =
     module Windows =
         let StartupFile = "Starter.lnk"

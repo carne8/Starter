@@ -11,7 +11,7 @@ open System.Threading.Tasks
 open ReactiveUI
 open R3
 
-type SearchEnginePrefixViewModel(se: ISearchEngine, prefix: string, onPrefixChanged) =
+type SearchEnginePrefixViewModel(se: SearchEngine, prefix: string, onPrefixChanged) =
     let icon = se.Icon |> StarterIconSource.build
 
     member this.Icon = icon
@@ -20,7 +20,7 @@ type SearchEnginePrefixViewModel(se: ISearchEngine, prefix: string, onPrefixChan
         with get () = prefix
         and set v = v |> onPrefixChanged
 
-type ViewModel(baseConfig: Configuration, searchEngines: Dictionary<string, ISearchEngine> BehaviorSubject) =
+type ViewModel(baseConfig: Configuration, searchEngines: Dictionary<string, SearchEngine> BehaviorSubject) =
     inherit ReactiveObject() // Equivalent to ViewModelBase
 
     let config = new BehaviorSubject<Configuration>(baseConfig)

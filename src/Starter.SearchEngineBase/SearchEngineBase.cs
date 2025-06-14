@@ -2,8 +2,9 @@
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
-using FluentAvalonia.UI.Controls;
+using FluentIcons.Common;
 using R3;
+using Serilog.Core;
 
 #pragma warning disable CS9113 // Parameter unread
 
@@ -12,11 +13,11 @@ namespace Starter.SearchEngine;
 public class StarterIconSource()
 {
     public static StarterIconSource Empty = new();
-    public StarterIconSource(IImage image) : this() => SourceImage = image;
-    public StarterIconSource(Symbol symbol) : this() => Symbol = symbol;
+    public StarterIconSource(IImage image) : this() => Image = image;
+    public StarterIconSource(Icon icon) : this() => Icon = icon;
 
-    public readonly IImage? SourceImage;
-    public readonly Symbol? Symbol;
+    public readonly IImage? Image;
+    public readonly Icon? Icon;
 }
 
 public interface ISearchResult
@@ -27,14 +28,14 @@ public interface ISearchResult
     StarterIconSource Icon { get; }
 }
 
-public interface ISearchEngine
+public abstract class SearchEngine(string pluginPath, Logger logger)
 {
-    string Id { get; }
-    string Name { get; }
-    string ShortName { get; }
-    StarterIconSource Icon { get; }
-    void SearchResultSelected(ISearchResult selectedSearchResult);
-    Control? LoadSettingsControl();
+    public abstract string Id { get; }
+    public abstract string Name { get; }
+    public abstract string ShortName { get; }
+    public abstract StarterIconSource Icon { get; }
+    public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
+    public abstract Control? LoadSettingsControl();
 }
 
 /// <summary>
@@ -42,15 +43,9 @@ public interface ISearchEngine
 /// Fuzzy finding is applicable on its results.
 /// Applicable for an application search engine.
 /// </summary>
-public abstract class StaticSearchEngine(string pluginPath) : ISearchEngine
+public abstract class StaticSearchEngine(string pluginPath, Logger logger) : SearchEngine(pluginPath, logger)
 {
-    public abstract string Id { get; }
-    public abstract string Name { get; }
-    public abstract string ShortName { get; }
-    public abstract StarterIconSource Icon { get; }
     public abstract Task<ISearchResult[]> LoadResults();
-    public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
-    public abstract Control? LoadSettingsControl();
 }
 
 /// <summary>
@@ -58,13 +53,8 @@ public abstract class StaticSearchEngine(string pluginPath) : ISearchEngine
 /// Fuzzy finding is not applicable for its results.
 /// Applicable for a web search engine.
 /// </summary>
-public abstract class DynamicSearchEngine(string pluginPath) : ISearchEngine
+public abstract class DynamicSearchEngine(string pluginPath, Logger logger) : SearchEngine(pluginPath, logger)
 {
-    public abstract string Id { get; }
-    public abstract string Name { get; }
-    public abstract string ShortName { get; }
-    public abstract StarterIconSource Icon { get; }
-
     /// <summary>
     /// Indicate if the result from this search engine should be shown in
     /// the first results (like for the calculator search engine) or if they
@@ -72,8 +62,6 @@ public abstract class DynamicSearchEngine(string pluginPath) : ISearchEngine
     /// </summary>
     public abstract bool ImportantResults { get; }
     public abstract (ISearchResult[], Observable<ISearchResult[]>) Search(string query, CancellationToken cancellationToken);
-    public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
-    public abstract Control? LoadSettingsControl();
 }
 
 public static class Constants
@@ -92,7 +80,6 @@ public static class Constants
         "Avalonia.Remote.Protocol",
         "Avalonia.Skia",
         "Avalonia.Vulkan",
-        "FluentAvalonia",
         "Svg.Controls.Skia.Avalonia",
         "Svg.Custom",
         "Svg.Model",

@@ -1,0 +1,51 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Starter.Features.LoggingView"
+             x:Class="Starter.Features.LoggingView.LogsView"
+             x:DataType="vm:LogsViewModel">
+    <StackPanel Spacing="20">
+        <!-- Filters -->
+        <StackPanel Orientation="Horizontal" Spacing="20">
+            <!-- Minimum Level -->
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <Label Target="MinimumLevelComboBox"
+                       VerticalAlignment="Center">
+                    Minimum log level
+                </Label>
+                <ComboBox x:Name="MinimumLevelComboBox"
+                          SelectedItem="{Binding MinimumLevel}"
+                          ItemsSource="{Binding LogLevels}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock VerticalAlignment="Center" Text="{Binding}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+
+            <!-- Filter logs -->
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <Label Target="ContextFilter" VerticalAlignment="Center">Filter</Label>
+                <ComboBox x:Name="ContextFilter"
+                          SelectedItem="{Binding ContextFilter}"
+                          ItemsSource="{Binding LogContexts}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock VerticalAlignment="Center" Text="{Binding}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Logs -->
+        <Border Padding="10"
+                Background="{DynamicResource ExpanderHeaderBackground}"
+                BorderBrush="{DynamicResource ExpanderHeaderBorderBrush}"
+                BorderThickness="{DynamicResource ExpanderHeaderBorderThickness}"
+                CornerRadius="8">
+            <SelectableTextBlock Inlines="{Binding Lines}" />
+        </Border>
+    </StackPanel>
+
+</UserControl>

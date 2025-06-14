@@ -1,14 +1,14 @@
 ﻿namespace Starter.ViewModels
 
 open Starter.SearchEngine
-open FluentAvalonia.UI.Controls
+open Avalonia.Controls
 
 type SingleSearchEngineViewModel =
-    { SearchEngine: ISearchEngine
+    { SearchEngine: SearchEngine
       ShortName: string
-      Icon: IconSource | null }
+      Icon: Control | null }
 
-    static member create (searchEngine: ISearchEngine) =
+    static member create (searchEngine: SearchEngine) =
         { SearchEngine = searchEngine
           ShortName = searchEngine.ShortName
           Icon = searchEngine.Icon |> StarterIconSource.buildWithFontSize 17 }

@@ -8,7 +8,7 @@ open FsToolkit.ErrorHandling
 open Vanara.PInvoke
 open Vanara.Windows.Shell
 open Avalonia.Media.Imaging
-open FluentAvalonia.UI.Controls
+open FluentIcons.Common
 
 open Starter.SearchEngine
 open IconHelper
@@ -30,7 +30,7 @@ type Application =
         member this.Description = "Application"
         member this.Icon = this.LoadIcon()
 
-type AppIndexer() =
+type AppIndexer(logger: Serilog.Core.Logger) =
     let applications = TaskCompletionSource<Application array>()
 
     let getAppIcon (targetPathOpt: string option) (app: ShellItem) =
@@ -53,40 +53,45 @@ type AppIndexer() =
         | _ ->
             getShellIcon() // Let the shell load the icon
 
-    let getApps () =
+    let loadApps () =
         use appsFolder = new ShellFolder(Shell32.KNOWNFOLDERID.FOLDERID_AppsFolder)
 
         appsFolder |> Seq.choose (fun app ->
-            option {
-                let! name = app.Name |> Option.require (String.IsNullOrEmpty >> not)
-                let packageIdOpt = app |> ShellItem.Property.get "System.AppUserModel.ID"
-                let targetPathOpt = app |> ShellItem.Property.get "System.Link.TargetParsingPath"
+            try
+                option {
+                    let! name = app.Name |> Option.require (String.IsNullOrEmpty >> not)
+                    let packageIdOpt = app |> ShellItem.Property.get "System.AppUserModel.ID"
+                    let targetPathOpt = app |> ShellItem.Property.get "System.Link.TargetParsingPath"
 
-                let icon = // TODO: Load icons only when needed
-                    app
-                    |> getAppIcon targetPathOpt
-                    |> fun bmp -> StarterIconSource(bmp)
+                    let icon = // TODO: Load icons only when needed
+                        app
+                        |> getAppIcon targetPathOpt
+                        |> fun bmp -> StarterIconSource(bmp)
 
-                let! executionPath =
-                    match packageIdOpt, targetPathOpt with
-                    | Some pkgId, _ -> ExecutionPath.PackageId pkgId |> Some
-                    | _, Some linkPath -> ExecutionPath.ExeFile linkPath |> Some
-                    | None, None -> None
+                    let! executionPath =
+                        match packageIdOpt, targetPathOpt with
+                        | Some pkgId, _ -> ExecutionPath.PackageId pkgId |> Some
+                        | _, Some linkPath -> ExecutionPath.ExeFile linkPath |> Some
+                        | None, None -> None
 
-                app.Dispose()
-                return
-                    { Id = app.ParsingName
-                      Name = name
-                      ExecutionPath = executionPath
-                      LoadIcon = fun () -> icon }
-            }
+                    logger.Verbose $"Loaded {app.Name}"
+                    app.Dispose()
+                    return
+                        { Id = app.ParsingName
+                          Name = name
+                          ExecutionPath = executionPath
+                          LoadIcon = fun () -> icon }
+                }
+            with e ->
+                logger.Error $"Failed to load {app.Name}"
+                None
         )
 
     do
         Task.Run<unit>(fun () -> task {
             try
                 let apps =
-                    getApps()
+                    loadApps()
                     |> Seq.sortBy _.Name
                     |> Seq.toArray
 
@@ -97,14 +102,14 @@ type AppIndexer() =
 
     member _.Apps = applications.Task
 
-type ApplicationSearchEngine(pluginPath) =
-    inherit StaticSearchEngine(pluginPath)
-    let indexer = AppIndexer()
+type ApplicationSearchEngine(pluginPath, logger) =
+    inherit StaticSearchEngine(pluginPath, logger)
+    let indexer = AppIndexer(logger)
 
     override _.Id = nameof ApplicationSearchEngine
     override _.Name = "Applications"
     override _.ShortName = "Apps"
-    override _.Icon = StarterIconSource(Symbol.AllApps)
+    override _.Icon = StarterIconSource(Icon.AppsListDetail)
 
     override _.LoadResults() = indexer.Apps |> Task.map unbox<ISearchResult array>
     override _.SearchResultSelected(searchResult) =

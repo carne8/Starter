@@ -36,7 +36,7 @@ type SearchResultViewModel(
         "fake"
     )
 
-    static member create pos (se: ISearchEngine) (sr: ISearchResult) =
+    static member create pos (se: SearchEngine) (sr: ISearchResult) =
         SearchResultViewModel(pos, sr, se.Id)
 
     static member mapForComparison resultScoreDb (sr: SearchResultViewModel) =

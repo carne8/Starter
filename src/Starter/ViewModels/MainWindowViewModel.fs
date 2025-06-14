@@ -3,6 +3,7 @@ namespace Starter.ViewModels
 open Starter.Features
 open Starter.Features.Config
 open Starter.Features.InternalSearchEngines
+open Starter.Features.Logging
 open Starter.Features.ResultScores
 open Starter.Features.CustomCollections
 open Starter.SearchEngine
@@ -22,7 +23,7 @@ open R3
 type SearchEngines =
     { Statics: List<StaticSearchEngine>
       Dynamics: List<DynamicSearchEngine>
-      Dict: BehaviorSubject<Dictionary<string, ISearchEngine>> }
+      Dict: BehaviorSubject<Dictionary<string, SearchEngine>> }
 
     static member create () =
         { Statics = List()
@@ -41,7 +42,7 @@ type SearchEngines =
         searchEngines.Dict.Value |> searchEngines.Dict.OnNext
         searchEngines
 
-    static member addSearchEngine (se: ISearchEngine) (searchEngines: SearchEngines) =
+    static member addSearchEngine (se: SearchEngine) (searchEngines: SearchEngines) =
         match se with
         | :? StaticSearchEngine as se -> searchEngines.Statics.Add se
         | :? DynamicSearchEngine as se -> searchEngines.Dynamics.Add se
@@ -61,7 +62,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
     // --- Search engines store
     let searchEngines = SearchEngines.create()
-    let searchEngineFromPrefix = new BehaviorSubject<(string * ISearchEngine) array>(Array.empty) // Bound to searchEngines in `do`
+    let searchEngineFromPrefix = new BehaviorSubject<(string * SearchEngine) array>(Array.empty) // Bound to searchEngines in `do`
 
     // --- Commands (to interact with view)
     let hideCommand = ReactiveCommand.Create(fun () -> ())
@@ -200,10 +201,12 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
         let settingsSearchEngine = SettingsSearchEngine(config.Value, searchEngines.Dict)
 
+        logger.Debug "Loading plugin assemblies"
         searchEngines
         |> SearchEngines.loadFromDirectories pluginDirectories
         |> SearchEngines.addSearchEngine settingsSearchEngine
         |> ignore
+        logger.Debug "Assemblies loaded"
 
         // TODO: First use of search engines is slow, but RuntimeHelpers.PrepareMethod doesn't work (HELP wanted)
         // Precompile search engine methods
@@ -247,9 +250,9 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
                         newStaticResults |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
                         staticSearchResults.OnNext newStaticResults
-                        printfn "%s results loaded" se.Name
+                        logger.Information $"{se.Name} results loaded: {results.Length} results"
                     )
-                with e -> printfn "%A" e
+                with e -> logger.Error $"{se.Name} failed to load results:\n{e.Message}"
             }) |> ignore
 
     member _.HideCommand = hideCommand
@@ -262,7 +265,10 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
     member _.ValidateResult(searchResult: SearchResultViewModel | null) =
         match searchResult with
         | null -> ()
-        | searchResult -> searchResult |> validateResult |> ignore
+        | searchResult ->
+            searchResult |> validateResult |> ignore
+            logger.Debug $"{searchResult.Name} selected"
+
         (hideCommand :> ICommand).Execute()
 
     member _.Config = config

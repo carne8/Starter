@@ -7,6 +7,7 @@ open Avalonia.Markup.Xaml
 
 open Starter.Features
 open Starter.Features.Config
+open Starter.Features.Logging
 open Starter.ViewModels
 open Starter.Views
 
@@ -30,9 +31,14 @@ type App() =
 
             // Load config
             let config =
+                logger.Debug "Loading config"
                 match Configuration.loadFromFile Constants.ConfigFile with
-                | Error e -> failwithf "Failed to decode configuration: %A" e
-                | Ok config -> config
+                | Error e ->
+                    logger.Error $"Failed to decode configuration: {e}"
+                    failwith $"Failed to decode configuration: {e}"
+                | Ok config ->
+                    logger.Information "Config loaded"
+                    config
 
             // Load result scores
             let resultScoreDb = Constants.ResultScoresFile |> ResultScores.ScoreDb.readFromFile
@@ -42,7 +48,9 @@ type App() =
 
             // Register hotkey // TODO: Move to platform interop
             match window.TryGetPlatformHandle() with
-            | null -> failwith "Failed to retrieve window platform handle"
+            | null ->
+                logger.Error "Failed to retrieve window platform handle"
+                failwith "Failed to retrieve window platform handle"
             | platformHandle ->
                 User32.RegisterHotKey(
                     platformHandle.Handle,
@@ -51,9 +59,7 @@ type App() =
                     User32.VK.VK_SPACE |> uint
                 ) |> ignore
 
-            #if DEBUG
-            printfn "Launched"
-            #endif
+            logger.Information "Launched"
         | _ -> ()
 
         base.OnFrameworkInitializationCompleted()

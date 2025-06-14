@@ -50,8 +50,8 @@ type SearchResult =
         member this.Description = this.Description
         member this.Icon = this.Icon
 
-type WebSearchEngine(pluginPath) =
-    inherit DynamicSearchEngine(pluginPath)
+type WebSearchEngine(pluginPath, logger) =
+    inherit DynamicSearchEngine(pluginPath, logger)
 
     let searchEngine = Google
     let searchEngineName = searchEngine |> SearchEngine.getName
