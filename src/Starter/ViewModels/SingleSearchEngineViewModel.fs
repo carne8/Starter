@@ -1,12 +1,12 @@
 ﻿namespace Starter.ViewModels
 
 open Starter.SearchEngine
-open FluentAvalonia.UI.Controls
+open Avalonia.Controls
 
 type SingleSearchEngineViewModel =
     { SearchEngine: ISearchEngine
       ShortName: string
-      Icon: IconSource | null }
+      Icon: Control | null }
 
     static member create (searchEngine: ISearchEngine) =
         { SearchEngine = searchEngine

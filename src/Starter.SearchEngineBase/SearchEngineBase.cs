@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
-using FluentAvalonia.UI.Controls;
+using FluentIcons.Common;
 using R3;
 
 #pragma warning disable CS9113 // Parameter unread
@@ -12,11 +12,11 @@ namespace Starter.SearchEngine;
 public class StarterIconSource()
 {
     public static StarterIconSource Empty = new();
-    public StarterIconSource(IImage image) : this() => SourceImage = image;
-    public StarterIconSource(Symbol symbol) : this() => Symbol = symbol;
+    public StarterIconSource(IImage image) : this() => Image = image;
+    public StarterIconSource(Icon icon) : this() => Icon = icon;
 
-    public readonly IImage? SourceImage;
-    public readonly Symbol? Symbol;
+    public readonly IImage? Image;
+    public readonly Icon? Icon;
 }
 
 public interface ISearchResult
@@ -92,7 +92,6 @@ public static class Constants
         "Avalonia.Remote.Protocol",
         "Avalonia.Skia",
         "Avalonia.Vulkan",
-        "FluentAvalonia",
         "Svg.Controls.Skia.Avalonia",
         "Svg.Custom",
         "Svg.Model",

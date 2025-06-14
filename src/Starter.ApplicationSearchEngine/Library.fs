@@ -8,7 +8,7 @@ open FsToolkit.ErrorHandling
 open Vanara.PInvoke
 open Vanara.Windows.Shell
 open Avalonia.Media.Imaging
-open FluentAvalonia.UI.Controls
+open FluentIcons.Common
 
 open Starter.SearchEngine
 open IconHelper
@@ -104,7 +104,7 @@ type ApplicationSearchEngine(pluginPath) =
     override _.Id = nameof ApplicationSearchEngine
     override _.Name = "Applications"
     override _.ShortName = "Apps"
-    override _.Icon = StarterIconSource(Symbol.AllApps)
+    override _.Icon = StarterIconSource(Icon.AppsListDetail)
 
     override _.LoadResults() = indexer.Apps |> Task.map unbox<ISearchResult array>
     override _.SearchResultSelected(searchResult) =

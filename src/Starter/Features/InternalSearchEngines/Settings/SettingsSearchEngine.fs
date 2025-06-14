@@ -2,11 +2,11 @@ module Starter.Features.InternalSearchEngines
 
 open Starter.SearchEngine
 open Avalonia.Threading
-open FluentAvalonia.UI.Controls
+open FluentIcons.Common
 open FsToolkit.ErrorHandling
 
-let private settingsIcon = StarterIconSource(Symbol.Settings)
-let private logsIcon = StarterIconSource(Symbol.Document)
+let private settingsIcon = StarterIconSource(Icon.Settings)
+let private logsIcon = StarterIconSource(Icon.DocumentText)
 
 type private TargetPage =
     | Settings

@@ -1,13 +1,16 @@
 ﻿namespace Starter.Features.Config.UI.SettingsWindow
 
 open System
+open System.Collections.Generic
 open Starter.Features
 open Starter.SearchEngine
 open Starter.Features.Config
 
-open System.Collections.Generic
 open Avalonia.Controls
 open FluentAvalonia.UI.Controls
+open FluentIcons.Common
+open FluentIcons.Avalonia.Fluent
+
 open ReactiveUI
 open R3
 
@@ -19,7 +22,7 @@ type MenuItemVM =
 
     static member create control (se: ISearchEngine) =
         { Id = se.Id
-          Icon = se.Icon |> StarterIconSource.build
+          Icon = se.Icon |> StarterIconSource.buildIconSource
           Name = se.Name
           Control = control }
 
@@ -29,14 +32,14 @@ type WindowViewModel(baseConfig, searchEngines: Dictionary<string, ISearchEngine
     let starterSettingsVM = new UI.StarterSettings.ViewModel(baseConfig, searchEngines)
     let starterSettingsMenuItem =
         { Id = "starter-settings"
-          Icon = SymbolIconSource(Symbol = Symbol.Settings)
+          Icon = FluentIconSource(Icon = Icon.Settings, IconSize = IconSize.Size16)
           Name = "Starter settings"
           Control = UI.StarterSettings.StarterSettings(DataContext = starterSettingsVM) }
 
     let logsVM = LoggingView.LogsViewModel()
     let logsMenuItem =
         { Id = "starter-logs"
-          Icon = SymbolIconSource(Symbol = Symbol.Document)
+          Icon = FluentIconSource(Icon = Icon.DocumentText, IconSize = IconSize.Size16)
           Name = "Logs"
           Control = LoggingView.LogsView(DataContext = logsVM) }
 

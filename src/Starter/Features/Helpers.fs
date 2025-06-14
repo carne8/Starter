@@ -4,19 +4,30 @@ module Helpers
 open System
 open System.Threading
 open Starter.SearchEngine
+
+open Avalonia.Controls
 open FluentAvalonia.UI.Controls
+open FluentIcons.Common
+open FluentIcons.Avalonia.Fluent
 
 type StarterIconSource with
-    /// Transform StarterIconSource in FluentAvalonia.UI.Controls.IconSource
-    static member build (iconSource: StarterIconSource) =
-        match iconSource.Symbol.HasValue, iconSource.SourceImage with
-        | true, _ -> SymbolIconSource(Symbol = iconSource.Symbol.Value) :> IconSource | null
+    /// Transform StarterIconSource in Control
+    static member build (iconSource: StarterIconSource) : Control | null =
+        match iconSource.Icon.HasValue, iconSource.Image with
+        | true, _ -> FluentIcon(Icon = iconSource.Icon.Value)
         | false, null -> null
-        | false, image -> ImageIconSource(Source = image)
+        | false, image -> ImageIcon(Source = image)
 
-    static member buildWithFontSize fontSize (iconSource: StarterIconSource) =
-        match iconSource.Symbol.HasValue, iconSource.SourceImage with
-        | true, _ -> SymbolIconSource(Symbol = iconSource.Symbol.Value, FontSize = fontSize) :> IconSource | null
+    static member buildWithFontSize iconSize (iconSource: StarterIconSource) : Control | null =
+        match iconSource.Icon.HasValue, iconSource.Image with
+        | true, _ -> FluentIcon(Icon = iconSource.Icon.Value, FontSize = iconSize, IconSize = IconSize.Resizable)
+        | false, null -> null
+        | false, image -> ImageIcon(Source = image)
+
+    /// Transform StarterIconSource in IconSource
+    static member buildIconSource (iconSource: StarterIconSource) : IconSource | null =
+        match iconSource.Icon.HasValue, iconSource.Image with
+        | true, _ -> FluentIconSource(Icon = iconSource.Icon.Value)
         | false, null -> null
         | false, image -> ImageIconSource(Source = image)
 

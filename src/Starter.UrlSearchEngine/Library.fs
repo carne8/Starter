@@ -6,13 +6,13 @@ open Starter.SearchEngine
 open System
 open System.Diagnostics
 open System.Text.RegularExpressions
-open FluentAvalonia.UI.Controls
+open FluentIcons.Common
 open R3
 
 type SearchResult =
     { Uri: Uri }
 
-    static let icon = StarterIconSource(Symbol.Globe)
+    static let icon = StarterIconSource(Icon.Link)
 
     interface ISearchResult with
         member this.Id = this.Uri.AbsoluteUri
@@ -44,7 +44,7 @@ type UrlSearchEngine(pluginPath) =
     override this.Id = nameof UrlSearchEngine
     override this.Name = "Link opener"
     override this.ShortName = "Link"
-    override this.Icon = StarterIconSource(Symbol.Globe)
+    override this.Icon = StarterIconSource(Icon.Globe)
     override this.ImportantResults = false
 
     override this.Search(query, _ct) =
