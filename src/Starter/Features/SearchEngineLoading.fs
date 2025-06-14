@@ -54,7 +54,9 @@ let private loadAssemblySearchEngines<'SearchEngineKind> (assemblyDir: string, a
     assembly.GetTypes()
     |> Array.choose (fun type' ->
         if expectedType.IsAssignableFrom type' then
-            match Activator.CreateInstance(type', assemblyDir) with
+            let logger = Logging.logger.ForContext("Context", expectedType.Name)
+
+            match Activator.CreateInstance(type', assemblyDir, logger) with
             | null -> None
             | searchEngine ->
                 searchEngine

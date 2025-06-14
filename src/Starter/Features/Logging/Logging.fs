@@ -43,6 +43,9 @@ type ObservableSink() =
 let private observableSink = new ObservableSink()
 let logs = observableSink
 
+[<Literal>]
+let logTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] [{Context}] {Message:lj}{NewLine}{Exception}"
+
 let logger =
     LoggerConfiguration()
         .MinimumLevel.Debug()
@@ -50,12 +53,14 @@ let logger =
             c.File(
                 Constants.LogFilePath,
                 rollingInterval = RollingInterval.Day,
-                retainedFileCountLimit = 10
+                retainedFileCountLimit = 10,
+                outputTemplate = logTemplate
             )
             |> ignore
         )
         .WriteTo.Async(fun c -> c.Sink(observableSink) |> ignore)
         #if DEBUG || DEBUG_LOGS
-        .WriteTo.Console()
+        .WriteTo.Console(outputTemplate = logTemplate)
         #endif
         .CreateLogger()
+        .ForContext("Context", "Starter")

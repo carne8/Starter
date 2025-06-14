@@ -2,6 +2,7 @@
 
 open System.IO
 open System.Text
+open System.Collections.Generic
 
 open Avalonia.Controls
 open Avalonia.Controls.Documents
@@ -20,10 +21,10 @@ type LogsViewModel() as this =
     let lines = InlineCollection()
 
     [<Literal>]
-    let template = "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}"
+    let template = "[{Timestamp:HH:mm:ss} {Level:u3}] [{Context}] {Message:lj}"
     let formatter = Display.MessageTemplateTextFormatter(template)
     [<Literal>]
-    let templateWithException = "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}"
+    let templateWithException = "[{Timestamp:HH:mm:ss} {Level:u3}] [{Context}] {Message:lj}{NewLine}{Exception}"
     let formatterWithException = Display.MessageTemplateTextFormatter(templateWithException)
 
     let brushes =
@@ -35,6 +36,7 @@ type LogsViewModel() as this =
           LogEventLevel.Fatal, SolidColorBrush(Color(255uy, 166uy, 38uy, 164uy)) ]
         |> dict
 
+    // Minimum log level
     let mutable minimumLevel = LogEventLevel.Information
     let logLevels =
         [| LogEventLevel.Verbose
@@ -44,8 +46,16 @@ type LogsViewModel() as this =
            LogEventLevel.Error
            LogEventLevel.Fatal |]
 
+    // Context filter
+    let mutable contextFilter = "None"
+    let logContexts = HashSet([ "None" ])
+
     let printLogEvent (logEvent: LogEvent) =
-        if logEvent.Level >= minimumLevel then
+        let logContext = logEvent.Properties["Context"].ToString()
+        let logContext = logContext.Substring(1, logContext.Length-2)
+
+        if logEvent.Level >= minimumLevel
+           && (contextFilter = "None" || logContext = contextFilter) then
             let sb = StringBuilder()
             use sw = new StringWriter(sb)
 
@@ -59,13 +69,19 @@ type LogsViewModel() as this =
             Run(sb.ToString(), Foreground = brushes[logEvent.Level])
             |> lines.Add
 
-    let minimumLevelChanged () =
+    let refreshLogs () =
         lines.Clear()
         logs.Logs |> Seq.iter printLogEvent
         this.RaisePropertyChanged(nameof this.Lines)
 
     do
         logs.ObserveOnUIThreadDispatcher().Subscribe(fun logEvent ->
+            let logContext = logEvent.Properties["Context"].ToString()
+            let logContext = logContext.Substring(1, logContext.Length-2) // Remove the double-quote
+
+            if logContext |> logContexts.Add then
+                this.RaisePropertyChanged(nameof this.LogContexts)
+
             logEvent |> printLogEvent
             this.RaisePropertyChanged(nameof this.Lines)
         )
@@ -77,9 +93,16 @@ type LogsViewModel() as this =
         with get () = minimumLevel
         and set v =
             this.RaiseAndSetIfChanged(&minimumLevel, v) |> ignore
-            minimumLevelChanged()
+            refreshLogs()
+
+    member this.ContextFilter
+        with get () = contextFilter
+        and set v =
+            this.RaiseAndSetIfChanged(&contextFilter, v) |> ignore
+            refreshLogs()
 
     member this.LogLevels = logLevels
+    member this.LogContexts = logContexts |> Seq.toArray
 
 type LogsView() as this =
     inherit UserControl()

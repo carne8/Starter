@@ -1,12 +1,12 @@
 # Starter todo
-- [ ] Add app logs
 - [ ] Improve start time
-- [ ] Switch to FluentIcons instead of FluentAvalonia
 
 - [ ] Finish web search plugin
 - [ ] Ordering of results
 - [ ] Remove apps logs
 
+- [x] Add app logs
+- [x] Switch to FluentIcons instead of FluentAvalonia
 - [x] Add mouse click
 - [x] Change UI scaling
 - [x] Center window

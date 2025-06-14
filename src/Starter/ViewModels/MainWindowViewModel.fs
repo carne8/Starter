@@ -23,7 +23,7 @@ open R3
 type SearchEngines =
     { Statics: List<StaticSearchEngine>
       Dynamics: List<DynamicSearchEngine>
-      Dict: BehaviorSubject<Dictionary<string, ISearchEngine>> }
+      Dict: BehaviorSubject<Dictionary<string, SearchEngine>> }
 
     static member create () =
         { Statics = List()
@@ -42,7 +42,7 @@ type SearchEngines =
         searchEngines.Dict.Value |> searchEngines.Dict.OnNext
         searchEngines
 
-    static member addSearchEngine (se: ISearchEngine) (searchEngines: SearchEngines) =
+    static member addSearchEngine (se: SearchEngine) (searchEngines: SearchEngines) =
         match se with
         | :? StaticSearchEngine as se -> searchEngines.Statics.Add se
         | :? DynamicSearchEngine as se -> searchEngines.Dynamics.Add se
@@ -62,7 +62,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
     // --- Search engines store
     let searchEngines = SearchEngines.create()
-    let searchEngineFromPrefix = new BehaviorSubject<(string * ISearchEngine) array>(Array.empty) // Bound to searchEngines in `do`
+    let searchEngineFromPrefix = new BehaviorSubject<(string * SearchEngine) array>(Array.empty) // Bound to searchEngines in `do`
 
     // --- Commands (to interact with view)
     let hideCommand = ReactiveCommand.Create(fun () -> ())

@@ -20,13 +20,13 @@ type MenuItemVM =
       Name: string
       Control: Control }
 
-    static member create control (se: ISearchEngine) =
+    static member create control (se: SearchEngine) =
         { Id = se.Id
           Icon = se.Icon |> StarterIconSource.buildIconSource
           Name = se.Name
           Control = control }
 
-type WindowViewModel(baseConfig, searchEngines: Dictionary<string, ISearchEngine> BehaviorSubject) =
+type WindowViewModel(baseConfig, searchEngines: Dictionary<string, SearchEngine> BehaviorSubject) =
     inherit ReactiveObject()
 
     let starterSettingsVM = new UI.StarterSettings.ViewModel(baseConfig, searchEngines)
