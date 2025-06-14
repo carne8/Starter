@@ -81,15 +81,10 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
         try
             let struct (instantResults, obs) = se.Search(query, searchCts.Token, singleSearchEngineMode.Value.IsSome)
 
-            let srPos =
-                match se.ImportantResults with
-                | true -> SearchResultPosition.Important
-                | false -> SearchResultPosition.Low
-
             obs.ObserveOnUIThreadDispatcher()
                .Subscribe(fun results ->
                 results
-                |> Array.map (SearchResultViewModel.create srPos se)
+                |> Array.map (SearchResultViewModel.create SearchResultKind.Dynamic se)
                 |> searchResults.AddRange
 
                 searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
@@ -97,8 +92,13 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
             )
             |> disposeOnCancelled ct
 
+            let instantSrPos =
+                match se.ImportantResults with
+                | true -> SearchResultKind.DynamicUnique
+                | false -> SearchResultKind.DynamicInstant
+
             instantResults
-            |> Array.map (SearchResultViewModel.create srPos se)
+            |> Array.map (SearchResultViewModel.create instantSrPos se)
             |> searchResults.AddRange
         with _ -> () // TODO: Add error / logs
 
@@ -245,7 +245,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                     Dispatcher.UIThread.Post(fun () ->
                         let newStaticResults =
                             results
-                            |> Array.map (SearchResultViewModel.create SearchResultPosition.Normal se)
+                            |> Array.map (SearchResultViewModel.create SearchResultKind.Static se)
                             |> Array.append staticSearchResults.Value
 
                         newStaticResults |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)

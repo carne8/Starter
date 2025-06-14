@@ -28,6 +28,14 @@ type SearchEngine =
         | Bing -> "Bing"
         | Ecosia -> "Ecosia"
 
+    static member getShortName =
+        function
+        | Google -> "Google"
+        | Qwant -> "Qwant"
+        | DuckDuckGo -> "DDG"
+        | Bing -> "Bing"
+        | Ecosia -> "Ecosia"
+
     static member getIconFilename =
         function
         | Google -> "Google.svg"
@@ -36,14 +44,45 @@ type SearchEngine =
         | Bing -> "Bing.svg"
         | Ecosia -> "Ecosia.svg"
 
-    static member getQueryUrl (query: string) (se: SearchEngine) =
+    static member getQueryUrl (se: SearchEngine) (query: string) =
         let escapedQuery = Uri.EscapeDataString query
         match se with
         | Google -> $"https://www.google.com/search?q={escapedQuery}"
         | Qwant -> $"https://www.qwant.com/?q={escapedQuery}"
         | DuckDuckGo -> $"https://duckduckgo.com/?q={escapedQuery}"
         | Bing -> $"https://www.bing.com/search?q={escapedQuery}"
-        | Ecosia -> $"https://https://www.ecosia.org/search?q={escapedQuery}"
+        | Ecosia -> $"https://www.ecosia.org/search?q={escapedQuery}"
+
+    static member getSuggestionsUrl (se: SearchEngine) (query: string) =
+        let escapedQuery = Uri.EscapeDataString query
+        match se with
+        | Google -> $"https://suggestqueries.google.com/complete/search?client=firefox&q={escapedQuery}"
+        | Qwant -> $"https://api.qwant.com/api/suggest/?client=opensearch&q={escapedQuery}"
+        | DuckDuckGo -> $"https://duckduckgo.com/ac/?type=list&q={escapedQuery}"
+        | Bing -> $"https://www.bingapis.com/api/v7/suggestions?appid=6D0A9B8C5100E9ECC7E11A104ADD76C10219804B&q={escapedQuery}"
+        | Ecosia -> $"https://ac.ecosia.org/autocomplete?type=list&q={escapedQuery}"
+
+    static member deserializeSuggestionsRequest (se: SearchEngine) (query: string) (stream: Stream) =
+        task {
+            let! json = JsonDocument.ParseAsync(stream)
+
+            let mutable enumerator, map =
+                match se with
+                | Google
+                | Qwant
+                | Ecosia
+                | DuckDuckGo -> json.RootElement[1].EnumerateArray(), id
+                | Bing ->
+                    (json.RootElement.GetProperty("suggestionGroups")[0])
+                        .GetProperty("searchSuggestions")
+                        .EnumerateArray(),
+                    (fun (jsonElement: JsonElement) -> jsonElement.GetProperty("displayText"))
+
+            return
+                [| while enumerator.MoveNext() do
+                    let s = enumerator.Current |> map |> _.GetString()
+                    if s <> query then s |]
+        }
 
 type SearchResult =
     { Name: string
@@ -60,8 +99,9 @@ type SearchResult =
 type WebSearchEngine(pluginPath, logger) =
     inherit DynamicSearchEngine(pluginPath, logger)
 
-    let searchEngine = Google
+    let searchEngine = SearchEngine.Google
     let searchEngineName = searchEngine |> SearchEngine.getName
+    let searchEngineShortName = searchEngine |> SearchEngine.getShortName
     let iconPath =
         searchEngine
         |> SearchEngine.getIconFilename
@@ -79,29 +119,23 @@ type WebSearchEngine(pluginPath, logger) =
 
     let loadSuggestions (query: string) (httpClient: HttpClient) (ct: CancellationToken) (se: SearchEngine) =
         task {
-            let escapedQuery = Uri.EscapeDataString query
-
-            let url =
-                match se with
-                | Google -> $"https://suggestqueries.google.com/complete/search?client=firefox&q={escapedQuery}"
-                | Qwant -> failwith "Not implemented"
-                | DuckDuckGo -> failwith "Not implemented"
-                | Bing -> failwith "Not implemented"
-                | Ecosia -> failwith "Not implemented"
+            let url = query |> SearchEngine.getSuggestionsUrl se
+            use req = new HttpRequestMessage(HttpMethod.Get, url)
+            Headers.ProductInfoHeaderValue("Mozilla", "5.0")
+            |> req.Headers.UserAgent.Add
+            req.Headers.Accept.Add(Headers.MediaTypeWithQualityHeaderValue("*/*"))
 
             try
-                let! json = httpClient.GetFromJsonAsync<JsonElement array>(url, ct)
-                let mutable enumerator = json[1].EnumerateArray()
-                return
-                    [| while enumerator.MoveNext() do
-                        let s = enumerator.Current.GetString()
-                        if s <> query then
-                            s |]
+                let! res = httpClient.SendAsync(req, ct)
+                res.EnsureSuccessStatusCode() |> ignore
+                let! jsonStream = res.Content.ReadAsStreamAsync()
+
+                return! jsonStream |> SearchEngine.deserializeSuggestionsRequest se query
             with
             | :? OperationCanceledException
             | :? TaskCanceledException -> return failwith "Task cancelled"
             | e ->
-                logger.Error(e, "Failed to load suggestions")
+                logger.Error(e, "Failed to load suggestions\n{Req}", req)
                 return failwith "Failed to load suggestions"
         }
 
@@ -115,7 +149,7 @@ type WebSearchEngine(pluginPath, logger) =
                     |> Array.map (fun s ->
                         { Name = s
                           Description = "Using " + searchEngineName
-                          Uri = searchEngine |> SearchEngine.getQueryUrl s
+                          Uri = s |> SearchEngine.getQueryUrl searchEngine
                           Icon = icon }
                         :> ISearchResult
                     )
@@ -127,7 +161,7 @@ type WebSearchEngine(pluginPath, logger) =
 
     override this.Id = nameof(WebSearchEngine)
     override this.Name = "Web search"
-    override this.ShortName = searchEngineName
+    override this.ShortName = searchEngineShortName
     override this.Icon = icon
     override this.ImportantResults = false
 
@@ -137,7 +171,7 @@ type WebSearchEngine(pluginPath, logger) =
             else
                 { Name = $"Search \"{query}\""
                   Description = "Using " + searchEngineName
-                  Uri = searchEngine |> SearchEngine.getQueryUrl query
+                  Uri = query |> SearchEngine.getQueryUrl searchEngine
                   Icon = icon }
                 :> ISearchResult
                 |> Array.singleton
@@ -150,7 +184,7 @@ type WebSearchEngine(pluginPath, logger) =
             else
                 { Name = query
                   Description = "Using " + searchEngineName
-                  Uri = searchEngine |> SearchEngine.getQueryUrl query
+                  Uri = query |> SearchEngine.getQueryUrl searchEngine
                   Icon = icon }
                 :> ISearchResult
                 |> Array.singleton

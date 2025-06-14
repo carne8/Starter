@@ -56,8 +56,8 @@ public abstract class StaticSearchEngine(string pluginPath, Logger logger) : Sea
 public abstract class DynamicSearchEngine(string pluginPath, Logger logger) : SearchEngine(pluginPath, logger)
 {
     /// <summary>
-    /// Indicate if the result from this search engine should be shown in
-    /// the first results (like for the calculator search engine) or if they
+    /// Indicate if the instant results from this search engine should be shown on
+    /// top of others results (like for the calculator search engine) or if they
     /// should be shown in the last results (like for the URL search engine)
     /// </summary>
     public abstract bool ImportantResults { get; }

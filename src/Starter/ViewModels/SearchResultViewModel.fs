@@ -3,13 +3,14 @@ namespace Starter.ViewModels
 open Starter.SearchEngine
 open Starter.Features.ResultScores
 
-type SearchResultPosition =
-    | Important = 0s
-    | Normal = 1s
-    | Low = 2s
+type SearchResultKind =
+    | DynamicUnique = 0s
+    | Static = 1s
+    | DynamicInstant = 2s
+    | Dynamic = 3s
 
 type SearchResultViewModel(
-    pos: SearchResultPosition,
+    pos: SearchResultKind,
     searchResult: ISearchResult,
     searchEngineId: string
     ) =
@@ -27,7 +28,7 @@ type SearchResultViewModel(
         and set v = accentuationMap <- v
 
     static member DesignVM = SearchResultViewModel(
-        SearchResultPosition.Normal,
+        SearchResultKind.Static,
         { new ISearchResult with
             member this.Id = ""
             member this.Name = "Zen Browser"
