@@ -83,6 +83,7 @@ public static class Constants
         "Svg.Controls.Skia.Avalonia",
         "Svg.Custom",
         "Svg.Model",
-        "Svg.Skia"
+        "Svg.Skia",
+        "FluentAvalonia"
     ];
 }

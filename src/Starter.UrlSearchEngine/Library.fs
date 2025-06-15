@@ -24,6 +24,7 @@ type UrlSearchEngine(pluginPath, logger) =
     inherit DynamicSearchEngine(pluginPath, logger)
 
     let regex = UriRegex.Regex()
+    let icon = StarterIconSource(Icon.Link)
 
     let tryParseUri (match': Match) =
         match match'.Success with
@@ -44,7 +45,7 @@ type UrlSearchEngine(pluginPath, logger) =
     override this.Id = nameof UrlSearchEngine
     override this.Name = "Link opener"
     override this.ShortName = "Link"
-    override this.Icon = StarterIconSource(Icon.Globe)
+    override this.Icon = icon
     override this.ImportantResults = false
 
     override this.Search(query, _ct, _) =

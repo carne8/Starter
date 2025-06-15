@@ -1,0 +1,26 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Starter.WebSearchEngine.Views"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             x:Class="Starter.WebSearchEngine.Views.Settings"
+             x:DataType="vm:SettingsViewModel">
+    <StackPanel Spacing="4">
+        <TextBlock Classes="title1" Margin="0, 0, 0, 16">Web search settings</TextBlock>
+
+        <!-- Search engine -->
+        <ui:SettingsExpander Header="Search engine">
+            <ui:SettingsExpander.IconSource>
+                <ui:ImageIconSource Source="{Binding Icon}" />
+            </ui:SettingsExpander.IconSource>
+            <ui:SettingsExpander.Footer>
+                <ComboBox SelectedItem="{Binding SelectedSeKind}" ItemsSource="{Binding SearchEngineKinds}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock VerticalAlignment="Center" Text="{Binding}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </ui:SettingsExpander.Footer>
+        </ui:SettingsExpander>
+    </StackPanel>
+</UserControl>
