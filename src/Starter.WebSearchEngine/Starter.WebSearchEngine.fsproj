@@ -17,8 +17,10 @@
         <Content Include="Images/*">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
+        <Compile Include="Logger.fs" />
         <Compile Include="Types.fs" />
-        <Compile Include="Settings.axaml.fs" />
+        <Compile Include="Config.fs" />
+        <Compile Include="Settings.fs" />
         <Compile Include="Library.fs" />
     </ItemGroup>
 

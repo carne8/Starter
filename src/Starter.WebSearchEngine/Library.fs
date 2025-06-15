@@ -2,6 +2,7 @@ namespace Starter.WebSearchEngine
 
 open Starter.SearchEngine
 open Starter.WebSearchEngine
+open Starter.WebSearchEngine.Logger
 
 open System
 open System.Threading
@@ -10,12 +11,13 @@ open System.Diagnostics
 
 open R3
 
-type WebSearchEngine(pluginPath, logger) =
-    inherit DynamicSearchEngine(pluginPath, logger)
+type WebSearchEngine(pluginPath, configDir, logger) =
+    inherit DynamicSearchEngine(pluginPath, configDir, logger)
 
+    do setLogger logger
     let httpClient = new HttpClient()
 
-    let settings = Views.SettingsViewModel(pluginPath, logger, httpClient)
+    let settings = Views.SettingsViewModel(pluginPath, configDir, httpClient)
     let searchEngine = settings.SearchEngine
 
     let suggestionRequests = new Subject<string * CancellationToken>()

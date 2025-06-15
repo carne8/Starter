@@ -20,8 +20,8 @@ type SearchResult =
         member this.Description = $"Open: {this.Uri.AbsoluteUri}"
         member this.Icon = icon
 
-type UrlSearchEngine(pluginPath, logger) =
-    inherit DynamicSearchEngine(pluginPath, logger)
+type UrlSearchEngine(pluginPath, configDir, logger) =
+    inherit DynamicSearchEngine(pluginPath, configDir, logger)
 
     let regex = UriRegex.Regex()
     let icon = StarterIconSource(Icon.Link)

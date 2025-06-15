@@ -102,8 +102,8 @@ type AppIndexer(logger: Serilog.Core.Logger) =
 
     member _.Apps = applications.Task
 
-type ApplicationSearchEngine(pluginPath, logger) =
-    inherit StaticSearchEngine(pluginPath, logger)
+type ApplicationSearchEngine(pluginPath, configDir, logger) =
+    inherit StaticSearchEngine(pluginPath, configDir, logger)
     let indexer = AppIndexer(logger)
 
     override _.Id = nameof ApplicationSearchEngine

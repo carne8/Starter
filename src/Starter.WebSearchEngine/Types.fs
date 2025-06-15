@@ -8,8 +8,8 @@ open System.Threading
 open System.Threading.Tasks
 
 open Starter.SearchEngine
+open Starter.WebSearchEngine.Logger
 open Avalonia.Svg.Skia
-open Serilog.Core
 
 type SearchEngineKind =
     | Google
@@ -84,7 +84,7 @@ type SearchEngineKind =
                     if s <> query then s |]
         }
 
-    static member loadSuggestions (logger: Logger) (httpClient: HttpClient) (se: SearchEngineKind) (ct: CancellationToken) (query: string) =
+    static member loadSuggestions (httpClient: HttpClient) (se: SearchEngineKind) (ct: CancellationToken) (query: string) =
         task {
             let url = query |> SearchEngineKind.getSuggestionsUrl se
             use req = new HttpRequestMessage(HttpMethod.Get, url)
@@ -115,7 +115,7 @@ type SearchEngine =
       LoadSuggestions: CancellationToken -> string -> Task<string array>
       LoadSearchUrl: string -> string }
 
-    static member create pluginPath logger httpClient (seKind: SearchEngineKind) =
+    static member create pluginPath httpClient (seKind: SearchEngineKind) =
         let ìconPath =
             Path.Combine(
                 pluginPath,
@@ -132,7 +132,7 @@ type SearchEngine =
           ShortName = seKind |> SearchEngineKind.getShortName
           Icon = icon
           StarterIcon = StarterIconSource(icon)
-          LoadSuggestions = seKind |> SearchEngineKind.loadSuggestions logger httpClient
+          LoadSuggestions = seKind |> SearchEngineKind.loadSuggestions httpClient
           LoadSearchUrl = seKind |> SearchEngineKind.getQueryUrl }
 
 

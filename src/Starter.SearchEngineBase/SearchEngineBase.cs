@@ -28,7 +28,7 @@ public interface ISearchResult
     StarterIconSource Icon { get; }
 }
 
-public abstract class SearchEngine(string pluginPath, Logger logger)
+public abstract class SearchEngine(string pluginPath, string configDir, Logger logger)
 {
     public abstract string Id { get; }
     public abstract string Name { get; }
@@ -43,7 +43,7 @@ public abstract class SearchEngine(string pluginPath, Logger logger)
 /// Fuzzy finding is applicable on its results.
 /// Applicable for an application search engine.
 /// </summary>
-public abstract class StaticSearchEngine(string pluginPath, Logger logger) : SearchEngine(pluginPath, logger)
+public abstract class StaticSearchEngine(string pluginPath, string configDir, Logger logger) : SearchEngine(pluginPath, configDir, logger)
 {
     public abstract Task<ISearchResult[]> LoadResults();
 }
@@ -53,7 +53,7 @@ public abstract class StaticSearchEngine(string pluginPath, Logger logger) : Sea
 /// Fuzzy finding is not applicable for its results.
 /// Applicable for a web search engine.
 /// </summary>
-public abstract class DynamicSearchEngine(string pluginPath, Logger logger) : SearchEngine(pluginPath, logger)
+public abstract class DynamicSearchEngine(string pluginPath, string configDir, Logger logger) : SearchEngine(pluginPath, configDir, logger)
 {
     /// <summary>
     /// Indicate if the instant results from this search engine should be shown on

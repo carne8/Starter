@@ -28,7 +28,7 @@ type private SettingsSearchResult =
             | TargetPage.Logs -> logsIcon
 
 type SettingsSearchEngine(searchEngines) =
-    inherit StaticSearchEngine("", null)
+    inherit StaticSearchEngine("", "", null)
 
     let vm = new Config.UI.SettingsWindow.WindowViewModel(searchEngines)
     let mutable window = Config.UI.SettingsWindow.WindowControl(DataContext = vm)
