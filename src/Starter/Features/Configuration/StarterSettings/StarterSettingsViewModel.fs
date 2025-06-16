@@ -12,7 +12,7 @@ open ReactiveUI
 open R3
 
 type SearchEnginePrefixViewModel(se: SearchEngine, prefix: string, onPrefixChanged) =
-    let icon = se.Icon |> StarterIconSource.build
+    let icon = se.Icon |> StarterIconSource.buildIconSource
 
     member this.Icon = icon
     member this.Name = se.Name

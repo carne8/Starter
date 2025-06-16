@@ -1,10 +1,11 @@
 # Starter todo
 - [ ] Improve start time
 
-- [ ] Finish web search plugin
-- [ ] Ordering of results
+- [ ] Fix dark/light mode for icons
 - [ ] Remove apps logs
 
+- [x] Finish web search plugin
+- [x] Ordering of results
 - [x] Add app logs
 - [x] Switch to FluentIcons instead of FluentAvalonia
 - [x] Add mouse click

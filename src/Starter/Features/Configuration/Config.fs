@@ -92,7 +92,7 @@ type Configuration =
 
             // Save config
             if not <| File.Exists filePath then
-                filePath |> File.Create |> ignore
+                filePath |> File.Create |> _.Dispose()
 
             do! File.WriteAllTextAsync(filePath, json)
         }

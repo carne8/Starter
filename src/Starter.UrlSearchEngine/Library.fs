@@ -20,10 +20,11 @@ type SearchResult =
         member this.Description = $"Open: {this.Uri.AbsoluteUri}"
         member this.Icon = icon
 
-type UrlSearchEngine(pluginPath, logger) =
-    inherit DynamicSearchEngine(pluginPath, logger)
+type UrlSearchEngine(pluginPath, configDir, logger) =
+    inherit DynamicSearchEngine(pluginPath, configDir, logger)
 
     let regex = UriRegex.Regex()
+    let icon = StarterIconSource(Icon.Link)
 
     let tryParseUri (match': Match) =
         match match'.Success with
@@ -44,10 +45,10 @@ type UrlSearchEngine(pluginPath, logger) =
     override this.Id = nameof UrlSearchEngine
     override this.Name = "Link opener"
     override this.ShortName = "Link"
-    override this.Icon = StarterIconSource(Icon.Globe)
+    override this.Icon = icon
     override this.ImportantResults = false
 
-    override this.Search(query, _ct) =
+    override this.Search(query, _ct, _) =
         query
         |> regex.Matches
         |> Seq.toArray

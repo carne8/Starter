@@ -1,89 +1,88 @@
-module Starter.WebSearchEngine
+namespace Starter.WebSearchEngine
+
+open Starter.SearchEngine
+open Starter.WebSearchEngine
+open Starter.WebSearchEngine.Logger
 
 open System
+open System.Threading
+open System.Net.Http
 open System.Diagnostics
-open System.IO
-open Starter.SearchEngine
-open Avalonia.Svg.Skia
+
 open R3
 
-type SearchEngine =
-    | Google
-    | Qwant
-    | DuckDuckGo
-    | Bing
-    | Ecosia
+type WebSearchEngine(pluginPath, configDir, logger) =
+    inherit DynamicSearchEngine(pluginPath, configDir, logger)
 
-    static member getName =
-        function
-        | Google -> "Google"
-        | Qwant -> "Qwant"
-        | DuckDuckGo -> "DuckDuckGo"
-        | Bing -> "Bing"
-        | Ecosia -> "Ecosia"
+    do setLogger logger
+    let httpClient = new HttpClient()
 
-    static member getIconFilename =
-        function
-        | Google -> "Google.svg"
-        | Qwant -> "Qwant.svg"
-        | DuckDuckGo -> "DuckDuckGo.svg"
-        | Bing -> "Bing.svg"
-        | Ecosia -> "Ecosia.svg"
+    let settings = Views.SettingsViewModel(pluginPath, configDir, httpClient)
+    let searchEngine = settings.SearchEngine
 
-    static member getQueryUrl (query: string) =
-        function
-        | Google -> $"https://www.google.com/search?q={query}"
-        | Qwant -> $"https://www.qwant.com/?q={query}"
-        | DuckDuckGo -> $"https://duckduckgo.com/?q={query}"
-        | Bing -> $"https://www.bing.com/search?q={query}"
-        | Ecosia -> $"https://https://www.ecosia.org/search?q={query}"
+    let suggestionRequests = new Subject<string * CancellationToken>()
+    let suggestions = new Subject<ISearchResult array>()
 
-type SearchResult =
-    { Name: string
-      Description: string
-      Uri: string
-      Icon: StarterIconSource }
+    do
+        suggestionRequests
+            .Debounce(TimeSpan.FromMilliseconds 60)
+            .Subscribe(fun (query, ct) ->
+                if query |> String.IsNullOrEmpty |> not then
+                    task {
+                        let se = searchEngine.Value
+                        let! newSuggestions = se.LoadSuggestions ct query
 
-    interface ISearchResult with
-        member this.Id = this.Uri
-        member this.Name = this.Name
-        member this.Description = this.Description
-        member this.Icon = this.Icon
-
-type WebSearchEngine(pluginPath, logger) =
-    inherit DynamicSearchEngine(pluginPath, logger)
-
-    let searchEngine = Google
-    let searchEngineName = searchEngine |> SearchEngine.getName
-    let iconPath =
-        searchEngine
-        |> SearchEngine.getIconFilename
-        |> fun filename -> Path.Combine(pluginPath, "Images", filename)
-
-    let icon =
-        let s = SvgSource.Load(iconPath)
-        SvgImage(Source = s)
-        :> Avalonia.Media.IImage
-        |> StarterIconSource
+                        newSuggestions
+                        |> Array.map (fun s ->
+                            { Name = s
+                              Description = "Using " + se.Name
+                              Uri = se.LoadSearchUrl query
+                              Icon = se.StarterIcon }
+                            :> ISearchResult
+                        )
+                        |> suggestions.OnNext
+                    }
+                    |> ignore
+            )
+        |> ignore
 
     override this.Id = nameof(WebSearchEngine)
     override this.Name = "Web search"
-    override this.ShortName = searchEngineName
-    override this.Icon = icon
+    override this.ShortName = searchEngine.Value.ShortName
+    override this.Icon = searchEngine.Value.StarterIcon
     override this.ImportantResults = false
 
-    override this.Search(query, _ct) =
+    member this.SimpleSearch(query) =
         let r =
-            if query = "" then Array.empty
+            if query |> String.IsNullOrEmpty then Array.empty
             else
-                { Name = $"Search \"{query}\" on {searchEngineName}"
-                  Description = String.Empty
-                  Uri = searchEngine |> SearchEngine.getQueryUrl query
-                  Icon = icon }
+                { Name = $"Search \"{query}\""
+                  Description = "Using " + searchEngine.Value.Name
+                  Uri = searchEngine.Value.LoadSearchUrl query
+                  Icon = searchEngine.Value.StarterIcon }
                 :> ISearchResult
                 |> Array.singleton
 
         struct (r, Observable.Empty())
+
+    member this.SuggestionsSearch(query, ct) =
+        let r =
+            if query = "" then Array.empty
+            else
+                { Name = query
+                  Description = "Using " + searchEngine.Value.Name
+                  Uri = searchEngine.Value.LoadSearchUrl query
+                  Icon = searchEngine.Value.StarterIcon }
+                :> ISearchResult
+                |> Array.singleton
+
+        suggestionRequests.OnNext(query, ct)
+        struct (r, suggestions.AsObservable())
+
+    override this.Search(query, ct, singleSearchEngineModeActivated) =
+        match singleSearchEngineModeActivated with
+        | false -> this.SimpleSearch(query)
+        | true -> this.SuggestionsSearch(query, ct)
 
     override this.SearchResultSelected(searchResult) =
         match searchResult with
@@ -96,4 +95,9 @@ type WebSearchEngine(pluginPath, logger) =
             |> ignore
         | _ -> ()
 
-    override this.LoadSettingsControl() = null
+    override this.LoadSettingsControl() =
+        try
+            Views.Settings(settings)
+        with e ->
+            logger.Error(e, "Failed to create settings view")
+            failwith "Failed to create settings view"
