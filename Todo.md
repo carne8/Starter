@@ -2,9 +2,9 @@
 - [ ] Improve start time
 
 - [ ] Fix dark/light mode for icons
-- [ ] Finish web search plugin
 - [ ] Remove apps logs
 
+- [x] Finish web search plugin
 - [x] Ordering of results
 - [x] Add app logs
 - [x] Switch to FluentIcons instead of FluentAvalonia
