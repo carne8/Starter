@@ -1,4 +1,4 @@
-﻿module rec Starter.WebSearchEngine.Config
+module rec Starter.WebSearchEngine.Config
 
 open System.IO
 open System.Text.Json
@@ -45,7 +45,7 @@ let ensureFileExists (filePath: string) =
         fileDir |> Directory.CreateDirectory |> ignore
 
     if filePath |> File.Exists |> not then
-        filePath |> File.Create |> ignore
+        filePath |> File.Create |> _.Dispose()
 
 let saveConfig (filePath: string) (config: Config) =
     try
