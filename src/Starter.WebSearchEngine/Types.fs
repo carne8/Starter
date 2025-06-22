@@ -110,7 +110,9 @@ type SearchEngine =
     { Kind: SearchEngineKind
       Name: string
       ShortName: string
-      Icon: Avalonia.Media.IImage
+      Icon:
+        {| Light: Avalonia.Media.IImage
+           Dark: Avalonia.Media.IImage |}
       StarterIcon: StarterIconSource
       LoadSuggestions: CancellationToken -> string -> Task<string array>
       LoadSearchUrl: string -> string }
@@ -123,15 +125,15 @@ type SearchEngine =
                 seKind |> SearchEngineKind.getIconFilename
             )
 
-        let icon =
-            let s = SvgSource.Load(ìconPath)
-            SvgImage(Source = s) :> Avalonia.Media.IImage
+        let lightIcon, darkIcon =
+            SvgImage(Source = SvgSource.Load ìconPath, Css = ".icon-color { fill: #282b2f; }"),
+            SvgImage(Source = SvgSource.Load ìconPath, Css = ".icon-color { fill: #ffffff; }")
 
         { Kind = seKind
           Name = seKind |> SearchEngineKind.getName
           ShortName = seKind |> SearchEngineKind.getShortName
-          Icon = icon
-          StarterIcon = StarterIconSource(icon)
+          Icon = {| Light = lightIcon; Dark = darkIcon |}
+          StarterIcon = StarterIconSource(lightIcon, darkIcon)
           LoadSuggestions = seKind |> SearchEngineKind.loadSuggestions httpClient
           LoadSearchUrl = seKind |> SearchEngineKind.getQueryUrl }
 

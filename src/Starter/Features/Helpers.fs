@@ -5,31 +5,14 @@ open System
 open System.Threading
 open Starter.SearchEngine
 
-open Avalonia.Controls
 open FluentAvalonia.UI.Controls
-open FluentIcons.Common
-open FluentIcons.Avalonia.Fluent
 
 type StarterIconSource with
-    /// Transform StarterIconSource in Control
-    static member build (iconSource: StarterIconSource) : Control | null =
-        match iconSource.Icon.HasValue, iconSource.Image with
-        | true, _ -> FluentIcon(Icon = iconSource.Icon.Value)
-        | false, null -> null
-        | false, image -> ImageIcon(Source = image)
-
-    static member buildWithFontSize iconSize (iconSource: StarterIconSource) : Control | null =
-        match iconSource.Icon.HasValue, iconSource.Image with
-        | true, _ -> FluentIcon(Icon = iconSource.Icon.Value, FontSize = iconSize, IconSize = IconSize.Resizable)
-        | false, null -> null
-        | false, image -> ImageIcon(Source = image)
-
     /// Transform StarterIconSource in IconSource
-    static member buildIconSource (iconSource: StarterIconSource) : IconSource | null =
-        match iconSource.Icon.HasValue, iconSource.Image with
-        | true, _ -> FluentIconSource(Icon = iconSource.Icon.Value)
-        | false, null -> null
-        | false, image -> ImageIconSource(Source = image)
+    static member buildIconSource lightMode (iconSource: StarterIconSource) =
+        match iconSource.Geometry with
+        | null -> ImageIconSource(Source = iconSource.GetImage lightMode) :> IconSource
+        | geo -> PathIconSource(Data = geo)
 
 let disposeOnCancelled (ct: CancellationToken) (d: IDisposable) =
     fun () -> d.Dispose()

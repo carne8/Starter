@@ -3,7 +3,6 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ui="using:FluentAvalonia.UI.Controls"
-        xmlns:ic="using:FluentIcons.Avalonia.Fluent"
         xmlns:vm="using:Starter.Features.Config.UI.SettingsWindow"
         mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
         x:Class="Starter.Features.Config.UI.SettingsWindow.WindowControl"
@@ -19,7 +18,7 @@
     <DockPanel LastChildFill="True">
         <Border DockPanel.Dock="Top" Height="30" Padding="10, 5, 5, 0" IsHitTestVisible="False">
             <StackPanel Spacing="10" Orientation="Horizontal">
-                <ic:SymbolIcon FontSize="16" Symbol="Flash" />
+                <PathIcon Data="{StaticResource Flash}" />
                 <TextBlock VerticalAlignment="Center">Starter Settings</TextBlock>
             </StackPanel>
         </Border>
@@ -29,15 +28,7 @@
                            CompactModeThresholdWidth="0"
                            ExpandedModeThresholdWidth="900"
                            SelectedItem="{Binding SelectedPage}"> <!-- MenuItemsSource bound from code-behind -->
-            <!-- Menu -->
-            <ui:NavigationView.MenuItemTemplate>
-                <DataTemplate DataType="vm:MenuItemVM">
-                    <ui:NavigationViewItem IconSource="{Binding Icon}"
-                                           FontFamily="{StaticResource JetBrainsMono}"
-                                           Content="{Binding Name}" />
-                </DataTemplate>
-            </ui:NavigationView.MenuItemTemplate>
-
+            <!-- Menu data template is set from code-behind -->
             <!-- Content -->
             <Border x:Name="ContentControl" Margin="20" /> <!-- Child bound from code-behind (otherwise it doesn't work) -->
         </ui:NavigationView>

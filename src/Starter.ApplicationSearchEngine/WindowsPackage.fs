@@ -113,5 +113,5 @@ module WindowsPackage =
                 + qualifiersCountScore
             )
             |> Array.tryHead
-            |> Option.map fst
+            |> Option.map (fst >> fun x -> x, x) // TODO: Load dark icon also
     }
