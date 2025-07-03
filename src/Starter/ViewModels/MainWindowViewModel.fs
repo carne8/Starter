@@ -100,7 +100,8 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
             instantResults
             |> Array.map (SearchResultViewModel.create instantSrPos se)
             |> searchResults.AddRange
-        with _ -> () // TODO: Add error / logs
+        with e ->
+            logger.Error(e, $"Failed to get results from dynamic search engine: {se.Name}")
 
     let onTextChanged (newText: string) =
         // Cancel previous search
@@ -238,7 +239,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
         for se in searchEngines.Statics do
             Task.Run<unit>(fun () -> task {
                 try
-                    let! results = se.LoadResults() // TODO: Handle errors
+                    let! results = se.LoadResults()
 
                     // SearchResultViewModel instantiation must happen on UI thread in order to create span controls
                     // Also staticSearchResults.OnNext must happen on UI thread

@@ -5,10 +5,10 @@ open Starter
 open Starter.Controls
 open Starter.Features
 open Starter.Features.Logging
+open Starter.Features.PlatformInterop
 
 open System.Collections.Generic
 open System.Windows.Input
-open Vanara.PInvoke
 
 open Avalonia
 open Avalonia.Input
@@ -50,14 +50,6 @@ type MainWindow() as this =
         zoomedResourceDictionary.Add("SearchResultPadding", Thickness(10, 10))
         zoomedResourceDictionary.Add("SearchResultFontSize", 15.)
 
-    let wndProcCallback =
-        Win32Properties.CustomWndProcHookCallback(
-            fun (_hWnd: nativeint) (msg: uint32) (_wParam: nativeint) (_lParam: nativeint) _ ->
-                if msg = uint User32.WindowMessage.WM_HOTKEY then
-                    this.Show()
-                0
-        )
-
     do this.InitializeComponent()
 
     member this.ViewModel =
@@ -79,7 +71,9 @@ type MainWindow() as this =
         this.AttachDevTools()
         #endif
 
-        Win32Properties.AddWndProcHookCallback(this, wndProcCallback)
+        match PlatformInteropFactory.GetPlatformInterop() with
+        | :? Windows as platform -> platform.SetupHotkeyCallback this
+        | _ -> ()
 
         this.Loaded.Add(fun _ ->
             this.SetupKeyboardShortcuts()

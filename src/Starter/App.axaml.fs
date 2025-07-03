@@ -8,10 +8,9 @@ open Avalonia.Markup.Xaml
 open Starter.Features
 open Starter.Features.Config
 open Starter.Features.Logging
+open Starter.Features.PlatformInterop
 open Starter.ViewModels
 open Starter.Views
-
-open Vanara.PInvoke
 
 type App() =
     inherit Application()
@@ -46,18 +45,10 @@ type App() =
             // Create the window
             let window = MainWindow(DataContext = MainWindowViewModel(config, resultScoreDb))
 
-            // Register hotkey // TODO: Move to platform interop
-            match window.TryGetPlatformHandle() with
-            | null ->
-                logger.Error "Failed to retrieve window platform handle"
-                failwith "Failed to retrieve window platform handle"
-            | platformHandle ->
-                User32.RegisterHotKey(
-                    platformHandle.Handle,
-                    0, // Hotkey id
-                    User32.HotKeyModifiers.MOD_ALT,
-                    User32.VK.VK_SPACE |> uint
-                ) |> ignore
+            // Register hotkey
+            match PlatformInteropFactory.GetPlatformInterop() with
+            | :? Windows as platform -> platform.RegisterHotkey window
+            | _ -> ()
 
             logger.Information "Launched"
         | _ -> ()

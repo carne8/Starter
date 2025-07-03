@@ -1,9 +1,8 @@
 # Starter todo
 - [ ] Improve start time
-
-- [ ] Fix dark/light mode for icons
 - [ ] Remove apps logs
 
+- [x] Fix dark/light mode for icons
 - [x] Finish web search plugin
 - [x] Ordering of results
 - [x] Add app logs
@@ -25,4 +24,5 @@
 ## Plugins
 - [ ] VSCode workspaces plugins
 - [ ] Calculator
-- [ ] Enhance google -> Add suggestions
+- [ ] Windows settings
+- [ ] File search
