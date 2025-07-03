@@ -4,8 +4,8 @@ open Avalonia
 open Avalonia.Controls
 open Avalonia.Controls.Templates
 open Avalonia.Markup.Xaml
-
 open Avalonia.Styling
+
 open FluentAvalonia.UI.Controls
 open R3
 open Starter.SearchEngine

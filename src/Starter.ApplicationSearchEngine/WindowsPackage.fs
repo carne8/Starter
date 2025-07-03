@@ -52,7 +52,10 @@ module WindowsPackage =
 
         Directory.GetFiles(absolutePath, $"{resourceName}*{resourceExt}")
         |> Array.map (fun file ->
-            let fileName = Path.GetFileNameWithoutExtension file
+            let fileName =
+                file
+                |> Path.GetFileNameWithoutExtension
+                |> _.ToLowerInvariant()
 
             if fileName = resourceName then // Is no qualifiers
                 file, dict []
@@ -74,44 +77,68 @@ module WindowsPackage =
                 file, qualifiers
         )
 
+    /// Return a low score for a resource that matches the criteria of a good app icon for Starter
+    let private getResourceScore (_file, qualifiers) =
+        let contrastScore =
+            match qualifiers |> Dict.tryGet "contrast" with
+            | None
+            | Some "standard" -> 0
+            | _ -> 100
+
+        let targetSizeScore =
+            match qualifiers |> Dict.tryGet "targetsize" with
+            | None -> 44 // Because Square44x44Logo
+            | Some size ->
+                match Int32.TryParse size with
+                | true, scale -> scale
+                | false, _ -> Int32.MaxValue
+            |> fun scale -> 100 - scale |> abs
+
+        let scaleScore =
+            match qualifiers |> Dict.tryGet "scale" with
+            | None -> 100
+            | Some scale ->
+                match Int32.TryParse scale with
+                | true, scale -> scale
+                | false, _ -> Int32.MaxValue
+            |> fun scale -> 200 - scale |> abs // Distance to 200
+
+        let qualifiersCountScore = qualifiers.Count
+
+        contrastScore*100_000
+        + targetSizeScore*10_000
+        + scaleScore*100
+        + qualifiersCountScore
+
     let getIcon package = option {
         let! resourceName = package |> getIconResourceName
         let resourceFiles = package |> getResourceFiles resourceName
 
-        return!
-            resourceFiles
-            |> Array.sortBy (fun (_file, qualifiers) ->
-                let contrastScore =
-                    match qualifiers |> Dict.tryGet "contrast" with
-                    | None
-                    | Some "standard" -> 0
-                    | _ -> 100
+        let lightResources, darkResources =
+            resourceFiles |> Array.partition (fun (file, _) ->
+                let fileName =
+                    file
+                    |> Path.GetFileNameWithoutExtension
+                    |> _.ToLowerInvariant()
 
-                let targetSizeScore =
-                    match qualifiers |> Dict.tryGet "targetsize" with
-                    | None -> 44 // Because Square44x44Logo
-                    | Some size ->
-                        match Int32.TryParse size with
-                        | true, scale -> scale
-                        | false, _ -> Int32.MaxValue
-                    |> fun scale -> 100 - scale |> abs
-
-                let scaleScore =
-                    match qualifiers |> Dict.tryGet "scale" with
-                    | None -> 100
-                    | Some scale ->
-                        match Int32.TryParse scale with
-                        | true, scale -> scale
-                        | false, _ -> Int32.MaxValue
-                    |> fun scale -> 200 - scale |> abs // Distance to 200
-
-                let qualifiersCountScore = qualifiers.Count
-
-                contrastScore*100_000
-                + targetSizeScore*10_000
-                + scaleScore*100
-                + qualifiersCountScore
+                fileName.Contains "theme-light" || fileName.Contains "altform-lightunplated"
             )
+
+        let lightIcon =
+            lightResources
+            |> Array.sortBy getResourceScore
             |> Array.tryHead
-            |> Option.map (fst >> fun x -> x, x) // TODO: Load dark icon also
+            |> Option.map fst
+
+        let darkIcon =
+            darkResources
+            |> Array.sortBy getResourceScore
+            |> Array.tryHead
+            |> Option.map fst
+
+        match lightIcon, darkIcon with
+        | Some f, None
+        | None, Some f -> return f, f
+        | Some l, Some d -> return l, d
+        | None, None -> return! None
     }

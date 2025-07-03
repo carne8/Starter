@@ -1,8 +1,8 @@
 ﻿namespace Starter.WebSearchEngine.Views
 
-open Avalonia.Styling
 open Starter.WebSearchEngine
 
+open Avalonia.Styling
 open Avalonia.Controls
 open Avalonia.Markup.Xaml
 

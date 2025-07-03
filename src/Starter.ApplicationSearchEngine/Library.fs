@@ -32,6 +32,7 @@ type Application =
 
 type AppIndexer(logger: Serilog.Core.Logger) =
     let applications = TaskCompletionSource<Application array>()
+    let [<Literal>] IconSize = 70
 
     let getAppIcon (targetPathOpt: string option) (app: ShellItem) =
         // Icon for the Appx apps
@@ -42,17 +43,20 @@ type AppIndexer(logger: Serilog.Core.Logger) =
 
         let getShellIcon () =
             app.Images
-               .GetImage(SIZE(35, 35),  ShellItemGetImageOptions.IconOnly) // TODO: Pass the size of the icon from the host program
+               .GetImage(SIZE(IconSize, IconSize),  ShellItemGetImageOptions.IconOnly)
                .ToAvaloniaBitmap()
             |> fun i -> i, i
 
         match packageIconOpt, targetPathOpt with
         | Some (lightIconPath, darkIconPath), _ -> // Found an icon associated with package
-            new Bitmap(lightIconPath),
-            new Bitmap(darkIconPath)
+            use lightIconStream = System.IO.File.OpenRead lightIconPath
+            use darkIconStream = System.IO.File.OpenRead darkIconPath
+
+            Bitmap.DecodeToHeight(lightIconStream, IconSize),
+            Bitmap.DecodeToHeight(darkIconStream, IconSize)
 
         | None, Some filePath when filePath.ToLowerInvariant().EndsWith ".exe" -> // Take the .exe icon
-            let bitmap = IconHelper.getFileIcon (Avalonia.PixelSize(35*2, 35*2)) filePath
+            let bitmap = IconHelper.getFileIcon (Avalonia.PixelSize(IconSize, IconSize)) filePath
 
             match bitmap with
             | Some bmp -> bmp, bmp
@@ -70,7 +74,7 @@ type AppIndexer(logger: Serilog.Core.Logger) =
                     let packageIdOpt = app |> ShellItem.Property.get "System.AppUserModel.ID"
                     let targetPathOpt = app |> ShellItem.Property.get "System.Link.TargetParsingPath"
 
-                    let icon = // TODO: Load icons only when needed
+                    let icon =
                         app
                         |> getAppIcon targetPathOpt
                         |> StarterIconSource
