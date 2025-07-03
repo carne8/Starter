@@ -1,5 +1,6 @@
 namespace Starter.ViewModels
 
+open Starter.Controls
 open Starter.SearchEngine
 open Starter.Features.ResultScores
 
@@ -17,7 +18,7 @@ type SearchResultViewModel(
 
     let mutable fuzzyMatchResult: Fusil.Fusil.FuzzyResult option = None
     let mutable accentuationMap = Array.empty<bool>
-    let icon = searchResult.Icon |> StarterIconSource.buildWithFontSize 35
+    let icon = searchResult.Icon
 
     member _.Position = pos
     member _.SearchResult = searchResult

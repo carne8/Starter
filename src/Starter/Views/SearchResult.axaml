@@ -11,10 +11,12 @@
     <Border HorizontalAlignment="Stretch" Padding="{DynamicResource SearchResultPadding}">
         <StackPanel Orientation="Horizontal" Spacing="10">
             <Border CornerRadius="4" ClipToBounds="True">
-                <ContentControl VerticalAlignment="Center"
-                                Height="{DynamicResource SearchResultIconSize}"
-                                Width="{DynamicResource SearchResultIconSize}"
-                                Content="{Binding Icon}" />
+                <controls:StarterIcon VerticalAlignment="Center"
+                                      Height="{DynamicResource SearchResultIconSize}"
+                                      Width="{DynamicResource SearchResultIconSize}"
+                                      FontSize="{DynamicResource SearchResultIconSize}"
+                                      IconSource="{Binding Icon}"
+                                      ExtraPaddingForSymbol="4" />
             </Border>
             <StackPanel VerticalAlignment="Center">
                 <controls:AccentuatedTextBlock FontSize="{DynamicResource SearchResultFontSize}"

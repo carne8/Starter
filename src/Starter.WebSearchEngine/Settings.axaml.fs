@@ -2,9 +2,11 @@
 
 open Starter.WebSearchEngine
 
+open Avalonia.Styling
 open Avalonia.Controls
 open Avalonia.Markup.Xaml
 
+open FluentAvalonia.UI.Controls
 open ReactiveUI
 open R3
 
@@ -49,10 +51,22 @@ type SettingsViewModel(pluginPath, configDir, httpClient) =
     member this.Icon = searchEngine.Value.Icon
 
 
-type Settings(viewModel) as this =
+type Settings(viewModel: SettingsViewModel) as this =
     inherit UserControl(DataContext = viewModel)
 
     do this.InitializeComponent()
 
     member this.InitializeComponent() =
         AvaloniaXamlLoader.Load this
+
+        // Bind icon source
+        let expander = this.GetControl<SettingsExpander> "SearchEngine"
+        let setIconSource () =
+            expander.IconSource <-
+                match this.ActualThemeVariant = ThemeVariant.Light with
+                | true -> ImageIconSource(Source = viewModel.Icon.Light)
+                | false -> ImageIconSource(Source = viewModel.Icon.Dark)
+
+        setIconSource()
+        viewModel.PropertyChanged.Add(fun change -> if change.PropertyName = nameof viewModel.Icon then setIconSource())
+        this.PropertyChanged.Add(fun change -> if change.NewValue :? ThemeVariant then setIconSource())

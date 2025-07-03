@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:controls="using:Starter.Controls"
              xmlns:vm="using:Starter.Features.Config.UI.StarterSettings"
              mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
              x:Class="Starter.Features.Config.UI.StarterSettings.StarterSettings"
@@ -42,22 +43,11 @@
         </ui:SettingsExpander>
 
         <!-- Search engine prefixes -->
-        <ui:SettingsExpander x:Name="SearchEnginePrefixes" Header="Search engine activation prefixes">
+        <ui:SettingsExpander x:Name="SearchEnginePrefixes" Header="Search engine activation prefixes"> <!-- Item template bound from code-behind -->
             <!-- ItemSource bound from code-behind -->
             <ui:SettingsExpander.IconSource>
                 <ic:SymbolIconSource Symbol="Keyboard" />
             </ui:SettingsExpander.IconSource>
-
-            <ui:SettingsExpander.ItemTemplate>
-                <DataTemplate DataType="vm:SearchEnginePrefixViewModel">
-                    <ui:SettingsExpanderItem IconSource="{Binding Icon}">
-                        <TextBlock Text="{Binding Name}" />
-                        <ui:SettingsExpanderItem.Footer>
-                            <TextBox Text="{Binding Prefix}" />
-                        </ui:SettingsExpanderItem.Footer>
-                    </ui:SettingsExpanderItem>
-                </DataTemplate>
-            </ui:SettingsExpander.ItemTemplate>
         </ui:SettingsExpander>
 
         <!-- Zoomed mode -->

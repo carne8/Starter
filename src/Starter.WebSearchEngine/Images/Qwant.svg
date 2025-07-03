@@ -1,56 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg
-   id="logosandtypes_com"
-   data-name="logosandtypes com"
-   viewBox="0 0 22500 22500"
-   version="1.1"
-   width="22500"
-   height="22500"
-   xmlns="http://www.w3.org/2000/svg"
-   xmlns:svg="http://www.w3.org/2000/svg">
-  <defs
-     id="defs1">
-    <style
-       id="style1">
-      .cls-1 {
-        fill-rule: evenodd;
-      }
-
-      .cls-1, .cls-2 {
-        fill: #282b2f;
-      }
-
-      .cls-3 {
-        fill: none;
-      }
-    </style>
-  </defs>
-  <g
-     id="Layer_3"
-     data-name="Layer 3"
-     transform="scale(150)">
-    <g
-       id="Layer_3-2"
-       data-name="Layer 3-2">
-      <g
-         id="Layer_2"
-         data-name="Layer 2">
-        <path
-           id="Layer_3-3"
-           data-name="Layer 3-3"
-           class="cls-3"
-           d="M 0,0 H 150 V 150 H 0 Z" />
-      </g>
-    </g>
-  </g>
-  <path
-     class="cls-2"
-     d="m 18750,300 -570,2209.5 -2185.5,564 v 225 l 2185.5,564 570,2209.5 h 213 l 570,-2209.5 2233.5,-576 v -201 L 19533,2509.5 18963,300 Z"
-     id="path1"
-     style="fill:#ffffff;fill-opacity:1;stroke-width:150" />
-  <path
-     class="cls-1"
-     d="m 11128.5,4339.5 c 3493.5,0 6324,2107.5 6324,6202.5 0,3874.5 -2502,5946 -5703,6180 1522.5,930 3822,931.5 5251.5,-283.5 l 447,241.5 -261,2448 -184.5,232.5 c -2539.5,747 -5053.5,-33 -6687,-2656.5 C 7206,16402.5 4803,14343 4803,10540.5 4803,6445.5 7635,4338 11127,4338 Z m 0,11304 c 2244,0 3322.5,-2284.5 3322.5,-5101.5 0,-2817 -934.5,-5101.5 -3322.5,-5101.5 -2388,0 -3322.5,2284.5 -3322.5,5101.5 0,2817 961.5,5101.5 3322.5,5101.5 z"
-     id="path2"
-     style="fill:#ffffff;fill-opacity:1;stroke-width:150" />
+<svg viewBox="0 0 22500 22500"
+     width="22500"
+     height="22500"
+     version="1.1"
+     id="svg2"
+     xmlns="http://www.w3.org/2000/svg"
+     xmlns:svg="http://www.w3.org/2000/svg">
+    <defs id="defs2" />
+    <path class="icon-color"
+          d="m 18750,300 -570,2209.5 -2185.5,564 v 225 l 2185.5,564 570,2209.5 h 213 l 570,-2209.5 2233.5,-576 v -201 L 19533,2509.5 18963,300 Z"
+          id="path1" />
+    <path class="icon-color"
+          fill-rule="evenodd"
+          d="m 11128.5,4339.5 c 3493.5,0 6324,2107.5 6324,6202.5 0,3874.5 -2502,5946 -5703,6180 1522.5,930 3822,931.5 5251.5,-283.5 l 447,241.5 -261,2448 -184.5,232.5 c -2539.5,747 -5053.5,-33 -6687,-2656.5 C 7206,16402.5 4803,14343 4803,10540.5 4803,6445.5 7635,4338 11127,4338 Z m 0,11304 c 2244,0 3322.5,-2284.5 3322.5,-5101.5 0,-2817 -934.5,-5101.5 -3322.5,-5101.5 -2388,0 -3322.5,2284.5 -3322.5,5101.5 0,2817 961.5,5101.5 3322.5,5101.5 z"
+          id="path2" />
 </svg>

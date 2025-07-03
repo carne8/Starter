@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
-using FluentIcons.Common;
 using R3;
 using Serilog.Core;
 
@@ -13,11 +12,18 @@ namespace Starter.SearchEngine;
 public class StarterIconSource()
 {
     public static StarterIconSource Empty = new();
-    public StarterIconSource(IImage image) : this() => Image = image;
-    public StarterIconSource(Icon icon) : this() => Icon = icon;
 
-    public readonly IImage? Image;
-    public readonly Icon? Icon;
+    public StarterIconSource(IImage lightImage, IImage darkImage) : this()
+    {
+        LightImage = lightImage;
+        DarkImage = darkImage;
+    }
+    public readonly IImage? LightImage;
+    public readonly IImage? DarkImage;
+    public IImage? GetImage(bool lightMode) => lightMode ? LightImage : DarkImage;
+
+    public StarterIconSource(Geometry geometry) : this() => Geometry = geometry;
+    public readonly Geometry? Geometry;
 }
 
 public interface ISearchResult

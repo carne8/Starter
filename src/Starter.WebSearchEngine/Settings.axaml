@@ -8,10 +8,7 @@
         <TextBlock Classes="title1" Margin="0, 0, 0, 16">Web search settings</TextBlock>
 
         <!-- Search engine -->
-        <ui:SettingsExpander Header="Search engine">
-            <ui:SettingsExpander.IconSource>
-                <ui:ImageIconSource Source="{Binding Icon}" />
-            </ui:SettingsExpander.IconSource>
+        <ui:SettingsExpander x:Name="SearchEngine" Header="Search engine"> <!-- Icon source bound from code-behind -->
             <ui:SettingsExpander.Footer>
                 <ComboBox SelectedItem="{Binding SelectedSeKind}" ItemsSource="{Binding SearchEngineKinds}">
                     <ComboBox.ItemTemplate>
