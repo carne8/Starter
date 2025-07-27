@@ -36,13 +36,12 @@ type WebSearchEngine(pluginPath, configDir, logger) =
                         |> Array.map (fun s ->
                             { Name = s
                               Description = "Using " + se.Name
-                              Uri = se.LoadSearchUrl query
+                              Uri = se.LoadSearchUrl s
                               Icon = se.StarterIcon }
                             :> ISearchResult
                         )
                         |> suggestions.OnNext
-                    }
-                    |> ignore
+                    } |> ignore
             )
         |> ignore
 
