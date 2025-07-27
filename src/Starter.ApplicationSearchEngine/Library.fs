@@ -1,8 +1,10 @@
 namespace Starter.ApplicationSearchEngine
 
 open Starter.SearchEngine
+
 open System.Diagnostics
 open System.Collections.Generic
+open System.Threading.Tasks
 open Avalonia.Media
 open R3
 
@@ -13,34 +15,43 @@ type ApplicationSearchEngine(pluginPath, configDir, logger) =
     let apps = List<ISearchResult>(100)
     let mutable disposables = List(2) // Btw: keep a reference of the UWP watcher and prevent it from being garbage collected
 
-    override this.LoadResults () = task {
+    override this.LoadResults () =
         #if WINDOWS
-        let! uwpApps = Loaders.Uwp.loadApplications logger
+        Parallel.Invoke(
+            (fun () ->
+                task {
+                    let! uwpApps = Loaders.Uwp.loadApplications logger
 
-        let exeFolderConfig = Loaders.Exe.FolderConfiguration.Default
-        let! exeApps =
-            Loaders.Exe.FolderConfiguration.Default
-            |> Loaders.Exe.loadApplications
+                    let observable, disposable = Loaders.Uwp.observeApplicationChanges apps
+                    disposables.Add disposable
+                    observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
 
-        let observable, disposable = Loaders.Exe.observeApplicationChanges apps exeFolderConfig
-        disposables.Add disposable
-        observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
+                    apps.AddRange uwpApps
+                    apps.ToArray() |> this.ResultsChanged.OnNext
+                } |> ignore
+            ),
+            (fun () ->
+                task {
+                    let exeFolderConfig = Loaders.Exe.FolderConfiguration.Default
+                    let! exeApps =
+                        Loaders.Exe.FolderConfiguration.Default
+                        |> Loaders.Exe.loadApplications
 
-        let observable, disposable = Loaders.Uwp.observeApplicationChanges apps
-        disposables.Add disposable
-        observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
+                    let observable, disposable = Loaders.Exe.observeApplicationChanges apps exeFolderConfig
+                    disposables.Add disposable
+                    observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
 
-        apps.AddRange exeApps
-        apps.AddRange uwpApps
-        apps.ToArray() |> this.ResultsChanged.OnNext
-
-        return apps.ToArray()
+                    apps.AddRange exeApps
+                    apps.ToArray() |> this.ResultsChanged.OnNext
+                } |> ignore
+            )
+        )
 
         #else
         logger.Warning("This Starter search engine is currently not supported on your OS.")
-        return Array.empty
         #endif
-    }
+
+        Array.empty |> Task.FromResult
 
     override _.Id = nameof ApplicationSearchEngine
     override _.Name = "Applications"
