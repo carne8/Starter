@@ -28,8 +28,13 @@ jobs:
         working-directory: src/Starter
 
       - name: Build Apps plugin
-        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/ApplicationSearchEngine
         working-directory: src/Starter.ApplicationSearchEngine
+        run: |
+          FRAMEWORK="net9.0"
+          if [[ "${{ matrix.rid }}" == win-* ]]; then
+          FRAMEWORK="net9.0-windows10.0.19041.0"
+          fi
+          dotnet publish --configuration Release --runtime ${{ matrix.rid }} --framework $FRAMEWORK -p:EnableWindowsTargeting=true -o ../../build/Plugins/ApplicationSearchEngine
 
       - name: Build Url plugin
         run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/UrlSearchEngine
