@@ -1,6 +1,6 @@
 # Starter todo
 - [ ] Improve start time
-- [ ] Remove apps logs
+- [ ] Fix config auto-save issue
 
 - [x] Fix dark/light mode for icons
 - [x] Finish web search plugin

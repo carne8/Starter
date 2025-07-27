@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFrameworks>net9.0;net9.0-windows10.0.19041.0</TargetFrameworks>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <EnableDynamicLoading>true</EnableDynamicLoading>
     </PropertyGroup>
@@ -14,9 +14,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Compile Include="Helpers.fs" />
-        <Compile Include="IconHelper.fs" />
-        <Compile Include="WindowsPackage.fs" />
+        <Compile Include="Types.fs" />
+        <Compile Include="Loaders\IconHelper.fs" Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'" />
+        <Compile Include="Loaders\UwpLoader.fs" Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'" />
+        <Compile Include="Loaders\ExecutableFilesLoader.fs" Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'" />
         <Compile Include="Library.fs" />
     </ItemGroup>
 

@@ -54,7 +54,6 @@ type SearchEngines =
 
         searchEngines
 
-
 type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.ScoreDb) =
     // ---
     let config = new BehaviorSubject<_>(baseConfig)
@@ -76,6 +75,22 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
     let mutable text = "starter"
     let mutable searchCts = new CancellationTokenSource()
     let mutable singleSearchEngineMode = new BehaviorSubject<SingleSearchEngineViewModel option>(None)
+
+    let setStaticResultForSearchEngine (se: StaticSearchEngine) results =
+        Dispatcher.UIThread.Post(fun () ->
+            let othersResults =
+                staticSearchResults.Value
+                |> Array.filter (_.SearchEngineId >> (<>) se.Id)
+
+            let newStaticResults =
+                results
+                |> Array.map (SearchResultViewModel.create SearchResultKind.Static se)
+                |> Array.append othersResults
+
+            newStaticResults |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
+            staticSearchResults.OnNext newStaticResults
+            logger.Information $"{se.Name} results loaded: {results.Length} results"
+        )
 
     let subscribeToDynamicSearchEngine (ct: CancellationToken) query (se: DynamicSearchEngine) =
         try
@@ -194,7 +209,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
         let pluginDirectories =
             #if DEBUG
             [| Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.UrlSearchEngine/bin/Debug/net9.0/")
-               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.ApplicationSearchEngine/bin/Debug/net9.0/")
+               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.ApplicationSearchEngine/bin/Debug/net9.0-windows10.0.19041.0/")
                Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.WebSearchEngine/bin/Debug/net9.0/") |]
             #else
             Constants.PluginsDirectory |> Directory.GetDirectories
@@ -240,19 +255,8 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
             Task.Run<unit>(fun () -> task {
                 try
                     let! results = se.LoadResults()
-
-                    // SearchResultViewModel instantiation must happen on UI thread in order to create span controls
-                    // Also staticSearchResults.OnNext must happen on UI thread
-                    Dispatcher.UIThread.Post(fun () ->
-                        let newStaticResults =
-                            results
-                            |> Array.map (SearchResultViewModel.create SearchResultKind.Static se)
-                            |> Array.append staticSearchResults.Value
-
-                        newStaticResults |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
-                        staticSearchResults.OnNext newStaticResults
-                        logger.Information $"{se.Name} results loaded: {results.Length} results"
-                    )
+                    results |> setStaticResultForSearchEngine se
+                    se.ResultsChanged.Subscribe(setStaticResultForSearchEngine se) |> ignore
                 with e -> logger.Error $"{se.Name} failed to load results:\n{e.Message}"
             }) |> ignore
 

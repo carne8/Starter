@@ -1,136 +1,59 @@
 namespace Starter.ApplicationSearchEngine
 
-open System
-open System.Diagnostics
-open System.Threading.Tasks
-
-open Avalonia.Media
-open Avalonia.Media.Imaging
-open FsToolkit.ErrorHandling
-open Vanara.PInvoke
-open Vanara.Windows.Shell
-
 open Starter.SearchEngine
-open IconHelper
-
-[<RequireQualifiedAccess>]
-type ExecutionPath =
-    | ExeFile of string
-    | PackageId of string
-
-type Application =
-    { Id: string
-      Name: string
-      ExecutionPath: ExecutionPath
-      LoadIcon: unit -> StarterIconSource }
-
-    interface ISearchResult with
-        member this.Id = this.Id
-        member this.Name = this.Name
-        member this.Description = "Application"
-        member this.Icon = this.LoadIcon()
-
-type AppIndexer(logger: Serilog.Core.Logger) =
-    let applications = TaskCompletionSource<Application array>()
-    let [<Literal>] IconSize = 70
-
-    let getAppIcon (targetPathOpt: string option) (app: ShellItem) =
-        // Icon for the Appx apps
-        let packageIconOpt =
-            app
-            |> WindowsPackage.ofShellItem
-            |> Option.bind WindowsPackage.getIcon
-
-        let getShellIcon () =
-            app.Images
-               .GetImage(SIZE(IconSize, IconSize),  ShellItemGetImageOptions.IconOnly)
-               .ToAvaloniaBitmap()
-            |> fun i -> i, i
-
-        match packageIconOpt, targetPathOpt with
-        | Some (lightIconPath, darkIconPath), _ -> // Found an icon associated with package
-            use lightIconStream = System.IO.File.OpenRead lightIconPath
-            use darkIconStream = System.IO.File.OpenRead darkIconPath
-
-            Bitmap.DecodeToHeight(lightIconStream, IconSize),
-            Bitmap.DecodeToHeight(darkIconStream, IconSize)
-
-        | None, Some filePath when filePath.ToLowerInvariant().EndsWith ".exe" -> // Take the .exe icon
-            let bitmap = IconHelper.getFileIcon (Avalonia.PixelSize(IconSize, IconSize)) filePath
-
-            match bitmap with
-            | Some bmp -> bmp, bmp
-            | None -> getShellIcon() // Let the shell load the icon
-        | _ ->
-            getShellIcon() // Let the shell load the icon
-
-    let loadApps () =
-        use appsFolder = new ShellFolder(Shell32.KNOWNFOLDERID.FOLDERID_AppsFolder)
-
-        appsFolder |> Seq.choose (fun app ->
-            try
-                option {
-                    let! name = app.Name |> Option.require (String.IsNullOrEmpty >> not)
-                    let packageIdOpt = app |> ShellItem.Property.get "System.AppUserModel.ID"
-                    let targetPathOpt = app |> ShellItem.Property.get "System.Link.TargetParsingPath"
-
-                    let icon =
-                        app
-                        |> getAppIcon targetPathOpt
-                        |> StarterIconSource
-
-                    let! executionPath =
-                        match packageIdOpt, targetPathOpt with
-                        | Some pkgId, _ -> ExecutionPath.PackageId pkgId |> Some
-                        | _, Some linkPath -> ExecutionPath.ExeFile linkPath |> Some
-                        | None, None -> None
-
-                    logger.Verbose $"Loaded {app.Name}"
-                    app.Dispose()
-                    return
-                        { Id = app.ParsingName
-                          Name = name
-                          ExecutionPath = executionPath
-                          LoadIcon = fun () -> icon }
-                }
-            with e ->
-                logger.Error $"Failed to load {app.Name}"
-                None
-        )
-
-    do
-        Task.Run<unit>(fun () -> task {
-            try
-                let apps =
-                    loadApps()
-                    |> Seq.sortBy _.Name
-                    |> Seq.toArray
-
-                applications.SetResult apps
-            with e ->
-                applications.SetException e
-        }) |> ignore
-
-    member _.Apps = applications.Task
+open System.Diagnostics
+open System.Collections.Generic
+open Avalonia.Media
+open R3
 
 type ApplicationSearchEngine(pluginPath, configDir, logger) =
     inherit StaticSearchEngine(pluginPath, configDir, logger)
-    let indexer = AppIndexer(logger)
     let icon = StarterIconSource(StreamGeometry.Parse "M6.24787561,16.0021244 C7.21437393,16.0021244 7.99787561,16.7856261 7.99787561,17.7521244 L7.99787561,20.25 C7.99787561,21.2164983 7.21437393,22 6.24787561,22 L3.75,22 C2.78350169,22 2,21.2164983 2,20.25 L2,17.7521244 C2,16.7856261 2.78350169,16.0021244 3.75,16.0021244 L6.24787561,16.0021244 Z M6.24787561,17.5021244 L3.75,17.5021244 C3.61192881,17.5021244 3.5,17.6140532 3.5,17.7521244 L3.5,20.25 C3.5,20.3880712 3.61192881,20.5 3.75,20.5 L6.24787561,20.5 C6.3859468,20.5 6.49787561,20.3880712 6.49787561,20.25 L6.49787561,17.7521244 C6.49787561,17.6140532 6.3859468,17.5021244 6.24787561,17.5021244 Z M9.74809326,18 L21.2528964,18 C21.66711,18 22.0028964,18.3357864 22.0028964,18.75 C22.0028964,19.1296958 21.7207425,19.443491 21.354667,19.4931534 L21.2528964,19.5 L9.74809326,19.5 C9.3338797,19.5 8.99809326,19.1642136 8.99809326,18.75 C8.99809326,18.3703042 9.28024715,18.056509 9.64632271,18.0068466 L9.74809326,18 L21.2528964,18 L9.74809326,18 Z M6.24787561,9.00106219 C7.21437393,9.00106219 7.99787561,9.78456388 7.99787561,10.7510622 L7.99787561,13.2489378 C7.99787561,14.2154361 7.21437393,14.9989378 6.24787561,14.9989378 L3.75,14.9989378 C2.78350169,14.9989378 2,14.2154361 2,13.2489378 L2,10.7510622 C2,9.78456388 2.78350169,9.00106219 3.75,9.00106219 L6.24787561,9.00106219 Z M6.24787561,10.5010622 L3.75,10.5010622 C3.61192881,10.5010622 3.5,10.612991 3.5,10.7510622 L3.5,13.2489378 C3.5,13.387009 3.61192881,13.4989378 3.75,13.4989378 L6.24787561,13.4989378 C6.3859468,13.4989378 6.49787561,13.387009 6.49787561,13.2489378 L6.49787561,10.7510622 C6.49787561,10.612991 6.3859468,10.5010622 6.24787561,10.5010622 Z M9.74809326,11 L21.2528964,11 C21.66711,11 22.0028964,11.3357864 22.0028964,11.75 C22.0028964,12.1296958 21.7207425,12.443491 21.354667,12.4931534 L21.2528964,12.5 L9.74809326,12.5 C9.3338797,12.5 8.99809326,12.1642136 8.99809326,11.75 C8.99809326,11.3703042 9.28024715,11.056509 9.64632271,11.0068466 L9.74809326,11 L21.2528964,11 L9.74809326,11 Z M6.24787561,2 C7.21437393,2 7.99787561,2.78350169 7.99787561,3.75 L7.99787561,6.24787561 C7.99787561,7.21437393 7.21437393,7.99787561 6.24787561,7.99787561 L3.75,7.99787561 C2.78350169,7.99787561 2,7.21437393 2,6.24787561 L2,3.75 C2,2.78350169 2.78350169,2 3.75,2 L6.24787561,2 Z M6.24787561,3.5 L3.75,3.5 C3.61192881,3.5 3.5,3.61192881 3.5,3.75 L3.5,6.24787561 C3.5,6.3859468 3.61192881,6.49787561 3.75,6.49787561 L6.24787561,6.49787561 C6.3859468,6.49787561 6.49787561,6.3859468 6.49787561,6.24787561 L6.49787561,3.75 C6.49787561,3.61192881 6.3859468,3.5 6.24787561,3.5 Z M9.74809326,4 L21.2528964,4 C21.66711,4 22.0028964,4.33578644 22.0028964,4.75 C22.0028964,5.12969577 21.7207425,5.44349096 21.354667,5.49315338 L21.2528964,5.5 L9.74809326,5.5 C9.3338797,5.5 8.99809326,5.16421356 8.99809326,4.75 C8.99809326,4.37030423 9.28024715,4.05650904 9.64632271,4.00684662 L9.74809326,4 L21.2528964,4 L9.74809326,4 Z")
+
+    let apps = List<ISearchResult>(100)
+    let mutable disposables = List(2) // Btw: keep a reference of the UWP watcher and prevent it from being garbage collected
+
+    override this.LoadResults () = task {
+        #if WINDOWS
+        let! uwpApps = Loaders.Uwp.loadApplications logger
+
+        let exeFolderConfig = Loaders.Exe.FolderConfiguration.Default
+        let! exeApps =
+            Loaders.Exe.FolderConfiguration.Default
+            |> Loaders.Exe.loadApplications
+
+        let observable, disposable = Loaders.Exe.observeApplicationChanges apps exeFolderConfig
+        disposables.Add disposable
+        observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
+
+        let observable, disposable = Loaders.Uwp.observeApplicationChanges apps
+        disposables.Add disposable
+        observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
+
+        apps.AddRange exeApps
+        apps.AddRange uwpApps
+        apps.ToArray() |> this.ResultsChanged.OnNext
+
+        return apps.ToArray()
+
+        #else
+        logger.Warning("This Starter search engine is currently not supported on your OS.")
+        return Array.empty
+        #endif
+    }
 
     override _.Id = nameof ApplicationSearchEngine
     override _.Name = "Applications"
     override _.ShortName = "Apps"
     override _.Icon = icon
 
-    override _.LoadResults() = indexer.Apps |> Task.map unbox<ISearchResult array>
     override _.SearchResultSelected(searchResult) =
         match searchResult with
         | :? Application as sr ->
             let execStr =
-                match sr.ExecutionPath with
-                | ExecutionPath.ExeFile path -> path
-                | ExecutionPath.PackageId pkgId -> $"shell:AppsFolder\\{pkgId}"
+                match sr.EntryPoint with
+                | EntryPoint.ShellFile path -> path
+                | EntryPoint.UwpApp pkgId -> $"shell:AppsFolder\\{pkgId}"
 
             ProcessStartInfo(
                 FileName = execStr,

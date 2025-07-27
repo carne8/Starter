@@ -51,6 +51,7 @@ public abstract class SearchEngine(string pluginPath, string configDir, Logger l
 /// </summary>
 public abstract class StaticSearchEngine(string pluginPath, string configDir, Logger logger) : SearchEngine(pluginPath, configDir, logger)
 {
+    public readonly Subject<ISearchResult[]> ResultsChanged = new();
     public abstract Task<ISearchResult[]> LoadResults();
 }
 
