@@ -58,14 +58,14 @@
             <Setter Property="Opacity" Value="0.5" />
         </Style>
 
-        <Style Selector="^:pointerover">
-            <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
-                <Setter Property="Background" Value="{DynamicResource CustomListBoxItemBackgroundSelected}" />
-            </Style>
-            <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
-                <Setter Property="Foreground" Value="{DynamicResource ListViewItemForegroundPointerOver}" />
-            </Style>
-        </Style>
+        <!-- <Style Selector="^:pointerover"> -->
+        <!--     <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter"> -->
+        <!--         <Setter Property="Background" Value="{DynamicResource CustomListBoxItemBackgroundSelected}" /> -->
+        <!--     </Style> -->
+        <!--     <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter"> -->
+        <!--         <Setter Property="Foreground" Value="{DynamicResource ListViewItemForegroundPointerOver}" /> -->
+        <!--     </Style> -->
+        <!-- </Style> -->
 
         <Style Selector="^:pressed">
             <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">

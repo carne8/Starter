@@ -119,8 +119,8 @@ type MainWindow() as this =
 
             // Subscribe to pointer pressed events
             this.ResultList.AddHandler(
-                InputElement.PointerPressedEvent,
-                EventHandler<PointerPressedEventArgs>(fun s e ->
+                InputElement.PointerReleasedEvent,
+                EventHandler<PointerReleasedEventArgs>(fun s e ->
                     e.GetPosition(this)
                     |> this.GetVisualsAt
                     |> Seq.tryFind (fun v -> v.DataContext :? ViewModels.SearchResultViewModel)
