@@ -12,11 +12,13 @@ open ReactiveUI
 open R3
 
 type SearchEnginePrefixViewModel(se: SearchEngine, prefix: string, onPrefixChanged) =
+    let mutable prefix = prefix
+
     member this.Icon = se.Icon
     member this.Name = se.Name
     member this.Prefix
         with get () = prefix
-        and set v = v |> onPrefixChanged
+        and set v = prefix <- v; v |> onPrefixChanged
 
 type ViewModel(baseConfig: Configuration, searchEngines: Dictionary<string, SearchEngine> BehaviorSubject) =
     inherit ReactiveObject() // Equivalent to ViewModelBase

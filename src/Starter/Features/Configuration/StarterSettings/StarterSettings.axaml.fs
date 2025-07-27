@@ -18,7 +18,7 @@ type StarterSettings() as this =
             let createIconSource () = StarterIconSource.buildIconSource (this.ActualThemeVariant = ThemeVariant.Light) vm.Icon
 
             let footer = TextBox(Text = vm.Prefix)
-            footer.Bind(TextBox.TextProperty, Binding("Prefix")) |> ignore
+            footer.Bind(TextBox.TextProperty, Binding(nameof vm.Prefix)) |> ignore
 
             let c = SettingsExpanderItem(
                 IconSource = createIconSource(),
