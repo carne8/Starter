@@ -1,6 +1,5 @@
 namespace Starter.ViewModels
 
-open Starter.Controls
 open Starter.SearchEngine
 open Starter.Features.ResultScores
 

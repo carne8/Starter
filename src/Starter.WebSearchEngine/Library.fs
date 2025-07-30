@@ -1,6 +1,5 @@
 namespace Starter.WebSearchEngine
 
-open System.Threading.Tasks
 open Starter.SearchEngine
 open Starter.WebSearchEngine
 open Starter.WebSearchEngine.Logger

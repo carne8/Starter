@@ -1,8 +1,5 @@
 namespace Starter.Controls
 
-open Starter.ViewModels
-open Starter.SearchEngine
-
 open Avalonia.Controls
 open Avalonia.Markup.Xaml
 

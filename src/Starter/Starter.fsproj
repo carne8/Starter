@@ -38,6 +38,7 @@
         <Compile Include="Features\InternalSearchEngines\Settings\ViewModels\ActivatorPrefixesViewModel.fs" />
 
         <!-- Internal search engines -->
+        <Compile Include="Features\InternalSearchEngines\Settings\Views\ActivatorPrefixesView.fs" />
         <Compile Include="Features\InternalSearchEngines\Settings\ViewModels\SettingsViewModel.fs" />
         <Compile Include="Features\InternalSearchEngines\Settings\Views\Settings.axaml.fs" />
         <Compile Include="Features\InternalSearchEngines\Settings\ViewModels\SettingsWindowViewModel.fs" />
