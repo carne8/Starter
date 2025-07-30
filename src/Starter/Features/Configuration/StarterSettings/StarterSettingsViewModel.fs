@@ -11,14 +11,31 @@ open System.Threading.Tasks
 open ReactiveUI
 open R3
 
-type SearchEnginePrefixViewModel(se: SearchEngine, prefix: string, onPrefixChanged) =
-    let mutable prefix = prefix
+type ActivatorPrefixViewModel(activator: ISearchEngineActivator, basePrefix, onPrefixChanged: string -> unit) =
+    let mutable prefix = basePrefix
 
-    member this.Icon = se.Icon
-    member this.Name = se.Name
+    member this.Icon = activator.Icon
+    member this.Name = activator.Name
     member this.Prefix
         with get () = prefix
         and set v = prefix <- v; v |> onPrefixChanged
+
+type SearchEngineActivatorsViewModel(se: SearchEngine, activators: Observable<struct (ISearchEngineActivator * string) seq>, onPrefixChanged) =
+    let activatorPrefixVms =
+        activators |> Observable.map (Array.ofSeq >> function
+            | [| struct (:? DefaultSearchEngineActivator as activator, prefix) |] ->
+                Choice1Of2 <| ActivatorPrefixViewModel(activator, prefix, onPrefixChanged activator.Id)
+            | activators ->
+                activators
+                |> Array.map (fun struct (activator, prefix) ->
+                    ActivatorPrefixViewModel(activator, prefix, onPrefixChanged activator.Id)
+                )
+                |> Choice2Of2
+        )
+
+    member this.Icon = se.Icon
+    member this.Name = se.Name
+    member this.ActivatorPrefixVms = activatorPrefixVms
 
 type ViewModel(baseConfig: Configuration, searchEngines: Dictionary<string, SearchEngine> BehaviorSubject) =
     inherit ReactiveObject() // Equivalent to ViewModelBase
@@ -37,33 +54,31 @@ type ViewModel(baseConfig: Configuration, searchEngines: Dictionary<string, Sear
            "None", Background.None |]
         |> Array.unzip
 
-    // Search engine prefixes
-    let onPrefixChanged seId newPrefix =
+    // Activator prefixes
+    let onActivatorPrefixChanged activatorId newPrefix =
         let newMap =
-            config.Value.SearchEnginePrefixes |> Map.change seId (
+            config.Value.ActivatorPrefixes |> Map.change activatorId (
                 match newPrefix with
                 | "" -> fun _ -> None
                 | s -> fun _ -> Some s
             )
 
-        config.OnNext <| { config.Value with SearchEnginePrefixes = newMap }
+        config.OnNext <| { config.Value with ActivatorPrefixes = newMap }
 
-    let sePrefixVms =
-        searchEngines.Select(
-            Seq.map (fun (kv: KeyValuePair<_, _>) ->
-                let prefix =
-                    config.Value.SearchEnginePrefixes
-                    |> Map.tryFind kv.Key
-                    |> Option.defaultValue String.Empty
+    let seActivatorsVms =
+        searchEngines |> Observable.map (Seq.map (fun kv ->
+            let searchEngine = kv.Value
+            let activators =
+                searchEngine.Activators |> Observable.map (Seq.map (fun activator ->
+                    let prefix =
+                        config.Value.ActivatorPrefixes
+                        |> Map.tryFind activator.Id
+                        |> Option.defaultValue String.Empty
+                    struct (activator, prefix)
+                ))
 
-                SearchEnginePrefixViewModel(
-                    kv.Value,
-                    prefix,
-                    onPrefixChanged kv.Key
-                )
-            )
-            >> Seq.toArray
-        )
+            SearchEngineActivatorsViewModel(searchEngine, activators, onActivatorPrefixChanged)
+        ))
 
     interface IDisposable with
         override _.Dispose() = config.Dispose()
@@ -100,7 +115,7 @@ type ViewModel(baseConfig: Configuration, searchEngines: Dictionary<string, Sear
             config.OnNext <| { config.Value with Background = v' }
 
     // Search engine prefixes
-    member this.SearchEnginePrefixes = sePrefixVms
+    member this.SearchEngineActivators = seActivatorsVms
 
     // Zoom mode activated
     member this.ZoomedModeActivated

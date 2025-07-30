@@ -4,4 +4,8 @@
         <Setter Property="FontSize">25</Setter>
         <Setter Property="FontWeight" Value="SemiBold"/>
     </Style>
+    <Style Selector="TextBlock.title2">
+        <Setter Property="FontSize">16</Setter>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
 </Styles>

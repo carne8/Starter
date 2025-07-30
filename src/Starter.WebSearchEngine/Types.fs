@@ -149,3 +149,4 @@ type SearchResult =
         member this.Name = this.Name
         member this.Description = this.Description
         member this.Icon = this.Icon
+        member this.ActivatorFilter = Array.empty

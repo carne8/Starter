@@ -50,9 +50,8 @@ type WindowViewModel(baseConfig, searchEngines: Dictionary<string, SearchEngine>
 
     let sub =
         searchEngines.ObserveOnUIThreadDispatcher()
-        |> Observable.subscribe (fun d ->
-            d
-            |> Seq.choose (fun kv ->
+        |> Observable.subscribe (
+            Seq.choose (fun kv ->
                 menuItems.Value
                 |> Array.tryFind (fun i -> i.Id = kv.Key)
                 |> Option.map Some
@@ -62,10 +61,10 @@ type WindowViewModel(baseConfig, searchEngines: Dictionary<string, SearchEngine>
                     | control -> kv.Value |> MenuItemVM.create control |> Some
                 )
             )
-            |> Seq.sortBy _.Name
-            |> Seq.append [ starterSettingsMenuItem; logsMenuItem ]
-            |> Seq.toArray
-            |> menuItems.OnNext
+            >> Seq.sortBy _.Name
+            >> Seq.append [ starterSettingsMenuItem; logsMenuItem ]
+            >> Seq.toArray
+            >> menuItems.OnNext
         )
 
     interface IDisposable with

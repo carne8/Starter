@@ -26,6 +26,8 @@
             </ui:SettingsExpander.Footer>
         </ui:SettingsExpander>
 
+        <TextBlock Classes="title2" Margin="0, 0, 0, 16">Personalization</TextBlock>
+
         <!-- Background -->
         <ui:SettingsExpander Header="Background transparency">
             <ui:SettingsExpander.IconSource>
@@ -42,14 +44,6 @@
             </ui:SettingsExpander.Footer>
         </ui:SettingsExpander>
 
-        <!-- Search engine prefixes -->
-        <ui:SettingsExpander x:Name="SearchEnginePrefixes" Header="Search engine activation prefixes"> <!-- Item template bound from code-behind -->
-            <!-- ItemSource bound from code-behind -->
-            <ui:SettingsExpander.IconSource>
-                <ic:SymbolIconSource Symbol="Keyboard" />
-            </ui:SettingsExpander.IconSource>
-        </ui:SettingsExpander>
-
         <!-- Zoomed mode -->
         <ui:SettingsExpander Header="Zoomed mode">
             <ui:SettingsExpander.IconSource>
@@ -59,5 +53,10 @@
                 <ToggleSwitch IsChecked="{Binding ZoomedModeActivated}" />
             </ui:SettingsExpander.Footer>
         </ui:SettingsExpander>
+
+        <TextBlock Classes="title2" Margin="0, 0, 0, 16">Search engine activation prefixes</TextBlock>
+
+        <!-- Activator prefixes -->
+        <ItemsControl x:Name="ActivatorPrefixes"/> <!-- Item template and ItemSource bound from code-behind -->
     </StackPanel>
 </UserControl>

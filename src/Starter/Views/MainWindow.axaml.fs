@@ -94,7 +94,7 @@ type MainWindow() as this =
             |> ignore
 
             // Bind single-search-engine pill
-            this.ViewModel.SingleSearchEngineMode.Subscribe(fun singleSeMode ->
+            this.ViewModel.CurrentActivator.Subscribe(fun singleSeMode ->
                 match singleSeMode with
                 | None ->
                     this.SearchEnginePill.IsVisible <- false
@@ -172,8 +172,8 @@ type MainWindow() as this =
         // Add escape key binding
         let onEscape = // Run when "Escape" is pressed
             ReactiveUI.ReactiveCommand.Create(fun () ->
-                if this.ViewModel.SingleSearchEngineMode.Value.IsSome then
-                    this.ViewModel.ResetSingleSearchEngineMode()
+                if this.ViewModel.CurrentActivator.Value.IsSome then
+                    this.ViewModel.ResetActivator()
                 else
                     (this.ViewModel.HideCommand :> ICommand).Execute()
             )
@@ -191,8 +191,8 @@ type MainWindow() as this =
             let newSelectedIdx =
                 match e.PhysicalKey with
                 | PhysicalKey.Backspace ->
-                    if this.ViewModel.SingleSearchEngineMode.Value.IsSome && this.TextBox.CaretIndex = 0 then
-                        this.ViewModel.ResetSingleSearchEngineMode()
+                    if this.ViewModel.CurrentActivator.Value.IsSome && this.TextBox.CaretIndex = 0 then
+                        this.ViewModel.ResetActivator()
                         e.Handled <- true
 
                     None

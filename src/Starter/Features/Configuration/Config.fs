@@ -29,12 +29,12 @@ type Background =
 
 type Configuration =
     { Background: Background
-      SearchEnginePrefixes: Map<string, string>
+      ActivatorPrefixes: Map<string, string>
       ZoomedMode: bool }
 
     static member Default =
         { Background = Background.Mica
-          SearchEnginePrefixes = Map.empty
+          ActivatorPrefixes = Map.empty
           ZoomedMode = false }
 
     static member encoder config =
@@ -43,7 +43,7 @@ type Configuration =
                 "background", Background.encoder config.Background
 
             "searchEnginePrefixes",
-            config.SearchEnginePrefixes
+            config.ActivatorPrefixes
             |> Map.map (fun _ v -> v |> Encode.string)
             |> Encode.dict
 
@@ -55,7 +55,7 @@ type Configuration =
             { Background =
                 get.Optional.Field "background" Background.decoder
                 |> Option.defaultValue Background.Mica
-              SearchEnginePrefixes =
+              ActivatorPrefixes =
                 Decode.dict Decode.string
                 |> get.Optional.Field "searchEnginePrefixes"
                 |> Option.defaultValue Map.empty

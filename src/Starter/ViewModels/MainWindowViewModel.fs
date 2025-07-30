@@ -30,14 +30,17 @@ type SearchEngines =
           Dynamics = List()
           Dict = new BehaviorSubject<_>(Dictionary()) }
 
+    static member private addSearchEngineCore (se: SearchEngine) searchEngines =
+        searchEngines.Dict.Value.Add(se.Id, se)
+
     static member loadFromDirectories (directories: string array) (searchEngines: SearchEngines) =
         for dir in directories do
             let statics, dynamics = dir |> SearchEngineLoading.loadSearchEngineFromDirectory
             statics |> searchEngines.Statics.AddRange
             dynamics |> searchEngines.Dynamics.AddRange
 
-            statics |> Seq.iter (fun s -> searchEngines.Dict.Value.Add(s.Id, s))
-            dynamics |> Seq.iter (fun s -> searchEngines.Dict.Value.Add(s.Id, s))
+            statics |> Seq.iter (fun se -> searchEngines.Dict.Value.Add(se.Id, se))
+            dynamics |> Seq.iter (fun se -> searchEngines.Dict.Value.Add(se.Id, se))
 
         searchEngines.Dict.Value |> searchEngines.Dict.OnNext
         searchEngines
@@ -49,9 +52,7 @@ type SearchEngines =
         | _ -> ()
 
         searchEngines.Dict.Value.Add(se.Id, se)
-        searchEngines.Dict.Value
-        |> searchEngines.Dict.OnNext
-
+        searchEngines.Dict.Value |> searchEngines.Dict.OnNext
         searchEngines
 
 type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.ScoreDb) =
@@ -61,20 +62,20 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
     // --- Search engines store
     let searchEngines = SearchEngines.create()
-    let searchEngineFromPrefix = new BehaviorSubject<(string * SearchEngine) array>(Array.empty) // Bound to searchEngines in `do`
+    let activatorStore = ActivatorStore(config)
 
     // --- Commands (to interact with view)
     let hideCommand = ReactiveCommand.Create(fun () -> ())
     let clearTextBoxCommand = new Subject<int>()
 
     // --- State
-    /// Static results pre-loaded
+    /// Pre-loaded static results
     let staticSearchResults = new BehaviorSubject<SearchResultViewModel array>(Array.empty)
     /// Results matching to the current query
     let searchResults = ObservableList<SearchResultViewModel>(100)
     let mutable text = "starter"
     let mutable searchCts = new CancellationTokenSource()
-    let mutable singleSearchEngineMode = new BehaviorSubject<SingleSearchEngineViewModel option>(None)
+    let mutable currentActivator = new BehaviorSubject<ISearchEngineActivator option>(None)
 
     let setStaticResultForSearchEngine (se: StaticSearchEngine) results =
         Dispatcher.UIThread.Post(fun () ->
@@ -84,22 +85,23 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
             let newStaticResults =
                 results
-                |> Array.map (SearchResultViewModel.create SearchResultKind.Static se)
-                |> Array.append othersResults
+                |> Seq.map (SearchResultViewModel.create SearchResultKind.Static se)
+                |> Seq.append othersResults
+                |> Seq.toArray
 
             newStaticResults |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
             staticSearchResults.OnNext newStaticResults
-            logger.Information $"{se.Name} results loaded: {results.Length} results"
+            logger.Information $"{se.Name} results loaded"
         )
 
-    let subscribeToDynamicSearchEngine (ct: CancellationToken) query (se: DynamicSearchEngine) =
+    let subscribeToDynamicSearchEngine activator (ct: CancellationToken) query (se: DynamicSearchEngine) =
         try
-            let struct (instantResults, obs) = se.Search(query, searchCts.Token, singleSearchEngineMode.Value.IsSome)
+            let struct (instantResults, obs) = se.Search(query, searchCts.Token, activator |> Option.toObj)
 
             obs.ObserveOnUIThreadDispatcher()
                .Subscribe(fun results ->
                 results
-                |> Array.map (SearchResultViewModel.create SearchResultKind.Dynamic se)
+                |> Seq.map (SearchResultViewModel.create SearchResultKind.Dynamic se)
                 |> searchResults.AddRange
 
                 searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
@@ -113,7 +115,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                 | false -> SearchResultKind.DynamicInstant
 
             instantResults
-            |> Array.map (SearchResultViewModel.create instantSrPos se)
+            |> Seq.map (SearchResultViewModel.create instantSrPos se)
             |> searchResults.AddRange
         with e ->
             logger.Error(e, $"Failed to get results from dynamic search engine: {se.Name}")
@@ -123,14 +125,13 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
         searchCts.Cancel()
         searchCts <- new CancellationTokenSource()
 
-        match searchEngineFromPrefix.Value |> Array.tryFind (fst >> newText.StartsWith) with
-        | Some (prefix, se) ->
-            // Update the single search-engine-mode
-            se
-            |> SingleSearchEngineViewModel.create
+        match activatorStore.GetActivatorFromPrefix newText with
+        | Some activator ->
+            // Update the current activator
+            activator
             |> Some
-            |> singleSearchEngineMode.OnNext
-            clearTextBoxCommand.OnNext(prefix.Length)
+            |> currentActivator.OnNext
+            clearTextBoxCommand.OnNext(newText.Length)
 
             // Clear the results (as the textbox is empty)
             searchResults.Clear()
@@ -144,45 +145,65 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
             let fuzzyMatch = Fusil.fuzzyMatch false true true fusilSlab query
 
-            singleSearchEngineMode.Subscribe(fun singleSe ->
-                match singleSe with
-                | Some { SearchEngine = :? DynamicSearchEngine as singleSe } ->
-                    searchResults.Clear()
-                    singleSe |> subscribeToDynamicSearchEngine searchCts.Token newText
-                    searchResults.NotifyChanges()
-                | _ ->
-                    let isSearchEngineActivated seId =
-                        match singleSe with
-                        | None -> true
-                        | Some se -> se.SearchEngine.Id = seId
+            currentActivator.Subscribe(fun activator ->
+                let targetSearchEngine =
+                    match activator with
+                    | None -> Choice1Of4 () // No activator -> show all static results
+                    | Some activator ->
+                        match searchEngines.Dict.Value.TryGetValue(activator.Id) with
+                        | true, (:? DynamicSearchEngine as se) -> Choice2Of4 struct (activator, se) // Activator from dynamic search engine -> show only its results
+                        | true, se -> Choice3Of4 se // Activator from static search engine -> show only its results
+                        | false, _ -> Choice4Of4 () // Activator from unknown search engine -> logging an error
 
+                match targetSearchEngine with
+                | Choice2Of4 (activator, se) -> // Only dynamic se
+                    searchResults.Clear()
+                    se |> subscribeToDynamicSearchEngine (Some activator) searchCts.Token newText
+                    searchResults.NotifyChanges()
+
+                | Choice3Of4 se -> // Only static se
                     staticSearchResults.Subscribe(fun staticResults ->
                         searchResults.Clear()
 
-                        searchEngines.Dynamics |> Seq.iter (fun se ->
-                            if se.Id |> isSearchEngineActivated then
-                                se |> subscribeToDynamicSearchEngine searchCts.Token newText
+                        staticResults
+                        |> Array.filter (fun result ->
+                            if result.SearchEngineId = se.Id then
+                                match result.Name |> fuzzyMatch with
+                                | Some fusilResult when fusilResult.Score > 0s ->
+                                    result.AccentuationMap <- fusilResult.MatchingPositions
+                                    true
+                                | _ -> false
+                            else
+                                false
                         )
+                        |> searchResults.AddRange
 
-                        let filteredResults =
-                            staticResults |> Array.filter (fun srVm ->
-                                if srVm.SearchEngineId |> isSearchEngineActivated |> not then
-                                    false
-                                else
-                                    match srVm.Name |> fuzzyMatch with
-                                    | Some fusilResult when fusilResult.Score > 0s ->
-                                        srVm.AccentuationMap <- fusilResult.MatchingPositions
-                                        true
-                                    | _ -> false
-                            )
-
-                        filteredResults |> searchResults.AddRange
                         searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
                         searchResults.NotifyChanges()
-                    )
-                    |> disposeOnCancelled searchCts.Token
-            )
-            |> disposeOnCancelled searchCts.Token
+                    ) |> disposeOnCancelled searchCts.Token
+
+                | Choice1Of4 () -> // All results
+                    staticSearchResults.Subscribe(fun staticResults ->
+                        searchResults.Clear()
+
+                        searchEngines.Dynamics |> Seq.iter (subscribeToDynamicSearchEngine None searchCts.Token newText)
+
+                        staticResults
+                        |> Array.filter (fun result ->
+                            match result.Name |> fuzzyMatch with
+                            | Some fusilResult when fusilResult.Score > 0s ->
+                                result.AccentuationMap <- fusilResult.MatchingPositions
+                                true
+                            | _ -> false
+                        )
+                        |> searchResults.AddRange
+
+                        searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
+                        searchResults.NotifyChanges()
+                    ) |> disposeOnCancelled searchCts.Token
+
+                | Choice4Of4 () -> logger.Error $"Failed to find search engine associated with activator: {activator |> Option.map _.Id}"
+            ) |> disposeOnCancelled searchCts.Token
 
     // ReSharper disable once FSharpRedundantDotInIndexer
     let validateResult (result: SearchResultViewModel) =
@@ -228,21 +249,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
         // Precompile search engine methods
         // dynamicSearchEngines |> Seq.iter SearchEngineLoading.prepareSearchEngine
 
-        // Sync searchEngineFromPrefix with config
-        config.Subscribe (fun config ->
-            config.SearchEnginePrefixes
-            |> Map.toSeq
-            |> Seq.choose (fun (k, v) ->
-                match searchEngines.Dict.Value.TryGetValue k with
-                | false, _ -> None
-                | true, se -> Some (v, se)
-            )
-            |> Seq.toArray
-            |> searchEngineFromPrefix.OnNext
-        )
-        |> ignore
-
-        // Sync config changes with the settings search engine (and the settings page)
+        // Sync settings search engine (and the settings page) with config
         // Save config to a file when it changes
         settingsSearchEngine.Configuration.Subscribe(fun newConfig ->
             config.OnNext newConfig
@@ -254,18 +261,21 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
         for se in searchEngines.Statics do
             Task.Run<unit>(fun () -> task {
                 try
-                    let! results = se.LoadResults()
+                    let! results, resultsChanged = se.LoadResults()
                     results |> setStaticResultForSearchEngine se
-                    se.ResultsChanged.Subscribe(setStaticResultForSearchEngine se) |> ignore
+                    resultsChanged.Subscribe(setStaticResultForSearchEngine se) |> ignore
                 with e -> logger.Error $"{se.Name} failed to load results:\n{e.Message}"
             }) |> ignore
 
+        for kv in searchEngines.Dict.Value do
+            activatorStore.AddSearchEngineActivators(kv.Value)
+
     member _.HideCommand = hideCommand
     member _.ClearTextBoxCommand = clearTextBoxCommand
-    member _.ResetSingleSearchEngineMode() =
-        match singleSearchEngineMode.Value with
+    member _.ResetActivator() =
+        match currentActivator.Value with
         | None -> ()
-        | Some _ -> singleSearchEngineMode.OnNext None
+        | Some _ -> currentActivator.OnNext None
 
     member _.ValidateResult(searchResult: SearchResultViewModel | null) =
         match searchResult with
@@ -283,7 +293,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
         with get () = text
         and set v = text <- v; onTextChanged v
 
-    member this.SingleSearchEngineMode = singleSearchEngineMode
+    member this.CurrentActivator = currentActivator
 
     #if DEBUG
     static member DesignVM = MainWindowViewModel(Configuration.Default, Array.empty |> dict)
