@@ -2,7 +2,7 @@ namespace Starter.ViewModels
 
 open Starter.Features
 open Starter.Features.Config
-open Starter.Features.InternalSearchEngines
+open Starter.Features.InternalSearchEngines.Settings
 open Starter.Features.Logging
 open Starter.Features.ResultScores
 open Starter.Features.CustomCollections

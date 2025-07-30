@@ -1,4 +1,7 @@
-namespace Starter.Features.Config.UI.StarterSettings
+namespace Starter.Features.InternalSearchEngines.Settings.Views
+
+open Starter.Features.InternalSearchEngines.Settings.ViewModels
+open Starter.SearchEngine
 
 open Avalonia.Controls
 open Avalonia.Controls.Templates
@@ -6,11 +9,10 @@ open Avalonia.Data
 open Avalonia.Markup.Xaml
 open Avalonia.Styling
 
-open Starter.SearchEngine
 open FluentAvalonia.UI.Controls
 open R3
 
-type StarterSettings() as this =
+type Settings() as this =
     inherit UserControl()
 
     let prefixTextBoxItemTemplate =
@@ -65,7 +67,7 @@ type StarterSettings() as this =
 
         this.DataContextChanged.Add(fun _ ->
             match this.DataContext with
-            | :? ViewModel as vm ->
+            | :? SettingsViewModel as vm ->
                 let activatorPrefixes = this.GetControl<ItemsControl> "ActivatorPrefixes"
 
                 // Set ActivatorPrefixes item template

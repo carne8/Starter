@@ -35,18 +35,13 @@
         <!-- Config-->
         <Compile Include="Features\Configuration\Config.fs" />
         <Compile Include="Features\Configuration\ActivatorStore.fs" />
-        <Compile Include="Features\Configuration\StarterSettings\StarterSettingsViewModel.fs" />
-        <Compile Include="Features\Configuration\StarterSettings\StarterSettings.axaml.fs">
-            <DependentUpon>Features\Configuration\StarterSettings\StarterSettings.axaml.fs</DependentUpon>
-            <SubType>Code</SubType>
-        </Compile>
-        <Compile Include="Features\Configuration\SettingsWindow\SettingsWindowViewModel.fs" />
-        <Compile Include="Features\Configuration\SettingsWindow\SettingsWindow.axaml.fs">
-            <DependentUpon>Features\Configuration\SettingsWindow\SettingsWindow.axaml.fs</DependentUpon>
-            <SubType>Code</SubType>
-        </Compile>
+        <Compile Include="Features\InternalSearchEngines\Settings\ViewModels\ActivatorPrefixesViewModel.fs" />
 
         <!-- Internal search engines -->
+        <Compile Include="Features\InternalSearchEngines\Settings\ViewModels\SettingsViewModel.fs" />
+        <Compile Include="Features\InternalSearchEngines\Settings\Views\Settings.axaml.fs" />
+        <Compile Include="Features\InternalSearchEngines\Settings\ViewModels\SettingsWindowViewModel.fs" />
+        <Compile Include="Features\InternalSearchEngines\Settings\Views\SettingsWindow.axaml.fs" />
         <Compile Include="Features\InternalSearchEngines\Settings\SettingsSearchEngine.fs" />
 
         <!-- Others -->
@@ -66,18 +61,9 @@
         <Compile Include="ViewModels\MainWindowViewModel.fs" />
 
         <!-- Views -->
-        <Compile Include="Views\SearchResult.axaml.fs">
-            <DependentUpon>Views\SearchResult.axaml.fs</DependentUpon>
-            <SubType>Code</SubType>
-        </Compile>
-        <Compile Include="Views\SearchEnginePill.axaml.fs">
-            <DependentUpon>Views\SearchEnginePill.axaml.fs</DependentUpon>
-            <SubType>Code</SubType>
-        </Compile>
-        <Compile Include="Views\MainWindow.axaml.fs">
-            <DependentUpon>Views\MainWindow.axaml.fs</DependentUpon>
-            <SubType>Code</SubType>
-        </Compile>
+        <Compile Include="Views\SearchResult.axaml.fs" />
+        <Compile Include="Views\SearchEnginePill.axaml.fs" />
+        <Compile Include="Views\MainWindow.axaml.fs" />
 
         <!-- Entry point -->
         <Compile Include="ViewLocator.fs" />
