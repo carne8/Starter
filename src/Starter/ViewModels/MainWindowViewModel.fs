@@ -231,7 +231,8 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
             #if DEBUG
             [| Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.UrlSearchEngine/bin/Debug/net9.0/")
                Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.ApplicationSearchEngine/bin/Debug/net9.0-windows10.0.19041.0/")
-               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.WebSearchEngine/bin/Debug/net9.0/") |]
+               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.WebSearchEngine/bin/Debug/net9.0/")
+               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.WorkspaceSearchEngine/bin/Debug/net9.0/") |]
             #else
             Constants.PluginsDirectory |> Directory.GetDirectories
             #endif

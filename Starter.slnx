@@ -1,8 +1,9 @@
 <Solution>
   <Folder Name="/Plugins/">
     <Project Path="src/Starter.ApplicationSearchEngine/Starter.ApplicationSearchEngine.fsproj" />
+    <Project Path="src/Starter.WorkspaceSearchEngine/Starter.WorkspaceSearchEngine.fsproj" />
     <Project Path="src/Starter.SearchEngineBase/Starter.SearchEngineBase.csproj" />
-    <Project Path="src\Starter.WebSearchEngine\Starter.WebSearchEngine.fsproj" />
+    <Project Path="src/Starter.WebSearchEngine/Starter.WebSearchEngine.fsproj" />
   </Folder>
   <Folder Name="/Plugins/Starter.UrlSearchEngine/">
     <Project Path="src/Starter.UrlSearchEngine/Starter.UrlSearchEngine.fsproj" />
