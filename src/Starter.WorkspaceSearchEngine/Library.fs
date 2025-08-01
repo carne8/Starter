@@ -4,6 +4,8 @@ open Starter.SearchEngine
 open Starter.WorkspaceSearchEngine
 
 open System.Collections.Generic
+open System.Threading
+
 open FsToolkit.ErrorHandling
 open R3
 
@@ -12,8 +14,25 @@ type WorkspaceSearchEngine(pluginPath, configDir, logger) =
 
     let workspaces = new BehaviorSubject<_>(ResizeArray<ISearchResult>())
     let workspaceSources = WorkspaceSourceProvider.loadWorkspaceSources pluginPath
+    let semaphore = new SemaphoreSlim(1, 1)
 
-    do workspaces.AsObservable().Cast<_, IEnumerable<ISearchResult>>().Subscribe(printfn "aaaaa: %A") |> ignore
+    let loadWorkspaces source =
+        task {
+            do! semaphore.WaitAsync()
+            try
+                let! newWorkspaces = source.LoadWorkspaces()
+
+                workspaces.Value.RemoveAll(fun searchResult ->
+                    searchResult.Id.StartsWith $"{SearchResult.prefixId}{source.Id}"
+                ) |> ignore
+
+                newWorkspaces
+                |> Seq.map (SearchResult.fromWorkspace source)
+                |> workspaces.Value.AddRange
+
+                workspaces.Value |> workspaces.OnNext
+            finally semaphore.Release() |> ignore
+        } |> ignore
 
     override this.Id = nameof WorkspaceSearchEngine
     override this.Name = "Dev workspaces"
@@ -22,17 +41,8 @@ type WorkspaceSearchEngine(pluginPath, configDir, logger) =
 
     override this.LoadResults() =
         workspaceSources |> Array.Parallel.iter (fun source ->
-            source.LoadWorkspaces()
-            |> Task.map (fun newWorkspaces ->
-                newWorkspaces
-                |> Seq.map (SearchResult.fromWorkspace source)
-                |> workspaces.Value.AddRange
-
-                workspaces.Value |> workspaces.OnNext
-            )
-            |> ignore
-        )
-
+            source |> loadWorkspaces
+            source.WorkspacesChanged.Subscribe(fun () -> source |> loadWorkspaces) |> ignore)
         struct (Seq.empty, workspaces.AsObservable().Cast<_, IEnumerable<ISearchResult>>()) |> Task.singleton
 
     override this.SearchResultSelected(selectedSearchResult) =

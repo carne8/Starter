@@ -1,7 +1,8 @@
 namespace Starter.WorkspaceSearchEngine
 
-open System.Threading.Tasks
 open Starter.SearchEngine
+open System
+open System.Threading.Tasks
 open R3
 
 type Workspace =
@@ -11,9 +12,12 @@ type Workspace =
       Open: unit -> unit }
 
 type WorkspaceSource =
-    { Icon: StarterIconSource
+    { Id: string
+      Icon: StarterIconSource
       LoadWorkspaces: unit -> Task<Workspace seq>
-      WorkspacesChanged: Observable<unit> }
+      WorkspacesChanged: Observable<unit>
+      /// Needed for the FileSystemWatcher to not be garbage collected
+      Watcher: IDisposable }
 
 type SearchResult =
     { Id: string
@@ -29,8 +33,10 @@ type SearchResult =
         member this.Icon = this.Icon
         member this.ActivatorFilter = Array.empty
 
+    static member prefixId = "workspace:"
+
     static member fromWorkspace (workspaceSource: WorkspaceSource) (workspace: Workspace) =
-        { Id = workspace.Id
+        { Id = SearchResult.prefixId + workspaceSource.Id + workspace.Id
           Name = workspace.Name
           Path = workspace.Path
           Icon = workspaceSource.Icon

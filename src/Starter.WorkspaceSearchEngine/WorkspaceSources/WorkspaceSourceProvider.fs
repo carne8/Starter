@@ -1,7 +1,5 @@
 ﻿module Starter.WorkspaceSearchEngine.WorkspaceSourceProvider
 
-open System
-open System.IO
 open FsToolkit.ErrorHandling
 
 // type JetBrainsIde =
@@ -32,9 +30,13 @@ let private getVsCodeWorkspaceSource insiders pluginPath =
             | false -> Icons.IconName.vsCode
             |> Icons.loadIcon pluginPath
 
-        { Icon = icon
+        let workspacesChanged, watcher = WorkspaceSources.VsCode.detectWorkspaceChanges insiders
+
+        { Id = if insiders then "vscode-insiders:" else "vscode:"
+          Icon = icon
           LoadWorkspaces = fun () -> WorkspaceSources.VsCode.loadWorkspaces vsCodePath insiders
-          WorkspacesChanged = R3.Observable.Empty() }
+          WorkspacesChanged = workspacesChanged
+          Watcher = watcher }
     )
 
 let loadWorkspaceSources pluginPath =

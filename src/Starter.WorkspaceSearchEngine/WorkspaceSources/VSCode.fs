@@ -7,8 +7,9 @@ open System.IO
 open System.Text
 open System.Text.Json
 open System.Diagnostics
+open R3
 
-let formatPath (path: string) =
+let private formatPath (path: string) =
     if OperatingSystem.IsWindows() then
         let stringBuilder = StringBuilder(path.Length - 1)
 
@@ -24,27 +25,28 @@ let formatPath (path: string) =
     else
         path
 
-let openWorkspace vsCodePath workspacePath =
+let private getWorkspaceDbPath insiders =
+    Path.Combine(
+        Environment.GetFolderPath Environment.SpecialFolder.ApplicationData,
+        (if insiders then "Code - Insiders" else "Code"),
+        "User/globalStorage/storage.json"
+    )
+
+let private openWorkspace vsCodePath workspacePath =
     ProcessStartInfo(FileName = vsCodePath, Arguments = workspacePath)
     |> Process.Start
     |> _.Dispose()
 
 let loadWorkspaces vsCodePath insiders =
     task {
-        let configFilePath =
-            Path.Combine(
-                Environment.GetFolderPath Environment.SpecialFolder.ApplicationData,
-                (if insiders then "Code - Insiders" else "Code"),
-                "User/globalStorage/storage.json"
-            )
+        let configFilePath = getWorkspaceDbPath insiders
 
-        use stream = File.OpenRead configFilePath
-        let! json = JsonDocument.ParseAsync(stream)
+        let! bytes = File.ReadAllBytesAsync configFilePath
+        let json = JsonDocument.Parse(bytes)
+
         let workspacesJson = json.RootElement.GetProperty("profileAssociations").GetProperty("workspaces")
         let mutable workspaceEnumerator = workspacesJson.EnumerateObject()
         let workspaces = ResizeArray()
-
-        let idPrefix = if insiders then "VsCode-insiders" else "VsCode"
 
         while workspaceEnumerator.MoveNext() do
             let property = workspaceEnumerator.Current
@@ -55,7 +57,7 @@ let loadWorkspaces vsCodePath insiders =
             | true, uri ->
                 let path = uri.LocalPath |> formatPath
 
-                { Id = idPrefix + file
+                { Id = file
                   Name = path |> Path.GetFileName
                   Path = path
                   Open = fun () -> openWorkspace vsCodePath path }
@@ -63,6 +65,24 @@ let loadWorkspaces vsCodePath insiders =
 
         return workspaces :> _ seq
     }
+
+let detectWorkspaceChanges insiders =
+    let configPath = getWorkspaceDbPath insiders
+    let watcher =
+        new FileSystemWatcher(
+            configPath |> Path.GetDirectoryName,
+            configPath |> Path.GetFileName,
+            NotifyFilter = (NotifyFilters.FileName ||| NotifyFilters.LastWrite),
+            IncludeSubdirectories = true,
+            EnableRaisingEvents = true
+        )
+
+    Observable.Merge(
+        watcher.Renamed.ToObservable().Select(ignore),
+        watcher.Changed.ToObservable().Select(ignore)
+    ).Debounce(TimeSpan.FromMilliseconds 300),
+    watcher :> IDisposable
+
 
 let findVsCode insiders =
     let relativeInstallPath =
