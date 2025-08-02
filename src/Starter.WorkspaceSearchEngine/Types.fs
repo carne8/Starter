@@ -40,6 +40,7 @@ type SearchResult =
         member this.Name = this.Name
         member this.Description = this.Path
         member this.Icon = this.Source.Icon
+        member this.ShowIfNoActivator = false
         member this.ActivatorFilter = [| this.Source |]
 
     static member fromWorkspace (workspaceSource: WorkspaceSource) (workspace: Workspace) =

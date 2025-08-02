@@ -19,6 +19,7 @@ type SearchResult =
         member this.Name = "Open link"
         member this.Description = $"Open: {this.Uri.AbsoluteUri}"
         member this.Icon = icon
+        member this.ShowIfNoActivator = true
         member this.ActivatorFilter = Array.empty
 
 type UrlSearchEngine(pluginPath, configDir, logger) =

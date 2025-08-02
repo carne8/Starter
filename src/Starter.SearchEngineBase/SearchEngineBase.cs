@@ -56,6 +56,10 @@ public interface ISearchResult
     string Name { get; }
     string Description { get; }
     StarterIconSource Icon { get; }
+    /// <summary>
+    /// Show this result in the default mode of Starter, without any activator being in use.
+    /// </summary>
+    bool ShowIfNoActivator { get; }
     ISearchEngineActivator[] ActivatorFilter { get; }
 }
 

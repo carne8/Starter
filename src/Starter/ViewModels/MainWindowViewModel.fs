@@ -202,11 +202,13 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
                         staticResults
                         |> Array.filter (fun result ->
-                            match result.Name |> fuzzyMatch with
-                            | Some fusilResult when fusilResult.Score > 0s ->
-                                result.AccentuationMap <- fusilResult.MatchingPositions
-                                true
-                            | _ -> false
+                            if result.SearchResult.ShowIfNoActivator then
+                                match result.Name |> fuzzyMatch with
+                                | Some fusilResult when fusilResult.Score > 0s ->
+                                    result.AccentuationMap <- fusilResult.MatchingPositions
+                                    true
+                                | _ -> false
+                            else false
                         )
                         |> searchResults.AddRange
 

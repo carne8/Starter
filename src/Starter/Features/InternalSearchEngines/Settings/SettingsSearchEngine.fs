@@ -29,6 +29,7 @@ type private SettingsSearchResult =
             match this.TargetPage with
             | TargetPage.Settings -> Icons.settingsIcon
             | TargetPage.Logs -> Icons.logsIcon
+        member this.ShowIfNoActivator = true
         member this.ActivatorFilter = Array.empty
 
 type SettingsSearchEngine(baseConfig, searchEngines) =
