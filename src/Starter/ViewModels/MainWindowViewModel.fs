@@ -101,7 +101,15 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
             obs.ObserveOnUIThreadDispatcher()
                .Subscribe(fun results ->
                 results
-                |> Seq.map (SearchResultViewModel.create SearchResultKind.Dynamic se)
+                |> Seq.choose (fun result ->
+                    match activator with
+                    | Some activator when result.ActivatorFilter |> Array.contains activator |> not ->
+                        None
+                    | _ ->
+                        result
+                        |> SearchResultViewModel.create SearchResultKind.Dynamic se
+                        |> Some
+                )
                 |> searchResults.AddRange
 
                 searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
@@ -125,13 +133,13 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
         searchCts.Cancel()
         searchCts <- new CancellationTokenSource()
 
-        match activatorStore.GetActivatorFromPrefix newText with
-        | Some activator ->
+        match activatorStore.GetActivatorFromText newText with
+        | Some (activator, prefix) ->
             // Update the current activator
             activator
             |> Some
             |> currentActivator.OnNext
-            clearTextBoxCommand.OnNext(newText.Length)
+            clearTextBoxCommand.OnNext(prefix.Length)
 
             // Clear the results (as the textbox is empty)
             searchResults.Clear()
@@ -150,7 +158,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                     match activator with
                     | None -> Choice1Of4 () // No activator -> show all static results
                     | Some activator ->
-                        match searchEngines.Dict.Value.TryGetValue(activator.Id) with
+                        match searchEngines.Dict.Value.TryGetValue(activator.SearchEngineId) with
                         | true, (:? DynamicSearchEngine as se) -> Choice2Of4 struct (activator, se) // Activator from dynamic search engine -> show only its results
                         | true, se -> Choice3Of4 se // Activator from static search engine -> show only its results
                         | false, _ -> Choice4Of4 () // Activator from unknown search engine -> logging an error
@@ -168,11 +176,15 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                         staticResults
                         |> Array.filter (fun result ->
                             if result.SearchEngineId = se.Id then
-                                match result.Name |> fuzzyMatch with
-                                | Some fusilResult when fusilResult.Score > 0s ->
-                                    result.AccentuationMap <- fusilResult.MatchingPositions
-                                    true
-                                | _ -> false
+                                match activator with
+                                | Some activator when result.SearchResult.ActivatorFilter |> Array.contains activator |> not ->
+                                    false
+                                | _ ->
+                                    match result.Name |> fuzzyMatch with
+                                    | Some fusilResult when fusilResult.Score > 0s ->
+                                        result.AccentuationMap <- fusilResult.MatchingPositions
+                                        true
+                                    | _ -> false
                             else
                                 false
                         )

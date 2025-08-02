@@ -13,31 +13,38 @@ type Workspace =
 
 type WorkspaceSource =
     { Id: string
+      Name: string
+      ShortName: string
       Icon: StarterIconSource
       LoadWorkspaces: unit -> Task<Workspace seq>
       WorkspacesChanged: Observable<unit>
       /// Needed for the FileSystemWatcher to not be garbage collected
       Watcher: IDisposable }
 
+    interface ISearchEngineActivator with
+        member this.Id = this.Id
+        member this.Icon = this.Icon
+        member this.Name = this.Name
+        member this.ShortName = this.ShortName
+        member this.SearchEngineId = "WorkspaceSearchEngine" // TODO
+
 type SearchResult =
     { Id: string
       Name: string
       Path: string
-      Icon: StarterIconSource
+      Source: WorkspaceSource
       Open: unit -> unit }
 
     interface ISearchResult with
         member this.Id = this.Id
         member this.Name = this.Name
         member this.Description = this.Path
-        member this.Icon = this.Icon
-        member this.ActivatorFilter = Array.empty
-
-    static member prefixId = "workspace:"
+        member this.Icon = this.Source.Icon
+        member this.ActivatorFilter = [| this.Source |]
 
     static member fromWorkspace (workspaceSource: WorkspaceSource) (workspace: Workspace) =
-        { Id = SearchResult.prefixId + workspaceSource.Id + workspace.Id
+        { Id = workspaceSource.Id + workspace.Id
           Name = workspace.Name
           Path = workspace.Path
-          Icon = workspaceSource.Icon
+          Source = workspaceSource
           Open = workspace.Open } :> ISearchResult

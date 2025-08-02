@@ -32,7 +32,9 @@ let private getVsCodeWorkspaceSource insiders pluginPath =
 
         let workspacesChanged, watcher = WorkspaceSources.VsCode.detectWorkspaceChanges insiders
 
-        { Id = if insiders then "vscode-insiders:" else "vscode:"
+        { Id = if insiders then "workspace-vscode-insiders:" else "workspace-vscode:"
+          Name = if insiders then "vscode insiders" else "vscode"
+          ShortName = "vscode"
           Icon = icon
           LoadWorkspaces = fun () -> WorkspaceSources.VsCode.loadWorkspaces vsCodePath insiders
           WorkspacesChanged = workspacesChanged

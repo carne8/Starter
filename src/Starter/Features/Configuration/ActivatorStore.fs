@@ -33,10 +33,10 @@ type ActivatorStore(config: BehaviorSubject<Configuration>) =
         )
         |> ignore
 
-    member _.GetActivatorFromPrefix(prefix: string) =
+    member _.GetActivatorFromText(text: string) =
         list
-        |> Seq.tryFind (fun pair -> pair.Prefix = prefix)
-        |> Option.map _.Activator
+        |> Seq.tryFind (fun pair -> text.StartsWith pair.Prefix)
+        |> Option.map (fun pair -> struct (pair.Activator, pair.Prefix))
 
     member _.AddSearchEngineActivators(searchEngine: SearchEngine) =
         searchEngine.LoadActivators()

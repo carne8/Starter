@@ -23,7 +23,7 @@ type WorkspaceSearchEngine(pluginPath, configDir, logger) =
                 let! newWorkspaces = source.LoadWorkspaces()
 
                 workspaces.Value.RemoveAll(fun searchResult ->
-                    searchResult.Id.StartsWith $"{SearchResult.prefixId}{source.Id}"
+                    searchResult.Id.StartsWith source.Id
                 ) |> ignore
 
                 newWorkspaces
@@ -43,6 +43,11 @@ type WorkspaceSearchEngine(pluginPath, configDir, logger) =
         workspaceSources |> Array.Parallel.iter (fun source ->
             source |> loadWorkspaces
             source.WorkspacesChanged.Subscribe(fun () -> source |> loadWorkspaces) |> ignore)
+
+        workspaceSources
+        |> Seq.cast<ISearchEngineActivator>
+        |> this.Activators.OnNext
+
         struct (Seq.empty, workspaces.AsObservable().Cast<_, IEnumerable<ISearchResult>>()) |> Task.singleton
 
     override this.SearchResultSelected(selectedSearchResult) =
