@@ -41,7 +41,26 @@ let private getVsCodeWorkspaceSource insiders pluginPath =
           Watcher = watcher }
     )
 
+let private getRiderWorkspaceSource pluginPath =
+    option {
+        let! riderPath = WorkspaceSources.JetBrains.Rider.findRider()
+        let! configPath = WorkspaceSources.JetBrains.Rider.getWorkspaceDbPath()
+
+        let icon = Icons.IconName.rider |> Icons.loadIcon pluginPath
+        let workspacesChanged, watcher = WorkspaceSources.JetBrains.Rider.detectWorkspaceChanges configPath
+
+        return
+            { Id = "workspace-jetbrains-rider:"
+              Name = "JetBrains Rider"
+              ShortName = "Rider"
+              Icon = icon
+              LoadWorkspaces = fun () -> WorkspaceSources.JetBrains.Rider.loadWorkspaces configPath riderPath
+              WorkspacesChanged = workspacesChanged
+              Watcher = watcher }
+    }
+
 let loadWorkspaceSources pluginPath =
     [| pluginPath |> getVsCodeWorkspaceSource false
-       pluginPath |> getVsCodeWorkspaceSource true |]
+       pluginPath |> getVsCodeWorkspaceSource true
+       pluginPath |> getRiderWorkspaceSource |]
     |> Array.choose id

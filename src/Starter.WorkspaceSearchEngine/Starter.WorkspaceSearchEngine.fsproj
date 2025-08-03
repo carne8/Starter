@@ -20,6 +20,7 @@
         <Compile Include="Types.fs" />
         <Compile Include="Icons.fs" />
         <Compile Include="WorkspaceSources\VsCode.fs" />
+        <Compile Include="WorkspaceSources\JetBrainsRider.fs" />
         <Compile Include="WorkspaceSources\WorkspaceSourceProvider.fs" />
         
         <Compile Include="Library.fs" />

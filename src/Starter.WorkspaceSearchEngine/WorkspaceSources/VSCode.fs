@@ -57,7 +57,7 @@ let loadWorkspaces vsCodePath insiders =
             | true, uri ->
                 let path = uri.LocalPath |> formatPath
 
-                { Id = file
+                { Id = path
                   Name = path |> Path.GetFileName
                   Path = path
                   Open = fun () -> openWorkspace vsCodePath path }
