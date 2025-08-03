@@ -56,6 +56,12 @@
         <TextBlock Classes="title2">Search engine activation prefixes</TextBlock>
 
         <!-- Activator prefixes -->
-        <ItemsControl x:Name="ActivatorPrefixes"/> <!-- Item template and ItemSource bound from code-behind -->
+        <ItemsControl x:Name="ActivatorPrefixes"> <!-- Item template and ItemSource bound from code-behind -->
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Spacing="4" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
     </StackPanel>
 </UserControl>

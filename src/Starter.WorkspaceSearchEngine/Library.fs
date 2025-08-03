@@ -16,7 +16,7 @@ type WorkspaceSearchEngine(pluginPath, configDir, logger) =
     let workspaceSources = WorkspaceSourceProvider.loadWorkspaceSources pluginPath
     let semaphore = new SemaphoreSlim(1, 1)
 
-    let loadWorkspaces source =
+    let loadWorkspaces (source: WorkspaceSource) =
         task {
             do! semaphore.WaitAsync()
             try
@@ -42,7 +42,8 @@ type WorkspaceSearchEngine(pluginPath, configDir, logger) =
     override this.LoadResults() =
         workspaceSources |> Array.Parallel.iter (fun source ->
             source |> loadWorkspaces
-            source.WorkspacesChanged.Subscribe(fun () -> source |> loadWorkspaces) |> ignore)
+            source.WorkspacesChanged.Subscribe(fun () -> source |> loadWorkspaces) |> ignore
+        )
 
         workspaceSources
         |> Seq.cast<ISearchEngineActivator>

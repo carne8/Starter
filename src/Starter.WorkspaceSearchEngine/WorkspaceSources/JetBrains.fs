@@ -1,4 +1,4 @@
-﻿module Starter.WorkspaceSearchEngine.WorkspaceSources.JetBrains.Rider
+module Starter.WorkspaceSearchEngine.WorkspaceSources.JetBrains
 
 open Starter.WorkspaceSearchEngine
 
@@ -11,7 +11,7 @@ open System.Xml.Linq
 open FsToolkit.ErrorHandling
 open R3
 
-let getWorkspaceDbPath () =
+let private findWorkspaceDbPath ideName ideProjectsFileName =
     result {
         let! idePaths =
             Path.Combine(
@@ -19,27 +19,27 @@ let getWorkspaceDbPath () =
                 "JetBrains"
             )
             |> Ok
-            |> Result.require Directory.Exists "No IDE config present"
+            |> Result.require Directory.Exists "No JetBrains config folder found"
 
-        let! riderDirectories =
-            Directory.EnumerateDirectories(idePaths, "Rider*")
+        let! ideDirectories =
+            Directory.EnumerateDirectories(idePaths, ideName + "*")
             |> Ok
-            |> Result.require (Seq.isEmpty >> not) "No Rider config found"
+            |> Result.require (Seq.isEmpty >> not) $"No {ideName} config folder found"
 
         return!
-            riderDirectories
+            ideDirectories
             |> Seq.fold
-                (fun state riderConfigDir ->
-                    let dirName = riderConfigDir |> Path.GetFileName
+                (fun state ideConfigDir ->
+                    let dirName = ideConfigDir |> Path.GetFileName
                     let version =
-                        dirName.Substring("Rider".Length)
+                        dirName.Substring(ideName.Length)
                         |> String.filter Char.IsDigit
                         |> int
 
                     match state with
                     | Some struct (_, stateVersion) when stateVersion >= version -> state
                     | _ ->
-                        let configFile = Path.Combine(riderConfigDir, "options", "recentSolutions.xml")
+                        let configFile = Path.Combine(ideConfigDir, "options", ideProjectsFileName)
                         if configFile |> File.Exists then
                             Some struct (configFile, version)
                         else
@@ -51,12 +51,12 @@ let getWorkspaceDbPath () =
     }
     |> Option.ofResult
 
-let private openWorkspace riderPath workspacePath =
-    ProcessStartInfo(FileName = riderPath, Arguments = workspacePath)
+let private openWorkspace ideExePath workspacePath =
+    ProcessStartInfo(FileName = ideExePath, Arguments = workspacePath)
     |> Process.Start
     |> _.Dispose()
 
-let loadWorkspaces (configFilePath: string) riderPath =
+let private loadWorkspaces (configFilePath: string) ideExePath =
     task {
         let stream = File.OpenRead configFilePath
         let! document = XElement.LoadAsync(stream, LoadOptions.None, CancellationToken.None)
@@ -70,12 +70,12 @@ let loadWorkspaces (configFilePath: string) riderPath =
                     { Id = path
                       Name = path |> Path.GetFileName
                       Path = path
-                      Open = fun () -> openWorkspace riderPath path } |> Some
+                      Open = fun () -> openWorkspace ideExePath path } |> Some
                 with _ -> None
             )
     }
 
-let detectWorkspaceChanges (configPath: string) =
+let private detectWorkspaceChanges (configPath: string) =
     let watcher =
         new FileSystemWatcher(
             configPath |> Path.GetDirectoryName,
@@ -92,7 +92,7 @@ let detectWorkspaceChanges (configPath: string) =
     watcher :> IDisposable
 
 
-let findRider () = // TODO: Add logs
+let private findIde ideName ideExeName = // TODO: Add logs
     seq {
         Path.Combine(Environment.SpecialFolder.ProgramFilesX86 |> Environment.GetFolderPath, "JetBrains/Installations")
         Path.Combine(Environment.SpecialFolder.ProgramFiles |> Environment.GetFolderPath, "JetBrains/Installations")
@@ -104,14 +104,14 @@ let findRider () = // TODO: Add logs
             |> function false -> None | true -> Some ()
 
         let! directories =
-            match Directory.GetDirectories(dir, "rider*") with
+            match Directory.GetDirectories(dir, ideName + "*", EnumerationOptions(MatchCasing = MatchCasing.CaseInsensitive)) with
             | [| |] -> None
             | arr -> Some arr
 
         let! struct (exePath, _) =
             directories |> Array.fold
                 (fun state dir ->
-                    let exeFile = Path.Combine(dir, "bin/rider64.exe")
+                    let exeFile = Path.Combine(dir, "bin", ideExeName)
 
                     match exeFile |> File.Exists with
                     | false -> state
@@ -119,7 +119,7 @@ let findRider () = // TODO: Add logs
                         let version =
                             dir
                             |> Path.GetFileName
-                            |> _.Substring("rider".Length)
+                            |> _.Substring(ideName.Length)
                             |> int
 
                         match state with
@@ -134,10 +134,28 @@ let findRider () = // TODO: Add logs
         let path =
             Path.Combine(
                 Environment.SpecialFolder.LocalApplicationData |> Environment.GetFolderPath,
-                "Programs/Rider/bin/rider64.exe"
+                "Programs", ideName, "bin", ideExeName
             )
 
         match path |> File.Exists with
         | false -> None
         | true -> Some path
     )
+
+let getBuilder
+    (ideName: string)
+    (ideShortName: string)
+    ideExeName
+    workspaceIdeName
+    ideProjectsFileName
+    iconName
+    : WorkspaceSourceBuilder
+    =
+    { Id = $"workspace-jetbrains-{ideName.ToLowerInvariant()}:"
+      Name = "JetBrains " + ideName
+      ShortName = ideShortName
+      LoadIcon = fun pluginPath -> Icons.loadIcon pluginPath iconName
+      FindExecutablePath = fun () -> findIde ideName ideExeName
+      FindWorkspacesDb = fun () -> findWorkspaceDbPath workspaceIdeName ideProjectsFileName
+      LoadWorkspaces = loadWorkspaces
+      GetChangesObservable = detectWorkspaceChanges }

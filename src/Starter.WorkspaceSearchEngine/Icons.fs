@@ -16,6 +16,8 @@ module IconName =
     let vsCode = "vscode.svg"
     let vsCodeInsiders = "vscode-insiders.svg"
     let rider = "Rider.svg"
+    let pyCharm = "PyCharm.svg"
+    let intelliJ = "IntelliJ_IDEA.svg"
 
 let loadIcon pluginPath iconName =
      let iconFile = Path.Combine(pluginPath, "Images", iconName)

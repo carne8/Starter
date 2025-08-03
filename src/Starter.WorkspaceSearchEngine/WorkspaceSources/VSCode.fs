@@ -25,23 +25,25 @@ let private formatPath (path: string) =
     else
         path
 
-let private getWorkspaceDbPath insiders =
-    Path.Combine(
+let private findWorkspaceDbPath insiders =
+    let path = Path.Combine(
         Environment.GetFolderPath Environment.SpecialFolder.ApplicationData,
         (if insiders then "Code - Insiders" else "Code"),
         "User/globalStorage/storage.json"
     )
+
+    match path |> File.Exists with
+    | true -> Some path
+    | false -> None
 
 let private openWorkspace vsCodePath workspacePath =
     ProcessStartInfo(FileName = vsCodePath, Arguments = workspacePath)
     |> Process.Start
     |> _.Dispose()
 
-let loadWorkspaces vsCodePath insiders =
+let loadWorkspaces insiders configPath vsCodePath =
     task {
-        let configFilePath = getWorkspaceDbPath insiders
-
-        let! bytes = File.ReadAllBytesAsync configFilePath
+        let! bytes = File.ReadAllBytesAsync configPath
         let json = JsonDocument.Parse(bytes)
 
         let workspacesJson = json.RootElement.GetProperty("profileAssociations").GetProperty("workspaces")
@@ -66,8 +68,7 @@ let loadWorkspaces vsCodePath insiders =
         return workspaces :> _ seq
     }
 
-let detectWorkspaceChanges insiders =
-    let configPath = getWorkspaceDbPath insiders
+let detectWorkspaceChanges insiders (configPath: string) =
     let watcher =
         new FileSystemWatcher(
             configPath |> Path.GetDirectoryName,
@@ -90,18 +91,27 @@ let findVsCode insiders =
         | false -> "Microsoft VS Code\Code.exe"
         | true -> "Microsoft VS Code Insiders\Code - Insiders.exe"
 
-    let global64Path = Path.Combine("C:\Program Files", relativeInstallPath)
-    let global32Path = Path.Combine("C:\Program Files (x86)", relativeInstallPath)
+    seq {
+        Path.Combine("C:\Program Files", relativeInstallPath)
+        Path.Combine("C:\Program Files (x86)", relativeInstallPath)
+        Path.Combine(
+            Environment.SpecialFolder.LocalApplicationData |> Environment.GetFolderPath,
+            "Programs",
+            relativeInstallPath
+        )
+    }
+    |> Seq.tryFind File.Exists
 
-    if global64Path |> File.Exists then Some global64Path
-    elif global32Path |> File.Exists then Some global32Path
-    else
-        let localPath =
-            Path.Combine(
-                Environment.SpecialFolder.LocalApplicationData |> Environment.GetFolderPath,
-                "Programs",
-                relativeInstallPath
-            )
-
-        if localPath |> File.Exists then Some localPath
-        else None
+let builder insiders : WorkspaceSourceBuilder =
+    { Id = if insiders then "workspace-vscode-insiders:" else "workspace-vscode:"
+      Name = if insiders then "Visual Studio Code Insiders" else "Visual Studio Code Insiders"
+      ShortName = "vscode"
+      LoadIcon =
+        if insiders then
+            fun pluginPath -> Icons.loadIcon pluginPath Icons.IconName.vsCodeInsiders
+        else
+            fun pluginPath -> Icons.loadIcon pluginPath Icons.IconName.vsCode
+      FindExecutablePath = fun () -> findVsCode insiders
+      FindWorkspacesDb = fun () -> findWorkspaceDbPath insiders
+      LoadWorkspaces = loadWorkspaces insiders
+      GetChangesObservable = detectWorkspaceChanges insiders }

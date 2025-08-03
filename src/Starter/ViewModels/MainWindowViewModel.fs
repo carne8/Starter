@@ -173,22 +173,35 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                     staticSearchResults.Subscribe(fun staticResults ->
                         searchResults.Clear()
 
-                        staticResults
-                        |> Array.filter (fun result ->
-                            if result.SearchEngineId = se.Id then
-                                match activator with
-                                | Some activator when result.SearchResult.ActivatorFilter |> Array.contains activator |> not ->
-                                    false
-                                | _ ->
-                                    match result.Name |> fuzzyMatch with
-                                    | Some fusilResult when fusilResult.Score > 0s ->
-                                        result.AccentuationMap <- fusilResult.MatchingPositions
+                        if newText = "" then
+                            staticResults
+                            |> Array.filter (fun result ->
+                                result.SearchEngineId = se.Id
+                                && match activator with
+                                    | Some activator when
+                                        result.SearchResult.ActivatorFilter |> Array.isEmpty
+                                        || result.SearchResult.ActivatorFilter |> Array.contains activator ->
+                                        result.AccentuationMap <- Array.empty
                                         true
                                     | _ -> false
-                            else
-                                false
-                        )
-                        |> searchResults.AddRange
+                            )
+                            |> searchResults.AddRange
+                        else
+                            staticResults
+                            |> Array.filter (fun result ->
+                                result.SearchEngineId = se.Id
+                                && match activator with
+                                    | Some activator when
+                                        result.SearchResult.ActivatorFilter |> Array.isEmpty
+                                        || result.SearchResult.ActivatorFilter |> Array.contains activator ->
+                                        match result.Name |> fuzzyMatch with
+                                        | Some fusilResult when fusilResult.Score > 0s ->
+                                            result.AccentuationMap <- fusilResult.MatchingPositions
+                                            true
+                                        | _ -> false
+                                    | _ -> false
+                            )
+                            |> searchResults.AddRange
 
                         searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
                         searchResults.NotifyChanges()
