@@ -18,6 +18,13 @@ module IconName =
     let rider = "Rider.svg"
     let pyCharm = "PyCharm.svg"
     let intelliJ = "IntelliJ_IDEA.svg"
+    let goLand = "GoLand.svg"
+    let phpStorm = "PhpStorm.svg"
+    let webStorm = "WebStorm.svg"
+    let rubyMine = "RubyMine.svg"
+    let rustRover = "RustRover.svg"
+    let cLion = "CLion.svg"
+    let androidStudio = "Android_Studio.svg"
 
 let loadIcon pluginPath iconName =
      let iconFile = Path.Combine(pluginPath, "Images", iconName)

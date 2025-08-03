@@ -13,7 +13,7 @@ open R3
 
 let private findWorkspaceDbPath ideName ideProjectsFileName =
     result {
-        let! idePaths =
+        let! idesPath =
             Path.Combine(
                 Environment.GetFolderPath Environment.SpecialFolder.ApplicationData,
                 "JetBrains"
@@ -22,7 +22,7 @@ let private findWorkspaceDbPath ideName ideProjectsFileName =
             |> Result.require Directory.Exists "No JetBrains config folder found"
 
         let! ideDirectories =
-            Directory.EnumerateDirectories(idePaths, ideName + "*")
+            Directory.EnumerateDirectories(idesPath, ideName + "*")
             |> Ok
             |> Result.require (Seq.isEmpty >> not) $"No {ideName} config folder found"
 
@@ -56,7 +56,7 @@ let private openWorkspace ideExePath workspacePath =
     |> Process.Start
     |> _.Dispose()
 
-let private loadWorkspaces (configFilePath: string) ideExePath =
+let loadWorkspaces (configFilePath: string) ideExePath =
     task {
         let stream = File.OpenRead configFilePath
         let! document = XElement.LoadAsync(stream, LoadOptions.None, CancellationToken.None)
@@ -75,7 +75,7 @@ let private loadWorkspaces (configFilePath: string) ideExePath =
             )
     }
 
-let private detectWorkspaceChanges (configPath: string) =
+let detectWorkspaceChanges (configPath: string) =
     let watcher =
         new FileSystemWatcher(
             configPath |> Path.GetDirectoryName,
