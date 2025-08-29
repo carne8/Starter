@@ -3,38 +3,32 @@ namespace Starter.Features.PlatformInterop
 open System
 open System.IO
 open Avalonia.Controls
+open Starter.Features
 open Starter.Features.Logging
 open Vanara.PInvoke
 open Vanara.Windows.Shell
-
-module Constants = Starter.Features.Constants.Platform.Windows
 
 type Windows() =
     inherit PlatformInterop()
 
     static let startupFolder = Environment.SpecialFolder.Startup |> Environment.GetFolderPath
-    static let startupFile = Path.Combine(startupFolder, Constants.StartupFile)
-    static let processFile =
-        match Environment.ProcessPath with
-        | null -> failwith "No process path available"
-        | path -> path
+    static let startupFile = Path.Combine(startupFolder, Constants.Platform.Windows.StartupFile)
 
     override _.ToggleLaunchAtStartup(enable) =
-        match enable with
-        | false ->
-            if File.Exists startupFile then File.Delete startupFile
-        | true ->
-            if not <| File.Exists startupFile then
-                use shortcut = new ShellLink(
-                    Constants.StartupFile,
-                    null,
-                    startupFolder,
-                    TargetPath = processFile,
-                    Description = "Starter",
-                    IconLocation = IconLocation(processFile, 0)
-                )
+        match enable, File.Exists startupFile with
+        | false, true -> File.Delete startupFile
+        | true, false ->
+            use shortcut = new ShellLink(
+                Constants.Platform.Windows.StartupFile,
+                null,
+                startupFolder,
+                TargetPath = Constants.ProcessExecutableFile,
+                Description = "Starter",
+                IconLocation = IconLocation(Constants.ProcessExecutableFile, 0)
+            )
 
-                shortcut.SaveAs startupFile
+            shortcut.SaveAs startupFile
+        | _ -> ()
 
     override _.IsLaunchAtStartupEnabled() = File.Exists startupFile
 

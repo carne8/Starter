@@ -15,16 +15,19 @@ let ResultScoresFile = Path.Combine(ConfigDirectory, "result-scores.db")
 let PluginConfigDirectory pluginName = Path.Combine(ConfigDirectory, pluginName)
 let [<Literal>] ScoresMaxAging = 10_000
 
-// --- Plugins ---
-let ProcessDirectory =
+// --- Exe ---
+let ProcessExecutableFile =
     match Environment.ProcessPath with
     | null -> failwith "Failed to retrieve process path"
-    | processPath ->
-        processPath
-        |> Path.GetDirectoryName
-        |> function
-            | null -> failwith "Failed to retrieve process path"
-            | p -> p
+    | processPath -> processPath
+
+// --- Plugins ---
+let ProcessDirectory =
+    ProcessExecutableFile
+    |> Path.GetDirectoryName
+    |> function
+        | null -> failwith "Failed to retrieve process path"
+        | p -> p
 
 let PluginsDirectory = Path.Combine(ProcessDirectory, "Plugins")
 let PluginsSymlinkPath = Path.Combine(ConfigDirectory, "Plugins")
@@ -35,3 +38,5 @@ let LogFilePath = Path.Combine(ConfigDirectory, "Logs", "log.txt")
 module Platform =
     module Windows =
         let StartupFile = "Starter.lnk"
+    module Linux =
+        let StartupFile = "Starter.desktop"

@@ -1,7 +1,10 @@
 namespace Starter.Features.PlatformInterop
 
+open System
+open System.IO
 open System.Threading.Tasks
 open Avalonia.Controls
+open Starter.Features
 open Tmds.DBus
 
 [<DBusInterface("com.carne8.Starter")>]
@@ -21,10 +24,33 @@ type StarterLauncher(onLaunched) =
 type Linux() =
     inherit PlatformInterop()
 
+    static let startupFolder =
+        Path.Combine(
+            Environment.SpecialFolder.UserProfile |> Environment.GetFolderPath,
+            ".config",
+            "autostart"
+        )
+    static let startupFile = Path.Combine(startupFolder, Constants.Platform.Linux.StartupFile)
+    static let startupFileContent =
+        $"""[Desktop Entry]
+Type=Application
+Name=Starter
+Exec={Constants.ProcessExecutableFile}
+Comment=Launch Starter at startup
+X-GNOME-Autostart-enabled=true
+"""
+
     let dbusConnection = new Connection(Address.Session)
 
-    override _.ToggleLaunchAtStartup(_enable) = failwith "Not implemented"
-    override _.IsLaunchAtStartupEnabled() = failwith "Not implemented"
+    override this.ToggleLaunchAtStartup(enable) =
+        match enable, this.IsLaunchAtStartupEnabled() with
+        | true, false ->
+            use writer = File.CreateText startupFile
+            writer.Write startupFileContent
+        | false, true -> File.Delete startupFile
+        | _ -> ()
+
+    override _.IsLaunchAtStartupEnabled() = startupFile |> File.Exists
 
     member _.SetupHotkeyCallback(window: Window) =
         Task.Run<unit>(fun () -> task {
