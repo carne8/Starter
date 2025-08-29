@@ -73,6 +73,7 @@ type MainWindow() as this =
 
         match PlatformInteropFactory.GetPlatformInterop() with
         | :? Windows as platform -> platform.SetupHotkeyCallback this
+        | :? Linux as platform -> platform.SetupHotkeyCallback this
         | _ -> ()
 
         this.Loaded.Add(fun _ ->

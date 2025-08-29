@@ -15,6 +15,7 @@
         Width="450"
         MinHeight="50"
         SizeToContent="Height"
+        CanResize="False"
         Topmost="True"
         ShowInTaskbar="False"
         WindowStartupLocation="Manual">

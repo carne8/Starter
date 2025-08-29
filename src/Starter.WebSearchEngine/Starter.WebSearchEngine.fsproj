@@ -27,8 +27,9 @@
 
     <ItemGroup>
         <PackageReference Include="Avalonia.ReactiveUI" Version="11.3.1" />
-        <PackageReference Include="FluentAvaloniaUI" Version="2.3.0" />
-        <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="11.3.0.1" />
+        <PackageReference Include="FluentAvaloniaUI" Version="2.4.0" />
+        <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="11.3.0.4" />
+        <PackageReference Update="FSharp.Core" Version="9.0.303" />
     </ItemGroup>
 
 </Project>
