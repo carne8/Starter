@@ -1,4 +1,4 @@
-<Window xmlns="https://github.com/avaloniaui"
+<controls:TranslucentWindow xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Starter.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -11,14 +11,16 @@
         Icon="/Assets/avalonia-logo.ico"
         Title="Starter"
         SystemDecorations="None"
-        Background="Transparent"
         Width="450"
         MinHeight="50"
         SizeToContent="Height"
         CanResize="False"
         Topmost="True"
         ShowInTaskbar="False"
-        WindowStartupLocation="Manual">
+        WindowStartupLocation="Manual"
+        BackgroundColor="{DynamicResource DefaultBackgroundColor}"
+        AcrylicBackgroundColor="{DynamicResource WindowBackground}"
+        CornerRadius="{DynamicResource CornerRadius}">
 
     <!-- Resources set from code-behind -->
 
@@ -40,21 +42,13 @@
             <Setter Property="Margin" Value="{DynamicResource SeparatorPadding}" />
         </Style>
 
-        <Style Selector=":is(Window)[ActualTransparencyLevel=AcrylicBlur] Border#WindowBackground">
-            <Setter Property="Background" Value="{DynamicResource WindowBackground}" />
-        </Style>
-        <Style Selector=":is(Window)[ActualTransparencyLevel=Transparent] Border#WindowBackground">
-            <Setter Property="Background" Value="{DynamicResource DefaultBackgroundColor}" />
-        </Style>
-
         <Style Selector="ListBox#ResultList">
             <Setter Property="Padding" Value="{DynamicResource ResultsPadding}" />
             <Setter Property="MaxHeight" Value="380" />
         </Style>
     </Window.Styles>
 
-    <Border x:Name="WindowBackground"
-            CornerRadius="{DynamicResource CornerRadius}"
+    <Border CornerRadius="{DynamicResource CornerRadius}"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="{StaticResource BorderThickness}">
         <StackPanel>
@@ -119,4 +113,4 @@
             </ListBox>
         </StackPanel>
     </Border>
-</Window>
+</controls:TranslucentWindow>

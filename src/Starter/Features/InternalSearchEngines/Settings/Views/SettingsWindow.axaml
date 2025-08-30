@@ -1,19 +1,22 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:ui="using:FluentAvalonia.UI.Controls"
-        xmlns:vm="using:Starter.Features.InternalSearchEngines.Settings.ViewModels"
-        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
-        x:Class="Starter.Features.InternalSearchEngines.Settings.Views.SettingsWindow"
-        x:DataType="vm:SettingsWindowViewModel"
-        Title="Settings"
-        Width="1050"
-        Height="700"
-        Background="Transparent"
-        ExtendClientAreaToDecorationsHint="True"
-        FontFamily="{StaticResource JetBrainsMono}">
-        <!-- TransparencyLevelHint bound from code-behind -->
+<controls:TranslucentWindow
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="using:FluentAvalonia.UI.Controls"
+    xmlns:vm="using:Starter.Features.InternalSearchEngines.Settings.ViewModels"
+    xmlns:controls="using:Starter.Controls"
+    mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
+    x:Class="Starter.Features.InternalSearchEngines.Settings.Views.SettingsWindow"
+    x:DataType="vm:SettingsWindowViewModel"
+    Title="Settings"
+    Width="1050"
+    Height="700"
+    ExtendClientAreaToDecorationsHint="True"
+    FontFamily="{StaticResource JetBrainsMono}"
+    BackgroundColor="{DynamicResource DefaultBackgroundColor}"
+    AcrylicBackgroundColor="{DynamicResource WindowBackground}">
+    <!-- BackgroundKind bound from code-behind -->
 
     <DockPanel LastChildFill="True">
         <Border DockPanel.Dock="Top" Height="30" Padding="10, 5, 5, 0" IsHitTestVisible="False">
@@ -35,4 +38,4 @@
             </ScrollViewer>
         </ui:NavigationView>
     </DockPanel>
-</Window>
+</controls:TranslucentWindow>

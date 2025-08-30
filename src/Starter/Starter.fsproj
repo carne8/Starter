@@ -32,14 +32,19 @@
         <Compile Include="Features\PlatformInterop\Linux.fs" />
         <Compile Include="Features\PlatformInterop\PlatformInteropFactory.fs" />
 
-        <!-- Config-->
+        <!-- Config -->
         <Compile Include="Features\Configuration\Config.fs" />
         <Compile Include="Features\Configuration\ActivatorStore.fs" />
-        <Compile Include="Features\InternalSearchEngines\Settings\ViewModels\ActivatorPrefixesViewModel.fs" />
+
+        <!-- Custom Controls -->
+        <Compile Include="Controls\AccentuatedTextBlock.fs" />
+        <Compile Include="Controls\StarterIcon.fs" />
+        <Compile Include="Controls\TranslucentWindow.fs" />
 
         <!-- Internal search engines -->
-        <Compile Include="Features\InternalSearchEngines\Settings\Views\ActivatorPrefixesView.fs" />
+        <Compile Include="Features\InternalSearchEngines\Settings\ViewModels\ActivatorPrefixesViewModel.fs" />
         <Compile Include="Features\InternalSearchEngines\Settings\ViewModels\SettingsViewModel.fs" />
+        <Compile Include="Features\InternalSearchEngines\Settings\Views\ActivatorPrefixesView.fs" />
         <Compile Include="Features\InternalSearchEngines\Settings\Views\Settings.axaml.fs" />
         <Compile Include="Features\InternalSearchEngines\Settings\ViewModels\SettingsWindowViewModel.fs" />
         <Compile Include="Features\InternalSearchEngines\Settings\Views\SettingsWindow.axaml.fs" />
@@ -52,10 +57,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- Custom Controls -->
-        <Compile Include="Controls\AccentuatedTextBlock.fs" />
-        <Compile Include="Controls\StarterIcon.fs" />
-
         <!-- View models -->
         <Compile Include="ViewModels\ViewModelBase.fs" />
         <Compile Include="ViewModels\SearchResultViewModel.fs" />

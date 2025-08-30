@@ -6,15 +6,14 @@ open Avalonia.Controls.Templates
 open Avalonia.Markup.Xaml
 open Avalonia.Styling
 
-open System.Collections.Generic
 open FluentAvalonia.UI.Controls
 open R3
 open Starter.Features.InternalSearchEngines.Settings.ViewModels
+open Starter.Controls
 open Starter.SearchEngine
-open Starter.Features
 
 type SettingsWindow() as this =
-    inherit Window()
+    inherit TranslucentWindow()
 
     do this.InitializeComponent()
 
@@ -58,15 +57,8 @@ type SettingsWindow() as this =
         let sub2 = contentControl.Bind(Border.ChildProperty, Data.Binding("SelectedPage.Control"))
 
         // Bind background transparency
-        let changeBackgroundTransparency background =
-            this.TransparencyLevelHint <-
-                match background with
-                | Config.Background.Acrylic -> [| WindowTransparencyLevel.AcrylicBlur |].AsReadOnly()
-                | Config.Background.Mica -> [| WindowTransparencyLevel.Mica |].AsReadOnly()
-                | Config.Background.None -> [| WindowTransparencyLevel.None |].AsReadOnly()
-
-        let sub3 = vm.Configuration.Subscribe(fun config -> config.Background |> changeBackgroundTransparency)
-        vm.BaseConfiguration.Background |> changeBackgroundTransparency
+        let sub3 = vm.Configuration.Subscribe(fun config -> this.BackgroundKind <- config.Background)
+        this.BackgroundKind <- vm.BaseConfiguration.Background
 
         this.Unloaded.Add(fun _ ->
             sub1.Dispose()

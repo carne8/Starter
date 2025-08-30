@@ -2,12 +2,10 @@ namespace Starter.Views
 
 open Starter
 open Starter.Controls
-open Starter.Features
 open Starter.Features.Logging
 open Starter.Features.PlatformInterop
 
 open System
-open System.Collections.Generic
 open System.Windows.Input
 
 open Avalonia
@@ -19,7 +17,7 @@ open Avalonia.VisualTree
 open R3
 
 type MainWindow() as this =
-    inherit Window()
+    inherit TranslucentWindow()
 
     static let normalResourceDictionary = ResourceDictionary()
     static let zoomedResourceDictionary = ResourceDictionary()
@@ -81,12 +79,7 @@ type MainWindow() as this =
 
             // Bind config changes
             this.ViewModel.Config.Subscribe(fun config ->
-                this.TransparencyLevelHint <-
-                    match config.Background with
-                    | Config.Background.Acrylic -> [| WindowTransparencyLevel.AcrylicBlur |].AsReadOnly()
-                    | Config.Background.Mica -> [| WindowTransparencyLevel.Mica |].AsReadOnly()
-                    | Config.Background.None -> [| WindowTransparencyLevel.None |].AsReadOnly()
-
+                this.BackgroundKind <- config.Background
                 this.Resources <-
                     match config.ZoomedMode with
                     | false -> normalResourceDictionary
