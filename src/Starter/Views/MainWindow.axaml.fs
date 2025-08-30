@@ -1,12 +1,12 @@
 namespace Starter.Views
 
-open System
 open Starter
 open Starter.Controls
 open Starter.Features
 open Starter.Features.Logging
 open Starter.Features.PlatformInterop
 
+open System
 open System.Collections.Generic
 open System.Windows.Input
 

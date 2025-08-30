@@ -70,6 +70,7 @@ type SettingsWindowViewModel(baseConfig, searchEngines: Dictionary<string, Searc
         member _.Dispose() = sub.Dispose()
 
     member this.Configuration = starterSettingsVM.Configuration
+    member this.BaseConfiguration = baseConfig
 
     member this.MenuItems = menuItems
     member this.SelectedPage

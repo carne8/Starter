@@ -10,10 +10,10 @@
         Title="Settings"
         Width="1050"
         Height="700"
-        TransparencyLevelHint="Mica"
         Background="Transparent"
         ExtendClientAreaToDecorationsHint="True"
         FontFamily="{StaticResource JetBrainsMono}">
+        <!-- TransparencyLevelHint bound from code-behind -->
 
     <DockPanel LastChildFill="True">
         <Border DockPanel.Dock="Top" Height="30" Padding="10, 5, 5, 0" IsHitTestVisible="False">
