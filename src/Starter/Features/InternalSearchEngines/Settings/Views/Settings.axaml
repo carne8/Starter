@@ -28,17 +28,22 @@
         <TextBlock Classes="title2">Personalization</TextBlock>
 
         <!-- Background -->
-        <ui:SettingsExpander Header="Background transparency">
+        <ui:SettingsExpander Header="Background transparency" Description="{Binding BackgroundDescription}">
             <ui:SettingsExpander.IconSource>
                 <ic:SymbolIconSource Symbol="Sparkle" />
             </ui:SettingsExpander.IconSource>
             <ui:SettingsExpander.Footer>
                 <ComboBox SelectedIndex="{Binding SelectedBackgroundIdx}" ItemsSource="{Binding Backgrounds}">
                     <ComboBox.ItemTemplate>
-                        <DataTemplate>
-                            <TextBlock VerticalAlignment="Center" Text="{Binding}" />
+                        <DataTemplate DataType="vm:BackgroundComboBoxItemViewModel">
+                            <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
+                    <ComboBox.Styles>
+                        <Style Selector="ComboBoxItem" x:DataType="vm:BackgroundComboBoxItemViewModel">
+                            <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
+                        </Style>
+                    </ComboBox.Styles>
                 </ComboBox>
             </ui:SettingsExpander.Footer>
         </ui:SettingsExpander>

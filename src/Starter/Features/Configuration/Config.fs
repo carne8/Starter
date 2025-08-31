@@ -1,5 +1,6 @@
 namespace Starter.Features.Config
 
+open System
 open Starter.Features
 open System.IO
 open FsToolkit.ErrorHandling
@@ -32,10 +33,17 @@ type Configuration =
       ActivatorPrefixes: Map<string, string>
       ZoomedMode: bool }
 
+    static member ensurePlatformCompatibility config =
+        if OperatingSystem.IsLinux() then
+            { config with Background = Background.None }
+        else
+            config
+
     static member Default =
         { Background = Background.Mica
           ActivatorPrefixes = Map.empty
           ZoomedMode = false }
+        |> Configuration.ensurePlatformCompatibility
 
     static member encoder config =
         Encode.object [
@@ -74,7 +82,11 @@ type Configuration =
                 // Load config
                 match filePath |> File.ReadAllText with
                 | "" -> return Configuration.Default
-                | json -> return! Decode.fromString Configuration.decoder json
+                | json ->
+                    return!
+                        json
+                        |> Decode.fromString Configuration.decoder
+                        |> Result.map Configuration.ensurePlatformCompatibility
         }
 
     static member save (filePath: string) (config: Configuration) =
