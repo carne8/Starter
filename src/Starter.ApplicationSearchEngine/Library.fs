@@ -1,12 +1,20 @@
 namespace Starter.ApplicationSearchEngine
 
-open Starter.SearchEngine
+open Avalonia.Media
+open FsToolkit.ErrorHandling
+open R3
 
-open System.Diagnostics
+open System
+open System.Linq
+
+#if WINDOWS
+open Starter.ApplicationSearchEngine.Loaders.Windows
+#else
+open Starter.ApplicationSearchEngine.Loaders.Linux
+#endif
 open System.Collections.Generic
 open System.Threading.Tasks
-open Avalonia.Media
-open R3
+open Starter.SearchEngine
 
 type ApplicationSearchEngine(pluginPath, configDir, logger) =
     inherit StaticSearchEngine(pluginPath, configDir, logger)
@@ -18,38 +26,48 @@ type ApplicationSearchEngine(pluginPath, configDir, logger) =
 
     override this.LoadResults() =
         #if WINDOWS
-        Parallel.Invoke(
-            (fun () ->
-                task {
-                    let! uwpApps = Loaders.Uwp.loadApplications logger
+        if OperatingSystem.IsWindows() then
+            Parallel.Invoke(
+                (fun () ->
+                    task {
+                        let! uwpApps = Uwp.loadApplications logger
 
-                    let observable, disposable = Loaders.Uwp.observeApplicationChanges apps
-                    disposables.Add disposable
-                    observable.Subscribe(fun () -> apps.ToArray() |> resultsObservable.OnNext) |> ignore
+                        let observable, disposable = Uwp.observeApplicationChanges apps
+                        disposables.Add disposable
+                        observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
 
-                    apps.AddRange uwpApps
-                    apps.ToArray() |> resultsObservable.OnNext
-                } |> ignore
-            ),
-            (fun () ->
-                task {
-                    let exeFolderConfig = Loaders.Exe.FolderConfiguration.Default
-                    let! exeApps =
-                        Loaders.Exe.FolderConfiguration.Default
-                        |> Loaders.Exe.loadApplications
+                        apps.AddRange uwpApps
+                        apps.ToArray() |> this.ResultsChanged.OnNext
+                    } |> ignore
+                ),
+                (fun () ->
+                    task {
+                        let exeFolderConfig = Exe.FolderConfiguration.Default
+                        let! exeApps =
+                            Exe.FolderConfiguration.Default
+                            |> Exe.loadApplications
 
-                    let observable, disposable = Loaders.Exe.observeApplicationChanges apps exeFolderConfig
-                    disposables.Add disposable
-                    observable.Subscribe(fun () -> apps.ToArray() |> resultsObservable.OnNext) |> ignore
+                        let observable, disposable = Exe.observeApplicationChanges apps exeFolderConfig
+                        disposables.Add disposable
+                        observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
 
-                    apps.AddRange exeApps
-                    apps.ToArray() |> resultsObservable.OnNext
-                } |> ignore
+                        apps.AddRange exeApps
+                        apps.ToArray() |> this.ResultsChanged.OnNext
+                    } |> ignore
+                )
             )
-        )
-
         #else
-        logger.Warning("This Starter search engine is currently not supported on your OS.")
+        if OperatingSystem.IsLinux() then
+            Task.Run<unit>(fun () ->
+                XDGDesktop.FolderConfiguration.Default
+                |> XDGDesktop.loadApplications
+                |> Task.map (fun newApps ->
+                    newApps |> apps.AddRange
+                    apps.ToArray() |> this.ResultsChanged.OnNext
+                )
+            ) |> ignore
+        else
+            logger.Warning("This Starter search engine is currently not supported on your OS.")
         #endif
 
         struct (Seq.empty, resultsObservable.AsObservable()) |> Task.FromResult
@@ -61,17 +79,11 @@ type ApplicationSearchEngine(pluginPath, configDir, logger) =
 
     override _.SearchResultSelected(searchResult) =
         match searchResult with
-        | :? Application as sr ->
-            let execStr =
-                match sr.EntryPoint with
-                | EntryPoint.ShellFile path -> path
-                | EntryPoint.UwpApp pkgId -> $"shell:AppsFolder\\{pkgId}"
-
-            ProcessStartInfo(
-                FileName = execStr,
-                UseShellExecute = true
-            )
-            |> Process.Start
-            |> ignore
+        #if WINDOWS
+        | :? Exe.ExeApplication as app -> Exe.runApp app
+        | :? Uwp.UwpApplication as app -> Uwp.runApp app
+        #else
+        | :? XDGDesktop.DesktopApplication as app -> XDGDesktop.runApp app
+        #endif
         | _ -> ()
     override this.LoadSettingsControl() = null

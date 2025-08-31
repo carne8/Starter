@@ -1,25 +1,12 @@
-﻿namespace Starter.ApplicationSearchEngine
+namespace Starter.ApplicationSearchEngine
 
-open Starter.SearchEngine
+[<Struct>]
+type FolderConfiguration =
+    { Folders: string array
+      ExcludedFolders: string array }
 
-[<RequireQualifiedAccess>]
-type EntryPoint =
-    | ShellFile of path: string
-    | UwpApp of fullName: string
-
-type Application =
-    { Id: string
-      Name: string
-      EntryPoint: EntryPoint
-      Icon: StarterIconSource }
-
-    interface ISearchResult with
-        member this.Id = this.Id
-        member this.Name = this.Name
-        member this.Description = "Application"
-        member this.Icon = this.Icon
-        member this.ShowIfNoActivator = true
-        member this.ActivatorFilter = Array.empty
+    static member isFileExcluded config (file: string) =
+        config.ExcludedFolders |> Array.exists file.StartsWith
 
 module Constants =
     open Avalonia

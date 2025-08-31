@@ -1,9 +1,10 @@
-﻿module Starter.ApplicationSearchEngine.Loaders.Exe
+﻿module Starter.ApplicationSearchEngine.Loaders.Windows.Exe
 
+open System.Diagnostics
 open R3
 open Starter.SearchEngine
 open Starter.ApplicationSearchEngine
-open Starter.ApplicationSearchEngine.IconHelper
+open Starter.ApplicationSearchEngine.Windows.IconHelper
 
 open System
 open System.IO
@@ -12,6 +13,35 @@ open System.Collections.Generic
 
 open FsToolkit.ErrorHandling
 open Vanara.Windows.Shell
+
+type ExeApplication =
+    { Id: string
+      Name: string
+      Path: string
+      Icon: StarterIconSource }
+
+    interface ISearchResult with
+        member this.Id = this.Id
+        member this.Name = this.Name
+        member this.Description = "Application"
+        member this.Icon = this.Icon
+
+module FolderConfiguration =
+    let Default =
+        { Folders =
+            [| Environment.GetFolderPath(Environment.SpecialFolder.Programs)
+               Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms) |]
+          ExcludedFolders =
+            [| Environment.GetFolderPath(Environment.SpecialFolder.Startup)
+               Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup) |]  }
+
+let runApp (app: ExeApplication) =
+    ProcessStartInfo(
+        FileName = app.Path,
+        UseShellExecute = true
+    )
+    |> Process.Start
+    |> ignore
 
 let private getAppFromFile (file: string) =
     option {
@@ -34,25 +64,9 @@ let private getAppFromFile (file: string) =
         return
             { Id = file
               Name = name
-              EntryPoint = EntryPoint.ShellFile file
+              Path = file
               Icon = StarterIconSource(icon, icon) } :> ISearchResult
     }
-
-[<Struct>]
-type FolderConfiguration =
-    { Folders: string array
-      ExcludedFolders: string array }
-
-    static member isFileExcluded config (file: string) =
-        config.ExcludedFolders |> Array.exists file.StartsWith
-
-    static member Default =
-        { Folders =
-            [| Environment.GetFolderPath(Environment.SpecialFolder.Programs)
-               Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms) |]
-          ExcludedFolders =
-            [| Environment.GetFolderPath(Environment.SpecialFolder.Startup)
-               Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup) |]  }
 
 let loadApplications (config: FolderConfiguration) : Task<ISearchResult seq> =
     Task.Run<ISearchResult seq>(fun () ->

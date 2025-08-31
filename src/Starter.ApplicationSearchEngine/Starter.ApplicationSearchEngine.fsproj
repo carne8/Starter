@@ -2,6 +2,7 @@
 
     <PropertyGroup>
         <TargetFrameworks>net9.0;net9.0-windows10.0.19041.0</TargetFrameworks>
+        <EnableWindowsTargeting>true</EnableWindowsTargeting>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <EnableDynamicLoading>true</EnableDynamicLoading>
     </PropertyGroup>
@@ -15,9 +16,17 @@
 
     <ItemGroup>
         <Compile Include="Types.fs" />
-        <Compile Include="Loaders\IconHelper.fs" Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'" />
-        <Compile Include="Loaders\UwpLoader.fs" Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'" />
-        <Compile Include="Loaders\ExecutableFilesLoader.fs" Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'" />
+    </ItemGroup>
+    
+    <!-- Windows -->
+    <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'">
+        <Compile Include="Loaders\Windows\IconHelper.fs" />
+        <Compile Include="Loaders\Windows\UwpLoader.fs" />
+        <Compile Include="Loaders\Windows\ExecutableFilesLoader.fs" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <Compile Include="Loaders\Linux\XDGDesktop.fs" />
         <Compile Include="Library.fs" />
     </ItemGroup>
 

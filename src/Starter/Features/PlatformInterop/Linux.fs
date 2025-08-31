@@ -25,6 +25,9 @@ type Linux() =
     inherit PlatformInterop()
 
     static let startupFolder =
+        // ~/.config/autostart/
+        // Or $XDG_CONFIG_HOME/autostart/
+        // TODO: Use env variable
         Path.Combine(
             Environment.SpecialFolder.UserProfile |> Environment.GetFolderPath,
             ".config",

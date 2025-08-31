@@ -1,4 +1,4 @@
-module Starter.ApplicationSearchEngine.IconHelper
+module Starter.ApplicationSearchEngine.Windows.IconHelper
 
 #nowarn 9
 

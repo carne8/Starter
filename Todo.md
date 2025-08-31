@@ -1,7 +1,9 @@
 # Starter todo
 - [ ] Improve start time
-- [ ] Fix config auto-save issue
+- [ ] Logs -> add scrollviewer around logs
+- [ ] Add buttons in settings to open config directory and plugins directory
 
+- [x] Fix config auto-save issue
 - [x] Fix dark/light mode for icons
 - [x] Finish web search plugin
 - [x] Ordering of results
