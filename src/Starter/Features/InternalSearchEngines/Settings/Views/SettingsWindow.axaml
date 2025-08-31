@@ -19,7 +19,7 @@
     <!-- BackgroundKind bound from code-behind -->
 
     <DockPanel LastChildFill="True">
-        <Border DockPanel.Dock="Top" Height="30" Padding="10, 5, 5, 0" IsHitTestVisible="False">
+        <Border x:Name="Title" DockPanel.Dock="Top" Height="30" Padding="10, 5, 5, 0" IsHitTestVisible="False">
             <StackPanel Spacing="10" Orientation="Horizontal">
                 <PathIcon Data="{StaticResource Flash}" />
                 <TextBlock VerticalAlignment="Center">Starter Settings</TextBlock>

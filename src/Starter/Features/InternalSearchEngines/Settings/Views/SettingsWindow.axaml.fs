@@ -4,9 +4,11 @@ open Avalonia
 open Avalonia.Controls
 open Avalonia.Controls.Templates
 open Avalonia.Markup.Xaml
+open Avalonia.Platform
 open Avalonia.Styling
 
 open FluentAvalonia.UI.Controls
+open System
 open R3
 open Starter.Features.InternalSearchEngines.Settings.ViewModels
 open Starter.Controls
@@ -28,6 +30,11 @@ type SettingsWindow() as this =
             | :? SettingsWindowViewModel as vm -> this.DataContextLoaded(vm)
             | _ -> ()
         )
+
+        if OperatingSystem.IsLinux() then
+            this.ExtendClientAreaToDecorationsHint <- false
+            this.GetControl("Title").IsVisible <- false
+            this.GetControl("NavigationView").Margin <- Thickness(0, 10, 0, 0)
 
         let navigationView = this.GetControl<NavigationView> "NavigationView"
         navigationView.MenuItemTemplate <-

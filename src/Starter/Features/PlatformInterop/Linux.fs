@@ -37,7 +37,6 @@ Type=Application
 Name=Starter
 Exec={Constants.ProcessExecutableFile}
 Comment=Launch Starter at startup
-X-GNOME-Autostart-enabled=true
 """
 
     let dbusConnection = new Connection(Address.Session)
