@@ -5,7 +5,9 @@ open System.Collections.Concurrent
 open System.Collections.Generic
 open System.Diagnostics
 open System.IO
+open System.Text.RegularExpressions
 open System.Threading.Tasks
+open Avalonia.Svg.Skia
 open FsToolkit.ErrorHandling
 open R3
 open Starter.ApplicationSearchEngine
@@ -59,39 +61,48 @@ let runApp (app: DesktopApplication) =
     |> Process.Start
     |> ignore
 
-let loadAppIcon iconName =
-    "/usr/share/icons/hicolor"
-    |> Directory.EnumerateDirectories
-    |> Seq.choose (fun dir ->
-        let dirName = Path.GetFileName dir
-
-        match dirName.TryIndexOf 'x' with
-        | ValueNone -> None
-        | ValueSome xIndex ->
-            dirName[0..xIndex-1]
-            |> Int32.TryParse
-            |> function
-                | true, v -> Some struct (dir, v)
-                | false, _ -> None
-    )
-    |> Seq.sortByDescending (fun struct (_, size) -> size)
-    |> Seq.tryPick (fun struct (dir, _) ->
-        let iconFile = Path.Combine(dir, "apps", $"{iconName}.png")
-        if iconFile |> File.Exists then Some iconFile
+let directoryIconSizeRegex = Regex(@"\/(\d+)x\d+(?:@\d)?\/", RegexOptions.Compiled)
+let loadAppIcon (iconName: string) =
+    if iconName |> File.Exists then
+        if iconName |> Path.GetExtension |> (=) ".svg" then
+            Avalonia.Threading.Dispatcher.UIThread.Invoke(fun () -> SvgImage(Source = SvgSource.Load iconName))
+            |> fun svg -> StarterIconSource(svg, svg)
+            |> Some
         else
-            Path.Combine(dir, "apps")
-            |> Directory.GetFiles
-            |> Array.tryFind (Path.GetFileName >> (=) iconName)
-    )
-    |> Option.map (fun iconPath ->
-        let bmp = new Avalonia.Media.Imaging.Bitmap(iconPath)
-        StarterIconSource(bmp, bmp)
-    )
+            let bmp = new Avalonia.Media.Imaging.Bitmap(iconName)
+            Some (StarterIconSource(bmp, bmp))
+    else
+        let files =
+            Seq.append
+                (Directory.EnumerateFiles("/usr/share/icons", $"{iconName}.*", SearchOption.AllDirectories))
+                (Directory.EnumerateFiles("/usr/share/pixmaps", $"{iconName}.*", SearchOption.AllDirectories))
+
+        let svgFile = files |> Seq.tryFind (Path.GetExtension >> (=) ".svg")
+        match svgFile with
+        | Some svgPath ->
+            Avalonia.Threading.Dispatcher.UIThread.Invoke(fun () -> SvgImage(Source = SvgSource.Load svgPath))
+            |> fun svg -> StarterIconSource(svg, svg)
+            |> Some
+        | None ->
+            files
+            |> Seq.filter (Path.GetExtension >> (<>) ".svg")
+            |> Seq.sortByDescending (fun path ->
+                let match' = directoryIconSizeRegex.Match(path)
+                match match'.Success with
+                | false -> 0
+                | true -> int match'.Groups[1].Value
+            )
+            |> Seq.tryHead
+            |> Option.map (fun iconPath ->
+                let bmp = new Avalonia.Media.Imaging.Bitmap(iconPath)
+                StarterIconSource(bmp, bmp)
+            )
 
 let getAppFromFile filePath =
     taskOption {
         let! lines = filePath |> File.ReadAllLinesAsync
         let! desktopEntryStart = lines |> Array.tryFindIndex _.StartsWith("[Desktop Entry]")
+
         let desktopEntryEnd =
             lines[desktopEntryStart+1..]
             |> Array.tryFindIndex _.StartsWith("[")
@@ -150,13 +161,15 @@ let getAppFromFile filePath =
 
         match appName, appExec, appIcon with
         | ValueSome name, ValueSome exec, ValueSome appIcon ->
-            if name.Contains "Google Maps" || name.Contains "Touchpad" then
-                printfn "%A" lines
-
             return { Id = filePath
                      Name = name
                      Exec = exec
-                     Icon = appIcon |> loadAppIcon |> Option.defaultValue null }
+                     Icon =
+                        try
+                            appIcon |> loadAppIcon |> Option.defaultValue null
+                        with e ->
+                            printfn "%s: %A" appIcon e.Message
+                            null }
         | _ -> return! None
     }
 
@@ -171,6 +184,7 @@ let loadApplications (config: FolderConfiguration) : Task<ISearchResult seq> =
 
                 do! Parallel.ForEachAsync(
                     files,
+                    // ParallelOptions(MaxDegreeOfParallelism = 1),
                     Func<_, _, _>(fun path _ ->
                         match path |> FolderConfiguration.isFileExcluded config with
                         | true -> ValueTask.CompletedTask

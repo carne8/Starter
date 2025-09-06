@@ -1,4 +1,4 @@
-﻿module Starter.Program
+module Starter.Program
 
 open System
 open System.Threading
