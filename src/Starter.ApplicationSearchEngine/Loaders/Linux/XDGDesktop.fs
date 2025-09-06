@@ -61,42 +61,6 @@ let runApp (app: DesktopApplication) =
     |> Process.Start
     |> ignore
 
-let directoryIconSizeRegex = Regex(@"\/(\d+)x\d+(?:@\d)?\/", RegexOptions.Compiled)
-let loadAppIcon (iconName: string) =
-    if iconName |> File.Exists then
-        if iconName |> Path.GetExtension |> (=) ".svg" then
-            Avalonia.Threading.Dispatcher.UIThread.Invoke(fun () -> SvgImage(Source = SvgSource.Load iconName))
-            |> fun svg -> StarterIconSource(svg, svg)
-            |> Some
-        else
-            let bmp = new Avalonia.Media.Imaging.Bitmap(iconName)
-            Some (StarterIconSource(bmp, bmp))
-    else
-        let files =
-            Seq.append
-                (Directory.EnumerateFiles("/usr/share/icons", $"{iconName}.*", SearchOption.AllDirectories))
-                (Directory.EnumerateFiles("/usr/share/pixmaps", $"{iconName}.*", SearchOption.AllDirectories))
-
-        let svgFile = files |> Seq.tryFind (Path.GetExtension >> (=) ".svg")
-        match svgFile with
-        | Some svgPath ->
-            Avalonia.Threading.Dispatcher.UIThread.Invoke(fun () -> SvgImage(Source = SvgSource.Load svgPath))
-            |> fun svg -> StarterIconSource(svg, svg)
-            |> Some
-        | None ->
-            files
-            |> Seq.filter (Path.GetExtension >> (<>) ".svg")
-            |> Seq.sortByDescending (fun path ->
-                let match' = directoryIconSizeRegex.Match(path)
-                match match'.Success with
-                | false -> 0
-                | true -> int match'.Groups[1].Value
-            )
-            |> Seq.tryHead
-            |> Option.map (fun iconPath ->
-                let bmp = new Avalonia.Media.Imaging.Bitmap(iconPath)
-                StarterIconSource(bmp, bmp)
-            )
 
 let getAppFromFile filePath =
     taskOption {
@@ -161,15 +125,15 @@ let getAppFromFile filePath =
 
         match appName, appExec, appIcon with
         | ValueSome name, ValueSome exec, ValueSome appIcon ->
+            let! icon =
+                appIcon
+                |> IconLoader.loadAppIcon
+                |> Task.map (Option.defaultValue null)
+
             return { Id = filePath
                      Name = name
                      Exec = exec
-                     Icon =
-                        try
-                            appIcon |> loadAppIcon |> Option.defaultValue null
-                        with e ->
-                            printfn "%s: %A" appIcon e.Message
-                            null }
+                     Icon = icon }
         | _ -> return! None
     }
 

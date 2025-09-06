@@ -16,6 +16,7 @@
 
     <ItemGroup>
         <Compile Include="Types.fs" />
+        <Compile Include="Logger.fs" />
     </ItemGroup>
     
     <!-- Windows -->
@@ -26,6 +27,7 @@
     </ItemGroup>
     
     <ItemGroup>
+        <Compile Include="Loaders\Linux\IconLoader.fs" />
         <Compile Include="Loaders\Linux\XDGDesktop.fs" />
         <Compile Include="Library.fs" />
     </ItemGroup>

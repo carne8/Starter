@@ -24,6 +24,8 @@ type ApplicationSearchEngine(pluginPath, configDir, logger) =
     let mutable disposables = List(2) // Btw: keep a reference of the UWP watcher and prevent it from being garbage collected
     let resultsObservable = new Subject<ISearchResult IEnumerable>()
 
+    do Logger.logger <- logger
+
     override this.LoadResults() =
         #if WINDOWS
         if OperatingSystem.IsWindows() then
