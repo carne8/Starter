@@ -2,28 +2,14 @@ module Starter.ApplicationSearchEngine.Loaders.Linux.XDGDesktop
 
 open System
 open System.Collections.Concurrent
-open System.Collections.Generic
 open System.Diagnostics
 open System.IO
-open System.Text.RegularExpressions
 open System.Threading.Tasks
-open Avalonia.Svg.Skia
 open FsToolkit.ErrorHandling
-open R3
 open Starter.ApplicationSearchEngine
 open Starter.SearchEngine
 
-type DesktopApplication =
-    { Id: string
-      Name: string
-      Exec: string
-      Icon: StarterIconSource }
 
-    interface ISearchResult with
-        member this.Id = this.Id
-        member this.Name = this.Name
-        member this.Description = "Application"
-        member this.Icon = this.Icon
 
 module FolderConfiguration =
     let Default =
@@ -35,17 +21,6 @@ module FolderConfiguration =
                "/usr/share/applications/"
                "/usr/local/share/applications/" |]
           ExcludedFolders = Array.empty  }
-
-type String with
-    member inline this.TryIndexOf(s: string) =
-        match this.IndexOf(s) with
-        | -1 -> ValueNone
-        | n -> ValueSome n
-
-    member inline this.TryIndexOf(c: char) =
-        match this.IndexOf(c) with
-        | -1 -> ValueNone
-        | n -> ValueSome n
 
 let runApp (app: DesktopApplication) =
     let struct (fileName, args) =
@@ -61,83 +36,6 @@ let runApp (app: DesktopApplication) =
     |> Process.Start
     |> ignore
 
-
-let getAppFromFile filePath =
-    taskOption {
-        let! lines = filePath |> File.ReadAllLinesAsync
-        let! desktopEntryStart = lines |> Array.tryFindIndex _.StartsWith("[Desktop Entry]")
-
-        let desktopEntryEnd =
-            lines[desktopEntryStart+1..]
-            |> Array.tryFindIndex _.StartsWith("[")
-            |> function
-                | None -> lines.Length-1
-                | Some i -> i
-        let desktopEntry = lines[desktopEntryStart+1..desktopEntryEnd]
-
-        let mutable appName = ValueNone
-        let mutable appExec = ValueNone
-        let mutable appIcon = ValueNone
-
-        desktopEntry
-        |> Array.choose (fun line ->
-            option {
-                let mutable key = ValueNone
-                let variant =
-                    line.TryIndexOf '[' |> ValueOption.bind (fun start ->
-                        key <- ValueSome line[..start-1]
-                        line.TryIndexOf "]"
-                        |> ValueOption.map (fun end' -> line[start+1..end'-1])
-                    )
-
-                if variant.IsSome then do! None // TODO: I18n
-
-                let! equalPos = line.TryIndexOf "="
-
-                match key with
-                | ValueNone -> key <- ValueSome line[..equalPos-1]
-                | _ -> ()
-
-                let! key = key
-
-                return
-                    {| Key = key
-                       Variant = variant
-                       Value = line[equalPos+1..] |}
-            }
-        )
-        |> Array.iter (fun line ->
-            if appName.IsNone && line.Key = "Name" then appName <- ValueSome line.Value
-            if appExec.IsNone && line.Key = "Exec" then appExec <- ValueSome line.Value
-            if appIcon.IsNone && line.Key = "Icon" then appIcon <- ValueSome line.Value
-        )
-
-
-        // if filePath.Contains "zen-browser" then
-        //     printfn "%A" (desktopEntryStart, desktopEntryEnd)
-        //     printfn "%A" desktopEntry
-        //     printfn "Name: %A" appName
-        //     printfn "Exec: %A" appExec
-        //     printfn "Icon: %A" appIcon
-        // if appName.IsValueNone then return! None
-        // let! appExec = appExec
-        // let! appIcon = appIcon
-
-        match appName, appExec, appIcon with
-        | ValueSome name, ValueSome exec, ValueSome appIcon ->
-            let! icon =
-                appIcon
-                |> IconLoader.loadAppIcon
-                |> Task.map (Option.defaultValue null)
-
-            return { Id = filePath
-                     Name = name
-                     Exec = exec
-                     Icon = icon }
-        | _ -> return! None
-    }
-
-
 let loadApplications (config: FolderConfiguration) : Task<ISearchResult seq> =
     Task.Run<ISearchResult seq>(fun () ->
         task {
@@ -148,16 +46,15 @@ let loadApplications (config: FolderConfiguration) : Task<ISearchResult seq> =
 
                 do! Parallel.ForEachAsync(
                     files,
-                    // ParallelOptions(MaxDegreeOfParallelism = 1),
                     Func<_, _, _>(fun path _ ->
                         match path |> FolderConfiguration.isFileExcluded config with
                         | true -> ValueTask.CompletedTask
                         | false ->
                             path
-                            |> getAppFromFile
-                            |> TaskOption.map (fun app ->
-                                apps.TryAdd(path |> Path.GetFileName, app :> ISearchResult) |> ignore
-                            )
+                            |> DesktopFileParser.loadDesktopEntries
+                            |> Task.map (Seq.iter (fun app ->
+                                apps.TryAdd(path |> Path.GetFileName, app) |> ignore
+                            ))
                             |> ValueTask
                     )
                 )

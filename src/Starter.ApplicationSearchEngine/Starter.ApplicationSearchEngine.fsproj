@@ -27,7 +27,9 @@
     </ItemGroup>
     
     <ItemGroup>
+        <Compile Include="Loaders\Linux\Types.fs" />
         <Compile Include="Loaders\Linux\IconLoader.fs" />
+        <Compile Include="Loaders\Linux\DesktopFileParser.fs" />
         <Compile Include="Loaders\Linux\XDGDesktop.fs" />
         <Compile Include="Library.fs" />
     </ItemGroup>

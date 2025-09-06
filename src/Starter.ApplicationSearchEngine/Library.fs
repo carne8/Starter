@@ -2,15 +2,15 @@ namespace Starter.ApplicationSearchEngine
 
 open Avalonia.Media
 open FsToolkit.ErrorHandling
-open R3
 
 open System
-open System.Linq
 
 #if WINDOWS
-open Starter.ApplicationSearchEngine.Loaders.Windows
+open R3
+open System.Linq
+open Starter.ApplicationSearchEngine.Loaders
 #else
-open Starter.ApplicationSearchEngine.Loaders.Linux
+open Starter.ApplicationSearchEngine.Loaders
 #endif
 open System.Collections.Generic
 open System.Threading.Tasks
@@ -32,9 +32,9 @@ type ApplicationSearchEngine(pluginPath, configDir, logger) =
             Parallel.Invoke(
                 (fun () ->
                     task {
-                        let! uwpApps = Uwp.loadApplications logger
+                        let! uwpApps = Windows.Uwp.loadApplications logger
 
-                        let observable, disposable = Uwp.observeApplicationChanges apps
+                        let observable, disposable = Windows.Uwp.observeApplicationChanges apps
                         disposables.Add disposable
                         observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
 
@@ -44,12 +44,12 @@ type ApplicationSearchEngine(pluginPath, configDir, logger) =
                 ),
                 (fun () ->
                     task {
-                        let exeFolderConfig = Exe.FolderConfiguration.Default
+                        let exeFolderConfig = Windows.Exe.FolderConfiguration.Default
                         let! exeApps =
-                            Exe.FolderConfiguration.Default
-                            |> Exe.loadApplications
+                            Windows.Exe.FolderConfiguration.Default
+                            |> Windows.Exe.loadApplications
 
-                        let observable, disposable = Exe.observeApplicationChanges apps exeFolderConfig
+                        let observable, disposable = Windows.Exe.observeApplicationChanges apps exeFolderConfig
                         disposables.Add disposable
                         observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
 
@@ -61,8 +61,8 @@ type ApplicationSearchEngine(pluginPath, configDir, logger) =
         #else
         if OperatingSystem.IsLinux() then
             Task.Run<unit>(fun () ->
-                XDGDesktop.FolderConfiguration.Default
-                |> XDGDesktop.loadApplications
+                Linux.XDGDesktop.FolderConfiguration.Default
+                |> Linux.XDGDesktop.loadApplications
                 |> Task.map (fun newApps ->
                     newApps |> apps.AddRange
                     apps.ToArray() |> this.ResultsChanged.OnNext
@@ -82,10 +82,10 @@ type ApplicationSearchEngine(pluginPath, configDir, logger) =
     override _.SearchResultSelected(searchResult) =
         match searchResult with
         #if WINDOWS
-        | :? Exe.ExeApplication as app -> Exe.runApp app
-        | :? Uwp.UwpApplication as app -> Uwp.runApp app
+        | :? Windows.Exe.ExeApplication as app -> Windows.Exe.runApp app
+        | :? Windows.Uwp.UwpApplication as app -> Windows.Uwp.runApp app
         #else
-        | :? XDGDesktop.DesktopApplication as app -> XDGDesktop.runApp app
+        | :? Linux.DesktopApplication as app -> Linux.XDGDesktop.runApp app
         #endif
         | _ -> ()
     override this.LoadSettingsControl() = null
