@@ -59,6 +59,34 @@ let runApp (app: DesktopApplication) =
     |> Process.Start
     |> ignore
 
+let loadAppIcon iconName =
+    "/usr/share/icons/hicolor"
+    |> Directory.EnumerateDirectories
+    |> Seq.choose (fun dir ->
+        let dirName = Path.GetFileName dir
+
+        match dirName.TryIndexOf 'x' with
+        | ValueNone -> None
+        | ValueSome xIndex ->
+            dirName[0..xIndex-1]
+            |> Int32.TryParse
+            |> function
+                | true, v -> Some struct (dir, v)
+                | false, _ -> None
+    )
+    |> Seq.sortByDescending (fun struct (_, size) -> size)
+    |> Seq.tryPick (fun struct (dir, _) ->
+        let iconFile = Path.Combine(dir, "apps", $"{iconName}.png")
+        if iconFile |> File.Exists then Some iconFile
+        else
+            Path.Combine(dir, "apps")
+            |> Directory.GetFiles
+            |> Array.tryFind (Path.GetFileName >> (=) iconName)
+    )
+    |> Option.map (fun iconPath ->
+        let bmp = new Avalonia.Media.Imaging.Bitmap(iconPath)
+        StarterIconSource(bmp, bmp)
+    )
 
 let getAppFromFile filePath =
     taskOption {
@@ -121,14 +149,14 @@ let getAppFromFile filePath =
         // let! appIcon = appIcon
 
         match appName, appExec, appIcon with
-        | ValueSome name, ValueSome exec, _ ->
+        | ValueSome name, ValueSome exec, ValueSome appIcon ->
             if name.Contains "Google Maps" || name.Contains "Touchpad" then
                 printfn "%A" lines
 
             return { Id = filePath
                      Name = name
                      Exec = exec
-                     Icon = null }
+                     Icon = appIcon |> loadAppIcon |> Option.defaultValue null }
         | _ -> return! None
     }
 
