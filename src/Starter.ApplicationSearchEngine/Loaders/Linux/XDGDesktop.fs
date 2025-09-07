@@ -23,15 +23,11 @@ module FolderConfiguration =
           ExcludedFolders = Array.empty  }
 
 let runApp (app: DesktopApplication) =
-    let struct (fileName, args) =
-        match app.Exec.IndexOf ' ' with
-        | -1 -> struct (app.Exec, String.Empty)
-        | i -> struct (app.Exec[..i-1], app.Exec[i..])
-
     ProcessStartInfo(
-        FileName = fileName,
-        Arguments = args,
-        UseShellExecute = true
+        FileName = "nohup",
+        Arguments = app.Exec,
+        RedirectStandardOutput = true,
+        RedirectStandardError = true
     )
     |> Process.Start
     |> ignore

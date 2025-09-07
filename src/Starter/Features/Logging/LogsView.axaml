@@ -3,9 +3,9 @@
              xmlns:vm="using:Starter.Features.LoggingView"
              x:Class="Starter.Features.LoggingView.LogsView"
              x:DataType="vm:LogsViewModel">
-    <StackPanel Spacing="20">
+    <DockPanel LastChildFill="True">
         <!-- Filters -->
-        <StackPanel Orientation="Horizontal" Spacing="20">
+        <StackPanel Orientation="Horizontal" Spacing="20" DockPanel.Dock="Top">
             <!-- Minimum Level -->
             <StackPanel Orientation="Horizontal" Spacing="5">
                 <Label Target="MinimumLevelComboBox"
@@ -40,12 +40,15 @@
 
         <!-- Logs -->
         <Border Padding="10"
+                Margin="0, 20, 0, 0"
                 Background="{DynamicResource ExpanderHeaderBackground}"
                 BorderBrush="{DynamicResource ExpanderHeaderBorderBrush}"
                 BorderThickness="{DynamicResource ExpanderHeaderBorderThickness}"
                 CornerRadius="8">
-            <SelectableTextBlock Inlines="{Binding Lines}" />
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+                <SelectableTextBlock Inlines="{Binding Lines}" />
+            </ScrollViewer>
         </Border>
-    </StackPanel>
+    </DockPanel>
 
 </UserControl>
