@@ -33,9 +33,7 @@
                            SelectedItem="{Binding SelectedPage}"> <!-- MenuItemsSource bound from code-behind -->
             <!-- Menu data template is set from code-behind -->
             <!-- Content -->
-            <ScrollViewer>
-                <Border x:Name="ContentControl" Margin="20" /> <!-- Child bound from code-behind (otherwise it doesn't work) -->
-            </ScrollViewer>
+            <Border x:Name="ContentControl" Margin="20" /> <!-- Child bound from code-behind (otherwise it doesn't work) -->
         </ui:NavigationView>
     </DockPanel>
 </controls:TranslucentWindow>

@@ -45,8 +45,9 @@
                 BorderBrush="{DynamicResource ExpanderHeaderBorderBrush}"
                 BorderThickness="{DynamicResource ExpanderHeaderBorderThickness}"
                 CornerRadius="8">
-            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
-                <SelectableTextBlock Inlines="{Binding Lines}" />
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <SelectableTextBlock Inlines="{Binding Lines}"
+                                     TextWrapping="Wrap"/>
             </ScrollViewer>
         </Border>
     </DockPanel>

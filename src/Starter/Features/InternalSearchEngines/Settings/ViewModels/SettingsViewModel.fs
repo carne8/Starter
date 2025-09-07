@@ -40,7 +40,7 @@ module private Helpers =
             | Background.Mica -> "Mica"
             | Background.None -> "None"
 
-type ViewModel(baseConfig: Configuration, searchEngines: Dictionary<string, SearchEngine> BehaviorSubject) =
+type SettingsViewModel(baseConfig: Configuration, searchEngines: Dictionary<string, SearchEngine> BehaviorSubject) =
     inherit ReactiveObject() // Equivalent to ViewModelBase
 
     let config = new BehaviorSubject<Configuration>(baseConfig)

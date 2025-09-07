@@ -8,65 +8,62 @@
              mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
              x:Class="Starter.Features.InternalSearchEngines.Settings.Views.Settings"
              x:DataType="vm:SettingsViewModel">
-    <StackPanel Spacing="4">
-        <TextBlock Classes="title1">Settings</TextBlock>
+    <ScrollViewer>
+        <StackPanel Spacing="4">
+            <TextBlock Classes="title1">Settings</TextBlock>
 
-        <!-- Launch at startup -->
-        <ui:SettingsExpander Header="Launch at startup">
-            <ui:SettingsExpander.IconSource>
-                <ic:SymbolIconSource Symbol="History" />
-            </ui:SettingsExpander.IconSource>
-            <ui:SettingsExpander.Footer>
-                <Panel>
-                    <ui:ProgressRing IsVisible="{Binding LaunchAtStartupLoading}" />
-                    <ToggleSwitch IsVisible="{Binding !LaunchAtStartupLoading}"
-                                  IsChecked="{Binding LaunchAtStartup}" />
-                </Panel>
-            </ui:SettingsExpander.Footer>
-        </ui:SettingsExpander>
+            <!-- Launch at startup -->
+            <ui:SettingsExpander Header="Launch at startup">
+                <ui:SettingsExpander.IconSource>
+                    <ic:SymbolIconSource Symbol="History" />
+                </ui:SettingsExpander.IconSource>
+                <ui:SettingsExpander.Footer>
+                    <Panel>
+                        <ui:ProgressRing IsVisible="{Binding LaunchAtStartupLoading}" />
+                        <ToggleSwitch IsVisible="{Binding !LaunchAtStartupLoading}"
+                                      IsChecked="{Binding LaunchAtStartup}" />
+                    </Panel>
+                </ui:SettingsExpander.Footer>
+            </ui:SettingsExpander>
 
-        <TextBlock Classes="title2">Personalization</TextBlock>
+            <TextBlock Classes="title2">Personalization</TextBlock>
 
-        <!-- Background -->
-        <ui:SettingsExpander Header="Background transparency" Description="{Binding BackgroundDescription}">
-            <ui:SettingsExpander.IconSource>
-                <ic:SymbolIconSource Symbol="Sparkle" />
-            </ui:SettingsExpander.IconSource>
-            <ui:SettingsExpander.Footer>
-                <ComboBox SelectedIndex="{Binding SelectedBackgroundIdx}" ItemsSource="{Binding Backgrounds}">
-                    <ComboBox.ItemTemplate>
-                        <DataTemplate DataType="vm:BackgroundComboBoxItemViewModel">
-                            <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
-                        </DataTemplate>
-                    </ComboBox.ItemTemplate>
-                    <ComboBox.Styles>
-                        <Style Selector="ComboBoxItem" x:DataType="vm:BackgroundComboBoxItemViewModel">
-                            <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
-                        </Style>
-                    </ComboBox.Styles>
-                </ComboBox>
-            </ui:SettingsExpander.Footer>
-        </ui:SettingsExpander>
+            <!-- Background -->
+            <ui:SettingsExpander Header="Background transparency">
+                <ui:SettingsExpander.IconSource>
+                    <ic:SymbolIconSource Symbol="Sparkle" />
+                </ui:SettingsExpander.IconSource>
+                <ui:SettingsExpander.Footer>
+                    <ComboBox SelectedIndex="{Binding SelectedBackgroundIdx}" ItemsSource="{Binding Backgrounds}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock VerticalAlignment="Center" Text="{Binding}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </ui:SettingsExpander.Footer>
+            </ui:SettingsExpander>
 
-        <!-- Zoomed mode -->
-        <ui:SettingsExpander Header="Zoomed mode">
-            <ui:SettingsExpander.IconSource>
-                <ic:SymbolIconSource Symbol="ZoomIn" />
-            </ui:SettingsExpander.IconSource>
-            <ui:SettingsExpander.Footer>
-                <ToggleSwitch IsChecked="{Binding ZoomedModeActivated}" />
-            </ui:SettingsExpander.Footer>
-        </ui:SettingsExpander>
+            <!-- Zoomed mode -->
+            <ui:SettingsExpander Header="Zoomed mode">
+                <ui:SettingsExpander.IconSource>
+                    <ic:SymbolIconSource Symbol="ZoomIn" />
+                </ui:SettingsExpander.IconSource>
+                <ui:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding ZoomedModeActivated}" />
+                </ui:SettingsExpander.Footer>
+            </ui:SettingsExpander>
 
-        <TextBlock Classes="title2">Search engine activation prefixes</TextBlock>
+            <TextBlock Classes="title2">Search engine activation prefixes</TextBlock>
 
-        <!-- Activator prefixes -->
-        <ItemsControl x:Name="ActivatorPrefixes"> <!-- Item template and ItemSource bound from code-behind -->
-            <ItemsControl.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <StackPanel Spacing="4" />
-                </ItemsPanelTemplate>
-            </ItemsControl.ItemsPanel>
-        </ItemsControl>
-    </StackPanel>
+            <!-- Activator prefixes -->
+            <ItemsControl x:Name="ActivatorPrefixes"> <!-- Item template and ItemSource bound from code-behind -->
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Spacing="4" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
 </UserControl>
