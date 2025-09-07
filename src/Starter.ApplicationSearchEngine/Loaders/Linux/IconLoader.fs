@@ -51,13 +51,13 @@ let loadAppIcon (iconName: string) =
         let! iconFile = iconName |> findIconFile
 
         match iconFile |> Path.GetExtension with
-        | ".svg" -> return! iconName |> StarterIconSource.fromSvgFile
-        | _ -> return new Bitmap(iconName) |> StarterIconSource.fromBitmapFile
+        | ".svg" -> return! iconFile |> StarterIconSource.fromSvgFile
+        | _ -> return new Bitmap(iconFile) |> StarterIconSource.fromBitmapFile
     }
     |> Task.catch
     |> Task.map (function
         | Choice1Of2 opt -> opt
-        | Choice2Of2 _exn ->
-            logger.Warning $"Failed to load icon: {iconName}"
+        | Choice2Of2 exn ->
+            logger.Warning $"Failed to load icon {iconName}: {exn.Message}"
             None
     )
