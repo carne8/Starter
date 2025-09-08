@@ -18,20 +18,20 @@
         <Compile Include="Types.fs" />
         <Compile Include="Logger.fs" />
     </ItemGroup>
-    
-    <!-- Windows -->
+
     <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'">
-        <Compile Include="Loaders\Windows\IconHelper.fs" />
-        <Compile Include="Loaders\Windows\UwpLoader.fs" />
-        <Compile Include="Loaders\Windows\ExecutableFilesLoader.fs" />
+        <Compile Include="Windows\IconHelper.fs" />
+        <Compile Include="Windows\UwpLoader.fs" />
+        <Compile Include="Windows\ExecutableFilesLoader.fs" />
+        <Compile Include="Windows\Library.fs" />
     </ItemGroup>
-    
-    <ItemGroup>
-        <Compile Include="Loaders\Linux\Types.fs" />
-        <Compile Include="Loaders\Linux\IconLoader.fs" />
-        <Compile Include="Loaders\Linux\DesktopFileParser.fs" />
-        <Compile Include="Loaders\Linux\XDGDesktop.fs" />
-        <Compile Include="Library.fs" />
+
+    <ItemGroup Condition="'$(TargetFramework)' != 'net9.0-windows10.0.19041.0'">
+        <Compile Include="Linux\Types.fs" />
+        <Compile Include="Linux\IconLoader.fs" />
+        <Compile Include="Linux\XDGDesktopFileParser.fs" />
+        <Compile Include="Linux\AppsLoader.fs" />
+        <Compile Include="Linux\Library.fs" />
     </ItemGroup>
 
     <ItemGroup>

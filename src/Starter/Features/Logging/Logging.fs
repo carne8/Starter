@@ -48,7 +48,7 @@ let logTemplate = "[{Timestamp:HH:mm:ss} {Level:u3}] [{Context}] {Message:lj}{Ne
 
 let logger =
     LoggerConfiguration()
-        .MinimumLevel.Debug()
+        .MinimumLevel.Verbose()
         .WriteTo.Async(fun c ->
             c.File(
                 Constants.LogFilePath,

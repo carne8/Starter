@@ -1,36 +1,12 @@
-module Starter.ApplicationSearchEngine.Loaders.Linux.XDGDesktop
+module Starter.ApplicationSearchEngine.Linux.AppsLoader
 
 open System
 open System.Collections.Concurrent
-open System.Diagnostics
 open System.IO
 open System.Threading.Tasks
 open FsToolkit.ErrorHandling
 open Starter.ApplicationSearchEngine
 open Starter.SearchEngine
-
-
-
-module FolderConfiguration =
-    let Default =
-        { Folders =
-            [| Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                ".local/share/applications"
-               )
-               "/usr/share/applications/"
-               "/usr/local/share/applications/" |]
-          ExcludedFolders = Array.empty  }
-
-let runApp (app: DesktopApplication) =
-    ProcessStartInfo(
-        FileName = "nohup",
-        Arguments = app.Exec,
-        RedirectStandardOutput = true,
-        RedirectStandardError = true
-    )
-    |> Process.Start
-    |> ignore
 
 let loadApplications (config: FolderConfiguration) : Task<ISearchResult seq> =
     Task.Run<ISearchResult seq>(fun () ->
@@ -47,7 +23,7 @@ let loadApplications (config: FolderConfiguration) : Task<ISearchResult seq> =
                         | true -> ValueTask.CompletedTask
                         | false ->
                             path
-                            |> DesktopFileParser.loadDesktopEntries
+                            |> XDGDesktopFileParser.loadDesktopEntries
                             |> Task.map (Seq.iter (fun app ->
                                 apps.TryAdd(path |> Path.GetFileName, app) |> ignore
                             ))

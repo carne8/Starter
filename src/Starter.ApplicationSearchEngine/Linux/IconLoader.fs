@@ -1,10 +1,9 @@
-﻿module Starter.ApplicationSearchEngine.Loaders.Linux.IconLoader
+﻿module Starter.ApplicationSearchEngine.Linux.IconLoader
 
 open Avalonia.Media.Imaging
 open Avalonia.Threading
 open Avalonia.Svg.Skia
 open FsToolkit.ErrorHandling
-open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Logger
 open Starter.SearchEngine
 open System.IO
@@ -42,7 +41,7 @@ let private findIconFile iconName =
             |> Seq.filter (Path.GetExtension >> (<>) ".svg")
             |> Seq.sortByDescending (fun path ->
                 let match' = directoryIconSizeRegex.Match(path)
-                if match'.Success then 0 else int match'.Groups[1].Value
+                if not match'.Success then 0 else int match'.Groups[1].Value
             )
             |> Seq.tryHead
 
@@ -58,6 +57,6 @@ let loadAppIcon (iconName: string) =
     |> Task.map (function
         | Choice1Of2 opt -> opt
         | Choice2Of2 exn ->
-            logger.Warning $"Failed to load icon {iconName}: {exn.Message}"
+            logger.Warning $"Failed to load icon {iconName}: {exn}"
             None
     )

@@ -1,4 +1,4 @@
-﻿module Starter.ApplicationSearchEngine.Loaders.Windows.Uwp
+﻿module Starter.ApplicationSearchEngine.Windows.UwpLoader
 
 open System.Diagnostics
 open R3

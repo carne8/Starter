@@ -1,11 +1,10 @@
-﻿module Starter.ApplicationSearchEngine.Loaders.Linux.DesktopFileParser
+﻿module Starter.ApplicationSearchEngine.Linux.XDGDesktopFileParser
 
 open System
 open System.Collections.Concurrent
 open System.IO
 open System.Threading.Tasks
 open FsToolkit.ErrorHandling
-open Starter.ApplicationSearchEngine.Loaders.Linux
 open Starter.SearchEngine
 
 type private String with

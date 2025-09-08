@@ -1,4 +1,4 @@
-﻿module Starter.ApplicationSearchEngine.Loaders.Windows.Exe
+﻿module Starter.ApplicationSearchEngine.Windows.ExeLoader
 
 open System.Diagnostics
 open R3

@@ -1,4 +1,4 @@
-﻿namespace Starter.ApplicationSearchEngine.Loaders.Linux
+﻿namespace Starter.ApplicationSearchEngine.Linux
 
 open Starter.SearchEngine
 
