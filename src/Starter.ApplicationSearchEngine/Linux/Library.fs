@@ -4,7 +4,7 @@ open System
 open System.Diagnostics
 open System.IO
 open System.Threading.Tasks
-open FsToolkit.ErrorHandling
+open R3
 open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Linux
 open Starter.SearchEngine
@@ -23,22 +23,26 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
           ExcludedFolders = Array.empty  }
 
     let apps = ResizeArray<ISearchResult>(200)
-    let mutable disposables = ResizeArray(2) // Btw: keep a reference of the app watcher and prevent it from being garbage collected
+    let mutable disposables = ResizeArray(3) // Btw: keep a reference of the app watcher and prevent it from being garbage collected
 
     do Logger.logger <- logger
+
+    member private this.LoadApps() =
+        task {
+            let! newApps = defaultFolderConfig |> AppsLoader.loadApplications
+            newApps |> apps.AddRange
+            apps.ToArray() |> this.ResultsChanged.OnNext
+
+            let observable, disposable = AppsLoader.observeApplicationChanges apps defaultFolderConfig
+            disposables.Add disposable
+            observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
+        }
 
     override this.LoadResults() =
         if not <| OperatingSystem.IsLinux() then
             logger.Warning("This search engine is not supported on this platform.")
         else
-            Task.Run<unit>(fun () ->
-                defaultFolderConfig
-                |> AppsLoader.loadApplications
-                |> Task.map (fun newApps ->
-                    newApps |> apps.AddRange
-                    apps.ToArray() |> this.ResultsChanged.OnNext
-                )
-            ) |> ignore
+            this.LoadApps |> Task.Run<unit> |> ignore
 
         Array.empty |> Task.FromResult
 

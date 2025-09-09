@@ -107,7 +107,7 @@ let observeApplicationChanges (appList: List<ISearchResult>) (config: FolderConf
             subject.OnNext()
         )
 
-        watcher.IncludeSubdirectories <- true
+        watcher.IncludeSubdirectories <- true // TODO: Is this correct ?
         watcher.EnableRaisingEvents <- true
         watcher
     )

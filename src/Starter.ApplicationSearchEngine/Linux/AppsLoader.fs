@@ -3,8 +3,10 @@ module Starter.ApplicationSearchEngine.Linux.AppsLoader
 open System
 open System.Collections.Concurrent
 open System.IO
+open System.Threading
 open System.Threading.Tasks
 open FsToolkit.ErrorHandling
+open R3
 open Starter.ApplicationSearchEngine
 open Starter.SearchEngine
 
@@ -35,44 +37,52 @@ let loadApplications (config: FolderConfiguration) : Task<ISearchResult seq> =
         }
     )
 
-// let observeApplicationChanges (appList: List<ISearchResult>) (config: FolderConfiguration) =
-//     let subject = new Subject<unit>()
-//     let watchers = config.Folders |> Array.map (fun folder ->
-//         let watcher = new FileSystemWatcher(folder)
-//         watcher.Filters.Add("*.exe")
-//         watcher.Filters.Add("*.lnk")
-//         watcher.NotifyFilter <-
-//             NotifyFilters.CreationTime
-//             ||| NotifyFilters.DirectoryName
-//             ||| NotifyFilters.FileName
-//             ||| NotifyFilters.LastWrite
-//
-//         watcher.Created.Add(fun args ->
-//             args.FullPath
-//             |> getAppFromFile
-//             |> Option.iter appList.Add
-//             subject.OnNext()
-//         )
-//         watcher.Deleted.Add(fun args ->
-//             appList.FindIndex(_.Id >> (=) args.FullPath) |> appList.RemoveAt
-//             subject.OnNext()
-//         )
-//         watcher.Renamed.Add(fun args ->
-//             appList.FindIndex(_.Id >> (=) args.OldFullPath) |> appList.RemoveAt
-//
-//             args.FullPath
-//             |> getAppFromFile
-//             |> Option.iter appList.Add
-//             subject.OnNext()
-//         )
-//
-//         watcher.IncludeSubdirectories <- true
-//         watcher.EnableRaisingEvents <- true
-//         watcher
-//     )
-//
-//     subject,
-//     { new IDisposable with
-//         member _.Dispose() =
-//             watchers |> Array.iter _.Dispose()
-//             subject.Dispose() }
+let observeApplicationChanges (appList: ResizeArray<ISearchResult>) (config: FolderConfiguration) =
+    let subject = new Subject<unit>()
+    let semaphore = new SemaphoreSlim(0, 1)
+
+    let replaceInList desktopFile =
+        desktopFile
+        |> XDGDesktopFileParser.loadDesktopEntries
+        |> Task.bind (fun newEntries ->
+            task {
+                do! semaphore.WaitAsync()
+                appList.RemoveAll(fun e -> e.Id.Contains desktopFile) |> ignore
+                appList.AddRange newEntries
+                subject.OnNext()
+                semaphore.Release() |> ignore
+            }
+        )
+        |> ignore
+
+    let removeFromList (desktopFile: string) =
+        task {
+            do! semaphore.WaitAsync()
+            appList.RemoveAll(fun e -> e.Id.Contains desktopFile) |> ignore
+            subject.OnNext()
+            semaphore.Release() |> ignore
+        }
+        |> ignore
+
+    let watchers = config.Folders |> Array.map (fun folder ->
+        let watcher = new FileSystemWatcher(folder)
+        watcher.Filters.Add("*.desktop")
+        watcher.NotifyFilter <-
+            NotifyFilters.CreationTime
+            ||| NotifyFilters.DirectoryName
+            ||| NotifyFilters.FileName
+            ||| NotifyFilters.LastWrite
+
+        watcher.Created.Add(fun args -> replaceInList args.FullPath)
+        watcher.Renamed.Add(fun args -> replaceInList args.FullPath)
+        watcher.Deleted.Add(fun args -> removeFromList args.FullPath)
+
+        watcher.EnableRaisingEvents <- true
+        watcher
+    )
+
+    subject,
+    { new IDisposable with
+        member _.Dispose() =
+            watchers |> Array.iter _.Dispose()
+            subject.Dispose() }

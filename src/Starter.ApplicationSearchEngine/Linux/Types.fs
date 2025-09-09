@@ -13,3 +13,5 @@ type DesktopApplication =
         member this.Name = this.Name
         member this.Description = "Application"
         member this.Icon = this.Icon
+        member this.ShowIfNoActivator = true
+        member this.ActivatorFilter = Array.empty
