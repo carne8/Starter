@@ -34,7 +34,9 @@ let private findWorkspaceDbPath ideName ideProjectsFileName =
                     let version =
                         dirName.Substring(ideName.Length)
                         |> String.filter Char.IsDigit
-                        |> int
+                        |> function
+                            | "" -> 0
+                            | v -> try int v with _ -> 0
 
                     match state with
                     | Some struct (_, stateVersion) when stateVersion >= version -> state
@@ -66,10 +68,13 @@ let loadWorkspaces (configFilePath: string) ideExePath =
             document.Descendants("entry")
             |> Seq.choose (fun e ->
                 try
-                    let path = e.Attribute("key").Value
+                    let rawPath = e.Attribute("key").Value
+                    let displayPath = rawPath.Replace("$USER_HOME$", "~")
+                    let path = rawPath.Replace("$USER_HOME$", Environment.GetFolderPath Environment.SpecialFolder.UserProfile)
+
                     { Id = path
                       Name = path |> Path.GetFileName
-                      Path = path
+                      Path = displayPath
                       Open = fun () -> openWorkspace ideExePath path } |> Some
                 with _ -> None
             )
@@ -120,7 +125,9 @@ let private findIde ideName ideExeName = // TODO: Add logs
                             dir
                             |> Path.GetFileName
                             |> _.Substring(ideName.Length)
-                            |> int
+                            |> function
+                                | "" -> 0
+                                | v -> try int v with _ -> 0
 
                         match state with
                         | Some struct (_, stateVersion) when stateVersion >= version -> state

@@ -1,6 +1,5 @@
 ﻿module Starter.WorkspaceSearchEngine.WorkspaceSourceProvider
 
-
 // type Software =
 //     | VisualStudio
 //     | GitKraken

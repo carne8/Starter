@@ -41,7 +41,7 @@ let private openWorkspace vsCodePath workspacePath =
     |> Process.Start
     |> _.Dispose()
 
-let loadWorkspaces insiders configPath vsCodePath =
+let loadWorkspaces configPath vsCodePath =
     task {
         let! bytes = File.ReadAllBytesAsync configPath
         let json = JsonDocument.Parse(bytes)
@@ -68,7 +68,7 @@ let loadWorkspaces insiders configPath vsCodePath =
         return workspaces :> _ seq
     }
 
-let detectWorkspaceChanges insiders (configPath: string) =
+let detectWorkspaceChanges (configPath: string) =
     let watcher =
         new FileSystemWatcher(
             configPath |> Path.GetDirectoryName,
@@ -113,5 +113,5 @@ let builder insiders : WorkspaceSourceBuilder =
             fun pluginPath -> Icons.loadIcon pluginPath Icons.IconName.vsCode
       FindExecutablePath = fun () -> findVsCode insiders
       FindWorkspacesDb = fun () -> findWorkspaceDbPath insiders
-      LoadWorkspaces = loadWorkspaces insiders
-      GetChangesObservable = detectWorkspaceChanges insiders }
+      LoadWorkspaces = loadWorkspaces
+      GetChangesObservable = detectWorkspaceChanges }

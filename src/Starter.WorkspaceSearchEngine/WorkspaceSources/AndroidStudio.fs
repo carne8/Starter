@@ -28,7 +28,9 @@ let private findWorkspaceDbPath () =
                     let version =
                         dirName.Substring("AndroidStudio".Length)
                         |> String.filter Char.IsDigit
-                        |> int
+                        |> function
+                            | "" -> 0
+                            | v -> try int v with _ -> 0
 
                     match state with
                     | Some struct (_, stateVersion) when stateVersion >= version -> state
@@ -54,7 +56,7 @@ let private findIde () = // TODO: Add logs
     |> Seq.tryFind File.Exists
 
 let builder : WorkspaceSourceBuilder =
-    { Id = $"workspace-android-studio:"
+    { Id = "workspace-android-studio:"
       Name = "Android Studio"
       ShortName = "studio"
       LoadIcon = fun pluginPath -> Icons.loadIcon pluginPath Icons.IconName.androidStudio
