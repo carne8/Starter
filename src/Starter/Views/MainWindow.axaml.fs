@@ -24,8 +24,9 @@ type MainWindow() as this =
     static let normalResourceDictionary = ResourceDictionary()
     static let zoomedResourceDictionary = ResourceDictionary()
     static do
-        normalResourceDictionary.Add("CornerRadius", CornerRadius 12)
+        normalResourceDictionary.Add("CornerRadius", CornerRadius 17)
         normalResourceDictionary.Add("TopCornerRadius", CornerRadius(12, 0))
+        normalResourceDictionary.Add("SearchResultCornerRadius", CornerRadius 10)
         normalResourceDictionary.Add("ResultsPadding", Thickness(7))
         normalResourceDictionary.Add("SeparatorPadding", Thickness(13, 0))
         normalResourceDictionary.Add("SearchEnginePillMargin", Thickness(-3, 0, 10, 0))
@@ -37,8 +38,9 @@ type MainWindow() as this =
         normalResourceDictionary.Add("SearchResultPadding", Thickness(10, 9))
         normalResourceDictionary.Add("SearchResultFontSize", 13.)
 
-        zoomedResourceDictionary.Add("CornerRadius", CornerRadius 12)
+        zoomedResourceDictionary.Add("CornerRadius", CornerRadius 17)
         zoomedResourceDictionary.Add("TopCornerRadius", CornerRadius(12, 0))
+        zoomedResourceDictionary.Add("SearchResultCornerRadius", CornerRadius 9)
         zoomedResourceDictionary.Add("ResultsPadding", Thickness(8))
         zoomedResourceDictionary.Add("SeparatorPadding", Thickness(15, 0))
         zoomedResourceDictionary.Add("SearchEnginePillMargin", Thickness(-3, 0, 10, 0))

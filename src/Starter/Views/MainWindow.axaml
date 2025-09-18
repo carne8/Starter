@@ -104,6 +104,7 @@
                 <ListBox.Styles>
                     <Style Selector="ListBoxItem">
                         <Setter Property="Margin" Value="0, 4, 0, 0" />
+                        <Setter Property="CornerRadius" Value="{DynamicResource SearchResultCornerRadius}" />
                     </Style>
                     <Style Selector="ListBoxItem:nth-child(1)"> <!-- Why is the of the first one 1 ?! -->
                         <Setter Property="Margin" Value="0, 0, 0, 0" />

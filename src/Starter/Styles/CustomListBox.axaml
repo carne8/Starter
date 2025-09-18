@@ -22,14 +22,12 @@
             <SolidColorBrush x:Key="CustomListBoxItemBackgroundSelected">rgba(200, 200, 200, 0.2)</SolidColorBrush>
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
-    <CornerRadius x:Key="CustomListViewItemCornerRadius">12</CornerRadius>
 
     <!-- Derived of ListBoxStyles.axaml from https://github.com/amwx/FluentAvalonia -->
     <ControlTheme x:Key="CustomListBoxItem" TargetType="ListBoxItem">
         <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
         <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
         <Setter Property="Background" Value="{DynamicResource CustomListBoxItemBackground}" />
-        <Setter Property="CornerRadius" Value="{DynamicResource CustomListViewItemCornerRadius}" />
         <Setter Property="Foreground" Value="{DynamicResource ListViewItemForeground}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
