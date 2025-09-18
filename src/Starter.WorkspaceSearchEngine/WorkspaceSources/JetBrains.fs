@@ -158,7 +158,7 @@ let getBuilder
     iconName
     : WorkspaceSourceBuilder
     =
-    { Id = $"workspace-jetbrains-{ideName.ToLowerInvariant()}:"
+    { Id = $"workspace-jetbrains-{ideName.ToLowerInvariant()}"
       Name = "JetBrains " + ideName
       ShortName = ideShortName
       LoadIcon = fun pluginPath -> Icons.loadIcon pluginPath iconName

@@ -28,5 +28,5 @@ module IconName =
 
 let loadIcon pluginPath iconName =
      let iconFile = Path.Combine(pluginPath, "Images", iconName)
-     let svg = SvgImage(Source = SvgSource.Load iconFile)
+     let svg = Avalonia.Threading.Dispatcher.UIThread.Invoke(fun () -> SvgImage(Source = SvgSource.Load iconFile))
      StarterIconSource(svg, svg)

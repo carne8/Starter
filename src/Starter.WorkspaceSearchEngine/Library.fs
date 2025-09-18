@@ -11,11 +11,17 @@ open R3
 
 type WorkspaceSearchEngine(pluginPath, configDir, logger) =
     inherit StaticSearchEngine(pluginPath, configDir, logger)
+    do Logger.logger <- logger
+
+    let settings = pluginPath |> Settings.loadSettings
+    let _settingsSaver = SettingsSaver(settings, pluginPath)
+    let workspaceSources = WorkspaceSourceProvider.loadWorkspaceSources pluginPath settings // Load sources
+    let settingsVm = Views.SettingsViewModel(workspaceSources, settings)
 
     let workspaces = new BehaviorSubject<_>(ResizeArray<ISearchResult>())
-    let workspaceSources = WorkspaceSourceProvider.loadWorkspaceSources pluginPath
     let semaphore = new SemaphoreSlim(1, 1)
 
+    /// Loads workspaces from one source and add them to the list
     let loadWorkspaces (source: WorkspaceSource) =
         task {
             do! semaphore.WaitAsync()
@@ -40,15 +46,18 @@ type WorkspaceSearchEngine(pluginPath, configDir, logger) =
     override this.Icon = Icons.searchEngineIcon
 
     override this.LoadResults() =
-        workspaceSources |> Array.Parallel.iter (fun source ->
+        // Load workspaces for each source
+        workspaceSources |> Array.iter (fun source ->
             source |> loadWorkspaces
             source.WorkspacesChanged.Subscribe(fun () -> source |> loadWorkspaces) |> ignore
         )
 
+        // Tell Starter what are the activators
         workspaceSources
         |> Seq.cast<ISearchEngineActivator>
         |> this.Activators.OnNext
 
+        // Returns the loaded workspaces
         struct (Seq.empty, workspaces.AsObservable().Cast<_, IEnumerable<ISearchResult>>()) |> Task.singleton
 
     override this.SearchResultSelected(selectedSearchResult) =
@@ -56,4 +65,4 @@ type WorkspaceSearchEngine(pluginPath, configDir, logger) =
         | :? SearchResult as workspace -> workspace.Open()
         | _ -> ()
 
-    override this.LoadSettingsControl() = null
+    override this.LoadSettingsControl() = Views.SettingsView(DataContext = settingsVm)

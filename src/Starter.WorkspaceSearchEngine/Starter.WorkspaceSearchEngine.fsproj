@@ -23,6 +23,7 @@
         <Compile Include="WorkspaceSources\JetBrains.fs" />
         <Compile Include="WorkspaceSources\AndroidStudio.fs" />
         <Compile Include="WorkspaceSources\WorkspaceSourceProvider.fs" />
+        <Compile Include="Settings.axaml.fs" />
         
         <Compile Include="Library.fs" />
     </ItemGroup>
@@ -31,6 +32,7 @@
         <PackageReference Include="Avalonia.ReactiveUI" Version="11.3.1" />
         <PackageReference Include="FluentAvaloniaUI" Version="2.3.0" />
         <PackageReference Include="FsToolkit.ErrorHandling" Version="5.0.1" />
+        <PackageReference Include="ObservableCollections" Version="3.3.4" />
         <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="11.3.0.1" />
     </ItemGroup>
 

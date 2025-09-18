@@ -292,7 +292,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                     let! results, resultsChanged = se.LoadResults()
                     results |> setStaticResultForSearchEngine se
                     resultsChanged.Subscribe(setStaticResultForSearchEngine se) |> ignore
-                with e -> logger.Error $"{se.Name} failed to load results:\n{e.Message}"
+                with e -> logger.Error(e, $"{se.Name} failed to load results:\n{e.Message}")
             }) |> ignore
 
         for kv in searchEngines.Dict.Value do

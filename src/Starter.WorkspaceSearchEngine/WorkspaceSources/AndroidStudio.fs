@@ -56,7 +56,7 @@ let private findIde () = // TODO: Add logs
     |> Seq.tryFind File.Exists
 
 let builder : WorkspaceSourceBuilder =
-    { Id = "workspace-android-studio:"
+    { Id = "workspace-android-studio"
       Name = "Android Studio"
       ShortName = "studio"
       LoadIcon = fun pluginPath -> Icons.loadIcon pluginPath Icons.IconName.androidStudio

@@ -103,7 +103,7 @@ let findVsCode insiders =
     |> Seq.tryFind File.Exists
 
 let builder insiders : WorkspaceSourceBuilder =
-    { Id = if insiders then "workspace-vscode-insiders:" else "workspace-vscode:"
+    { Id = if insiders then "workspace-vscode-insiders" else "workspace-vscode"
       Name = if insiders then "Visual Studio Code Insiders" else "Visual Studio Code"
       ShortName = "vscode"
       LoadIcon =
