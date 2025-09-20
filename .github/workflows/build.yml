@@ -58,7 +58,7 @@ jobs:
     name: Build the Windows installer
     needs: build-starter
     if: github.ref_type == 'tag'
-    runs-on: windows-latest
+    runs-on: windows-2022
     strategy:
       matrix:
         rid: [win-x64, win-x86, win-arm64]
