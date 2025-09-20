@@ -102,7 +102,7 @@ type SearchEngineKind =
             | :? OperationCanceledException
             | :? TaskCanceledException -> return failwith "Task cancelled"
             | e ->
-                logger.Error(e, "Failed to load suggestions\n{Req}", req)
+                logger.Warning(e, "Failed to load suggestions\n{Req}", req)
                 return failwith "Failed to load suggestions"
         }
 
@@ -149,3 +149,5 @@ type SearchResult =
         member this.Name = this.Name
         member this.Description = this.Description
         member this.Icon = this.Icon
+        member this.ShowIfNoActivator = true
+        member this.ActivatorFilter = Array.empty

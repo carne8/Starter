@@ -1,6 +1,5 @@
 namespace Starter.ViewModels
 
-open Starter.Controls
 open Starter.SearchEngine
 open Starter.Features.ResultScores
 
@@ -34,7 +33,9 @@ type SearchResultViewModel(
             member this.Id = ""
             member this.Name = "Zen Browser"
             member this.Description = "Application"
-            member this.Icon = StarterIconSource.Empty },
+            member this.Icon = StarterIconSource.Empty
+            member this.ShowIfNoActivator = true
+            member this.ActivatorFilter = Array.empty },
         "fake"
     )
 

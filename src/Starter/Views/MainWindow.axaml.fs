@@ -24,8 +24,8 @@ type MainWindow() as this =
     static let normalResourceDictionary = ResourceDictionary()
     static let zoomedResourceDictionary = ResourceDictionary()
     static do
-        normalResourceDictionary.Add("CornerRadius", CornerRadius 12)
-        normalResourceDictionary.Add("TopCornerRadius", CornerRadius(12, 0))
+        normalResourceDictionary.Add("CornerRadius", CornerRadius 17)
+        normalResourceDictionary.Add("SearchResultCornerRadius", CornerRadius 11)
         normalResourceDictionary.Add("ResultsPadding", Thickness(7))
         normalResourceDictionary.Add("SeparatorPadding", Thickness(13, 0))
         normalResourceDictionary.Add("SearchEnginePillMargin", Thickness(-3, 0, 10, 0))
@@ -37,8 +37,8 @@ type MainWindow() as this =
         normalResourceDictionary.Add("SearchResultPadding", Thickness(10, 9))
         normalResourceDictionary.Add("SearchResultFontSize", 13.)
 
-        zoomedResourceDictionary.Add("CornerRadius", CornerRadius 12)
-        zoomedResourceDictionary.Add("TopCornerRadius", CornerRadius(12, 0))
+        zoomedResourceDictionary.Add("CornerRadius", CornerRadius 17)
+        zoomedResourceDictionary.Add("SearchResultCornerRadius", CornerRadius 10)
         zoomedResourceDictionary.Add("ResultsPadding", Thickness(8))
         zoomedResourceDictionary.Add("SeparatorPadding", Thickness(15, 0))
         zoomedResourceDictionary.Add("SearchEnginePillMargin", Thickness(-3, 0, 10, 0))
@@ -94,7 +94,7 @@ type MainWindow() as this =
             |> ignore
 
             // Bind single-search-engine pill
-            this.ViewModel.SingleSearchEngineMode.Subscribe(fun singleSeMode ->
+            this.ViewModel.CurrentActivator.Subscribe(fun singleSeMode ->
                 match singleSeMode with
                 | None ->
                     this.SearchEnginePill.IsVisible <- false
@@ -172,8 +172,8 @@ type MainWindow() as this =
         // Add escape key binding
         let onEscape = // Run when "Escape" is pressed
             ReactiveUI.ReactiveCommand.Create(fun () ->
-                if this.ViewModel.SingleSearchEngineMode.Value.IsSome then
-                    this.ViewModel.ResetSingleSearchEngineMode()
+                if this.ViewModel.CurrentActivator.Value.IsSome then
+                    this.ViewModel.ResetActivator()
                 else
                     (this.ViewModel.HideCommand :> ICommand).Execute()
             )
@@ -191,8 +191,8 @@ type MainWindow() as this =
             let newSelectedIdx =
                 match e.PhysicalKey with
                 | PhysicalKey.Backspace ->
-                    if this.ViewModel.SingleSearchEngineMode.Value.IsSome && this.TextBox.CaretIndex = 0 then
-                        this.ViewModel.ResetSingleSearchEngineMode()
+                    if this.ViewModel.CurrentActivator.Value.IsSome && this.TextBox.CaretIndex = 0 then
+                        this.ViewModel.ResetActivator()
                         e.Handled <- true
 
                     None

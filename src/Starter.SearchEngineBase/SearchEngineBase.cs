@@ -1,4 +1,6 @@
-﻿using System.Threading;
+using System;
+using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
@@ -26,12 +28,39 @@ public class StarterIconSource()
     public readonly Geometry? Geometry;
 }
 
+public interface ISearchEngineActivator
+{
+    string Id { get; }
+    string SearchEngineId { get; }
+    string Name { get; }
+    string ShortName { get; }
+    StarterIconSource Icon { get; }
+}
+
+/// <summary>
+/// Activator used when a search engine doesn't declare
+/// activators and the user used the single-search-engine mode
+/// </summary>
+public readonly struct DefaultSearchEngineActivator(SearchEngine se) : ISearchEngineActivator
+{
+    public string Id { get; } = se.Id;
+    public string SearchEngineId { get; } = se.Id;
+    public string Name { get; } = se.Name;
+    public string ShortName { get; } = se.ShortName;
+    public StarterIconSource Icon { get; } = se.Icon;
+}
+
 public interface ISearchResult
 {
     string? Id { get; }
     string Name { get; }
     string Description { get; }
     StarterIconSource Icon { get; }
+    /// <summary>
+    /// Show this result in the default mode of Starter, without any activator being in use.
+    /// </summary>
+    bool ShowIfNoActivator { get; }
+    ISearchEngineActivator[] ActivatorFilter { get; }
 }
 
 public abstract class SearchEngine(string pluginPath, string configDir, Logger logger)
@@ -40,6 +69,10 @@ public abstract class SearchEngine(string pluginPath, string configDir, Logger l
     public abstract string Name { get; }
     public abstract string ShortName { get; }
     public abstract StarterIconSource Icon { get; }
+
+    public readonly BehaviorSubject<IEnumerable<ISearchEngineActivator>> Activators = new([]);
+    public void LoadActivators() => Activators.OnNext([new DefaultSearchEngineActivator(this)]);
+
     public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
     public abstract Control? LoadSettingsControl();
 }
@@ -51,8 +84,7 @@ public abstract class SearchEngine(string pluginPath, string configDir, Logger l
 /// </summary>
 public abstract class StaticSearchEngine(string pluginPath, string configDir, Logger logger) : SearchEngine(pluginPath, configDir, logger)
 {
-    public readonly Subject<ISearchResult[]> ResultsChanged = new();
-    public abstract Task<ISearchResult[]> LoadResults();
+    public abstract Task<(IEnumerable<ISearchResult>, Observable<IEnumerable<ISearchResult>>)> LoadResults();
 }
 
 /// <summary>
@@ -68,7 +100,7 @@ public abstract class DynamicSearchEngine(string pluginPath, string configDir, L
     /// should be shown in the last results (like for the URL search engine)
     /// </summary>
     public abstract bool ImportantResults { get; }
-    public abstract (ISearchResult[], Observable<ISearchResult[]>) Search(string query, CancellationToken cancellationToken, bool singleSearchEngineModeActivated);
+    public abstract (IEnumerable<ISearchResult>, Observable<IEnumerable<ISearchResult>>) Search(string query, CancellationToken cancellationToken, ISearchEngineActivator? activator);
 }
 
 public static class Constants

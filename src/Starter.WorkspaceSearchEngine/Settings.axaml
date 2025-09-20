@@ -1,0 +1,30 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Starter.WorkspaceSearchEngine.Views"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             x:Class="Starter.WorkspaceSearchEngine.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+    <StackPanel Spacing="4">
+        <TextBlock Classes="title1">Workspace search settings</TextBlock>
+
+        <TextBlock Classes="title2">Show if no activator is used</TextBlock>
+
+        <ItemsControl ItemsSource="{Binding WorkspaceSources}">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Spacing="4" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="vm:WorkspaceSourceViewModel">
+                    <ui:SettingsExpander Header="{Binding WorkspaceSource.Name}" IconSource="{Binding Icon}">
+                        <ui:SettingsExpander.Footer>
+                            <ToggleSwitch IsChecked="{Binding Show}" />
+                        </ui:SettingsExpander.Footer>
+                    </ui:SettingsExpander>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</UserControl>

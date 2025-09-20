@@ -19,6 +19,8 @@ type SearchResult =
         member this.Name = "Open link"
         member this.Description = $"Open: {this.Uri.AbsoluteUri}"
         member this.Icon = icon
+        member this.ShowIfNoActivator = true
+        member this.ActivatorFilter = Array.empty
 
 type UrlSearchEngine(pluginPath, configDir, logger) =
     inherit DynamicSearchEngine(pluginPath, configDir, logger)
@@ -50,15 +52,14 @@ type UrlSearchEngine(pluginPath, configDir, logger) =
     override this.Search(query, _ct, _) =
         query
         |> regex.Matches
-        |> Seq.toArray
-        |> Array.collect (
+        |> Seq.collect (
             tryParseUri
             >> Option.map (fun uri ->
                 match uri.Host with
                 | "localhost" ->
                     [| { Uri = uri } :> ISearchResult
                        { Uri = Uri("https://localhost:8080") }
-                       { Uri = Uri("https://localhost:5174") } |]
+                       { Uri = Uri("https://localhost:5174") } |] // TODO: Allow the user to set custom values
                 | _ -> [| { Uri = uri } |]
             )
             >> Option.defaultValue Array.empty

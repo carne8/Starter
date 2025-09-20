@@ -3,5 +3,11 @@
     <Style Selector="TextBlock.title1">
         <Setter Property="FontSize">25</Setter>
         <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin" Value="2,0,0,16" />
+    </Style>
+    <Style Selector="TextBlock.title2">
+        <Setter Property="FontSize">14</Setter>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Margin" Value="2,18,0,2" />
     </Style>
 </Styles>

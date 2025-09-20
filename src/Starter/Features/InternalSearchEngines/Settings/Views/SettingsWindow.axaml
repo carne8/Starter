@@ -3,10 +3,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:ui="using:FluentAvalonia.UI.Controls"
-        xmlns:vm="using:Starter.Features.Config.UI.SettingsWindow"
+        xmlns:vm="using:Starter.Features.InternalSearchEngines.Settings.ViewModels"
         mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
-        x:Class="Starter.Features.Config.UI.SettingsWindow.WindowControl"
-        x:DataType="vm:WindowViewModel"
+        x:Class="Starter.Features.InternalSearchEngines.Settings.Views.SettingsWindow"
+        x:DataType="vm:SettingsWindowViewModel"
         Title="Settings"
         Width="1050"
         Height="700"
@@ -30,7 +30,9 @@
                            SelectedItem="{Binding SelectedPage}"> <!-- MenuItemsSource bound from code-behind -->
             <!-- Menu data template is set from code-behind -->
             <!-- Content -->
-            <Border x:Name="ContentControl" Margin="20" /> <!-- Child bound from code-behind (otherwise it doesn't work) -->
+            <ScrollViewer>
+                <Border x:Name="ContentControl" Margin="20" /> <!-- Child bound from code-behind (otherwise it doesn't work) -->
+            </ScrollViewer>
         </ui:NavigationView>
     </DockPanel>
 </Window>

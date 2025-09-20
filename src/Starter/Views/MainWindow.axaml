@@ -27,7 +27,6 @@
         </Style>
 
         <Style Selector="TextBox#TextBox">
-            <Setter Property="CornerRadius" Value="{DynamicResource TopCornerRadius}" />
             <Setter Property="Margin" Value="{DynamicResource TextBoxMargin}" />
             <Setter Property="FontSize" Value="{DynamicResource TextBoxFontSize}" />
             <Setter Property="Height" Value="{DynamicResource TextBoxLineHeight}" />
@@ -104,6 +103,7 @@
                 <ListBox.Styles>
                     <Style Selector="ListBoxItem">
                         <Setter Property="Margin" Value="0, 4, 0, 0" />
+                        <Setter Property="CornerRadius" Value="{DynamicResource SearchResultCornerRadius}" />
                     </Style>
                     <Style Selector="ListBoxItem:nth-child(1)"> <!-- Why is the of the first one 1 ?! -->
                         <Setter Property="Margin" Value="0, 0, 0, 0" />

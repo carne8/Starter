@@ -4,13 +4,12 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:ic="using:FluentIcons.Avalonia.Fluent"
-             xmlns:controls="using:Starter.Controls"
-             xmlns:vm="using:Starter.Features.Config.UI.StarterSettings"
+             xmlns:vm="using:Starter.Features.InternalSearchEngines.Settings.ViewModels"
              mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
-             x:Class="Starter.Features.Config.UI.StarterSettings.StarterSettings"
-             x:DataType="vm:ViewModel">
+             x:Class="Starter.Features.InternalSearchEngines.Settings.Views.Settings"
+             x:DataType="vm:SettingsViewModel">
     <StackPanel Spacing="4">
-        <TextBlock Classes="title1" Margin="0, 0, 0, 16">Settings</TextBlock>
+        <TextBlock Classes="title1">Settings</TextBlock>
 
         <!-- Launch at startup -->
         <ui:SettingsExpander Header="Launch at startup">
@@ -25,6 +24,8 @@
                 </Panel>
             </ui:SettingsExpander.Footer>
         </ui:SettingsExpander>
+
+        <TextBlock Classes="title2">Personalization</TextBlock>
 
         <!-- Background -->
         <ui:SettingsExpander Header="Background transparency">
@@ -42,14 +43,6 @@
             </ui:SettingsExpander.Footer>
         </ui:SettingsExpander>
 
-        <!-- Search engine prefixes -->
-        <ui:SettingsExpander x:Name="SearchEnginePrefixes" Header="Search engine activation prefixes"> <!-- Item template bound from code-behind -->
-            <!-- ItemSource bound from code-behind -->
-            <ui:SettingsExpander.IconSource>
-                <ic:SymbolIconSource Symbol="Keyboard" />
-            </ui:SettingsExpander.IconSource>
-        </ui:SettingsExpander>
-
         <!-- Zoomed mode -->
         <ui:SettingsExpander Header="Zoomed mode">
             <ui:SettingsExpander.IconSource>
@@ -59,5 +52,16 @@
                 <ToggleSwitch IsChecked="{Binding ZoomedModeActivated}" />
             </ui:SettingsExpander.Footer>
         </ui:SettingsExpander>
+
+        <TextBlock Classes="title2">Search engine activation prefixes</TextBlock>
+
+        <!-- Activator prefixes -->
+        <ItemsControl x:Name="ActivatorPrefixes"> <!-- Item template and ItemSource bound from code-behind -->
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <StackPanel Spacing="4" />
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
+        </ItemsControl>
     </StackPanel>
 </UserControl>

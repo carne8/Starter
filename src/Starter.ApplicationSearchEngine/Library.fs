@@ -14,8 +14,9 @@ type ApplicationSearchEngine(pluginPath, configDir, logger) =
 
     let apps = List<ISearchResult>(100)
     let mutable disposables = List(2) // Btw: keep a reference of the UWP watcher and prevent it from being garbage collected
+    let resultsObservable = new Subject<ISearchResult IEnumerable>()
 
-    override this.LoadResults () =
+    override this.LoadResults() =
         #if WINDOWS
         Parallel.Invoke(
             (fun () ->
@@ -24,10 +25,10 @@ type ApplicationSearchEngine(pluginPath, configDir, logger) =
 
                     let observable, disposable = Loaders.Uwp.observeApplicationChanges apps
                     disposables.Add disposable
-                    observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
+                    observable.Subscribe(fun () -> apps.ToArray() |> resultsObservable.OnNext) |> ignore
 
                     apps.AddRange uwpApps
-                    apps.ToArray() |> this.ResultsChanged.OnNext
+                    apps.ToArray() |> resultsObservable.OnNext
                 } |> ignore
             ),
             (fun () ->
@@ -39,10 +40,10 @@ type ApplicationSearchEngine(pluginPath, configDir, logger) =
 
                     let observable, disposable = Loaders.Exe.observeApplicationChanges apps exeFolderConfig
                     disposables.Add disposable
-                    observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
+                    observable.Subscribe(fun () -> apps.ToArray() |> resultsObservable.OnNext) |> ignore
 
                     apps.AddRange exeApps
-                    apps.ToArray() |> this.ResultsChanged.OnNext
+                    apps.ToArray() |> resultsObservable.OnNext
                 } |> ignore
             )
         )
@@ -51,7 +52,7 @@ type ApplicationSearchEngine(pluginPath, configDir, logger) =
         logger.Warning("This Starter search engine is currently not supported on your OS.")
         #endif
 
-        Array.empty |> Task.FromResult
+        struct (Seq.empty, resultsObservable.AsObservable()) |> Task.FromResult
 
     override _.Id = nameof ApplicationSearchEngine
     override _.Name = "Applications"

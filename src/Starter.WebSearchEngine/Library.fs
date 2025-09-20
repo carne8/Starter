@@ -21,7 +21,7 @@ type WebSearchEngine(pluginPath, configDir, logger) =
     let searchEngine = settings.SearchEngine
 
     let suggestionRequests = new Subject<string * CancellationToken>()
-    let suggestions = new Subject<ISearchResult array>()
+    let suggestions = new Subject<ISearchResult seq>()
 
     do
         suggestionRequests
@@ -53,35 +53,36 @@ type WebSearchEngine(pluginPath, configDir, logger) =
 
     member this.SimpleSearch(query) =
         let r =
-            if query |> String.IsNullOrEmpty then Array.empty
+            if query |> String.IsNullOrEmpty then Seq.empty
             else
                 { Name = $"Search \"{query}\""
                   Description = "Using " + searchEngine.Value.Name
                   Uri = searchEngine.Value.LoadSearchUrl query
                   Icon = searchEngine.Value.StarterIcon }
                 :> ISearchResult
-                |> Array.singleton
+                |> Seq.singleton
 
         struct (r, Observable.Empty())
 
     member this.SuggestionsSearch(query, ct) =
         let r =
-            if query = "" then Array.empty
+            if query = "" then Seq.empty
             else
                 { Name = query
                   Description = "Using " + searchEngine.Value.Name
                   Uri = searchEngine.Value.LoadSearchUrl query
                   Icon = searchEngine.Value.StarterIcon }
                 :> ISearchResult
-                |> Array.singleton
+                |> Seq.singleton
 
         suggestionRequests.OnNext(query, ct)
         struct (r, suggestions.AsObservable())
 
-    override this.Search(query, ct, singleSearchEngineModeActivated) =
-        match singleSearchEngineModeActivated with
-        | false -> this.SimpleSearch(query)
-        | true -> this.SuggestionsSearch(query, ct)
+    override this.Search(query, ct, usedActivator) =
+        if usedActivator <> null then
+            this.SuggestionsSearch(query, ct)
+        else
+            this.SimpleSearch(query)
 
     override this.SearchResultSelected(searchResult) =
         match searchResult with

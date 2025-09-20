@@ -1,4 +1,4 @@
-namespace Starter.Features.Config.UI.SettingsWindow
+namespace Starter.Features.InternalSearchEngines.Settings.Views
 
 open Avalonia
 open Avalonia.Controls
@@ -8,9 +8,10 @@ open Avalonia.Styling
 
 open FluentAvalonia.UI.Controls
 open R3
+open Starter.Features.InternalSearchEngines.Settings.ViewModels
 open Starter.SearchEngine
 
-type WindowControl() as this =
+type SettingsWindow() as this =
     inherit Window()
 
     do this.InitializeComponent()
@@ -23,7 +24,7 @@ type WindowControl() as this =
 
         this.DataContextChanged.Add(fun _ ->
             match this.DataContext with
-            | :? WindowViewModel as vm -> this.DataContextLoaded(vm)
+            | :? SettingsWindowViewModel as vm -> this.DataContextLoaded(vm)
             | _ -> ()
         )
 
@@ -45,7 +46,7 @@ type WindowControl() as this =
                 c
             )
 
-    member this.DataContextLoaded(vm: WindowViewModel) =
+    member this.DataContextLoaded(vm: SettingsWindowViewModel) =
         // Bind MenuItems
         let navigationView = this.GetControl<NavigationView> "NavigationView"
         let sub1 = vm.MenuItems.Subscribe(fun vms -> navigationView.MenuItemsSource <- vms)

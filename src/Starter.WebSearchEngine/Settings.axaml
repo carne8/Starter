@@ -5,7 +5,7 @@
              x:Class="Starter.WebSearchEngine.Views.Settings"
              x:DataType="vm:SettingsViewModel">
     <StackPanel Spacing="4">
-        <TextBlock Classes="title1" Margin="0, 0, 0, 16">Web search settings</TextBlock>
+        <TextBlock Classes="title1">Web search settings</TextBlock>
 
         <!-- Search engine -->
         <ui:SettingsExpander x:Name="SearchEngine" Header="Search engine"> <!-- Icon source bound from code-behind -->
