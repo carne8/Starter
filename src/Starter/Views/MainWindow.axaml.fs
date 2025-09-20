@@ -124,7 +124,6 @@ type MainWindow() as this =
                     e.GetPosition(this)
                     |> this.GetVisualsAt
                     |> Seq.tryFind (fun v -> v.DataContext :? ViewModels.SearchResultViewModel)
-                    |> Option.bind Option.ofObj
                     |> Option.bind (_.DataContext >> Option.ofObj)
                     |> Option.iter (fun dataContext ->
                         dataContext

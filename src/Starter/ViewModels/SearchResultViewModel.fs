@@ -42,18 +42,25 @@ type SearchResultViewModel(
     static member create pos (se: SearchEngine) (sr: ISearchResult) =
         SearchResultViewModel(pos, sr, se.Id)
 
+    // Returns a low number for a result that should be on top of the list
     static member mapForComparison resultScoreDb (sr: SearchResultViewModel) =
-        let struct (usageScore, d) = sr.SearchResult.Id |> ScoreDb.getResultScore resultScoreDb
+        let struct (usageScore, d) =
+            sr.SearchResult.Id
+            |> ValueOption.ofObj
+            |> ValueOption.map (ScoreDb.getResultScore resultScoreDb)
+            |> ValueOption.defaultValue (struct (System.Int32.MaxValue, System.TimeSpan.MaxValue))
         let fuzzyMatchScore =
             match sr.FuzzyMatchResult with
             | Some fuzzyResult -> float fuzzyResult.Score
             | None -> 0.
 
-        sr.Position,
-        -(fuzzyMatchScore + (2. * usageScore)),
-        d,
-        sr.Name.Length,
-        sr.Name
+        struct (
+            sr.Position,
+            -(fuzzyMatchScore + (2. * usageScore)),
+            d,
+            sr.Name.Length,
+            sr.Name
+        )
 
     // UI Bindings
     member this.Name : string = this.SearchResult.Name

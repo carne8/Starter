@@ -233,25 +233,27 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                 | Choice4Of4 () -> logger.Error $"Failed to find search engine associated with activator: {activator |> Option.map _.Id}"
             ) |> disposeOnCancelled searchCts.Token
 
-    // ReSharper disable once FSharpRedundantDotInIndexer
     let validateResult (result: SearchResultViewModel) =
-        task {
-            // Send the result to the search engine
-            let se = searchEngines.Dict.Value[result.SearchEngineId]
-            se.SearchResultSelected result.SearchResult
+        match result.SearchResult.Id with
+        | null -> ValueTask.CompletedTask
+        | searchResultId ->
+            task {
+                // Send the result to the search engine
+                let se = searchEngines.Dict.Value[result.SearchEngineId]
+                se.SearchResultSelected result.SearchResult
 
-            // Increase score
-            resultScoreDb |> ScoreDb.increaseAppScore result.SearchResult.Id
-            resultScoreDb |> ScoreDb.runMaxAgingPolicy Constants.ScoresMaxAging
+                // Increase score
+                resultScoreDb |> ScoreDb.increaseAppScore searchResultId
+                resultScoreDb |> ScoreDb.runMaxAgingPolicy Constants.ScoresMaxAging
 
-            // Resort results (for next opening)
-            searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
+                // Resort results (for next opening)
+                searchResults.Sort(SearchResultViewModel.mapForComparison resultScoreDb)
 
-            // Save score changes to file
-            resultScoreDb
-            |> ScoreDb.writeToFile Constants.ResultScoresFile
-            |> ignore
-        }
+                // Save score changes to file
+                resultScoreDb
+                |> ScoreDb.writeToFile Constants.ResultScoresFile
+                |> ignore
+            } |> ValueTask
 
     do
         // Load search engines
