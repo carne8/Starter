@@ -102,7 +102,7 @@ type SearchEngineKind =
             | :? OperationCanceledException
             | :? TaskCanceledException -> return failwith "Task cancelled"
             | e ->
-                logger.Error(e, "Failed to load suggestions\n{Req}", req)
+                logger.Warning(e, "Failed to load suggestions\n{Req}", req)
                 return failwith "Failed to load suggestions"
         }
 

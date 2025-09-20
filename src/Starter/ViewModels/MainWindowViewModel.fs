@@ -89,9 +89,10 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                 |> Seq.append othersResults
                 |> Seq.toArray
 
-            newStaticResults |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
-            staticSearchResults.OnNext newStaticResults
-            logger.Information $"{se.Name} results loaded"
+            if newStaticResults |> Array.isEmpty |> not then
+                newStaticResults |> Array.Parallel.sortInPlaceBy (SearchResultViewModel.mapForComparison resultScoreDb)
+                staticSearchResults.OnNext newStaticResults
+                logger.Information $"{se.Name} results loaded"
         )
 
     let subscribeToDynamicSearchEngine activator (ct: CancellationToken) query (se: DynamicSearchEngine) =
