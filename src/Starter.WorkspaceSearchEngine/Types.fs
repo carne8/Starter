@@ -96,6 +96,8 @@ module Settings =
     [<Literal>]
     let private SettingsFilename = "settings.json"
 
+    let getFilePath settingsDirectory = Path.Combine(settingsDirectory, SettingsFilename)
+
     let ensureFileExists (filePath: string) =
         let fileDir = filePath |> Path.GetDirectoryName
         if fileDir |> Directory.Exists |> not then
@@ -104,30 +106,31 @@ module Settings =
         if filePath |> File.Exists |> not then
             filePath |> File.Create |> _.Dispose()
 
-    let saveSettings (settingsDirectory: string) (settings: Settings) =
+    let saveSettings (filePath: string) (settings: Settings) =
         try
-            let filePath = Path.Combine(settingsDirectory, SettingsFilename)
             ensureFileExists filePath
-
             let json = settings |> JsonSerializer.SerializeToUtf8Bytes
             File.WriteAllBytes(filePath, json)
         with e ->
             logger.Warning(e, "Failed to save settings")
             failwith "Failed to save settings"
 
-    let loadSettings (settingsDirectory: string) =
-        let filePath = Path.Combine(settingsDirectory, SettingsFilename)
-
+    let loadSettings (filePath: string) =
         try
             use stream = File.OpenRead filePath
             JsonSerializer.Deserialize<Settings> stream
-        with e ->
+        with
+        | :? DirectoryNotFoundException ->
+            logger.Information("Settings file doesn't exists. Creating it.")
+            Settings.defaultSettings |> saveSettings filePath
+            Settings.defaultSettings
+        | e ->
             logger.Warning(e, "Failed to load settings")
             Settings.defaultSettings |> saveSettings filePath
             Settings.defaultSettings
 
-type SettingsSaver(settings: Settings, settingsDirectory) =
+type SettingsSaver(settings: Settings, settingsFilePath) =
     do
         settings.ShowIfNoActivator.add_CollectionChanged(NotifyCollectionChangedEventHandler(fun args ->
-            settings |> Settings.saveSettings settingsDirectory
+            settings |> Settings.saveSettings settingsFilePath
         ))

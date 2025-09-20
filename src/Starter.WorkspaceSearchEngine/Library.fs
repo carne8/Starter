@@ -9,12 +9,16 @@ open System.Threading
 open FsToolkit.ErrorHandling
 open R3
 
-type WorkspaceSearchEngine(pluginPath, configDir, logger) =
-    inherit StaticSearchEngine(pluginPath, configDir, logger)
+type WorkspaceSearchEngine(pluginPath, settingsDir, logger) =
+    inherit StaticSearchEngine(pluginPath, settingsDir, logger)
     do Logger.logger <- logger
 
-    let settings = pluginPath |> Settings.loadSettings
-    let _settingsSaver = SettingsSaver(settings, pluginPath)
+    let settings, _settingsSaver =
+        let filePath = settingsDir |> Settings.getFilePath
+        let settings = filePath |> Settings.loadSettings
+
+        settings, SettingsSaver(settings, filePath)
+
     let workspaceSources = WorkspaceSourceProvider.loadWorkspaceSources pluginPath settings // Load sources
     let settingsVm = Views.SettingsViewModel(workspaceSources, settings)
 
