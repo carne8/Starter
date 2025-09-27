@@ -10,7 +10,7 @@
              x:DataType="vm:SettingsViewModel">
     <ScrollViewer>
         <StackPanel Spacing="4">
-            <TextBlock Classes="title1">Settings</TextBlock>
+            <TextBlock Classes="title1" Margin="0, 0, 0, 16">Settings</TextBlock>
 
             <!-- Launch at startup -->
             <ui:SettingsExpander Header="Launch at startup">
@@ -29,7 +29,7 @@
             <TextBlock Classes="title2">Personalization</TextBlock>
 
             <!-- Background -->
-            <ui:SettingsExpander Header="Background transparency">
+            <ui:SettingsExpander Header="Background transparency" Description="{Binding BackgroundDescription}">
                 <ui:SettingsExpander.IconSource>
                     <ic:SymbolIconSource Symbol="Sparkle" />
                 </ui:SettingsExpander.IconSource>
@@ -40,6 +40,11 @@
                                 <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
+                        <ComboBox.Styles>
+                            <Style Selector="ComboBoxItem" x:DataType="vm:BackgroundComboBoxItemViewModel">
+                                <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
+                            </Style>
+                        </ComboBox.Styles>
                     </ComboBox>
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
