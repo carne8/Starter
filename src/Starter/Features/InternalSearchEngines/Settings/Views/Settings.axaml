@@ -36,8 +36,8 @@
                 <ui:SettingsExpander.Footer>
                     <ComboBox SelectedIndex="{Binding SelectedBackgroundIdx}" ItemsSource="{Binding Backgrounds}">
                         <ComboBox.ItemTemplate>
-                            <DataTemplate>
-                                <TextBlock VerticalAlignment="Center" Text="{Binding}" />
+                            <DataTemplate DataType="vm:BackgroundComboBoxItemViewModel">
+                                <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>

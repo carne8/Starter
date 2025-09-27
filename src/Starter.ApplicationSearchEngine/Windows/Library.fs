@@ -12,6 +12,7 @@ type WindowsAppsSearchEngine(pluginPath, configDir, logger) =
 
     let apps = ResizeArray<ISearchResult>(100)
     let mutable disposables = ResizeArray(2) // Btw: keep a reference of the UWP watcher and prevent it from being garbage collected
+    let resultsObservable = new Subject<ISearchResult seq>()
 
     do Logger.logger <- logger
 
@@ -26,10 +27,10 @@ type WindowsAppsSearchEngine(pluginPath, configDir, logger) =
 
                         let observable, disposable = UwpLoader.observeApplicationChanges apps
                         disposables.Add disposable
-                        observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
+                        observable.Subscribe(fun () -> apps.ToArray() |> resultsObservable.OnNext) |> ignore
 
                         apps.AddRange uwpApps
-                        apps.ToArray() |> this.ResultsChanged.OnNext
+                        apps.ToArray() |> resultsObservable.OnNext
                     } |> ignore
                 ),
                 (fun () ->
@@ -41,15 +42,15 @@ type WindowsAppsSearchEngine(pluginPath, configDir, logger) =
 
                         let observable, disposable = ExeLoader.observeApplicationChanges apps exeFolderConfig
                         disposables.Add disposable
-                        observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
+                        observable.Subscribe(fun () -> apps.ToArray() |> resultsObservable.OnNext) |> ignore
 
                         apps.AddRange exeApps
-                        apps.ToArray() |> this.ResultsChanged.OnNext
+                        apps.ToArray() |> resultsObservable.OnNext
                     } |> ignore
                 )
             )
 
-        Array.empty |> Task.FromResult
+        struct (Seq.empty, resultsObservable.AsObservable()) |> Task.FromResult
 
     override _.Id = nameof WindowsAppsSearchEngine
     override _.Name = "Applications"

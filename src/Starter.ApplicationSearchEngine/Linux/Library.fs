@@ -23,6 +23,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
           ExcludedFolders = Array.empty  }
 
     let apps = ResizeArray<ISearchResult>(200)
+    let results = new Subject<ISearchResult seq>()
     let mutable disposables = ResizeArray(3) // Btw: keep a reference of the app watcher and prevent it from being garbage collected
 
     do Logger.logger <- logger
@@ -31,11 +32,11 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
         task {
             let! newApps = defaultFolderConfig |> AppsLoader.loadApplications
             newApps |> apps.AddRange
-            apps.ToArray() |> this.ResultsChanged.OnNext
+            apps.ToArray() |> results.OnNext
 
             let observable, disposable = AppsLoader.observeApplicationChanges apps defaultFolderConfig
             disposables.Add disposable
-            observable.Subscribe(fun () -> apps.ToArray() |> this.ResultsChanged.OnNext) |> ignore
+            observable.Subscribe(fun () -> apps.ToArray() |> results.OnNext) |> ignore
         }
 
     override this.LoadResults() =
@@ -44,7 +45,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
         else
             this.LoadApps |> Task.Run<unit> |> ignore
 
-        Array.empty |> Task.FromResult
+        struct (Seq.empty, results.AsObservable()) |> Task.FromResult
 
     override _.Id = nameof LinuxAppsSearchEngine
     override _.Name = "Applications"
