@@ -2,29 +2,22 @@
 - [ ] Improve start time
 - [ ] Logs -> add scrollviewer around logs
 - [ ] Add buttons in settings to open config directory and plugins directory
+- [ ] Allow only one settings search result to be returned
 
-- [x] Fix config auto-save issue
-- [x] Fix dark/light mode for icons
-- [x] Finish web search plugin
-- [x] Ordering of results
-- [x] Add app logs
-- [x] Switch to FluentIcons instead of FluentAvalonia
-- [x] Add mouse click
-- [x] Change UI scaling
-- [x] Center window
-- [x] Change window width
-- [x] Fix text box scrolling
-- [x] Tab navigation
-- [x] Prevent starting 2 instances
-- [x] Installer
-- [x] Plugins folder
-- [x] Config centralization
-- [x] Settings page for plugins
-- [x] Settings page corner radius (abandoned)
-- [x] Show if launch at startup is enabled
+## Linux
+- [ ] Fix multi screen centering
+- [ ] Fix unfocusing
+
+## Linux - Apps
+- [ ] Add ability to search gedit
+- [ ] Fix icons
+- [ ] Remove non normal apps like: "Install to hard drive"
+- [ ] Fix %U
+
+## Workspaces
+- [ ] Change settings when no workspace source is found
 
 ## Plugins
-- [ ] VSCode workspaces plugins
 - [ ] Calculator
 - [ ] Windows settings
 - [ ] File search

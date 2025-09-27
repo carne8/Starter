@@ -45,7 +45,9 @@ let private parseDesktopEntry (desktopEntry: string array) =
     let mutable appName = ValueNone
     let mutable appExec = ValueNone
     let mutable appIcon = ValueNone
+    let mutable noDisplay = false
 
+    // Find keys, key variants and values: key[variant]=value
     desktopEntry
     |> Array.choose (fun line ->
         option {
@@ -76,12 +78,16 @@ let private parseDesktopEntry (desktopEntry: string array) =
         if appName.IsNone && line.Key = "Name" then appName <- ValueSome line.Value
         if appExec.IsNone && line.Key = "Exec" then appExec <- ValueSome line.Value
         if appIcon.IsNone && line.Key = "Icon" then appIcon <- ValueSome line.Value
+        if line.Key = "NoDisplay" then noDisplay <- true
     )
 
-    match appName, appExec, appIcon with
-    | ValueSome name, ValueSome exec, ValueSome icon ->
-        Some <| struct {| Name = name; Exec = exec; Icon = icon |}
-    | _ -> None
+    match noDisplay with
+    | true -> None
+    | false ->
+        match appName, appExec, appIcon with
+        | ValueSome name, ValueSome exec, ValueSome icon ->
+            Some <| struct {| Name = name; Exec = exec; Icon = icon |}
+        | _ -> None
 
 let loadDesktopEntries desktopFile =
     task {
