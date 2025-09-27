@@ -131,16 +131,24 @@ type MainWindow() as this =
 
         this.Activated.Add (fun _ ->
             // Center window
-            match this.Screens.Primary with
-            | null ->
+            let screen =
+                this
+                |> this.Screens.ScreenFromTopLevel
+                |> ValueOption.ofObj
+                |> ValueOption.orElse (this.Screens.Primary |> ValueOption.ofObj)
+
+            match screen with
+            | ValueNone ->
                 logger.Error "No screen available. Can't center window"
                 failwith "No screen available. Can't center window"
-            | screen ->
+            | ValueSome screen ->
                 this.Position <-
                     PixelPoint(
                         round ((float screen.WorkingArea.Width - (this.Width * screen.Scaling)) / 2.) |> int,
                         float screen.WorkingArea.Height * (5./16.) |> int
                     )
+                    +
+                    screen.WorkingArea.TopLeft
 
             // Reset focus
             this.TextBox.Focus() |> ignore
