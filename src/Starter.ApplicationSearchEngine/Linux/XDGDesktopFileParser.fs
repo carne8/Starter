@@ -18,6 +18,14 @@ type private String with
         | -1 -> ValueNone
         | n -> ValueSome n
 
+[<Struct>]
+type DesktopEntry =
+    { Name: string
+      Exec: string
+      Icon: string
+      Comment: string voption
+      Keywords: string array }
+
 /// Find the desktop entries in a .desktop file
 let private findDesktopEntries desktopFile =
     task {
@@ -46,6 +54,8 @@ let private parseDesktopEntry (desktopEntry: string array) =
     let mutable appName = ValueNone
     let mutable appExec = ValueNone
     let mutable appIcon = ValueNone
+    let mutable appComment = ValueNone
+    let mutable appKeywords = ValueNone
     let mutable noDisplay = false
 
     // Find keys, key variants and values: key[variant]=value
@@ -79,6 +89,9 @@ let private parseDesktopEntry (desktopEntry: string array) =
         if appName.IsNone && line.Key = "Name" then appName <- ValueSome line.Value
         if appExec.IsNone && line.Key = "Exec" then appExec <- ValueSome line.Value
         if appIcon.IsNone && line.Key = "Icon" then appIcon <- ValueSome line.Value
+        if appComment.IsNone && line.Key = "Comment" then appComment <- ValueSome line.Value
+        if appKeywords.IsNone && line.Key = "Keywords" then
+            appKeywords <- line.Value.Split ';' |> ValueSome
         if line.Key = "NoDisplay" then noDisplay <- true
     )
 
@@ -91,7 +104,13 @@ let private parseDesktopEntry (desktopEntry: string array) =
                 ExecKeyParameters |> Array.fold
                     (fun (exec: string) param -> exec.Replace(param, String.Empty))
                     exec
-            Some <| struct {| Name = name; Exec = exec; Icon = icon |}
+
+            { Name = name
+              Exec = exec
+              Icon = icon
+              Comment = appComment
+              Keywords = appKeywords |> ValueOption.defaultValue Array.empty }
+            |> Some
         | _ -> None
 
 let loadDesktopEntries desktopFile =
@@ -102,7 +121,7 @@ let loadDesktopEntries desktopFile =
 
         do! Parallel.ForEachAsync(
             appInfo,
-            Func<struct {| Exec: string; Icon: string; Name: string |}, _, _>(fun appInfo ct ->
+            Func<DesktopEntry, _, _>(fun appInfo ct ->
                 task {
                     let! icon =
                         appInfo.Icon
@@ -112,6 +131,8 @@ let loadDesktopEntries desktopFile =
                     { Id = $"application:{desktopFile}:{appInfo.Name}"
                       Name = appInfo.Name
                       Icon = icon
+                      Description = appInfo.Comment |> ValueOption.defaultValue "Applications" // TODO: I18n
+                      Keywords = appInfo.Keywords
                       Exec = appInfo.Exec }
                     |> bag.Add
                 }

@@ -5,16 +5,12 @@
 - [ ] Allow only one settings search result to be returned
 - [ ] Add exit search result
 
-## Linux
-- [x] Fix multi screen centering
-
 ## Linux - Apps
 - [ ] Add ability to search gedit
 - [ ] Fix icons
-- [X] Remove non normal apps like: "Install to hard drive"
-- [X] Fix %U
 - [ ] Light/Dark theme support (global theme support)
-- [X] Fix apps refreshing
+- [ ] Prevent apps to quit when Starter quits
+- [ ] Add option to show app descriptions
 
 ## Workspaces
 - [ ] Change settings when no workspace source is found
