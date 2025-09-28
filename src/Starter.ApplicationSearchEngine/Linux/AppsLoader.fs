@@ -39,7 +39,7 @@ let loadApplications (config: FolderConfiguration) : Task<ISearchResult seq> =
 
 let observeApplicationChanges (appList: ResizeArray<ISearchResult>) (config: FolderConfiguration) =
     let subject = new Subject<unit>()
-    let semaphore = new SemaphoreSlim(0, 1)
+    let semaphore = new SemaphoreSlim(1, 1)
 
     let replaceInList desktopFile =
         desktopFile

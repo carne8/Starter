@@ -28,9 +28,12 @@ let private findIconFile iconName =
     | true -> Some iconName
     | false ->
         let files =
-            Seq.append
-                (Directory.EnumerateFiles("/usr/share/icons", $"{iconName}.*", SearchOption.AllDirectories))
-                (Directory.EnumerateFiles("/usr/share/pixmaps", $"{iconName}.*", SearchOption.AllDirectories))
+            seq {
+                Directory.EnumerateFiles("/usr/share/icons", $"{iconName}.*", SearchOption.AllDirectories)
+                Directory.EnumerateFiles("/usr/share/pixmaps", $"{iconName}.*", SearchOption.AllDirectories)
+                Directory.EnumerateFiles("/var/lib/flatpak/exports/share/icons/", $"{iconName}.*", SearchOption.AllDirectories)
+            }
+            |> Seq.concat
 
         let svgFile = files |> Seq.tryFind (Path.GetExtension >> (=) ".svg")
 

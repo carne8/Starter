@@ -19,7 +19,8 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
                 ".local/share/applications"
                )
                "/usr/share/applications/"
-               "/usr/local/share/applications/" |]
+               "/usr/local/share/applications/"
+               "/var/lib/flatpak/exports/share/applications/" |]
           ExcludedFolders = Array.empty  }
 
     let apps = ResizeArray<ISearchResult>(200)

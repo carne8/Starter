@@ -40,6 +40,7 @@ let private findDesktopEntries desktopFile =
         return entries |> Seq.map Seq.toArray |> Seq.toArray
     }
 
+let private ExecKeyParameters = [| "%f"; "%F"; "%u"; "%U"; "%d"; "%D"; "%n"; "%N"; "%i"; "%c"; "%k"; "%v"; "%m" |]
 /// Get needed info from a desktop entry
 let private parseDesktopEntry (desktopEntry: string array) =
     let mutable appName = ValueNone
@@ -86,6 +87,10 @@ let private parseDesktopEntry (desktopEntry: string array) =
     | false ->
         match appName, appExec, appIcon with
         | ValueSome name, ValueSome exec, ValueSome icon ->
+            let exec =
+                ExecKeyParameters |> Array.fold
+                    (fun (exec: string) param -> exec.Replace(param, String.Empty))
+                    exec
             Some <| struct {| Name = name; Exec = exec; Icon = icon |}
         | _ -> None
 
