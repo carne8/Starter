@@ -154,6 +154,18 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                 |> Array.map System.Text.Rune.ToLowerInvariant
 
             let fuzzyMatch = Fusil.fuzzyMatch false true true fusilSlab query
+            let fuzzyMatchKeywords (result: SearchResultViewModel) =
+                result.SearchResult.Keywords |> Array.fold
+                    (fun max keyword ->
+                        match max with
+                        | None -> keyword |> fuzzyMatch
+                        | Some max' ->
+                            match keyword |> fuzzyMatch with
+                            | None -> max
+                            | Some res when res.Score < max'.Score -> max
+                            | Some res -> Some res
+                    )
+                    None
 
             currentActivator.Subscribe(fun activator ->
                 let targetSearchEngine =
@@ -199,8 +211,15 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                                         match result.Name |> fuzzyMatch with
                                         | Some fusilResult when fusilResult.Score > 0s ->
                                             result.AccentuationMap <- fusilResult.MatchingPositions
+                                            result.FuzzyMatchScore <- fusilResult.Score
                                             true
-                                        | _ -> false
+                                        | _ ->
+                                            match result |> fuzzyMatchKeywords with
+                                            | Some fusilResult when fusilResult.Score > 0s ->
+                                                result.AccentuationMap <- Array.empty
+                                                result.FuzzyMatchScore <- fusilResult.Score
+                                                true
+                                            | _ -> false
                                     | _ -> false
                             )
                             |> searchResults.AddRange
@@ -221,8 +240,15 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                                 match result.Name |> fuzzyMatch with
                                 | Some fusilResult when fusilResult.Score > 0s ->
                                     result.AccentuationMap <- fusilResult.MatchingPositions
+                                    result.FuzzyMatchScore <- fusilResult.Score
                                     true
-                                | _ -> false
+                                | _ ->
+                                    match result |> fuzzyMatchKeywords with
+                                    | Some fusilResult when fusilResult.Score > 0s ->
+                                        result.AccentuationMap <- Array.empty
+                                        result.FuzzyMatchScore <- fusilResult.Score
+                                        true
+                                    | _ -> false
                             else false
                         )
                         |> searchResults.AddRange

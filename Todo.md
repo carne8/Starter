@@ -4,9 +4,14 @@
 - [ ] Add buttons in settings to open config directory and plugins directory
 - [ ] Allow only one settings search result to be returned
 - [ ] Add exit search result
+- [ ] Refactor
+- [ ] Add buttons in settings to open config folder / log folder / plugins folder
+
+## Fusil
+- [ ] Use value options
+- [ ] Update versions
 
 ## Linux - Apps
-- [ ] Add ability to search gedit
 - [ ] Fix icons
 - [ ] Light/Dark theme support (global theme support)
 - [ ] Prevent apps to quit when Starter quits
@@ -17,6 +22,7 @@
 
 ## Plugins
 - [ ] Calculator
+- [ ] Int representations converter (binary, base32, base64, octal, decimal, etc)
 - [ ] Windows settings
 - [ ] File search
 - [ ] App killer

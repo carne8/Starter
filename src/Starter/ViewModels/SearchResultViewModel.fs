@@ -15,14 +15,16 @@ type SearchResultViewModel(
     searchEngineId: string
     ) =
 
-    let mutable fuzzyMatchResult: Fusil.Fusil.FuzzyResult option = None
+    let mutable fuzzyMatchScore = 0s
     let mutable accentuationMap = Array.empty<bool>
     let icon = searchResult.Icon
 
     member _.Position = pos
     member _.SearchResult = searchResult
     member _.SearchEngineId = searchEngineId
-    member _.FuzzyMatchResult = fuzzyMatchResult
+    member _.FuzzyMatchScore
+        with get () = fuzzyMatchScore
+        and set v = fuzzyMatchScore <- v
     member _.AccentuationMap
         with get () = accentuationMap
         and set v = accentuationMap <- v
@@ -33,6 +35,7 @@ type SearchResultViewModel(
             member this.Id = ""
             member this.Name = "Zen Browser"
             member this.Description = "Application"
+            member this.Keywords = Array.empty
             member this.Icon = StarterIconSource.Empty
             member this.ShowIfNoActivator = true
             member this.ActivatorFilter = Array.empty },
@@ -49,10 +52,7 @@ type SearchResultViewModel(
             |> ValueOption.ofObj
             |> ValueOption.map (ScoreDb.getResultScore resultScoreDb)
             |> ValueOption.defaultValue (struct (System.Int32.MaxValue, System.TimeSpan.MaxValue))
-        let fuzzyMatchScore =
-            match sr.FuzzyMatchResult with
-            | Some fuzzyResult -> float fuzzyResult.Score
-            | None -> 0.
+        let fuzzyMatchScore = float sr.FuzzyMatchScore
 
         struct (
             sr.Position,

@@ -73,6 +73,7 @@ type SearchResult =
         member this.Id = this.Id
         member this.Name = this.Name
         member this.Description = this.Path
+        member this.Keywords = Array.empty
         member this.Icon = this.Source.Icon
         member this.ShowIfNoActivator = this.Source.ShowIfNoActivator
         member this.ActivatorFilter = [| this.Source |]
