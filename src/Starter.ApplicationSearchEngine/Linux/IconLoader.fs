@@ -35,7 +35,11 @@ let private findIconFile iconName =
             }
             |> Seq.concat
 
-        let svgFile = files |> Seq.tryFind (Path.GetExtension >> (=) ".svg")
+        let svgFile =
+            files |> Seq.tryFind (fun path ->
+                path |> Path.GetExtension = ".svg"
+                && path |> Path.GetFileNameWithoutExtension = iconName
+            )
 
         match svgFile with
         | Some file -> Some file

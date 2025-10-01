@@ -6,13 +6,13 @@
 - [ ] Add exit search result
 - [ ] Refactor
 - [ ] Add buttons in settings to open config folder / log folder / plugins folder
+- [ ] Add custom protocols in url search engine
 
 ## Fusil
 - [ ] Use value options
 - [ ] Update versions
 
 ## Linux - Apps
-- [ ] Fix icons
 - [ ] Light/Dark theme support (global theme support)
 - [ ] Prevent apps to quit when Starter quits
 - [ ] Add option to show app descriptions
