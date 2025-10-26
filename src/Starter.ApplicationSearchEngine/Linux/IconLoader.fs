@@ -21,7 +21,7 @@ module private StarterIconSource =
 
     let fromBitmapFile bmp = StarterIconSource(bmp, bmp)
 
-// TODO: Add theme support
+// TODO: Rebuild using -> https://specifications.freedesktop.org/icon-theme-spec/latest/
 
 let private findIconFile iconName =
     match iconName |> File.Exists with
@@ -29,9 +29,9 @@ let private findIconFile iconName =
     | false ->
         let files =
             seq {
-                Directory.EnumerateFiles("/usr/share/icons", $"{iconName}.*", SearchOption.AllDirectories)
-                Directory.EnumerateFiles("/usr/share/pixmaps", $"{iconName}.*", SearchOption.AllDirectories)
-                Directory.EnumerateFiles("/var/lib/flatpak/exports/share/icons/", $"{iconName}.*", SearchOption.AllDirectories)
+                if Directory.Exists "/usr/share/icons" then Directory.EnumerateFiles("/usr/share/icons", $"{iconName}.*", SearchOption.AllDirectories)
+                if Directory.Exists "/usr/share/pixmaps" then Directory.EnumerateFiles("/usr/share/pixmaps", $"{iconName}.*", SearchOption.AllDirectories)
+                if Directory.Exists "/var/lib/flatpak/exports/share/icons/" then Directory.EnumerateFiles("/var/lib/flatpak/exports/share/icons/", $"{iconName}.*", SearchOption.AllDirectories)
             }
             |> Seq.concat
 

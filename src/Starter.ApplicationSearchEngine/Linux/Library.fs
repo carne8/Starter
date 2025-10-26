@@ -21,6 +21,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
                "/usr/share/applications/"
                "/usr/local/share/applications/"
                "/var/lib/flatpak/exports/share/applications/" |]
+            |> Array.filter Path.Exists
           ExcludedFolders = Array.empty  }
 
     let apps = ResizeArray<ISearchResult>(200)
@@ -56,13 +57,21 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
     override _.SearchResultSelected(searchResult) =
         match searchResult with
         | :? DesktopApplication as app ->
-            ProcessStartInfo(
-                FileName = "nohup",
-                Arguments = app.Exec,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
-            )
-            |> Process.Start
-            |> ignore
+            match app.Exec with
+            | ValueNone -> logger.Warning $"The app {app.Name} doesn't provide a valid Exec command"
+            | ValueSome exec ->
+                // TODO: Prevent logs from showing
+                // TODO: DBus Activation -> https://specifications.freedesktop.org/desktop-entry-spec/latest/dbus.html
+                // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
+                // TODO: Maybe this https://specifications.freedesktop.org/desktop-entry-spec/latest/extra-actions.html
+                ProcessStartInfo(
+                    FileName = "nohup",
+                    WorkingDirectory = (app.WorkingDirectory |> ValueOption.defaultValue null),
+                    Arguments = exec,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                )
+                |> Process.Start
+                |> ignore
         | _ -> ()
     override this.LoadSettingsControl() = null

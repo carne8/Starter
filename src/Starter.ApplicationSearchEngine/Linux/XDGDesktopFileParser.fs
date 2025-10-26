@@ -2,9 +2,12 @@
 
 open System
 open System.Collections.Concurrent
+open System.Collections.Generic
 open System.IO
+open System.Text
 open System.Threading.Tasks
 open FsToolkit.ErrorHandling
+open Starter.ApplicationSearchEngine.Logger
 open Starter.SearchEngine
 
 type private String with
@@ -18,123 +21,177 @@ type private String with
         | -1 -> ValueNone
         | n -> ValueSome n
 
+module Seq =
+    let inline choosev f =
+        Seq.choose (f >> Option.ofValueOption) 
+
+/// Represents a raw desktop entry parsed from a .desktop file
 [<Struct>]
 type DesktopEntry =
     { Name: string
       Exec: string
-      Icon: string
-      Keywords: string array }
+      WorkingDirectory: string ValueOption
+      IconName: string ValueOption
+      AdditionalSearchKeywords: string array
+      DesktopFilePath: string }
 
-/// Find the desktop entries in a .desktop file
-let private findDesktopEntries desktopFile =
-    task {
-        let! lines = desktopFile |> File.ReadAllLinesAsync
-        let entries = ResizeArray<_ ResizeArray>()
-        let mutable currentEntryIndex = ValueNone
+let private groupLinesByEntry (desktopFileLines: string array) =    
+    // Group lines by entry
+    let entries = List<List<string>>()
+    let mutable currentEntryIndex = ValueNone
 
-        for line in lines do
-            if line.StartsWith("[Desktop Entry]") then
-                entries.Add(ResizeArray())
-                currentEntryIndex <- ValueSome <| entries.Count - 1
-            elif line.StartsWith("[") then
-                currentEntryIndex <- ValueNone
-
+    for line in desktopFileLines do
+        if line.StartsWith("[Desktop Entry]") then
+            entries.Add(List())
+            currentEntryIndex <- ValueSome <| entries.Count - 1
+        elif line.StartsWith("[") then
+            currentEntryIndex <- ValueNone
+        else
             match currentEntryIndex with
             | ValueNone -> ()
             | ValueSome currentEntryIndex ->
                 entries[currentEntryIndex].Add line
 
-        return entries |> Seq.map Seq.toArray |> Seq.toArray
+    entries
+    
+let private parseKeyValuePair (line: string) =
+    voption {
+        let! equalIndex = line.TryIndexOf '='
+        let keyWithLocalization = line[..equalIndex-1]
+        let value = line[equalIndex+1..]
+        
+        // Separate key and localization
+        let key, localization = 
+            match keyWithLocalization.TryIndexOf '[' with
+            | ValueNone -> keyWithLocalization, ValueNone
+            | ValueSome i -> keyWithLocalization[..i-1], ValueSome keyWithLocalization[i+1..]
+                
+        return struct {| Key = key
+                         Localization = localization
+                         Value = value |}
     }
 
-let private ExecKeyParameters = [| "%f"; "%F"; "%u"; "%U"; "%d"; "%D"; "%n"; "%N"; "%i"; "%c"; "%k"; "%v"; "%m" |]
-/// Get needed info from a desktop entry
-let private parseDesktopEntry (desktopEntry: string array) =
-    let mutable appName = ValueNone
-    let mutable appExec = ValueNone
-    let mutable appIcon = ValueNone
-    let mutable appKeywords = ValueNone
-    let mutable noDisplay = false
+/// Transform the lines of a desktop entry from .desktop file
+/// into a DesktopEntry struct
+let private parseDesktopEntryLines filePath (lines: string seq) =
+    let keyValuePairs = lines |> Seq.choosev parseKeyValuePair
+        
+    let mutable shouldBeShown = true
+    let mutable name = ValueNone
+    let mutable iconName = ValueNone
+    let mutable exec = ValueNone
+    let mutable path = ValueNone
+    let mutable additionalSearchStrings = List.empty
+    
+    let mutable enumerator = keyValuePairs.GetEnumerator()
+    while shouldBeShown && enumerator.MoveNext() do
+        let kv = enumerator.Current
+        match kv.Key with
+        | "Hidden"
+        | "NoDisplay" when kv.Value.ToLowerInvariant() = "true" -> shouldBeShown <- false        
+        | "Name" -> name <- ValueSome kv.Value // TODO: Add name localization
+        | "Icon" -> iconName <- ValueSome kv.Value
+        | "Exec" -> exec <- ValueSome kv.Value
+        | "Path" -> path <- ValueSome kv.Value
+        | "GenericName"
+        | "Keywords" ->
+            additionalSearchStrings <-
+                (kv.Value.Split ';' |> Array.toList) @ additionalSearchStrings
+        | _ -> ()
+        // TODO: | "OnlyShowIn" | "NotShowIn"
+        // TODO: | "TryExec"
+        // TODO: | "DBusActivatable"
+        // TODO: | "PrefersNonDefaultGPU"
 
-    // Find keys, key variants and values: key[variant]=value
-    desktopEntry
-    |> Array.choose (fun line ->
-        option {
-            let mutable key = ValueNone
-            let variant =
-                line.TryIndexOf '[' |> ValueOption.bind (fun start ->
-                    key <- ValueSome line[..start-1]
-                    line.TryIndexOf "]"
-                    |> ValueOption.map (fun end' -> line[start+1..end'-1])
-                )
+    match shouldBeShown, name, exec with
+    | true, ValueSome name, ValueSome exec ->
+        { Name = name
+          Exec = exec
+          IconName = iconName
+          WorkingDirectory = path
+          AdditionalSearchKeywords =
+              match additionalSearchStrings with
+              | [] -> null
+              | l -> l |> List.toArray
+          DesktopFilePath = filePath }
+        |> ValueSome
+    | _ -> ValueNone
 
-            if variant.IsSome then do! None // TODO: I18n
-
-            let! equalPos = line.TryIndexOf "="
-
-            match key with
-            | ValueNone -> key <- ValueSome line[..equalPos-1]
-            | _ -> ()
-
-            let! key = key
-
-            return struct {| Key = key
-                             Variant = variant
-                             Value = line[equalPos+1..] |}
-        }
-    )
-    |> Array.iter (fun line ->
-        if appName.IsNone && line.Key = "Name" then appName <- ValueSome line.Value
-        if appExec.IsNone && line.Key = "Exec" then appExec <- ValueSome line.Value
-        if appIcon.IsNone && line.Key = "Icon" then appIcon <- ValueSome line.Value
-        if appKeywords.IsNone && line.Key = "Keywords" then
-            appKeywords <-
-                line.Value.Split(
-                    ';',
-                    StringSplitOptions.TrimEntries
-                    ||| StringSplitOptions.RemoveEmptyEntries
-                ) |> ValueSome
-        if line.Key = "NoDisplay" then noDisplay <- true
-    )
-
-    match noDisplay with
-    | true -> None
+/// Make the Exec value found in desktop entry an executable line
+/// to run when the app is selected.
+let private parseExec (entry: DesktopEntry) =
+    // Check presence of deprecated field code
+    let deprecatedFieldCodes = [ "%d"; "%D"; "%n"; "%N"; "%v"; "%m" ] 
+    let containsDeprecatedFieldCode =
+        entry.Exec.Split ' '
+        |> Array.exists (fun frag -> deprecatedFieldCodes |> List.contains frag)
+        
+    match containsDeprecatedFieldCode with
+    | true ->
+        logger.Warning $"The Exec in {entry.DesktopFilePath} contains deprecated field code"
+        ValueNone
     | false ->
-        match appName, appExec, appIcon with
-        | ValueSome name, ValueSome exec, ValueSome icon ->
-            let exec =
-                ExecKeyParameters |> Array.fold
-                    (fun (exec: string) param -> exec.Replace(param, String.Empty))
-                    exec
+        let exec = StringBuilder(entry.Exec)
 
-            { Name = name
-              Exec = exec
-              Icon = icon
-              Keywords = appKeywords |> ValueOption.defaultValue Array.empty }
-            |> Some
-        | _ -> None
+        match entry.Exec.TryIndexOf "%i" with
+        | ValueNone -> ()
+        | ValueSome i ->
+            exec.Remove(i, 2) |> ignore
+            entry.IconName
+            |> ValueOption.map (sprintf "--icon %s")
+            |> ValueOption.defaultValue String.Empty
+            |> fun s -> exec.Insert(i, s)
+            |> ignore
+            
+        match entry.Exec.TryIndexOf "%c" with
+        | ValueNone -> ()
+        | ValueSome i ->
+            exec.Remove(i, 2) |> ignore
+            exec.Insert(i, entry.Name) |> ignore
+
+        match entry.Exec.TryIndexOf "%k" with
+        | ValueNone -> ()
+        | ValueSome i ->
+            exec.Remove(i, 2) |> ignore
+            exec.Insert(i, entry.DesktopFilePath) |> ignore
+            
+        exec.Replace("%f", "") |> ignore
+        exec.Replace("%F", "") |> ignore
+        exec.Replace("%u", "") |> ignore
+        exec.Replace("%U", "") |> ignore
+        
+        exec.ToString() |> ValueSome
 
 let loadDesktopEntries desktopFile =
     task {
-        let! entries = desktopFile |> findDesktopEntries
-        let appInfo = entries |> Array.Parallel.choose parseDesktopEntry
+        let! lines = desktopFile |> File.ReadAllLinesAsync
+        let entries =
+            lines
+            |> groupLinesByEntry
+            |> Seq.choosev (parseDesktopEntryLines desktopFile)
+            |> Seq.toArray
+            
         let bag = ConcurrentBag<ISearchResult>()
 
         do! Parallel.ForEachAsync(
-            appInfo,
-            Func<DesktopEntry, _, _>(fun appInfo ct ->
+            entries,
+            Func<DesktopEntry, _, _>(fun entry ct ->
                 task {
                     let! icon =
-                        appInfo.Icon
-                        |> IconLoader.loadAppIcon
-                        |> TaskOption.defaultValue null
+                        match entry.IconName with
+                        | ValueNone -> null
+                        | ValueSome iconName ->
+                            iconName
+                            |> IconLoader.loadAppIcon
+                            |> TaskOption.defaultValue null
 
-                    { Id = $"application:{desktopFile}:{appInfo.Name}"
-                      Name = appInfo.Name
+                    { Id = $"application:{desktopFile}:{entry.Name}"
+                      Name = entry.Name
                       Icon = icon
-                      Description = "Applications" // TODO: I18n
-                      Keywords = appInfo.Keywords
-                      Exec = appInfo.Exec }
+                      Description = "Applications" // TODO: I18n or use Generic Name
+                      Keywords = entry.AdditionalSearchKeywords
+                      Exec = entry |> parseExec
+                      WorkingDirectory = entry.WorkingDirectory }
                     |> bag.Add
                 }
                 |> ValueTask

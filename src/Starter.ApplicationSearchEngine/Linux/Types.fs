@@ -5,7 +5,8 @@ open Starter.SearchEngine
 type DesktopApplication =
     { Id: string
       Name: string
-      Exec: string
+      Exec: string ValueOption
+      WorkingDirectory: string ValueOption
       Icon: StarterIconSource
       Description: string
       Keywords: string array }

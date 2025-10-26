@@ -77,6 +77,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
     let mutable text = "starter"
     let mutable searchCts = new CancellationTokenSource()
     let mutable currentActivator = new BehaviorSubject<ISearchEngineActivator option>(None)
+    let timer = System.Diagnostics.Stopwatch()
 
     let setStaticResultForSearchEngine (se: StaticSearchEngine) results =
         Dispatcher.UIThread.Post(fun () ->
@@ -131,6 +132,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
             logger.Error(e, $"Failed to get results from dynamic search engine: {se.Name}")
 
     let onTextChanged (newText: string) =
+        timer.Restart()
         // Cancel previous search
         searchCts.Cancel()
         searchCts <- new CancellationTokenSource()
@@ -153,19 +155,23 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                 |> String.normalize
                 |> Array.map System.Text.Rune.ToLowerInvariant
 
-            let fuzzyMatch = Fusil.fuzzyMatch false true true fusilSlab query
+            let inline fuzzyMatch i = Fusil.fuzzyMatch false true true fusilSlab query i
             let fuzzyMatchKeywords (result: SearchResultViewModel) =
-                result.SearchResult.Keywords |> Array.fold
-                    (fun max keyword ->
-                        match max with
-                        | None -> keyword |> fuzzyMatch
-                        | Some max' ->
-                            match keyword |> fuzzyMatch with
-                            | None -> max
-                            | Some res when res.Score < max'.Score -> max
-                            | Some res -> Some res
-                    )
-                    None
+                let inline fuzzyMatch i = Fusil.fuzzyMatch false false false fusilSlab query i // TODO: Normalize keywords
+                match result.SearchResult.Keywords with
+                | null -> ValueNone
+                | arr ->
+                    arr |> Array.fold
+                        (fun max keyword ->
+                            match max with
+                            | ValueNone -> keyword |> fuzzyMatch
+                            | ValueSome max' ->
+                                match keyword |> fuzzyMatch with
+                                | ValueNone -> max
+                                | ValueSome res when res.Score < max'.Score -> max
+                                | ValueSome res -> ValueSome res
+                        )
+                        ValueNone
 
             currentActivator.Subscribe(fun activator ->
                 let targetSearchEngine =
@@ -209,13 +215,13 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                                         result.SearchResult.ActivatorFilter |> Array.isEmpty
                                         || result.SearchResult.ActivatorFilter |> Array.contains activator ->
                                         match result.Name |> fuzzyMatch with
-                                        | Some fusilResult when fusilResult.Score > 0s ->
+                                        | ValueSome fusilResult when fusilResult.Score > 0s ->
                                             result.AccentuationMap <- fusilResult.MatchingPositions
                                             result.FuzzyMatchScore <- fusilResult.Score
                                             true
                                         | _ ->
                                             match result |> fuzzyMatchKeywords with
-                                            | Some fusilResult when fusilResult.Score > 0s ->
+                                            | ValueSome fusilResult when fusilResult.Score > 0s ->
                                                 result.AccentuationMap <- Array.empty
                                                 result.FuzzyMatchScore <- fusilResult.Score
                                                 true
@@ -237,18 +243,20 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                         staticResults
                         |> Array.filter (fun result ->
                             if result.SearchResult.ShowIfNoActivator then
+                                timer.Restart()
                                 match result.Name |> fuzzyMatch with
-                                | Some fusilResult when fusilResult.Score > 0s ->
+                                | ValueSome fusilResult when fusilResult.Score > 0s ->
                                     result.AccentuationMap <- fusilResult.MatchingPositions
                                     result.FuzzyMatchScore <- fusilResult.Score
                                     true
                                 | _ ->
                                     match result |> fuzzyMatchKeywords with
-                                    | Some fusilResult when fusilResult.Score > 0s ->
+                                    | ValueSome fusilResult when fusilResult.Score > 0s ->
                                         result.AccentuationMap <- Array.empty
                                         result.FuzzyMatchScore <- fusilResult.Score
                                         true
-                                    | _ -> false
+                                    | _ ->
+                                        false
                             else false
                         )
                         |> searchResults.AddRange
@@ -259,6 +267,9 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
                 | Choice4Of4 () -> logger.Error $"Failed to find search engine associated with activator: {activator |> Option.map _.Id}"
             ) |> disposeOnCancelled searchCts.Token
+            
+            printfn "%A" timer.ElapsedMilliseconds
+            timer.Stop()
 
     let validateResult (result: SearchResultViewModel) =
         match result.SearchResult.Id with
