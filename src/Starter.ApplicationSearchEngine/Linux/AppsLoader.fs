@@ -18,9 +18,12 @@ let loadApplications (config: FolderConfiguration) : Task<ISearchResult seq> =
             |> Option.filter (FolderConfiguration.isFileExcluded config >> not)
             |> Option.filter Path.Exists
         )
-        |> Seq.collect (fun folder ->
-            printfn "%A" folder
-            Directory.EnumerateFiles(folder, "*.desktop")
+        |> Seq.collect (fun folder -> Directory.EnumerateFiles(folder, "*.desktop", SearchOption.AllDirectories))
+        |> Seq.distinctBy (fun desktopFile ->
+            // Take only the first occurrence of each Desktop File ID
+            // https://specifications.freedesktop.org/desktop-entry-spec/latest/file-naming.html#desktop-file-id 
+            let i = desktopFile.IndexOf "applications"
+            desktopFile.Remove(0, i + "applications".Length)
         )
         |> Seq.map (XDGDesktopFileParser.loadDesktopEntries config)
         |> Task.WhenAll
