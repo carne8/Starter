@@ -4,6 +4,7 @@ open Avalonia.Media.Imaging
 open Avalonia.Threading
 open Avalonia.Svg.Skia
 open FsToolkit.ErrorHandling
+open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Logger
 open Starter.SearchEngine
 open System.IO
@@ -23,7 +24,7 @@ module private StarterIconSource =
 
 // TODO: Rebuild using -> https://specifications.freedesktop.org/icon-theme-spec/latest/
 
-let private findIconFile iconName =
+let private findIconFile (folderConfig: FolderConfiguration) iconName = // TODO: Take care of using the folderConfig
     match iconName |> File.Exists with
     | true -> Some iconName
     | false ->
@@ -52,9 +53,9 @@ let private findIconFile iconName =
             )
             |> Seq.tryHead
 
-let loadAppIcon (iconName: string) =
+let loadAppIcon folderConfig (iconName: string) =
     taskOption {
-        let! iconFile = iconName |> findIconFile
+        let! iconFile = iconName |> findIconFile folderConfig
 
         match iconFile |> Path.GetExtension with
         | ".svg" -> return! iconFile |> StarterIconSource.fromSvgFile

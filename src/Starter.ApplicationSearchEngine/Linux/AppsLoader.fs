@@ -1,7 +1,6 @@
 module Starter.ApplicationSearchEngine.Linux.AppsLoader
 
 open System
-open System.Collections.Concurrent
 open System.IO
 open System.Threading
 open System.Threading.Tasks
@@ -12,29 +11,20 @@ open Starter.SearchEngine
 
 let loadApplications (config: FolderConfiguration) : Task<ISearchResult seq> =
     Task.Run<ISearchResult seq>(fun () ->
-        task {
-            let apps = ConcurrentDictionary<_, _>()
-
-            for folder in config.Folders do
-                let files = Directory.EnumerateFiles(folder, "*.desktop")
-
-                do! Parallel.ForEachAsync(
-                    files,
-                    Func<_, _, _>(fun path _ ->
-                        match path |> FolderConfiguration.isFileExcluded config with
-                        | true -> ValueTask.CompletedTask
-                        | false ->
-                            path
-                            |> XDGDesktopFileParser.loadDesktopEntries
-                            |> Task.map (Seq.iter (fun app ->
-                                apps.TryAdd(path |> Path.GetFileName, app) |> ignore
-                            ))
-                            |> ValueTask
-                    )
-                )
-
-            return apps.Values :> ISearchResult seq
-        }
+        config.Folders
+        |> Seq.choose (fun folder ->
+            Path.Combine(folder, "applications")
+            |> Some
+            |> Option.filter (FolderConfiguration.isFileExcluded config >> not)
+            |> Option.filter Path.Exists
+        )
+        |> Seq.collect (fun folder ->
+            printfn "%A" folder
+            Directory.EnumerateFiles(folder, "*.desktop")
+        )
+        |> Seq.map (XDGDesktopFileParser.loadDesktopEntries config)
+        |> Task.WhenAll
+        |> Task.map Seq.concat
     )
 
 let observeApplicationChanges (appList: ResizeArray<ISearchResult>) (config: FolderConfiguration) =
@@ -43,7 +33,7 @@ let observeApplicationChanges (appList: ResizeArray<ISearchResult>) (config: Fol
 
     let replaceInList desktopFile =
         desktopFile
-        |> XDGDesktopFileParser.loadDesktopEntries
+        |> XDGDesktopFileParser.loadDesktopEntries config
         |> Task.bind (fun newEntries ->
             task {
                 do! semaphore.WaitAsync()

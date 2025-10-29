@@ -162,7 +162,7 @@ let private parseExec (entry: DesktopEntry) =
         
         exec.ToString() |> ValueSome
 
-let loadDesktopEntries desktopFile =
+let loadDesktopEntries folderConfig desktopFile =
     task {
         let! lines = desktopFile |> File.ReadAllLinesAsync
         let entries =
@@ -182,7 +182,7 @@ let loadDesktopEntries desktopFile =
                         | ValueNone -> null
                         | ValueSome iconName ->
                             iconName
-                            |> IconLoader.loadAppIcon
+                            |> IconLoader.loadAppIcon folderConfig
                             |> TaskOption.defaultValue null
 
                     { Id = $"application:{desktopFile}:{entry.Name}"

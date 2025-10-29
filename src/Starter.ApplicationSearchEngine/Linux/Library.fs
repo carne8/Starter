@@ -12,16 +12,19 @@ open Starter.SearchEngine
 type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
     inherit StaticSearchEngine(pluginPath, configDir, logger)
     static let icon = Constants.icon
+    
+    static let defaultDataDirectories = // TODO: Make it respect the hierarchy and prioritize the first matches 
+        "XDG_DATA_DIRS"
+        |> Environment.GetEnvironmentVariable
+        |> fun s -> s.Split ':'
+        |> Array.append
+            [| (Environment.SpecialFolder.UserProfile |> Environment.GetFolderPath,
+                ".local/share")
+               |> Path.Combine |]
+        |> Array.filter Directory.Exists
+
     static let defaultFolderConfig =
-        { Folders =
-            [| Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                ".local/share/applications"
-               )
-               "/usr/share/applications/"
-               "/usr/local/share/applications/"
-               "/var/lib/flatpak/exports/share/applications/" |]
-            |> Array.filter Path.Exists
+        { Folders = defaultDataDirectories
           ExcludedFolders = Array.empty  }
 
     let apps = ResizeArray<ISearchResult>(200)
