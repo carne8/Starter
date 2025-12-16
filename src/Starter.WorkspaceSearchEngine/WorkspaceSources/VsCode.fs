@@ -81,19 +81,19 @@ let detectWorkspaceChanges (configPath: string) =
     Observable.Merge(
         watcher.Renamed.ToObservable().Select(ignore),
         watcher.Changed.ToObservable().Select(ignore)
-    ).Debounce(TimeSpan.FromMilliseconds 300),
+    ).Debounce(TimeSpan.FromMilliseconds 300L),
     watcher :> IDisposable
 
 
 let findVsCode insiders =
     let relativeInstallPath =
         match insiders with
-        | false -> "Microsoft VS Code\Code.exe"
-        | true -> "Microsoft VS Code Insiders\Code - Insiders.exe"
+        | false -> "Microsoft VS Code\\Code.exe"
+        | true -> "Microsoft VS Code Insiders\\Code - Insiders.exe"
 
     seq {
-        Path.Combine("C:\Program Files", relativeInstallPath)
-        Path.Combine("C:\Program Files (x86)", relativeInstallPath)
+        Path.Combine("C:\\Program Files", relativeInstallPath)
+        Path.Combine("C:\\Program Files (x86)", relativeInstallPath)
         Path.Combine(
             Environment.SpecialFolder.LocalApplicationData |> Environment.GetFolderPath,
             "Programs",

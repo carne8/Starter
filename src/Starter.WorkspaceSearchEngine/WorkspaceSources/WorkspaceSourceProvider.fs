@@ -46,7 +46,7 @@ let loadWorkspaceSources pluginPath (settings: Settings) : WorkspaceSource array
                 |> Array.tryFind (fun source -> source.Id = sourceId)
 
             match source with
-            | None -> logger.Error($"Cannot apply \"show if activator\" settings to {sourceId}: Workspace source not found")
+            | None -> logger.Error $"Cannot apply \"show if activator\" settings to {sourceId}: Workspace source not found"
             | Some source -> source.ShowIfNoActivator <- args.NewItem.Value
         ))
 

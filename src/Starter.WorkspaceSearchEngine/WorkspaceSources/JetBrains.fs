@@ -93,7 +93,7 @@ let detectWorkspaceChanges (configPath: string) =
     Observable.Merge(
         watcher.Renamed.ToObservable().Select(ignore),
         watcher.Changed.ToObservable().Select(ignore)
-    ).Debounce(TimeSpan.FromMilliseconds 300),
+    ).Debounce(TimeSpan.FromMilliseconds 300L),
     watcher :> IDisposable
 
 

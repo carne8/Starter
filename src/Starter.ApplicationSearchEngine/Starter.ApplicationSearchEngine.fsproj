@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net9.0;net9.0-windows10.0.19041.0</TargetFrameworks>
+        <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
         <EnableWindowsTargeting>true</EnableWindowsTargeting>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <EnableDynamicLoading>true</EnableDynamicLoading>
@@ -19,14 +19,14 @@
         <Compile Include="Logger.fs" />
     </ItemGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'">
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.19041.0'">
         <Compile Include="Windows\IconHelper.fs" />
         <Compile Include="Windows\UwpLoader.fs" />
         <Compile Include="Windows\ExecutableFilesLoader.fs" />
         <Compile Include="Windows\Library.fs" />
     </ItemGroup>
 
-    <ItemGroup Condition="'$(TargetFramework)' != 'net9.0-windows10.0.19041.0'">
+    <ItemGroup Condition="'$(TargetFramework)' != 'net10.0-windows10.0.19041.0'">
         <Compile Include="Linux\Types.fs" />
         <Compile Include="Linux\IconLoader.fs" />
         <Compile Include="Linux\XDGDesktopFileParser.fs" />

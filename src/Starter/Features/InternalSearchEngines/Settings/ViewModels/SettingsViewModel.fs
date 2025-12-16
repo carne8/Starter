@@ -92,7 +92,7 @@ type SettingsViewModel(baseConfig: Configuration, searchEngines: Dictionary<stri
         override _.Dispose() = config.Dispose()
 
     member _.Configuration =
-        config.Skip(1).Debounce(TimeSpan.FromMilliseconds 100)
+        config.Skip(1).Debounce(TimeSpan.FromMilliseconds 100L)
 
     // --- Settings bindings ---
 

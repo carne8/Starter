@@ -164,12 +164,12 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                     arr |> Array.fold
                         (fun max keyword ->
                             match max with
-                            | ValueNone -> keyword |> fuzzyMatch
+                            | ValueNone -> keyword |> fuzzyMatch |> Option.toValueOption // TODO: Make fusil use voption
                             | ValueSome max' ->
                                 match keyword |> fuzzyMatch with
-                                | ValueNone -> max
-                                | ValueSome res when res.Score < max'.Score -> max
-                                | ValueSome res -> ValueSome res
+                                | None -> max
+                                | Some res when res.Score < max'.Score -> max
+                                | Some res -> ValueSome res
                         )
                         ValueNone
 
@@ -215,7 +215,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                                         result.SearchResult.ActivatorFilter |> Array.isEmpty
                                         || result.SearchResult.ActivatorFilter |> Array.contains activator ->
                                         match result.Name |> fuzzyMatch with
-                                        | ValueSome fusilResult when fusilResult.Score > 0s ->
+                                        | Some fusilResult when fusilResult.Score > 0s ->
                                             result.AccentuationMap <- fusilResult.MatchingPositions
                                             result.FuzzyMatchScore <- fusilResult.Score
                                             true
@@ -245,7 +245,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                             if result.SearchResult.ShowIfNoActivator then
                                 timer.Restart()
                                 match result.Name |> fuzzyMatch with
-                                | ValueSome fusilResult when fusilResult.Score > 0s ->
+                                | Some fusilResult when fusilResult.Score > 0s ->
                                     result.AccentuationMap <- fusilResult.MatchingPositions
                                     result.FuzzyMatchScore <- fusilResult.Score
                                     true
@@ -267,7 +267,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
                 | Choice4Of4 () -> logger.Error $"Failed to find search engine associated with activator: {activator |> Option.map _.Id}"
             ) |> disposeOnCancelled searchCts.Token
-            
+
             printfn "%A" timer.ElapsedMilliseconds
             timer.Stop()
 
@@ -297,13 +297,13 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
         // Load search engines
         let pluginDirectories =
             #if DEBUG
-            [| Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.UrlSearchEngine/bin/Debug/net9.0/")
-               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.WebSearchEngine/bin/Debug/net9.0/")
-               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.WorkspaceSearchEngine/bin/Debug/net9.0/")
+            [| Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.UrlSearchEngine/bin/Debug/net10.0/")
+               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.WebSearchEngine/bin/Debug/net10.0/")
+               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.WorkspaceSearchEngine/bin/Debug/net10.0/")
                if OperatingSystem.IsWindows() then
-                Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.ApplicationSearchEngine/bin/Debug/net9.0-windows10.0.19041.0/")
+                Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.ApplicationSearchEngine/bin/Debug/net10.0-windows10.0.19041.0/")
                else
-                Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.ApplicationSearchEngine/bin/Debug/net9.0/") |]
+                Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.ApplicationSearchEngine/bin/Debug/net10.0/") |]
             #else
             Constants.PluginsDirectory |> Directory.GetDirectories
             #endif

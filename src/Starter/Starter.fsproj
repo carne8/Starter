@@ -2,7 +2,7 @@
     <PropertyGroup>
         <OutputType Condition="'$(Configuration)' == 'Debug' Or $(DefineConstants.Contains(DEBUG_LOGS))">Exe</OutputType>
         <OutputType Condition="'$(Configuration)' != 'Debug' And !$(DefineConstants.Contains(DEBUG_LOGS))">WinExe</OutputType>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
         <Nullable>enable</Nullable>
         <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
         <ApplicationManifest>app.manifest</ApplicationManifest>
