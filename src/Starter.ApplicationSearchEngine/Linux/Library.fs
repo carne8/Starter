@@ -12,8 +12,8 @@ open Starter.SearchEngine
 type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
     inherit StaticSearchEngine(pluginPath, configDir, logger)
     static let icon = Constants.icon
-    
-    static let defaultDataDirectories = // TODO: Make it respect the hierarchy and prioritize the first matches 
+
+    static let defaultDataDirectories = // TODO: Make it respect the hierarchy and prioritize the first matches
         "XDG_DATA_DIRS"
         |> Environment.GetEnvironmentVariable
         |> fun s -> s.Split ':'
@@ -25,7 +25,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
 
     static let defaultFolderConfig =
         { Folders = defaultDataDirectories
-          ExcludedFolders = Array.empty  }
+          ExcludedFolders = Array.empty }
 
     let apps = ResizeArray<ISearchResult>(200)
     let results = new Subject<ISearchResult seq>()

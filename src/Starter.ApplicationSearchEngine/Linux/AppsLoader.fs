@@ -21,11 +21,11 @@ let loadApplications (config: FolderConfiguration) : Task<ISearchResult seq> =
         |> Seq.collect (fun folder -> Directory.EnumerateFiles(folder, "*.desktop", SearchOption.AllDirectories))
         |> Seq.distinctBy (fun desktopFile ->
             // Take only the first occurrence of each Desktop File ID
-            // https://specifications.freedesktop.org/desktop-entry-spec/latest/file-naming.html#desktop-file-id 
+            // https://specifications.freedesktop.org/desktop-entry-spec/latest/file-naming.html#desktop-file-id
             let i = desktopFile.IndexOf "applications"
             desktopFile.Remove(0, i + "applications".Length)
         )
-        |> Seq.map (XDGDesktopFileParser.loadDesktopEntries config)
+        |> Seq.map XDGDesktopFileParser.loadDesktopEntries
         |> Task.WhenAll
         |> Task.map Seq.concat
     )
@@ -36,7 +36,7 @@ let observeApplicationChanges (appList: ResizeArray<ISearchResult>) (config: Fol
 
     let replaceInList desktopFile =
         desktopFile
-        |> XDGDesktopFileParser.loadDesktopEntries config
+        |> XDGDesktopFileParser.loadDesktopEntries
         |> Task.bind (fun newEntries ->
             task {
                 do! semaphore.WaitAsync()
@@ -59,7 +59,7 @@ let observeApplicationChanges (appList: ResizeArray<ISearchResult>) (config: Fol
 
     let watchers = config.Folders |> Array.map (fun folder ->
         let watcher = new FileSystemWatcher(folder)
-        watcher.Filters.Add("*.desktop")
+        watcher.Filters.Add "*.desktop"
         watcher.NotifyFilter <-
             NotifyFilters.CreationTime
             ||| NotifyFilters.DirectoryName
