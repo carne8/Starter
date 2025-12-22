@@ -83,13 +83,13 @@ let private parseDesktopEntryLines filePath (lines: string seq) =
     let mutable path = ValueNone
     let mutable additionalSearchStrings = List.empty
 
-    let mutable enumerator = keyValuePairs.GetEnumerator()
+    use enumerator = keyValuePairs.GetEnumerator()
     while shouldBeShown && enumerator.MoveNext() do
         let kv = enumerator.Current
         match kv.Key with
         | "Hidden"
         | "NoDisplay" when kv.Value.ToLowerInvariant() = "true" -> shouldBeShown <- false
-        | "Name" -> name <- ValueSome kv.Value // TODO: Add name localization
+        | "Name" when kv.Localization.IsNone -> name <- ValueSome kv.Value // TODO: Add name localization
         | "Icon" -> iconName <- ValueSome kv.Value
         | "Exec" -> exec <- ValueSome kv.Value
         | "Path" -> path <- ValueSome kv.Value

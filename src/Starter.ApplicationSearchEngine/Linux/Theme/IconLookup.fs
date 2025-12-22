@@ -6,6 +6,7 @@ open System.Threading.Tasks
 open System.Collections.Generic
 
 open FsToolkit.ErrorHandling
+open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Linux.Theme
 
 let private extensions = [| "svg"; "png"; "xpm" |]
@@ -38,12 +39,13 @@ let private fallbackThemes =
             |> Some
         | _ -> None
     )
+    |> fun themes ->
+        themes
+        |> Array.map (fun theme -> $"({theme.Name}, {theme.ThemePath})")
+        |> fun arr -> "Fallback themes: " + String.Join("; ", arr)
+        |> Logger.logger.Debug
 
-
-fallbackThemes
-|> Array.map (fun x -> x.Name, x.ThemePath)
-|> sprintf "%A"
-|> Starter.ApplicationSearchEngine.Logger.logger.Debug
+        themes
 
 /// Returns a dictionary per theme matching the name provided.
 /// Each dictionary contains the theme and its parents.
@@ -67,29 +69,39 @@ let buildIconLookupDb (iconThemeName: string) : struct (string * Dictionary<stri
             |> Task.WhenAll
             |> Task.map (Array.choose id)
 
-        let themes = themesOnSystem |> Array.filter (fun theme -> theme.Name = iconThemeName)
+        let themes = themesOnSystem |> Array.filter (fun theme -> theme.Name.Equals(iconThemeName, StringComparison.InvariantCultureIgnoreCase))
 
-        return themes |> Array.map (fun theme ->
-            let d =
-                { new IEqualityComparer<string> with
-                    member _.Equals(x, y) = x.Equals(y, StringComparison.InvariantCultureIgnoreCase)
-                    member _.GetHashCode s = s.GetHashCode StringComparison.InvariantCultureIgnoreCase }
-                |> Dictionary
-            d.Add(theme.Name, theme)
+        let db =
+            themes |> Array.map (fun theme ->
+                let d =
+                    { new IEqualityComparer<string> with
+                        member _.Equals(x, y) = x.Equals(y, StringComparison.InvariantCultureIgnoreCase)
+                        member _.GetHashCode s = s.GetHashCode StringComparison.InvariantCultureIgnoreCase }
+                    |> Dictionary
+                d.Add(theme.Name, theme)
 
-            let rec addParents theme =
-                theme.ParentThemes |> Array.iter (fun parent ->
-                    themesOnSystem
-                    |> Array.tryFind (fun theme -> theme.Name.Equals(parent, StringComparison.InvariantCultureIgnoreCase))
-                    |> Option.iter (fun theme ->
-                        d.TryAdd(theme.Name, theme) |> ignore
-                        addParents theme
+                let rec addParents theme =
+                    theme.ParentThemes |> Array.iter (fun parent ->
+                        themesOnSystem
+                        |> Array.tryFind (fun theme -> theme.Name.Equals(parent, StringComparison.InvariantCultureIgnoreCase))
+                        |> Option.iter (fun theme ->
+                            d.TryAdd(theme.Name, theme) |> ignore
+                            addParents theme
+                        )
                     )
-                )
 
-            addParents theme
-            struct (theme.Name, d)
+                addParents theme
+                struct (theme.Name, d)
+            )
+
+        db
+        |> Seq.collect (fun struct (_, d) ->
+            d |> Seq.map (fun kv -> struct (kv.Value.Name, kv.Value.ThemePath))
         )
+        |> fun seq -> "Themes used: " + String.Join("; ", seq)
+        |> Starter.ApplicationSearchEngine.Logger.logger.Debug
+
+        return db
     }
 
 /// Look up icon in a specific theme

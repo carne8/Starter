@@ -14,12 +14,11 @@ let parseIndexTheme (indexPath: string) : Task<IconTheme option> =
     task {
         if not (File.Exists indexPath) then return None else
 
-        let lines = indexPath |> File.ReadLinesAsync |> _.GetAsyncEnumerator()
+        use lines = indexPath |> File.ReadLinesAsync |> _.GetAsyncEnumerator()
         let mutable currentSection = ""
 
         // Icon theme properties
         let path = indexPath |> Path.GetDirectoryName
-        let mutable themeName = String.Empty
         let mutable dirNames = Array.empty
         let mutable scaledDirNames = Array.empty
         let mutable parentThemes = Array.empty
@@ -71,7 +70,6 @@ let parseIndexTheme (indexPath: string) : Task<IconTheme option> =
                     let value = value.Trim()
 
                     match key with
-                    | "Name" -> themeName <- value
                     | "Directories" -> dirNames <- value.Split ',' |> Array.map _.Trim()
                     | "ScaledDirectories" -> scaledDirNames <- value.Split ',' |> Array.map _.Trim()
                     | "Inherits" -> parentThemes <- value.Split ',' |> Array.map _.Trim()
@@ -95,8 +93,7 @@ let parseIndexTheme (indexPath: string) : Task<IconTheme option> =
                     | _ -> ()
                 | _ -> Logger.logger.Warning $"Failed to parse line of theme manifest {indexPath}: \"{line}\""
 
-        if themeName |> String.IsNullOrEmpty then return None else
-        return Some { Name = themeName
+        return Some { Name = path |> Path.GetFileName
                       ThemePath = path
                       Directories = directories.ToArray()
                       ParentThemes = parentThemes }
