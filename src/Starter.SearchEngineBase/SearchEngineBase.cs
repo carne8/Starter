@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +12,7 @@ namespace Starter.SearchEngine;
 
 public class StarterIconSource()
 {
-    public static StarterIconSource Empty = new();
+    public readonly static StarterIconSource Empty = new();
 
     public StarterIconSource(IImage lightImage, IImage darkImage) : this()
     {

@@ -14,9 +14,9 @@ type ObservableSink() =
     let logs = List<LogEvent>()
     let observers = List<Observer<LogEvent>>()
 
-    member this.Logs = logs
+    member _.Logs = logs
 
-    override this.SubscribeCore(observer) =
+    override _.SubscribeCore observer =
         if disposed then
             "The Observable sink is disposed"
             |> ObjectDisposedException
@@ -26,15 +26,15 @@ type ObservableSink() =
         logs |> Seq.iter observer.OnNext
 
         { new IDisposable with
-            member this.Dispose() = observers.Remove observer |> ignore }
+            member _.Dispose() = observers.Remove observer |> ignore }
 
     interface ILogEventSink with
-        member this.Emit(logEvent) =
+        member _.Emit logEvent =
             observers |> Seq.iter _.OnNext(logEvent)
             logEvent |> logs.Add
 
     interface IDisposable with
-        member this.Dispose() =
+        member _.Dispose() =
             if not disposed then
                 observers |> Seq.iter _.OnCompleted()
                 disposed <- true
@@ -58,9 +58,13 @@ let logger =
             )
             |> ignore
         )
-        .WriteTo.Async(fun c -> c.Sink(observableSink) |> ignore)
+        .WriteTo.Async(fun c -> c.Sink observableSink |> ignore)
         #if DEBUG || DEBUG_LOGS
-        .WriteTo.Console(outputTemplate = logTemplate, theme = Serilog.Sinks.SystemConsole.Themes.ConsoleTheme.None)
+        .WriteTo.Console(
+            outputTemplate = logTemplate,
+            theme = Sinks.SystemConsole.Themes.ConsoleTheme.None,
+            levelSwitch = LoggingLevelSwitch LogEventLevel.Verbose
+        )
         #endif
         .CreateLogger()
         .ForContext("Context", "Starter")

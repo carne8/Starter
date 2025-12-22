@@ -30,7 +30,14 @@
 
     <ItemGroup Condition="'$(TargetFramework)' != 'net10.0-windows10.0.19041.0'">
         <Compile Include="Linux\Types.fs" />
-        <Compile Include="Linux\IconLoader.fs" />
+        <Compile Include="Linux\Helpers.fs" />
+
+        <Compile Include="Linux\Theme\Types.fs" />
+        <Compile Include="Linux\Theme\IconThemeParser.fs" />
+        <Compile Include="Linux\Theme\IconLookup.fs" />
+        <Compile Include="Linux\Theme\ThemeDetection.fs" />
+        <Compile Include="Linux\Theme\IconLoader.fs" />
+
         <Compile Include="Linux\XDGDesktopFileParser.fs" />
         <Compile Include="Linux\AppsLoader.fs" />
         <Compile Include="Linux\Library.fs" />
