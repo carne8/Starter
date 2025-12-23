@@ -149,7 +149,7 @@ let private findIde ideName ideExeName = // TODO: Add logs
         | true -> Some path
     )
 
-let getBuilder
+let builder
     (ideName: string)
     (ideShortName: string)
     ideExeName

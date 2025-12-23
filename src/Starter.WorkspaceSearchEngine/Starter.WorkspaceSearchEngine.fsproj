@@ -21,6 +21,7 @@
         </Content>
         <Compile Include="Types.fs" />
         <Compile Include="Icons.fs" />
+        <Compile Include="WorkspaceSources\Common.fs" />
         <Compile Include="WorkspaceSources\VsCode.fs" />
         <Compile Include="WorkspaceSources\JetBrains.fs" />
         <Compile Include="WorkspaceSources\AndroidStudio.fs" />

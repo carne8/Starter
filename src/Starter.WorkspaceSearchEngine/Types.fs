@@ -10,12 +10,14 @@ open R3
 module Logger =
     let mutable logger: Serilog.ILogger = unbox null
 
+/// Represents a workspace from an app like vscode or rider
 type Workspace =
     { Id: string
       Name: string
       Path: string
       Open: unit -> unit }
 
+/// Loads workspaces. For instance it can represents a vscode installation
 type WorkspaceSource =
     { Id: string
       Name: string
@@ -42,7 +44,7 @@ type WorkspaceSourceBuilder =
       FindExecutablePath: unit -> string option
       FindWorkspacesDb: unit -> string option
       LoadWorkspaces: string -> string -> Task<Workspace seq>
-      GetChangesObservable: string -> Observable<unit> * IDisposable  }
+      GetChangesObservable: string -> Observable<unit> * IDisposable }
 
     static member build showIfNoActivator pluginPath (builder: WorkspaceSourceBuilder) =
         option {

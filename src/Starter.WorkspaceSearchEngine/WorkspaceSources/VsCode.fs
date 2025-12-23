@@ -86,21 +86,26 @@ let detectWorkspaceChanges (configPath: string) =
 
 
 let findVsCode insiders =
-    let relativeInstallPath =
-        match insiders with
-        | false -> "Microsoft VS Code\\Code.exe"
-        | true -> "Microsoft VS Code Insiders\\Code - Insiders.exe"
+    match OperatingSystem.IsLinux() with
+    | true ->
+        if insiders then "code-insiders" else "code"
+        |> Common.findCommandPath
+    | false ->
+        let relativeInstallPath =
+            match insiders with
+            | false -> "Microsoft VS Code\\Code.exe"
+            | true -> "Microsoft VS Code Insiders\\Code - Insiders.exe"
 
-    seq {
-        Path.Combine("C:\\Program Files", relativeInstallPath)
-        Path.Combine("C:\\Program Files (x86)", relativeInstallPath)
-        Path.Combine(
-            Environment.SpecialFolder.LocalApplicationData |> Environment.GetFolderPath,
-            "Programs",
-            relativeInstallPath
-        )
-    }
-    |> Seq.tryFind File.Exists
+        seq {
+            Path.Combine("C:\\Program Files", relativeInstallPath)
+            Path.Combine("C:\\Program Files (x86)", relativeInstallPath)
+            Path.Combine(
+                Environment.SpecialFolder.LocalApplicationData |> Environment.GetFolderPath,
+                "Programs",
+                relativeInstallPath
+            )
+        }
+        |> Seq.tryFind File.Exists
 
 let builder insiders : WorkspaceSourceBuilder =
     { Id = if insiders then "workspace-vscode-insiders" else "workspace-vscode"
