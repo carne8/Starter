@@ -87,9 +87,7 @@ let detectWorkspaceChanges (configPath: string) =
 
 let findVsCode insiders =
     match OperatingSystem.IsLinux() with
-    | true ->
-        if insiders then "code-insiders" else "code"
-        |> Common.findCommandPath
+    | true -> Common.findCommandPath (if insiders then "code-insiders" else "code")
     | false ->
         let relativeInstallPath =
             match insiders with

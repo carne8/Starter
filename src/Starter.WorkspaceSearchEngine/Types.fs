@@ -1,14 +1,16 @@
 namespace Starter.WorkspaceSearchEngine
 
-open FsToolkit.ErrorHandling
-open ObservableCollections
-open Starter.SearchEngine
 open System
 open System.Threading.Tasks
+
+open Starter.SearchEngine
+open ObservableCollections
+open FsToolkit.ErrorHandling
 open R3
 
 module Logger =
     let mutable logger: Serilog.ILogger = unbox null
+open Logger
 
 /// Represents a workspace from an app like vscode or rider
 type Workspace =
@@ -49,7 +51,11 @@ type WorkspaceSourceBuilder =
     static member build showIfNoActivator pluginPath (builder: WorkspaceSourceBuilder) =
         option {
             let! executablePath = builder.FindExecutablePath()
-            let! dbPath = builder.FindWorkspacesDb()
+            let! dbPath =
+                builder.FindWorkspacesDb() |> Option.teeNone (fun () ->
+                    logger.Debug $"DB path not found while executable exists: {builder.Name}"
+                )
+
             let workspacesChanged, watcher = builder.GetChangesObservable dbPath
 
             return
@@ -94,7 +100,6 @@ type Settings =
 module Settings =
     open System.IO
     open System.Text.Json
-    open Logger
 
     [<Literal>]
     let private SettingsFilename = "settings.json"
@@ -124,7 +129,7 @@ module Settings =
             JsonSerializer.Deserialize<Settings> stream
         with
         | :? DirectoryNotFoundException ->
-            logger.Information("Settings file doesn't exists. Creating it.")
+            logger.Information "Settings file doesn't exists. Creating it."
             Settings.defaultSettings |> saveSettings filePath
             Settings.defaultSettings
         | e ->
@@ -134,6 +139,6 @@ module Settings =
 
 type SettingsSaver(settings: Settings, settingsFilePath) =
     do
-        settings.ShowIfNoActivator.add_CollectionChanged(NotifyCollectionChangedEventHandler(fun args ->
+        settings.ShowIfNoActivator.add_CollectionChanged(NotifyCollectionChangedEventHandler(fun _args ->
             settings |> Settings.saveSettings settingsFilePath
         ))
