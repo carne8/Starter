@@ -93,6 +93,18 @@ let parseIndexTheme (indexPath: string) : Task<IconTheme option> =
                     | _ -> ()
                 | _ -> Logger.logger.Warning $"Failed to parse line of theme manifest {indexPath}: \"{line}\""
 
+        match size with
+        | ValueNone -> ()
+        | ValueSome size ->
+            { Path = Path.Combine(path, currentSection.Substring(1, currentSection.Length-2))
+              Size = size
+              Scale = scale |> ValueOption.defaultValue 1
+              MinSize = minSize |> ValueOption.defaultValue size
+              MaxSize = maxSize |> ValueOption.defaultValue size
+              Threshold = threshold |> ValueOption.defaultValue 2
+              Type = iconType }
+            |> directories.Add
+
         return Some { Name = path |> Path.GetFileName
                       ThemePath = path
                       Directories = directories.ToArray()
