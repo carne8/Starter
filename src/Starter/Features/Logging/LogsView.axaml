@@ -3,7 +3,7 @@
              xmlns:vm="using:Starter.Features.LoggingView"
              x:Class="Starter.Features.LoggingView.LogsView"
              x:DataType="vm:LogsViewModel">
-    <DockPanel LastChildFill="True">
+    <DockPanel Margin="20" LastChildFill="True">
         <!-- Filters -->
         <StackPanel Orientation="Horizontal" Spacing="20" DockPanel.Dock="Top">
             <!-- Minimum Level -->

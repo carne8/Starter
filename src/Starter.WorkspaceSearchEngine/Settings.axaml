@@ -4,7 +4,7 @@
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              x:Class="Starter.WorkspaceSearchEngine.Views.SettingsView"
              x:DataType="vm:SettingsViewModel">
-    <StackPanel Spacing="4">
+    <StackPanel Margin="20" Spacing="4">
         <TextBlock Classes="title1">Workspace search settings</TextBlock>
 
         <TextBlock Classes="title2">Show if no activator is used</TextBlock>

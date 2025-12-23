@@ -42,7 +42,7 @@ type SettingsWindow() as this =
                 let c =
                     NavigationViewItem(
                         Content = vm.Name,
-                        FontFamily = (unbox this.Resources["JetBrainsMono"]),
+                        FontFamily = unbox this.Resources["JetBrainsMono"],
                         IconSource = (vm.Icon |> StarterIconSource.buildIconSource (this.ActualThemeVariant = ThemeVariant.Light))
                     )
                 c.PropertyChanged.Add(fun change ->
@@ -60,8 +60,8 @@ type SettingsWindow() as this =
         let sub1 = vm.MenuItems.Subscribe(fun vms -> navigationView.MenuItemsSource <- vms)
 
         // Bind settings control
-        let contentControl = this.GetControl<Border> "ContentControl"
-        let sub2 = contentControl.Bind(Border.ChildProperty, Data.Binding("SelectedPage.Control"))
+        let contentControl = this.GetControl<ContentControl> "ContentControl"
+        let sub2 = contentControl.Bind(ContentControl.ContentProperty, Data.Binding "SelectedPage.Control")
 
         // Bind background transparency
         let sub3 = vm.Configuration.Subscribe(fun config -> this.BackgroundKind <- config.Background)
