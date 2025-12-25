@@ -55,6 +55,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
             let! newApps =
                 AppsLoader.loadApplications
                     appsIconThemes
+                    useGtkLaunch
                     defaultFolderConfig
 
             newApps |> apps.AddRange
@@ -63,6 +64,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
             let observable, disposable =
                 AppsLoader.observeApplicationChanges
                     appsIconThemes
+                    useGtkLaunch
                     apps
                     defaultFolderConfig
 
@@ -86,31 +88,20 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
     override _.SearchResultSelected(searchResult) =
         match searchResult with
         | :? DesktopApplication as app ->
-            if useGtkLaunch then
-                ProcessStartInfo(
-                    FileName = "gtk-launch",
-                    WorkingDirectory = (app.WorkingDirectory |> ValueOption.defaultValue null),
-                    Arguments = $"{app.GtkLaunchId} {app.Arguments}",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                )
-                |> Process.Start
-                |> ignore
-            else
-                ProcessStartInfo(
-                    FileName = "nohup",
-                    WorkingDirectory = (app.WorkingDirectory |> ValueOption.defaultValue null),
-                    Arguments = $"{app.Exec} {app.Arguments}",
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                )
-                |> Process.Start
-                |> ignore
+            ProcessStartInfo(
+                FileName = "setsid",
+                Arguments = app.Exec,
+                #if DEBUG // Hide process logs
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                #endif
+                CreateNoWindow = true
+            )
+            |> Process.Start
+            |> ignore
 
-                //logger.Warning $"The app {app.Name} doesn't provide a valid Exec command"
-                // TODO: Prevent logs from showing
-                // TODO: DBus Activation -> https://specifications.freedesktop.org/desktop-entry-spec/latest/dbus.html
-                // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
-                // TODO: Maybe this https://specifications.freedesktop.org/desktop-entry-spec/latest/extra-actions.html
+            // TODO: DBus Activation -> https://specifications.freedesktop.org/desktop-entry-spec/latest/dbus.html
+            // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
+            // TODO: Maybe this https://specifications.freedesktop.org/desktop-entry-spec/latest/extra-actions.html
         | _ -> ()
     override this.LoadSettingsControl() = null

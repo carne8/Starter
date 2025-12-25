@@ -115,51 +115,50 @@ let private parseDesktopEntryLines filePath (lines: string seq) =
     | _ -> ValueNone
 
 /// Make the Exec value found in desktop valid arguments for a executable line
-let parseArguments (entry: DesktopEntry) =
+let parseExec (entry: DesktopEntry) =
     let fragments = entry.Exec.Split ' '
-    match fragments with
-    | [| |] | [| _ |] -> ValueNone
-    | fragments ->
-        // Check presence of deprecated field code
-        let deprecatedFieldCodes = [| "%d"; "%D"; "%n"; "%N"; "%v"; "%m" |]
-        let containsDeprecatedFieldCode =
-            fragments |> Array.exists (fun frag -> deprecatedFieldCodes |> Array.contains frag)
 
-        match containsDeprecatedFieldCode with
-        | true ->
-            logger.Warning $"The Exec in {entry.DesktopFilePath} contains deprecated field code"
-            ValueNone
-        | false ->
-            let arguments = StringBuilder entry.Exec.Length
+    // Check presence of deprecated field code
+    let deprecatedFieldCodes = [| "%d"; "%D"; "%n"; "%N"; "%v"; "%m" |]
+    let containsDeprecatedFieldCode =
+        fragments |> Array.exists (fun frag -> deprecatedFieldCodes |> Array.contains frag)
 
-            for i = 1 to fragments.Length - 1 do
-                match fragments[i] with
-                | "%i" ->
-                    entry.IconName
-                    |> ValueOption.map (sprintf " --icon %s")
-                    |> ValueOption.defaultValue String.Empty
-                    |> arguments.Append
-                    |> ignore
+    match containsDeprecatedFieldCode with
+    | true ->
+        logger.Warning $"The Exec in {entry.DesktopFilePath} contains deprecated field code"
+        ValueNone
+    | false ->
+        let exec = StringBuilder entry.Exec.Length
 
-                | "%c" ->
-                    arguments.Append ' ' |> ignore
-                    arguments.Append entry.Name |> ignore // TODO: Add translation
+        for i = 0 to fragments.Length - 1 do
+            match fragments[i] with
+            | frag when i = 0 -> exec.Append frag |> ignore
+            | "%i" ->
+                entry.IconName
+                |> ValueOption.map (sprintf " --icon %s")
+                |> ValueOption.defaultValue String.Empty
+                |> exec.Append
+                |> ignore
 
-                | "%k" ->
-                    arguments.Append ' ' |> ignore
-                    arguments.Append entry.DesktopFilePath |> ignore
+            | "%c" ->
+                exec.Append ' ' |> ignore
+                exec.Append entry.Name |> ignore // TODO: Add translation
 
-                | "%f"
-                | "%F"
-                | "%u"
-                | "%U" -> ()
-                | other ->
-                    if i <> 1 then arguments.Append ' ' |> ignore
-                    arguments.Append other |> ignore
+            | "%k" ->
+                exec.Append ' ' |> ignore
+                exec.Append entry.DesktopFilePath |> ignore
 
-            match arguments.ToString() with
-            | "" -> ValueNone
-            | s -> ValueSome s
+            | "%f"
+            | "%F"
+            | "%u"
+            | "%U" -> ()
+            | other ->
+                exec.Append ' ' |> ignore
+                exec.Append other |> ignore
+
+        match exec.Length with
+        | 0 -> ValueNone
+        | _ -> ValueSome <| exec.ToString()
 
 let loadDesktopEntries desktopFile =
     desktopFile

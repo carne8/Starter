@@ -12,7 +12,7 @@ open Starter.SearchEngine
 open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Logger
 
-let loadApplication iconThemes entry =
+let loadApplication iconThemes useGtkLaunch entry =
     task {
         let! icon = IconLoader.loadAppIcon iconThemes entry
 
@@ -22,17 +22,21 @@ let loadApplication iconThemes entry =
               Icon = icon
               Description = "Applications" // TODO: I18n or use Generic Name
               Keywords = entry.AdditionalSearchKeywords
-              GtkLaunchId = entry.DesktopFilePath |> Path.GetFileNameWithoutExtension
-              Exec = entry.Exec.Split(' ', 1) |> Array.head
-              Arguments =
-                entry
-                |> XDGDesktopFileParser.parseArguments
-                |> ValueOption.defaultValue String.Empty
+              Exec =
+                match useGtkLaunch with
+                | true -> $"gtk-launch {entry.DesktopFilePath |> Path.GetFileNameWithoutExtension}"
+                | false ->
+                    entry
+                    |> XDGDesktopFileParser.parseExec
+                    |> ValueOption.defaultWith (fun () ->
+                        logger.Warning $"{entry.DesktopFilePath} does not provide a valid Exec string"
+                        String.Empty
+                    )
               WorkingDirectory = entry.WorkingDirectory }
     }
 
 
-let loadApplications iconThemes (config: FolderConfiguration) : Task<ISearchResult seq> =
+let loadApplications iconThemes useGtkLaunch (config: FolderConfiguration) : Task<ISearchResult seq> =
     Task.Run<ISearchResult seq>(fun () -> task {
         let sw = Diagnostics.Stopwatch()
         sw.Start()
@@ -60,7 +64,7 @@ let loadApplications iconThemes (config: FolderConfiguration) : Task<ISearchResu
             task {
                 let! desktopEntries = XDGDesktopFileParser.loadDesktopEntries desktopFile
                 for entry in desktopEntries do
-                    let! app = loadApplication iconThemes entry
+                    let! app = loadApplication iconThemes useGtkLaunch entry
 
                     app
                     :> ISearchResult
@@ -74,7 +78,7 @@ let loadApplications iconThemes (config: FolderConfiguration) : Task<ISearchResu
         return apps :> ISearchResult seq
     })
 
-let observeApplicationChanges iconThemes (appList: ResizeArray<ISearchResult>) (config: FolderConfiguration) =
+let observeApplicationChanges iconThemes useGtkLaunch (appList: ResizeArray<ISearchResult>) (config: FolderConfiguration) =
     let subject = new Subject<unit>()
     let semaphore = new SemaphoreSlim(1, 1)
 
@@ -90,7 +94,7 @@ let observeApplicationChanges iconThemes (appList: ResizeArray<ISearchResult>) (
 
                 // Add new apps
                 for entry in newEntries do
-                    let! app = loadApplication iconThemes entry
+                    let! app = loadApplication iconThemes useGtkLaunch entry
                     appList.Add app
 
                 subject.OnNext()

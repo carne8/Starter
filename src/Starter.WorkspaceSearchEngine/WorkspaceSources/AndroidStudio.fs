@@ -57,7 +57,7 @@ let private findWorkspaceDbPath () =
 
 let private findIdeExecutable () = // TODO: Add logs
     match OperatingSystem.IsLinux() with
-    | true -> Common.findCommandPath "studio"
+    | true -> Common.findCommandPath "android-studio"
     | false ->
         seq {
             Path.Combine(Environment.SpecialFolder.ProgramFilesX86 |> Environment.GetFolderPath, "Android/Android Studio/bin/studio64.exe")
