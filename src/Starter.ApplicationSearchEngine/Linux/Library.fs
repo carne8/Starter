@@ -27,26 +27,52 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
         { Folders = defaultDataDirectories
           ExcludedFolders = Array.empty }
 
-    let apps = ResizeArray<ISearchResult>(200)
+    let apps = ResizeArray<ISearchResult> 200
     let results = new Subject<ISearchResult seq>()
-    let mutable disposables = ResizeArray(3) // Btw: keep a reference of the app watcher and prevent it from being garbage collected
+    let mutable disposables = ResizeArray 3 // Btw: keep a reference of the app watcher and prevent it from being garbage collected
 
-    do Logger.logger <- logger
+    let useGtkLaunch =
+        try
+            let proc =
+                ProcessStartInfo(
+                    FileName = "gtk-launch",
+                    Arguments = "--version",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                )
+                |> Process.Start
+            proc.WaitForExit(TimeSpan.FromSeconds 3L) && proc.ExitCode = 0
+        with _ -> false
+
+    do
+        Logger.logger <- logger
+        if not useGtkLaunch then
+            logger.Information $"gtk-launch not available"
 
     member private this.LoadApps() =
         task {
-            let! newApps = defaultFolderConfig |> AppsLoader.loadApplications
+            let! appsIconThemes = IconLoader.loadThemes()
+            let! newApps =
+                AppsLoader.loadApplications
+                    appsIconThemes
+                    defaultFolderConfig
+
             newApps |> apps.AddRange
             apps.ToArray() |> results.OnNext
 
-            let observable, disposable = AppsLoader.observeApplicationChanges apps defaultFolderConfig
+            let observable, disposable =
+                AppsLoader.observeApplicationChanges
+                    appsIconThemes
+                    apps
+                    defaultFolderConfig
+
             disposables.Add disposable
             observable.Subscribe(fun () -> apps.ToArray() |> results.OnNext) |> ignore
         }
 
     override this.LoadResults() =
         if not <| OperatingSystem.IsLinux() then
-            logger.Warning("This search engine is not supported on this platform.")
+            logger.Warning "This search engine is not supported on this platform."
         else
             this.LoadApps |> Task.Run<unit> |> ignore
 
@@ -60,21 +86,31 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
     override _.SearchResultSelected(searchResult) =
         match searchResult with
         | :? DesktopApplication as app ->
-            match app.Exec with
-            | ValueNone -> logger.Warning $"The app {app.Name} doesn't provide a valid Exec command"
-            | ValueSome exec ->
-                // TODO: Prevent logs from showing
-                // TODO: DBus Activation -> https://specifications.freedesktop.org/desktop-entry-spec/latest/dbus.html
-                // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
-                // TODO: Maybe this https://specifications.freedesktop.org/desktop-entry-spec/latest/extra-actions.html
+            if useGtkLaunch then
                 ProcessStartInfo(
-                    FileName = "nohup",
+                    FileName = "gtk-launch",
                     WorkingDirectory = (app.WorkingDirectory |> ValueOption.defaultValue null),
-                    Arguments = exec,
+                    Arguments = $"{app.GtkLaunchId} {app.Arguments}",
                     RedirectStandardOutput = true,
                     RedirectStandardError = true
                 )
                 |> Process.Start
                 |> ignore
+            else
+                ProcessStartInfo(
+                    FileName = "nohup",
+                    WorkingDirectory = (app.WorkingDirectory |> ValueOption.defaultValue null),
+                    Arguments = $"{app.Exec} {app.Arguments}",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true
+                )
+                |> Process.Start
+                |> ignore
+
+                //logger.Warning $"The app {app.Name} doesn't provide a valid Exec command"
+                // TODO: Prevent logs from showing
+                // TODO: DBus Activation -> https://specifications.freedesktop.org/desktop-entry-spec/latest/dbus.html
+                // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
+                // TODO: Maybe this https://specifications.freedesktop.org/desktop-entry-spec/latest/extra-actions.html
         | _ -> ()
     override this.LoadSettingsControl() = null

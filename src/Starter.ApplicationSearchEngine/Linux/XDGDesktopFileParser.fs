@@ -1,14 +1,11 @@
 ﻿module Starter.ApplicationSearchEngine.Linux.XDGDesktopFileParser
 
 open System
-open System.Collections.Concurrent
-open System.Collections.Generic
 open System.IO
 open System.Text
-open System.Threading.Tasks
+open System.Collections.Generic
 open FsToolkit.ErrorHandling
 open Starter.ApplicationSearchEngine.Logger
-open Starter.SearchEngine
 
 type private String with
     member inline this.TryIndexOf(s: string) =
@@ -110,93 +107,65 @@ let private parseDesktopEntryLines filePath (lines: string seq) =
           IconName = iconName
           WorkingDirectory = path
           AdditionalSearchKeywords =
-              match additionalSearchStrings with
-              | [] -> null
-              | l -> l |> List.toArray
+            match additionalSearchStrings with
+            | [] -> null
+            | l -> l |> List.toArray
           DesktopFilePath = filePath }
         |> ValueSome
     | _ -> ValueNone
 
-/// Make the Exec value found in desktop entry an executable line
-/// to run when the app is selected.
-let private parseExec (entry: DesktopEntry) =
-    // Check presence of deprecated field code
-    let deprecatedFieldCodes = [ "%d"; "%D"; "%n"; "%N"; "%v"; "%m" ]
-    let containsDeprecatedFieldCode =
-        entry.Exec.Split ' '
-        |> Array.exists (fun frag -> deprecatedFieldCodes |> List.contains frag)
+/// Make the Exec value found in desktop valid arguments for a executable line
+let parseArguments (entry: DesktopEntry) =
+    let fragments = entry.Exec.Split ' '
+    match fragments with
+    | [| |] | [| _ |] -> ValueNone
+    | fragments ->
+        // Check presence of deprecated field code
+        let deprecatedFieldCodes = [| "%d"; "%D"; "%n"; "%N"; "%v"; "%m" |]
+        let containsDeprecatedFieldCode =
+            fragments |> Array.exists (fun frag -> deprecatedFieldCodes |> Array.contains frag)
 
-    match containsDeprecatedFieldCode with
-    | true ->
-        logger.Warning $"The Exec in {entry.DesktopFilePath} contains deprecated field code"
-        ValueNone
-    | false ->
-        let exec = StringBuilder(entry.Exec)
+        match containsDeprecatedFieldCode with
+        | true ->
+            logger.Warning $"The Exec in {entry.DesktopFilePath} contains deprecated field code"
+            ValueNone
+        | false ->
+            let arguments = StringBuilder entry.Exec.Length
 
-        match entry.Exec.TryIndexOf "%i" with
-        | ValueNone -> ()
-        | ValueSome i ->
-            exec.Remove(i, 2) |> ignore
-            entry.IconName
-            |> ValueOption.map (sprintf "--icon %s")
-            |> ValueOption.defaultValue String.Empty
-            |> fun s -> exec.Insert(i, s)
-            |> ignore
+            for i = 1 to fragments.Length - 1 do
+                match fragments[i] with
+                | "%i" ->
+                    entry.IconName
+                    |> ValueOption.map (sprintf " --icon %s")
+                    |> ValueOption.defaultValue String.Empty
+                    |> arguments.Append
+                    |> ignore
 
-        match entry.Exec.TryIndexOf "%c" with
-        | ValueNone -> ()
-        | ValueSome i ->
-            exec.Remove(i, 2) |> ignore
-            exec.Insert(i, entry.Name) |> ignore
+                | "%c" ->
+                    arguments.Append ' ' |> ignore
+                    arguments.Append entry.Name |> ignore // TODO: Add translation
 
-        match entry.Exec.TryIndexOf "%k" with
-        | ValueNone -> ()
-        | ValueSome i ->
-            exec.Remove(i, 2) |> ignore
-            exec.Insert(i, entry.DesktopFilePath) |> ignore
+                | "%k" ->
+                    arguments.Append ' ' |> ignore
+                    arguments.Append entry.DesktopFilePath |> ignore
 
-        exec.Replace("%f", "") |> ignore
-        exec.Replace("%F", "") |> ignore
-        exec.Replace("%u", "") |> ignore
-        exec.Replace("%U", "") |> ignore
+                | "%f"
+                | "%F"
+                | "%u"
+                | "%U" -> ()
+                | other ->
+                    if i <> 1 then arguments.Append ' ' |> ignore
+                    arguments.Append other |> ignore
 
-        exec.ToString() |> ValueSome
+            match arguments.ToString() with
+            | "" -> ValueNone
+            | s -> ValueSome s
 
 let loadDesktopEntries desktopFile =
-    task {
-        let! lines = desktopFile |> File.ReadAllLinesAsync
-        let entries =
-            lines
-            |> groupLinesByEntry
-            |> Seq.choosev (parseDesktopEntryLines desktopFile)
-            |> Seq.toArray
-
-        let bag = ConcurrentBag<ISearchResult>()
-
-        do! Parallel.ForEachAsync(
-            entries,
-            Func<DesktopEntry, _, _>(fun entry ct ->
-                task {
-                    let! icon =
-                        match entry.IconName with
-                        | ValueNone -> null
-                        | ValueSome iconName ->
-                            iconName
-                            |> IconLoader.loadAppIcon
-                            |> TaskOption.defaultValue null
-
-                    { Id = $"application:{desktopFile}:{entry.Name}"
-                      Name = entry.Name
-                      Icon = icon
-                      Description = "Applications" // TODO: I18n or use Generic Name
-                      Keywords = entry.AdditionalSearchKeywords
-                      Exec = entry |> parseExec
-                      WorkingDirectory = entry.WorkingDirectory }
-                    |> bag.Add
-                }
-                |> ValueTask
-            )
-        )
-
-        return bag :> _ seq
-    }
+    desktopFile
+    |> File.ReadAllLinesAsync
+    |> Task.map (fun lines ->
+        lines
+        |> groupLinesByEntry
+        |> Seq.choosev (parseDesktopEntryLines desktopFile)
+    )

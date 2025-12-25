@@ -5,7 +5,9 @@ open Starter.SearchEngine
 type DesktopApplication =
     { Id: string
       Name: string
-      Exec: string ValueOption
+      GtkLaunchId: string
+      Exec: string
+      Arguments: string
       WorkingDirectory: string ValueOption
       Icon: StarterIconSource
       Description: string
