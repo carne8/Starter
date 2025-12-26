@@ -125,9 +125,16 @@ type Configuration =
             |> ignore
 
         // Ensure symlink exists
-        if Constants.PluginsSymlinkPath |> Directory.Exists |> not then
-            logger.Debug "Plugins symlink directory doesn't exist, creating it"
+        try
+            if Constants.PluginsSymlinkPath |> File.Exists then
+                File.Delete Constants.PluginsSymlinkPath
+
+            if Constants.PluginsSymlinkPath |> Directory.Exists then
+                Directory.Delete Constants.PluginsSymlinkPath
+
             Directory.CreateSymbolicLink(
                 Constants.PluginsSymlinkPath,
                 Constants.PluginsDirectory
             ) |> ignore
+        with e ->
+            logger.Error(e, "Failed to create symlink to plugins in config directory")

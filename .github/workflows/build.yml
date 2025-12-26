@@ -45,7 +45,7 @@ jobs:
         working-directory: src/Starter.WebSearchEngine
 
       - name: Build Workspace plugin
-        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/WorkspaceSearcheEngine
+        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/WorkspaceSearchEngine
         working-directory: src/Starter.WorkspaceSearchEngine
 
       - name: Upload artifacts

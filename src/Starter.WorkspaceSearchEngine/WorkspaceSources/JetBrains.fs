@@ -143,7 +143,7 @@ let private findWorkspaceDbPath ide =
     |> Result.teeError (fun e -> logger.Debug $"Failed to find workspaces file for {ideName}: {e}")
     |> Option.ofResult
 
-let openWorkspace ideExePath workspacePath =
+let openWorkspace ideExePath workspacePath = // TODO: Use setsid
     ProcessStartInfo(FileName = ideExePath, Arguments = workspacePath)
     |> Process.Start
     |> _.Dispose()

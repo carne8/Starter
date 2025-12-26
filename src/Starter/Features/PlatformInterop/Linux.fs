@@ -3,9 +3,12 @@ namespace Starter.Features.PlatformInterop
 open System
 open System.IO
 open System.Threading.Tasks
-open Avalonia.Controls
-open Starter.Features
+
 open Tmds.DBus
+open Avalonia.Controls
+
+open Starter.Features
+open Starter.Features.Logging
 
 [<DBusInterface("com.carne8.Starter")>]
 type IStarterLauncher =
@@ -25,15 +28,21 @@ type Linux() =
     inherit PlatformInterop()
 
     static let startupFolder =
-        // ~/.config/autostart/
-        // Or $XDG_CONFIG_HOME/autostart/
-        // TODO: Use env variable
-        Path.Combine(
-            Environment.SpecialFolder.UserProfile |> Environment.GetFolderPath,
-            ".config",
-            "autostart"
-        )
+        match Environment.GetEnvironmentVariable "XDG_CONFIG_HOME" with
+        | null
+        | "" ->
+            // ~/.config/autostart/
+            Path.Combine(
+                Environment.GetFolderPath Environment.SpecialFolder.UserProfile,
+                ".config",
+                "autostart"
+            )
+        | envVar ->
+            // $XDG_CONFIG_HOME/autostart/
+            Path.Combine(envVar, "autostart")
+
     static let startupFile = Path.Combine(startupFolder, Constants.Platform.Linux.StartupFile)
+
     static let startupFileContent =
         $"""[Desktop Entry]
 Type=Application
@@ -47,9 +56,23 @@ Comment=Launch Starter at startup
     override this.ToggleLaunchAtStartup(enable) =
         match enable, this.IsLaunchAtStartupEnabled() with
         | true, false ->
-            use writer = File.CreateText startupFile
-            writer.Write startupFileContent
-        | false, true -> File.Delete startupFile
+            try
+                if not <| Directory.Exists startupFolder then
+                    startupFolder
+                    |> Directory.CreateDirectory
+                    |> ignore
+
+                use writer = File.CreateText startupFile
+                writer.Write startupFileContent
+                logger.Information $"Created autostart file {startupFile}"
+            with e ->
+                logger.Error(e, $"Failed to create autostart file {startupFile}")
+        | false, true ->
+            try
+                File.Delete startupFile
+                logger.Information $"Deleted autostart file {startupFile}"
+            with e ->
+                logger.Error(e, $"Failed to delete autostart file {startupFile}")
         | _ -> ()
 
     override _.IsLaunchAtStartupEnabled() = startupFile |> File.Exists

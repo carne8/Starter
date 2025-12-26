@@ -106,34 +106,35 @@ module Settings =
 
     let getFilePath settingsDirectory = Path.Combine(settingsDirectory, SettingsFilename)
 
-    let ensureFileExists (filePath: string) =
+    let ensureConfigFileExists (filePath: string) =
         let fileDir = filePath |> Path.GetDirectoryName
         if fileDir |> Directory.Exists |> not then
             fileDir |> Directory.CreateDirectory |> ignore
 
         if filePath |> File.Exists |> not then
-            filePath |> File.Create |> _.Dispose()
+            logger.Information "Config file does not exist. Creating it."
+            use file = File.Create filePath
+
+            Settings.defaultSettings
+            |> JsonSerializer.SerializeToUtf8Bytes
+            |> file.Write
 
     let saveSettings (filePath: string) (settings: Settings) =
         try
-            ensureFileExists filePath
+            ensureConfigFileExists filePath
             let json = settings |> JsonSerializer.SerializeToUtf8Bytes
             File.WriteAllBytes(filePath, json)
         with e ->
-            logger.Warning(e, "Failed to save settings")
-            failwith "Failed to save settings"
+            logger.Error(e, "Failed to save config")
 
     let loadSettings (filePath: string) =
         try
+            ensureConfigFileExists filePath
             use stream = File.OpenRead filePath
             JsonSerializer.Deserialize<Settings> stream
         with
-        | :? DirectoryNotFoundException ->
-            logger.Information "Settings file doesn't exists. Creating it."
-            Settings.defaultSettings |> saveSettings filePath
-            Settings.defaultSettings
         | e ->
-            logger.Warning(e, "Failed to load settings")
+            logger.Error(e, "Failed to load config")
             Settings.defaultSettings |> saveSettings filePath
             Settings.defaultSettings
 
