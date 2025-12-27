@@ -1,16 +1,18 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+<UserControl x:Class="Starter.Features.InternalSearchEngines.Settings.Views.Settings"
+             xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
-             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
              xmlns:vm="using:Starter.Features.InternalSearchEngines.Settings.ViewModels"
-             mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
-             x:Class="Starter.Features.InternalSearchEngines.Settings.Views.Settings"
-             x:DataType="vm:SettingsViewModel">
+             d:DesignHeight="450"
+             d:DesignWidth="600"
+             x:DataType="vm:SettingsViewModel"
+             mc:Ignorable="d">
     <ScrollViewer>
         <StackPanel Margin="20" Spacing="4">
-            <TextBlock Classes="title1" Margin="0, 0, 0, 16">Settings</TextBlock>
+            <TextBlock Margin="0,0,0,16" Classes="title1">Settings</TextBlock>
 
             <!-- Launch at startup -->
             <ui:SettingsExpander Header="Launch at startup">
@@ -20,29 +22,40 @@
                 <ui:SettingsExpander.Footer>
                     <Panel>
                         <ui:ProgressRing IsVisible="{Binding LaunchAtStartupLoading}" />
-                        <ToggleSwitch IsVisible="{Binding !LaunchAtStartupLoading}"
-                                      IsChecked="{Binding LaunchAtStartup}" />
+                        <ToggleSwitch IsChecked="{Binding LaunchAtStartup}" IsVisible="{Binding !LaunchAtStartupLoading}" />
                     </Panel>
+                </ui:SettingsExpander.Footer>
+            </ui:SettingsExpander>
+
+            <!-- Keyboard shortcut -->
+            <ui:SettingsExpander Header="Keyboard shortcut">
+                <ui:SettingsExpander.IconSource>
+                    <ic:SymbolIconSource Symbol="Keyboard" />
+                </ui:SettingsExpander.IconSource>
+                <ui:SettingsExpander.Footer>
+                    <TextBox KeyDown="KeyboardShortcutKeyDown"
+                             KeyUp="KeyboardShortcutKeyUp"
+                             Text="{Binding KeyboardShortcutText}" />
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
 
             <TextBlock Classes="title2">Personalization</TextBlock>
 
             <!-- Background -->
-            <ui:SettingsExpander Header="Background transparency" Description="{Binding BackgroundDescription}">
+            <ui:SettingsExpander Description="{Binding BackgroundDescription}" Header="Background transparency">
                 <ui:SettingsExpander.IconSource>
                     <ic:SymbolIconSource Symbol="Sparkle" />
                 </ui:SettingsExpander.IconSource>
                 <ui:SettingsExpander.Footer>
-                    <ComboBox SelectedIndex="{Binding SelectedBackgroundIdx}" ItemsSource="{Binding Backgrounds}">
+                    <ComboBox ItemsSource="{Binding Backgrounds}" SelectedIndex="{Binding SelectedBackgroundIdx}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate DataType="vm:BackgroundComboBoxItemViewModel">
                                 <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                         <ComboBox.Styles>
-                            <Style Selector="ComboBoxItem" x:DataType="vm:BackgroundComboBoxItemViewModel">
-                                <Setter Property="IsEnabled" Value="{Binding IsEnabled}"/>
+                            <Style x:DataType="vm:BackgroundComboBoxItemViewModel" Selector="ComboBoxItem">
+                                <Setter Property="IsEnabled" Value="{Binding IsEnabled}" />
                             </Style>
                         </ComboBox.Styles>
                     </ComboBox>
@@ -62,7 +75,8 @@
             <TextBlock Classes="title2">Search engine activation prefixes</TextBlock>
 
             <!-- Activator prefixes -->
-            <ItemsControl x:Name="ActivatorPrefixes"> <!-- Item template and ItemSource bound from code-behind -->
+            <ItemsControl x:Name="ActivatorPrefixes">
+                <!-- Item template and ItemSource bound from code-behind -->
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
                         <StackPanel Spacing="4" />
