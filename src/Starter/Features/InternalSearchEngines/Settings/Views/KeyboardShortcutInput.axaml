@@ -1,0 +1,17 @@
+<UserControl x:Class="Starter.Features.InternalSearchEngines.Settings.Views.KeyboardShortcutInput"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Starter.Features.InternalSearchEngines.Settings.ViewModels"
+             d:DesignHeight="450"
+             d:DesignWidth="600"
+             x:DataType="vm:KeyboardShortcutInputViewModel"
+             mc:Ignorable="d">
+    <TextBox x:Name="TextBox"
+             IsReadOnly="True"
+             Text="{Binding Text}"
+             KeyDown="KeyboardShortcutKeyDown"
+             GotFocus="TextBoxGotFocus"
+             LostFocus="TextBoxLostFocus" />
+</UserControl>

@@ -1,6 +1,5 @@
 namespace Starter.Features.InternalSearchEngines.Settings.ViewModels
 
-open Avalonia.Input
 open Starter.Features.Config
 open Starter.Features.PlatformInterop
 open Starter.SearchEngine
@@ -52,7 +51,10 @@ type SettingsViewModel(baseConfig: Configuration, searchEngines: Dictionary<stri
     let mutable launchAtStartupLoading = true
 
     // Keyboard shortcut
-    let mutable keyboardShortcutText = "Alt+Space"
+    let keyboardShortcutViewModel =
+        config
+        |> Observable.map (_.KeyboardShortcut >> KeyboardShortcutInputViewModel)
+        |> _.AsSystemObservable()
 
     // Background
     let backgrounds =
@@ -119,13 +121,7 @@ type SettingsViewModel(baseConfig: Configuration, searchEngines: Dictionary<stri
             Task.Run<unit>(fun () -> platform.ToggleLaunchAtStartup v) |> ignore
 
     // Keyboard shortcut
-    member this.KeyboardShortcutText
-        with get () = keyboardShortcutText
-        and set v = this.RaiseAndSetIfChanged(&keyboardShortcutText, v) |> ignore
-
-    member this.KeyDooooown(key: PhysicalKey) =
-        this.KeyboardShortcutText <-
-            this.KeyboardShortcutText + key.ToString()
+    member this.KeyboardShortcutViewModel = keyboardShortcutViewModel
 
     // Background
     member this.Backgrounds = backgrounds

@@ -77,7 +77,9 @@ Comment=Launch Starter at startup
 
     override _.IsLaunchAtStartupEnabled() = startupFile |> File.Exists
 
-    member _.SetupHotkeyCallback(window: Window) =
+    override this.RegisterHotkey modifiers key window = failwith "todo"
+
+    override _.SetupHotkeyCallback(window: Window) =
         Task.Run<unit>(fun () -> task {
             try
                 let! _ = dbusConnection.ConnectAsync()
@@ -87,6 +89,6 @@ Comment=Launch Starter at startup
                     Avalonia.Threading.Dispatcher.UIThread.Post(fun () -> window.Show())
                 )
                 do! dbusConnection.RegisterObjectAsync(object)
-            with e -> printfn "DBus: %s" e.Message
+            with e -> logger.Error(e, "Failed to setup dbus service");
         })
         |> ignore

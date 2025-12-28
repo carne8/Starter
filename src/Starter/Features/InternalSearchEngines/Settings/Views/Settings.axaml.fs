@@ -1,8 +1,7 @@
 namespace Starter.Features.InternalSearchEngines.Settings.Views
 
-open Avalonia.Input
-open Starter.Features.InternalSearchEngines.Settings.ViewModels
 open Starter.Features.InternalSearchEngines.Settings.Views
+open Starter.Features.InternalSearchEngines.Settings.ViewModels
 
 open Avalonia.Controls
 open Avalonia.Markup.Xaml
@@ -32,14 +31,3 @@ type Settings() as this =
                 this.Loaded.Add(fun _ -> vm.OnOpened())
             | _ -> ()
         )
-
-    member this.KeyboardShortcutKeyDown(_sender: obj, args: KeyEventArgs) =
-        match this.DataContext with
-        | :? SettingsViewModel as dc -> dc.KeyDooooown args.PhysicalKey
-        | _ -> ()
-
-    member this.KeyboardShortcutKeyUp(_sender: obj, args: KeyEventArgs) =
-        // match this.DataContext with
-        // | :? SettingsViewModel as dc -> dc.KeyDooooown args.PhysicalKey
-        // | _ -> ()
-        ()

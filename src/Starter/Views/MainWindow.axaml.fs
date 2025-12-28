@@ -69,10 +69,7 @@ type MainWindow() as this =
         this.AttachDevTools()
         #endif
 
-        match PlatformInteropFactory.GetPlatformInterop() with
-        | :? Windows as platform -> platform.SetupHotkeyCallback this
-        | :? Linux as platform -> platform.SetupHotkeyCallback this
-        | _ -> ()
+        PlatformInteropFactory.GetPlatformInterop().SetupHotkeyCallback this
 
         this.Loaded.Add(fun _ ->
             this.SetupKeyboardShortcuts()

@@ -6,6 +6,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:Starter.Features.InternalSearchEngines.Settings.ViewModels"
+             xmlns:controls="using:Starter.Features.InternalSearchEngines.Settings.Views"
              d:DesignHeight="450"
              d:DesignWidth="600"
              x:DataType="vm:SettingsViewModel"
@@ -33,9 +34,7 @@
                     <ic:SymbolIconSource Symbol="Keyboard" />
                 </ui:SettingsExpander.IconSource>
                 <ui:SettingsExpander.Footer>
-                    <TextBox KeyDown="KeyboardShortcutKeyDown"
-                             KeyUp="KeyboardShortcutKeyUp"
-                             Text="{Binding KeyboardShortcutText}" />
+                    <controls:KeyboardShortcutInput DataContext="{Binding KeyboardShortcutViewModel^}" ControlToFocus="{Binding #ComboBox}" />
                 </ui:SettingsExpander.Footer>
             </ui:SettingsExpander>
 
@@ -47,7 +46,9 @@
                     <ic:SymbolIconSource Symbol="Sparkle" />
                 </ui:SettingsExpander.IconSource>
                 <ui:SettingsExpander.Footer>
-                    <ComboBox ItemsSource="{Binding Backgrounds}" SelectedIndex="{Binding SelectedBackgroundIdx}">
+                    <ComboBox x:Name="ComboBox"
+                              ItemsSource="{Binding Backgrounds}"
+                              SelectedIndex="{Binding SelectedBackgroundIdx}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate DataType="vm:BackgroundComboBoxItemViewModel">
                                 <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
