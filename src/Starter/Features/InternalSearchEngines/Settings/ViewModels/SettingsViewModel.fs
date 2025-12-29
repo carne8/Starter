@@ -51,10 +51,10 @@ type SettingsViewModel(baseConfig: Configuration, searchEngines: Dictionary<stri
     let mutable launchAtStartupLoading = true
 
     // Keyboard shortcut
-    let keyboardShortcutViewModel =
-        config
-        |> Observable.map (_.KeyboardShortcut >> KeyboardShortcutInputViewModel)
-        |> _.AsSystemObservable()
+    let onKeyboardShortcutChanged newShortcut =
+        { config.Value with KeyboardShortcut = newShortcut }
+        |> config.OnNext
+    let keyboardShortcutViewModel = KeyboardShortcutInputViewModel(baseConfig.KeyboardShortcut, onKeyboardShortcutChanged)
 
     // Background
     let backgrounds =

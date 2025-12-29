@@ -77,7 +77,7 @@ Comment=Launch Starter at startup
 
     override _.IsLaunchAtStartupEnabled() = startupFile |> File.Exists
 
-    override this.RegisterHotkey modifiers key window = failwith "todo"
+    override this.RegisterHotkey shortcut window = failwith "todo"
 
     override _.SetupHotkeyCallback(window: Window) =
         Task.Run<unit>(fun () -> task {

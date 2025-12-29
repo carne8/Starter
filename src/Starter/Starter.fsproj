@@ -28,15 +28,15 @@
         <Compile Include="Features\Logging\Logging.fs" />
         <Compile Include="Features\Logging\LogsView.axaml.fs" />
 
+        <!-- Config -->
+        <Compile Include="Features\Configuration\Config.fs" />
+        <Compile Include="Features\Configuration\ActivatorStore.fs" />
+
         <!-- Platform interop -->
         <Compile Include="Features\PlatformInterop\PlatformInterop.fs" />
         <Compile Include="Features\PlatformInterop\Windows.fs" />
         <Compile Include="Features\PlatformInterop\Linux.fs" />
         <Compile Include="Features\PlatformInterop\PlatformInteropFactory.fs" />
-
-        <!-- Config -->
-        <Compile Include="Features\Configuration\Config.fs" />
-        <Compile Include="Features\Configuration\ActivatorStore.fs" />
 
         <!-- Custom Controls -->
         <Compile Include="Controls\AccentuatedTextBlock.fs" />

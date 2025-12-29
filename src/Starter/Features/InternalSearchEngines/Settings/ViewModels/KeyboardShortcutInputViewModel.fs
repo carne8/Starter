@@ -2,20 +2,19 @@
 
 open System
 open System.Collections.Generic
-open Avalonia.Controls
 open Avalonia.Input
 open ReactiveUI
 open Starter.Features.Logging
 open Starter.Features.Config
 
-type KeyboardShortcutInputViewModel(actualKeyboardShortcut: KeyboardShortcut) as this =
+type KeyboardShortcutInputViewModel(initialKeyboardShortcut: KeyboardShortcut, onKeyboardChanged: KeyboardShortcut -> unit) as this =
     inherit ReactiveObject() // TODO: Switch to CommunityToolkit
 
     let mutable listenKeys = false
     let stoppedListening = Event<unit>()
     let stoppedListeningEvent = stoppedListening.Publish
 
-    let mutable keyboardShortcut = actualKeyboardShortcut
+    let mutable keyboardShortcut = initialKeyboardShortcut
     let mutable pressedModifiers = HashSet<Key>()
     let mutable pressedKey = Key.None
     let mutable text = ""
@@ -24,6 +23,7 @@ type KeyboardShortcutInputViewModel(actualKeyboardShortcut: KeyboardShortcut) as
         keyboardShortcut.Modifiers
         keyboardShortcut.Key
 
+    // Fields
     member this.Text
         with get () = text
         and set v = this.RaiseAndSetIfChanged(&text, v) |> ignore
@@ -35,8 +35,10 @@ type KeyboardShortcutInputViewModel(actualKeyboardShortcut: KeyboardShortcut) as
             |> fun s -> String.Join(" + ", s)
             |> fun s -> if key <> Key.None then $"{s} + {key}" else s
 
-    member this.StartListeningKeys() = listenKeys <- true
     member this.StoppedListeningKeys = stoppedListeningEvent
+
+    // Methods
+    member this.StartListeningKeys() = listenKeys <- true
 
     member this.Cancel() =
         listenKeys <- false
@@ -51,12 +53,13 @@ type KeyboardShortcutInputViewModel(actualKeyboardShortcut: KeyboardShortcut) as
         | true, _
         | _, Key.None -> this.Cancel()
         | _ ->
-            let newKeyboardShortcut =
+            keyboardShortcut <-
                 { Modifiers = pressedModifiers |> Seq.toArray
                   Key = pressedKey }
 
-            logger.Information $"Keyboard shortcut changed: %A{newKeyboardShortcut}"
-            this.RefreshText newKeyboardShortcut.Modifiers newKeyboardShortcut.Key
+            logger.Information $"Keyboard shortcut changed: %A{keyboardShortcut}"
+            this.RefreshText keyboardShortcut.Modifiers keyboardShortcut.Key
+            onKeyboardChanged keyboardShortcut
 
             listenKeys <- false
             stoppedListening.Trigger()

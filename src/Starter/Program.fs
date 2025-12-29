@@ -10,7 +10,7 @@ let buildAvaloniaApp () =
         .Configure<App>()
         .UsePlatformDetect()
         .UseR3()
-        .With(Win32PlatformOptions(WinUICompositionBackdropCornerRadius = 21f))
+        .With(Win32PlatformOptions(WinUICompositionBackdropCornerRadius = 20f))
         .LogToTrace()
 
 let [<Literal>] mutexName = "Starter-426a2d89-cfe9-4554-b9a5-8c7d85417f25"

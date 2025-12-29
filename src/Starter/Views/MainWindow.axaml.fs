@@ -69,19 +69,31 @@ type MainWindow() as this =
         this.AttachDevTools()
         #endif
 
-        PlatformInteropFactory.GetPlatformInterop().SetupHotkeyCallback this
+        let platformInterop = PlatformInteropFactory.GetPlatformInterop()
+        platformInterop.SetupHotkeyCallback this
 
         this.Loaded.Add(fun _ ->
             this.SetupKeyboardShortcuts()
 
             // Bind config changes
-            this.ViewModel.Config.Subscribe(fun config ->
-                this.BackgroundKind <- config.Background
-                this.Resources <-
-                    match config.ZoomedMode with
-                    | false -> normalResourceDictionary
-                    | true -> zoomedResourceDictionary
-            )
+            this.ViewModel.Config
+                .DistinctUntilChangedBy(_.Background)
+                .Subscribe(fun config -> this.BackgroundKind <- config.Background)
+            |> ignore
+
+            this.ViewModel.Config
+                .DistinctUntilChangedBy(_.ZoomedMode)
+                .Subscribe(fun config ->
+                    this.Resources <-
+                        match config.ZoomedMode with
+                        | false -> normalResourceDictionary
+                        | true -> zoomedResourceDictionary
+                )
+            |> ignore
+
+            this.ViewModel.Config
+                .DistinctUntilChangedBy(_.KeyboardShortcut)
+                .Subscribe(fun config -> platformInterop.RegisterHotkey config.KeyboardShortcut this)
             |> ignore
 
             // Bind single-search-engine pill
@@ -216,7 +228,7 @@ type MainWindow() as this =
 
             match newSelectedIdx with
             | None -> ()
-            | Some newSelectedIdx ->
+            | Some newSelectedIdx -> // TODO: Always keep bottom padding
                 // Scroll to top or bottom to preserve the paddings
                 let scrollViewer = this.ResultListScrollViewer()
                 if newSelectedIdx = 0 then

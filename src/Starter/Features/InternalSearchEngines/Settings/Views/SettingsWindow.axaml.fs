@@ -25,17 +25,17 @@ type SettingsWindow() as this =
         this.AttachDevTools()
         #endif
 
-        this.DataContextChanged.Add(fun _ ->
-            match this.DataContext with
-            | :? SettingsWindowViewModel as vm -> this.DataContextLoaded(vm)
-            | _ -> ()
-        )
-
         if OperatingSystem.IsLinux() then
             this.ExtendClientAreaToDecorationsHint <- false
             this.GetControl("Title").IsVisible <- false
             this.GetControl("NavigationView").Margin <- Thickness(0, 10, 0, 0)
 
+        // Bind settings control
+        let contentControl = this.GetControl<ContentControl> "ContentControl"
+        let sub = contentControl.Bind(ContentControl.ContentProperty, Data.Binding "SelectedPage.Control")
+        this.Unloaded.Add(fun _ -> sub.Dispose())
+
+        // Bind data template
         let navigationView = this.GetControl<NavigationView> "NavigationView"
         navigationView.MenuItemTemplate <-
             FuncDataTemplate<MenuItemVM>(fun vm _ ->
@@ -54,21 +54,9 @@ type SettingsWindow() as this =
                 c
             )
 
-    member this.DataContextLoaded(vm: SettingsWindowViewModel) =
-        // Bind MenuItems
-        let navigationView = this.GetControl<NavigationView> "NavigationView"
-        let sub1 = vm.MenuItems.Subscribe(fun vms -> navigationView.MenuItemsSource <- vms)
-
-        // Bind settings control
-        let contentControl = this.GetControl<ContentControl> "ContentControl"
-        let sub2 = contentControl.Bind(ContentControl.ContentProperty, Data.Binding "SelectedPage.Control")
-
-        // Bind background transparency
-        let sub3 = vm.Configuration.Subscribe(fun config -> this.BackgroundKind <- config.Background)
-        this.BackgroundKind <- vm.BaseConfiguration.Background
-
-        this.Unloaded.Add(fun _ ->
-            sub1.Dispose()
-            sub2.Dispose()
-            sub3.Dispose()
-        )
+    override this.OnDataContextChanged(e) =
+        base.OnDataContextChanged(e)
+        match this.DataContext with
+        | :? SettingsWindowViewModel as dc ->
+            this.BackgroundKind <- dc.BaseConfiguration.Background
+        | _ -> ()

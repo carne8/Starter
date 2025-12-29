@@ -47,8 +47,7 @@ type App() =
 
             // Register hotkey
             PlatformInteropFactory.GetPlatformInterop().RegisterHotkey
-                config.KeyboardShortcut.Modifiers
-                config.KeyboardShortcut.Key
+                config.KeyboardShortcut
                 window
 
             logger.Debug "Launched"

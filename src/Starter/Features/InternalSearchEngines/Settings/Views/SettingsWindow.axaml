@@ -15,8 +15,8 @@
     ExtendClientAreaToDecorationsHint="True"
     FontFamily="{StaticResource JetBrainsMono}"
     BackgroundColor="{DynamicResource DefaultBackgroundColor}"
-    AcrylicBackgroundColor="{DynamicResource WindowBackground}">
-    <!-- BackgroundKind bound from code-behind -->
+    AcrylicBackgroundColor="{DynamicResource WindowBackground}"
+    BackgroundKind="{Binding Configuration^.Background, Mode=OneWay}">
 
     <DockPanel LastChildFill="True">
         <Border x:Name="Title" DockPanel.Dock="Top" Height="30" Padding="10, 5, 5, 0" IsHitTestVisible="False">
@@ -30,11 +30,10 @@
                            IsSettingsVisible="False"
                            CompactModeThresholdWidth="0"
                            ExpandedModeThresholdWidth="900"
+                           MenuItemsSource="{Binding MenuItems^}"
                            SelectedItem="{Binding SelectedPage}">
-                           <!-- MenuItemsSource bound from code-behind -->
                            <!-- Menu data template is set from code-behind -->
-            <!-- Content -->
-            <ContentControl x:Name="ContentControl" /> <!-- Child bound from code-behind (otherwise it doesn't work) -->
+            <ContentControl x:Name="ContentControl" /> <!-- Content bound from code-behind (otherwise it doesn't work) -->
         </ui:NavigationView>
     </DockPanel>
 </controls:TranslucentWindow>

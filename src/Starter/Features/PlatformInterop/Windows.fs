@@ -76,22 +76,21 @@ type Windows() =
 
     override _.IsLaunchAtStartupEnabled() = File.Exists startupFile
 
-    override _.RegisterHotkey modifiers key window =
+    override _.RegisterHotkey shortcut window =
         match window.TryGetPlatformHandle() with
         | null -> logger.Fatal "Failed to retrieve window platform handle"
         | platformHandle ->
             User32.UnregisterHotKey(platformHandle.Handle, hotkeyId) |> ignore
 
-            key
-            |> VK.fromKey
-            |> ValueOption.iter (fun key ->
+            match shortcut.Key |> VK.fromKey with
+            | ValueNone -> logger.Error $"Failed to parse key: {shortcut.Key}"
+            | ValueSome key ->
                 User32.RegisterHotKey(
                     platformHandle.Handle,
                     hotkeyId,
-                    modifiers |> HotKeyModifiers.fromKeys,
+                    shortcut.Modifiers |> HotKeyModifiers.fromKeys,
                     key
                 ) |> ignore
-            )
 
 
     override _.SetupHotkeyCallback(window: Window) =

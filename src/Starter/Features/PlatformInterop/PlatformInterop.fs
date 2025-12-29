@@ -1,13 +1,15 @@
 namespace Starter.Features.PlatformInterop
 
+open Starter.Features
+
 [<AbstractClass>]
 type PlatformInterop() =
     abstract member ToggleLaunchAtStartup: bool -> unit
     abstract member IsLaunchAtStartupEnabled: unit -> bool
 
     abstract member RegisterHotkey:
-        modifiers: Avalonia.Input.Key array ->
-        key: Avalonia.Input.Key ->
-        window: Avalonia.Controls.Window -> unit
+        shortcut: Config.KeyboardShortcut
+        -> window: Avalonia.Controls.Window
+        -> unit
 
     abstract member SetupHotkeyCallback: window: Avalonia.Controls.Window -> unit
