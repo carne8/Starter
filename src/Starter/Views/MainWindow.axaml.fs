@@ -93,7 +93,11 @@ type MainWindow() as this =
 
             this.ViewModel.Config
                 .DistinctUntilChangedBy(_.KeyboardShortcut)
-                .Subscribe(fun config -> platformInterop.RegisterHotkey config.KeyboardShortcut this)
+                .Subscribe(fun config ->
+                    this
+                    |> platformInterop.RegisterHotkey config.KeyboardShortcut
+                    |> ignore
+                )
             |> ignore
 
             // Bind single-search-engine pill

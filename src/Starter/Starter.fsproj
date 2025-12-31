@@ -34,7 +34,8 @@
 
         <!-- Platform interop -->
         <Compile Include="Features\PlatformInterop\PlatformInterop.fs" />
-        <Compile Include="Features\PlatformInterop\Linux\GnomeKey.fs" />
+        <Compile Include="Features\PlatformInterop\Linux\Common.fs" />
+        <Compile Include="Features\PlatformInterop\Linux\Gnome.fs" />
         <Compile Include="Features\PlatformInterop\Linux\KeyboardShortcut.fs" />
         <Compile Include="Features\PlatformInterop\LinuxPlatformInterop.fs" />
         <Compile Include="Features\PlatformInterop\WindowsPlatformInterop.fs" />

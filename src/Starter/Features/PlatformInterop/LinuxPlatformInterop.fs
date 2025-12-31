@@ -81,9 +81,16 @@ Comment=Launch Starter at startup
     override this.RegisterHotkey shortcut _window =
         let de = KeyboardShortcut.DesktopEnvironment.detectDesktopEnvironment()
 
-        match KeyboardShortcut.setKeyboardShortcut de shortcut with
-        | Ok () -> logger.Information "Successfully set keyboard shortcut."
-        | Error err -> logger.Error $"Failed to set keyboard shortcut: {err}"
+        task {
+            let! res = Task.Run<Result<_, _>>(fun () -> KeyboardShortcut.setKeyboardShortcut de shortcut)
+
+            match res with
+            | Ok () -> logger.Information "Successfully set keyboard shortcut."
+            | Error err -> logger.Error $"Failed to set keyboard shortcut: {err}"
+
+            return res.IsOk
+        }
+        |> ValueTask<bool>
 
     override _.SetupHotkeyCallback(window: Window) =
         Task.Run<unit>(fun () -> task {

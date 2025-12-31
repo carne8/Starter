@@ -26,7 +26,14 @@ module Observable =
     let inline map ([<InlineIfLambda>] f: 'A -> 'B) (obs: Observable<'A>) : Observable<'B>  = obs.Select(f)
     let inline subscribe ([<InlineIfLambda>] f: 'A -> unit) (obs: Observable<'A>)  = obs.Subscribe(f)
 
-/// Returns the first value of a value tuple. valueFst (a, b) = a
-let inline valueFst struct (v, _) = v
-/// Returns the second value of a value tuple. valueSnd (a, b) = b
-let inline valueSnd struct (_, v) = v
+[<RequireQualifiedAccess>]
+module Result =
+    let inline ofOption error opt =
+        match opt with
+        | None -> Error error
+        | Some v -> Ok v
+
+    let inline ofValueOption error opt =
+        match opt with
+        | ValueNone -> Error error
+        | ValueSome v -> Ok v

@@ -1,6 +1,7 @@
 namespace Starter.Features.PlatformInterop
 
 open Starter.Features
+open System.Threading.Tasks
 
 [<AbstractClass>]
 type PlatformInterop() =
@@ -10,6 +11,6 @@ type PlatformInterop() =
     abstract member RegisterHotkey:
         shortcut: Config.KeyboardShortcut
         -> window: Avalonia.Controls.Window
-        -> unit // TODO: bool
+        -> ValueTask<bool>
 
     abstract member SetupHotkeyCallback: window: Avalonia.Controls.Window -> unit

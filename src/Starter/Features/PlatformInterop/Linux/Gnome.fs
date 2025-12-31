@@ -1,7 +1,12 @@
-module Starter.Features.PlatformInterop.Linux.GnomeKey
+module Starter.Features.PlatformInterop.Linux.Gnome
+
+open Starter.Features.Config
+open Starter.Features.PlatformInterop.Linux.Common
 
 open System
-open Starter.Features.Config
+open System.Text
+open System.Text.RegularExpressions
+
 open Avalonia.Input
 open FsToolkit.ErrorHandling
 
@@ -96,4 +101,77 @@ let parseKeyboardShortcut (shortcut: KeyboardShortcut) =
         let! modifiers = shortcut.Modifiers |> Array.traverseVOptionM fromAvaloniaKey
         let! key = shortcut.Key |> fromAvaloniaKey
         return String.Concat modifiers + key
+    }
+
+let findCustomKeybindings () =
+    let regex = Regex "'((?:(\d)|.)+?)'"
+
+    Proc.readProcessOutput "gsettings" "get org.gnome.settings-daemon.plugins.media-keys custom-keybindings"
+    |> TaskResult.map (fun output ->
+        output
+        |> regex.Matches
+        |> Seq.choose (fun m ->
+            option {
+                let! path = m.Groups |> Seq.tryItem 1 |> Option.map _.Value
+                let! idxGroup = m.Groups |> Seq.tryItem 2
+                let! idx = Int32.TryParse idxGroup.ValueSpan |> ValueOption.ofPair
+
+                return struct {| Path = path; Idx = idx |}
+            }
+        )
+        |> Seq.toArray
+    )
+
+let findKeybindingByName name (keybindings: struct {| Path: string; Idx: int |} array) =
+    taskResult {
+        let mutable foundKeybinding = ValueNone
+        let mutable i = 0
+
+        while foundKeybinding.IsNone && i < keybindings.Length do
+            let keybinding = keybindings[i]
+            let! output =
+                Proc.readProcessOutput
+                    "gsettings"
+                    $"get org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{keybinding.Path} name"
+
+            if output.Trim() = name then
+                foundKeybinding <- ValueSome keybinding
+
+            i <- i+1
+
+        return foundKeybinding
+    }
+
+let setKeybindingList (keybindings: struct {| Path: string; Idx: int |} seq) =
+    let cmd = StringBuilder()
+    cmd.Append "set org.gnome.settings-daemon.plugins.media-keys custom-keybindings [" |> ignore
+
+    let keybindings = keybindings.GetEnumerator()
+    let mutable finished = keybindings.MoveNext() |> not
+
+    while not finished do
+        let left = keybindings.Current
+
+        cmd.Append ''' |> ignore
+        cmd.Append left.Path |> ignore
+
+        if keybindings.MoveNext() then
+            cmd.Append "'," |> ignore
+        else
+            cmd.Append ''' |> ignore
+            finished <- true
+
+    cmd.Append "]" |> ignore
+
+    Proc.executeCommand "gsettings" (cmd.ToString())
+    |> TaskResult.mapError (sprintf "Failed to update the keybionding list: %s")
+
+let updateKeybinding (path: string) (name: string) (command: string) (binding: string) =
+    taskResult {
+        do! Proc.executeCommand "gsettings" $"set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{path} name {name}"
+            |> TaskResult.mapError (sprintf "Failed to set keybinding name: %s")
+        do! Proc.executeCommand "gsettings" $"set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{path} command \"{command}\""
+            |> TaskResult.mapError (sprintf "Failed to set keybinding command: %s")
+        do! Proc.executeCommand "gsettings" $"set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{path} binding '{binding}'"
+            |> TaskResult.mapError (sprintf "Failed to set keybinding binding: %s")
     }

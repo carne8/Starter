@@ -3,7 +3,8 @@ module Starter.Features.PlatformInterop.Linux.KeyboardShortcut
 open Starter.Features.Config
 
 open System
-open System.Text
+open System.Threading.Tasks
+open FsToolkit.ErrorHandling
 
 type DesktopEnvironment =
     | Gnome
@@ -44,125 +45,51 @@ type DesktopEnvironment =
         elif xdgCurrent.Contains "enlightenment" || xdgSession.Contains "enlightenment" then Enlightenment
         else Unknown
 
-open System.Diagnostics
-open System.Text.RegularExpressions
-open FsToolkit.ErrorHandling
-
 [<Literal>]
 let private StarterKeybindingName = "'Starter'"
 [<Literal>]
 let private StarterKeybindingCommand = "dbus-send --print-reply --dest=com.carne8.Starter /com/carne8/Starter com.carne8.Starter.Launch"
 
-let inline startProcess command args =
-    ProcessStartInfo(
-        FileName = command,
-        Arguments = args,
-        RedirectStandardOutput = true,
-        RedirectStandardError = true
-    )
-    |> Process.Start
-    |> Result.requireNotNull "Failed to start process"
-
-let inline readProcessOutput command args =
-    result {
-        use! proc = startProcess command args
-        proc.WaitForExit()
-        return proc.StandardOutput.ReadToEnd()
-    }
-
-let private executeCommand command args =
-    try
-        result {
-            use! proc = startProcess command args
-            proc.WaitForExit()
-
-            match proc.ExitCode with
-            | 0 -> return ()
-            | exitCode ->
-                let error = proc.StandardError.ReadToEnd()
-                printfn "%A %A" command args
-                return! Error $"Command failed with exit code {exitCode}: {error}"
-        }
-    with
-    | ex -> Error ex.Message
-
 let setKeyboardShortcut de (keyboardShortcut: KeyboardShortcut) =
     match de with
     | Gnome | Budgie | Cinnamon ->
         // Gnome and Budgie and Cinnamon both use GNOME's gsettings backend
-        let regex = Regex "'((?:(\d)|.)+?)'"
-
-        result {
+        taskResult {
             let! keybinding =
                 keyboardShortcut
-                |> GnomeKey.parseKeyboardShortcut
+                |> Gnome.parseKeyboardShortcut
                 |> Result.requireValueSome $"Failed to convert keyboard shortcut in gsettings keybinding: %A{keyboardShortcut}"
 
-            let! output = readProcessOutput "gsettings" "get org.gnome.settings-daemon.plugins.media-keys custom-keybindings"
-            let otherKeybindings =
-                output
-                |> regex.Matches
-                |> Seq.choose (fun m ->
-                    option {
-                        let! customKeybinding = m.Groups |> Seq.tryItem 1
-                        let customKeybindingPath = customKeybinding.Value
-
-                        let! customKeybindingIdx = m.Groups |> Seq.tryItem 2
-                        let! customKeybindingIdx = Int32.TryParse customKeybindingIdx.ValueSpan |> ValueOption.ofPair
-
-                        return struct (customKeybindingPath, customKeybindingIdx)
-                    }
-                )
-                |> Seq.toArray
-
-            let keybindingExists =
-                otherKeybindings |> Array.tryFind (fun struct (keybindingPath, _) ->
-                    readProcessOutput "gsettings" $"get org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{keybindingPath} name"
-                    |> Result.map (fun output -> output.Trim() = StarterKeybindingName)
-                    |> Result.defaultValue false
-                )
+            let! keybindings = Gnome.findCustomKeybindings ()
+            let! starterKeybinding = Gnome.findKeybindingByName StarterKeybindingName keybindings
 
             // Update keybinding list
-            let! keybindingName =
-                match keybindingExists with
-                | Some struct (keybindingName, _) -> Ok keybindingName
-                | None ->
+            let! keybindingPath =
+                match starterKeybinding with
+                | ValueSome keybinding ->
+                    keybinding.Path
+                    |> Ok
+                    |> ValueTask.FromResult
+                | ValueNone ->
                     let newKeybindingIdx =
-                        match otherKeybindings with
+                        match keybindings with
                         | [| |] -> 0
-                        | _ ->
-                            otherKeybindings
-                            |> Array.maxBy valueSnd
-                            |> valueSnd
-                            |> (+) 1
-                    let newKeybindingName = $"/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom{newKeybindingIdx}/"
+                        | _ -> (keybindings |> Array.maxBy _.Idx).Idx + 1
 
-                    let cmd = StringBuilder()
-                    cmd.Append "set org.gnome.settings-daemon.plugins.media-keys custom-keybindings [" |> ignore
-                    for struct (keybindingName, _) in otherKeybindings do
-                        cmd.Append ''' |> ignore
-                        cmd.Append keybindingName |> ignore
-                        cmd.Append "'," |> ignore
+                    let newKeybindingPath = $"/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom{newKeybindingIdx}/"
 
-                    cmd.Append ''' |> ignore
-                    cmd.Append newKeybindingName |> ignore
-                    cmd.Append "']" |> ignore
+                    seq { yield! keybindings; struct {| Path = newKeybindingPath; Idx = newKeybindingIdx |}}
+                    |> Gnome.setKeybindingList
+                    |> TaskResult.map (fun () -> newKeybindingPath)
+                    |> ValueTask<Result<_, _>>
 
-                    cmd.ToString()
-                    |> executeCommand "gsettings"
-                    |> function
-                        | Ok () -> Ok newKeybindingName
-                        | Error err -> Error $"Failed to set keybindings: {err}"
-
-            // Update keybinding
-            do! executeCommand "gsettings" $"set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{keybindingName} name {StarterKeybindingName}"
-                |> Result.mapError (sprintf "Failed to set keybinding name: %s")
-            do! executeCommand "gsettings" $"set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{keybindingName} command \"{StarterKeybindingCommand}\""
-                |> Result.mapError (sprintf "Failed to set keybinding command: %s")
-            do! executeCommand "gsettings" $"set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{keybindingName} binding '{keybinding}'" // TODO
-                |> Result.mapError (sprintf "Failed to set keybinding binding: %s")
+            return! Gnome.updateKeybinding keybindingPath StarterKeybindingName StarterKeybindingCommand keybinding
         }
-    | _ -> Error "Not supported"
+
+    | _ ->
+        "Not supported"
+        |> Error
+        |> Task.singleton
 
 
     // | KDE ->

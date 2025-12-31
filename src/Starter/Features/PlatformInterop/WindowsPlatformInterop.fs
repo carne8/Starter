@@ -2,6 +2,7 @@ namespace Starter.Features.PlatformInterop
 
 open System
 open System.IO
+open System.Threading.Tasks
 open Avalonia.Controls
 open Avalonia.Input
 open Avalonia.Win32.Input
@@ -9,6 +10,7 @@ open Starter.Features
 open Starter.Features.Logging
 open Vanara.PInvoke
 open Vanara.Windows.Shell
+open FsToolkit.ErrorHandling
 
 module HotKeyModifiers =
     let fromKeys =
@@ -77,21 +79,30 @@ type WindowsPlatformInterop() =
     override _.IsLaunchAtStartupEnabled() = File.Exists startupFile
 
     override _.RegisterHotkey shortcut window =
-        match window.TryGetPlatformHandle() with
-        | null -> logger.Fatal "Failed to retrieve window platform handle"
-        | platformHandle ->
+        result {
+            let! platformHandle =
+                window.TryGetPlatformHandle()
+                |> Result.requireNotNull "Failed to retrieve window platform handle"
+
             User32.UnregisterHotKey(platformHandle.Handle, hotkeyId) |> ignore
 
-            match shortcut.Key |> VK.fromKey with
-            | ValueNone -> logger.Error $"Failed to parse key: {shortcut.Key}"
-            | ValueSome key ->
-                User32.RegisterHotKey(
-                    platformHandle.Handle,
-                    hotkeyId,
-                    shortcut.Modifiers |> HotKeyModifiers.fromKeys,
-                    key
-                ) |> ignore
+            let! key =
+                shortcut.Key
+                |> VK.fromKey
+                |> Result.ofValueOption $"Failed to parse key: {shortcut.Key}"
 
+            User32.RegisterHotKey(
+                platformHandle.Handle,
+                hotkeyId,
+                shortcut.Modifiers |> HotKeyModifiers.fromKeys,
+                key
+            ) |> ignore
+        }
+        |> function
+            | Ok () -> ValueTask.FromResult false
+            | Error err ->
+                logger.Error err
+                ValueTask.FromResult true
 
     override _.SetupHotkeyCallback(window: Window) =
         let wndProcCallback =

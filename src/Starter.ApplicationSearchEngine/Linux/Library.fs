@@ -33,7 +33,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
 
     let useGtkLaunch =
         try
-            let proc =
+            use proc =
                 ProcessStartInfo(
                     FileName = "gtk-launch",
                     Arguments = "--version",

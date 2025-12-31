@@ -49,6 +49,7 @@ type App() =
             PlatformInteropFactory.GetPlatformInterop().RegisterHotkey
                 config.KeyboardShortcut
                 window
+            |> ignore
 
             logger.Debug "Launched"
         | _ -> ()
