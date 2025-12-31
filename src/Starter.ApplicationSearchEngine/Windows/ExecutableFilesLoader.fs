@@ -44,7 +44,7 @@ let runApp (app: ExeApplication) =
         UseShellExecute = true
     )
     |> Process.Start
-    |> ignore
+    |> _.Dispose()
 
 let private getAppFromFile (file: string) =
     option {

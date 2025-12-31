@@ -315,7 +315,7 @@ let runApp (app: UwpApplication) =
         UseShellExecute = true
     )
     |> Process.Start
-    |> ignore
+    |> _.Dispose()
 
 let loadApplications (logger: Serilog.ILogger) : Task<ISearchResult seq> =
     let packageManager = PackageManager()

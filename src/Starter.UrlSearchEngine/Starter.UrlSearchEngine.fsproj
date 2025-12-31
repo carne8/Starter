@@ -19,4 +19,8 @@
     <ItemGroup>
         <Compile Include="Library.fs" />
     </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
+    </ItemGroup>
 </Project>

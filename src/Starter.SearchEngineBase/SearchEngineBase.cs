@@ -12,16 +12,17 @@ namespace Starter.SearchEngine;
 
 public class StarterIconSource()
 {
-    public readonly static StarterIconSource Empty = new();
+    public static readonly StarterIconSource Empty = new();
 
     public StarterIconSource(IImage lightImage, IImage darkImage) : this()
     {
-        LightImage = lightImage;
-        DarkImage = darkImage;
+        this.lightImage = lightImage;
+        this.darkImage = darkImage;
     }
-    public readonly IImage? LightImage;
-    public readonly IImage? DarkImage;
-    public IImage? GetImage(bool lightMode) => lightMode ? LightImage : DarkImage;
+
+    private readonly IImage? lightImage;
+    private readonly IImage? darkImage;
+    public IImage? GetImage(bool lightMode) => lightMode ? lightImage : darkImage;
 
     public StarterIconSource(Geometry geometry) : this() => Geometry = geometry;
     public readonly Geometry? Geometry;

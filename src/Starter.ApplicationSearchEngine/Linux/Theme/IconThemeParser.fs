@@ -2,23 +2,30 @@ module Starter.ApplicationSearchEngine.Linux.Theme.IconThemeParser
 
 open System
 open System.IO
-open System.Threading.Tasks
 open System.Text.RegularExpressions
 
+open Starter.ApplicationSearchEngine.Logger
 open Starter.ApplicationSearchEngine.Linux.Theme
-open Starter.ApplicationSearchEngine
 open FsToolkit.ErrorHandling
 
 /// Parse the index.theme file and return directory information
-let parseIndexTheme (indexPath: string) : Task<IconTheme option> =
-    task {
-        if not (File.Exists indexPath) then return None else
+let parseIndexTheme (indexPath: string) =
+    taskResult {
+        do! File.Exists indexPath |> Result.requireTrue $"File does not exist: {indexPath}"
 
         use lines = indexPath |> File.ReadLinesAsync |> _.GetAsyncEnumerator()
         let mutable currentSection = ""
 
         // Icon theme properties
-        let path = indexPath |> Path.GetDirectoryName
+        let! path =
+            indexPath
+            |> Path.GetDirectoryName
+            |> Result.requireNotNull $"Cannot parse theme index at this location: {indexPath}"
+        let! themeName =
+            path
+            |> Path.GetFileName
+            |> Result.requireNotNull $"Invalid theme directory: {indexPath}"
+
         let mutable dirNames = Array.empty
         let mutable scaledDirNames = Array.empty
         let mutable parentThemes = Array.empty
@@ -74,7 +81,7 @@ let parseIndexTheme (indexPath: string) : Task<IconTheme option> =
                     | "ScaledDirectories" -> scaledDirNames <- value.Split ',' |> Array.map _.Trim()
                     | "Inherits" -> parentThemes <- value.Split ',' |> Array.map _.Trim()
                     | _ -> ()
-                | _ -> Logger.logger.Warning $"Failed to parse line of theme manifest {indexPath}: \"{line}\""
+                | _ -> logger.Warning $"Failed to parse line of theme manifest {indexPath}: \"{line}\""
 
             // Directory section
             elif line.Contains "=" then
@@ -91,7 +98,7 @@ let parseIndexTheme (indexPath: string) : Task<IconTheme option> =
                     | "Threshold" -> threshold <- value |> Int32.TryParse |> ValueOption.ofPair
                     | "Type" -> iconType <- value |> IconType.ofString
                     | _ -> ()
-                | _ -> Logger.logger.Warning $"Failed to parse line of theme manifest {indexPath}: \"{line}\""
+                | _ -> logger.Warning $"Failed to parse line of theme manifest {indexPath}: \"{line}\""
 
         match size with
         | ValueNone -> ()
@@ -105,11 +112,13 @@ let parseIndexTheme (indexPath: string) : Task<IconTheme option> =
               Type = iconType }
             |> directories.Add
 
-        return Some { Name = path |> Path.GetFileName
-                      ThemePath = path
-                      Directories = directories.ToArray()
-                      ParentThemes = parentThemes }
+        return { Name = themeName
+                 ThemePath = path
+                 Directories = directories.ToArray()
+                 ParentThemes = parentThemes }
     }
+    |> TaskResult.teeError logger.Warning
+    |> Task.map Result.toOption
 
 /// Parse a directory containing icons (ex: .../128x128@2/)
 let private parseIconDirectory (dir: string) : IconThemeDirectory array option =
@@ -161,7 +170,12 @@ let private parseIconDirectory (dir: string) : IconThemeDirectory array option =
         }
 
 let parseFromDirectory (directory: string) =
-    { Name = directory |> Path.GetFileName
+    { Name =
+        directory
+        |> Path.GetFileName
+        |> function
+            | null -> failwith "Cannot extirpate name from directory"
+            | other -> other
       ThemePath = directory
       Directories =
         directory
@@ -169,4 +183,3 @@ let parseFromDirectory (directory: string) =
         |> Array.choose parseIconDirectory
         |> Array.concat
       ParentThemes = Array.empty }
-

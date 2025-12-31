@@ -92,7 +92,7 @@ type WebSearchEngine(pluginPath, configDir, logger) =
                 UseShellExecute = true
             )
             |> Process.Start
-            |> ignore
+            |> _.Dispose()
         | _ -> ()
 
     override this.LoadSettingsControl() =
