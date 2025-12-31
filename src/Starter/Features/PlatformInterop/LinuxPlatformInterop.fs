@@ -9,6 +9,7 @@ open Avalonia.Controls
 
 open Starter.Features
 open Starter.Features.Logging
+open Starter.Features.PlatformInterop.Linux
 
 [<DBusInterface("com.carne8.Starter")>]
 type IStarterLauncher =
@@ -24,7 +25,7 @@ type StarterLauncher(onLaunched) =
             onLaunched()
             Task.FromResult()
 
-type Linux() =
+type LinuxPlatformInterop() =
     inherit PlatformInterop()
 
     static let startupFolder =
@@ -77,7 +78,12 @@ Comment=Launch Starter at startup
 
     override _.IsLaunchAtStartupEnabled() = startupFile |> File.Exists
 
-    override this.RegisterHotkey shortcut window = failwith "todo"
+    override this.RegisterHotkey shortcut _window =
+        let de = KeyboardShortcut.DesktopEnvironment.detectDesktopEnvironment()
+
+        match KeyboardShortcut.setKeyboardShortcut de shortcut with
+        | Ok () -> logger.Information "Successfully set keyboard shortcut."
+        | Error err -> logger.Error $"Failed to set keyboard shortcut: {err}"
 
     override _.SetupHotkeyCallback(window: Window) =
         Task.Run<unit>(fun () -> task {

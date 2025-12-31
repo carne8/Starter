@@ -49,7 +49,7 @@ module VK =
             |> uint32
             |> ValueSome
 
-type Windows() =
+type WindowsPlatformInterop() =
     inherit PlatformInterop()
 
     static let startupFolder = Environment.SpecialFolder.Startup |> Environment.GetFolderPath

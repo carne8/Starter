@@ -10,6 +10,6 @@ type PlatformInterop() =
     abstract member RegisterHotkey:
         shortcut: Config.KeyboardShortcut
         -> window: Avalonia.Controls.Window
-        -> unit
+        -> unit // TODO: bool
 
     abstract member SetupHotkeyCallback: window: Avalonia.Controls.Window -> unit
