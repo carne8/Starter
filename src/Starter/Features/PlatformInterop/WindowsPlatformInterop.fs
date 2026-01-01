@@ -78,6 +78,7 @@ type WindowsPlatformInterop() =
 
     override _.IsLaunchAtStartupEnabled() = File.Exists startupFile
 
+    override _.HotkeyRegistrable = true
     override _.RegisterHotkey shortcut window =
         result {
             let! platformHandle =

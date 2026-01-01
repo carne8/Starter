@@ -52,8 +52,15 @@ Exec={Constants.ProcessExecutableFile}
 Comment=Launch Starter at startup
 """
 
+    let desktopEnvironment = DesktopEnvironment.detectDesktopEnvironment()
+    let hotkeyRegistrable =
+        match desktopEnvironment with
+        | Gnome -> true
+        | _ -> false
+
     let dbusConnection = new Connection(Address.Session)
 
+    // Launch at startup
     override this.ToggleLaunchAtStartup(enable) =
         match enable, this.IsLaunchAtStartupEnabled() with
         | true, false ->
@@ -78,11 +85,11 @@ Comment=Launch Starter at startup
 
     override _.IsLaunchAtStartupEnabled() = startupFile |> File.Exists
 
-    override this.RegisterHotkey shortcut _window =
-        let de = KeyboardShortcut.DesktopEnvironment.detectDesktopEnvironment()
-
+    // Hotkey
+    override _.HotkeyRegistrable = hotkeyRegistrable
+    override _.RegisterHotkey shortcut _window =
         task {
-            let! res = Task.Run<Result<_, _>>(fun () -> KeyboardShortcut.setKeyboardShortcut de shortcut)
+            let! res = Task.Run<Result<_, _>>(fun () -> KeyboardShortcut.setKeyboardShortcut desktopEnvironment shortcut)
 
             match res with
             | Ok () -> logger.Information "Successfully set keyboard shortcut."

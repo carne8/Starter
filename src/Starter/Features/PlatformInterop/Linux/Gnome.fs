@@ -1,16 +1,16 @@
 module Starter.Features.PlatformInterop.Linux.Gnome
 
-open Starter.Features.Config
-open Starter.Features.PlatformInterop.Linux.Common
-
 open System
 open System.Text
 open System.Text.RegularExpressions
+open System.Threading.Tasks
+
+open Starter.Features.Config
 
 open Avalonia.Input
 open FsToolkit.ErrorHandling
 
-let fromAvaloniaKey (key: Key) =
+let private fromAvaloniaKey (key: Key) =
     match key with
     | Key.None -> ValueNone
     | Key.LeftShift
@@ -96,14 +96,14 @@ let fromAvaloniaKey (key: Key) =
     | Key.MediaPreviousTrack -> ValueSome "AudioPrev"
     | _ -> ValueNone
 
-let parseKeyboardShortcut (shortcut: KeyboardShortcut) =
+let private parseKeyboardShortcut (shortcut: KeyboardShortcut) =
     voption {
         let! modifiers = shortcut.Modifiers |> Array.traverseVOptionM fromAvaloniaKey
         let! key = shortcut.Key |> fromAvaloniaKey
         return String.Concat modifiers + key
     }
 
-let findCustomKeybindings () =
+let private findCustomKeybindings () =
     let regex = Regex "'((?:(\d)|.)+?)'"
 
     Proc.readProcessOutput "gsettings" "get org.gnome.settings-daemon.plugins.media-keys custom-keybindings"
@@ -122,7 +122,7 @@ let findCustomKeybindings () =
         |> Seq.toArray
     )
 
-let findKeybindingByName name (keybindings: struct {| Path: string; Idx: int |} array) =
+let private findKeybindingByName name (keybindings: struct {| Path: string; Idx: int |} array) =
     taskResult {
         let mutable foundKeybinding = ValueNone
         let mutable i = 0
@@ -142,7 +142,7 @@ let findKeybindingByName name (keybindings: struct {| Path: string; Idx: int |} 
         return foundKeybinding
     }
 
-let setKeybindingList (keybindings: struct {| Path: string; Idx: int |} seq) =
+let private setKeybindingList (keybindings: struct {| Path: string; Idx: int |} seq) =
     let cmd = StringBuilder()
     cmd.Append "set org.gnome.settings-daemon.plugins.media-keys custom-keybindings [" |> ignore
 
@@ -166,7 +166,7 @@ let setKeybindingList (keybindings: struct {| Path: string; Idx: int |} seq) =
     Proc.executeCommand "gsettings" (cmd.ToString())
     |> TaskResult.mapError (sprintf "Failed to update the keybionding list: %s")
 
-let updateKeybinding (path: string) (name: string) (command: string) (binding: string) =
+let private updateKeybinding (path: string) (name: string) (command: string) (binding: string) =
     taskResult {
         do! Proc.executeCommand "gsettings" $"set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{path} name {name}"
             |> TaskResult.mapError (sprintf "Failed to set keybinding name: %s")
@@ -174,4 +174,37 @@ let updateKeybinding (path: string) (name: string) (command: string) (binding: s
             |> TaskResult.mapError (sprintf "Failed to set keybinding command: %s")
         do! Proc.executeCommand "gsettings" $"set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:{path} binding '{binding}'"
             |> TaskResult.mapError (sprintf "Failed to set keybinding binding: %s")
+    }
+
+let setKeyboardShortcut name command keyboardShortcut =
+    taskResult {
+        let! keybinding =
+            keyboardShortcut
+            |> parseKeyboardShortcut
+            |> Result.requireValueSome $"Failed to convert keyboard shortcut in gsettings keybinding: %A{keyboardShortcut}"
+
+        let! keybindings = findCustomKeybindings ()
+        let! starterKeybinding = findKeybindingByName name keybindings
+
+        // Update keybinding list
+        let! keybindingPath =
+            match starterKeybinding with
+            | ValueSome keybinding ->
+                keybinding.Path
+                |> Ok
+                |> ValueTask.FromResult
+            | ValueNone ->
+                let newKeybindingIdx =
+                    match keybindings with
+                    | [| |] -> 0
+                    | _ -> (keybindings |> Array.maxBy _.Idx).Idx + 1
+
+                let newKeybindingPath = $"/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom{newKeybindingIdx}/"
+
+                seq { yield! keybindings; struct {| Path = newKeybindingPath; Idx = newKeybindingIdx |}}
+                |> setKeybindingList
+                |> TaskResult.map (fun () -> newKeybindingPath)
+                |> ValueTask<Result<_, _>>
+
+        return! updateKeybinding keybindingPath name command keybinding
     }

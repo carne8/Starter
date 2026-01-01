@@ -1,7 +1,46 @@
-module Starter.Features.PlatformInterop.Linux.Common
+namespace Starter.Features.PlatformInterop.Linux
 
+open System
 open System.Diagnostics
 open FsToolkit.ErrorHandling
+
+type DesktopEnvironment =
+    | Gnome
+    | KDE
+    | Unknown
+    // | XFCE
+    // | Cinnamon
+    // | MATE
+    // | Budgie
+    // | Deepin
+    // | LXDE
+    // | LXQt
+    // | Enlightenment
+
+    static member detectDesktopEnvironment () =
+        let xdgCurrent =
+            Environment.GetEnvironmentVariable "XDG_CURRENT_DESKTOP"
+            |> Option.ofObj
+            |> Option.map _.ToLowerInvariant()
+            |> Option.defaultValue ""
+
+        let xdgSession =
+            Environment.GetEnvironmentVariable "XDG_SESSION_DESKTOP"
+            |> Option.ofObj
+            |> Option.map _.ToLowerInvariant()
+            |> Option.defaultValue ""
+
+        if xdgCurrent.Contains "gnome" || xdgSession.Contains "gnome" then Gnome
+        elif xdgCurrent.Contains "kde" || xdgSession.Contains "plasma" then KDE
+        else Unknown
+        // elif xdgCurrent.Contains "xfce" || xdgSession.Contains "xfce" then XFCE
+        // elif xdgCurrent.Contains "cinnamon" || xdgSession.Contains "cinnamon" then Cinnamon
+        // elif xdgCurrent.Contains "mate" || xdgSession.Contains "mate" then MATE
+        // elif xdgCurrent.Contains "budgie" || xdgSession.Contains "budgie" then Budgie
+        // elif xdgCurrent.Contains "deepin" || xdgSession.Contains "deepin" then Deepin
+        // elif xdgCurrent.Contains "lxde" || xdgSession.Contains "lxde" then LXDE
+        // elif xdgCurrent.Contains "lxqt" || xdgSession.Contains "lxqt" then LXQt
+        // elif xdgCurrent.Contains "enlightenment" || xdgSession.Contains "enlightenment" then Enlightenment
 
 module Proc =
     let inline startProcess command args =

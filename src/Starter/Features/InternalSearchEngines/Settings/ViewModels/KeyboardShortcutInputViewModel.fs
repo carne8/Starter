@@ -6,9 +6,12 @@ open Avalonia.Input
 open ReactiveUI
 open Starter.Features.Logging
 open Starter.Features.Config
+open Starter.Features.PlatformInterop
 
 type KeyboardShortcutInputViewModel(initialKeyboardShortcut: KeyboardShortcut, onKeyboardChanged: KeyboardShortcut -> unit) as this =
     inherit ReactiveObject() // TODO: Switch to CommunityToolkit
+
+    let platformInterop = PlatformInteropFactory.GetPlatformInterop()
 
     let mutable listenKeys = false
     let stoppedListening = Event<unit>()
@@ -24,6 +27,8 @@ type KeyboardShortcutInputViewModel(initialKeyboardShortcut: KeyboardShortcut, o
         keyboardShortcut.Key
 
     // Fields
+    member this.Enabled = platformInterop.HotkeyRegistrable
+
     member this.Text
         with get () = text
         and set v = this.RaiseAndSetIfChanged(&text, v) |> ignore
@@ -64,7 +69,7 @@ type KeyboardShortcutInputViewModel(initialKeyboardShortcut: KeyboardShortcut, o
             listenKeys <- false
             stoppedListening.Trigger()
 
-    member this.KeyboardShortcutKeyDown(key: Key) =
+    member this.KeyDown(key: Key) =
         if not listenKeys then () else
         match key with
         | Key.Escape -> this.Cancel()

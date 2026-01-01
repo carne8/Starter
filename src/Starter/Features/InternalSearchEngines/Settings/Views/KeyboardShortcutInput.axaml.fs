@@ -43,10 +43,10 @@ type KeyboardShortcutInput() as this =
                 |> ValueSome
         | _ -> ()
 
-    member this.KeyboardShortcutKeyDown(_sender: obj, args: KeyEventArgs) =
+    member this.TextBoxKeyDown(_sender: obj, args: KeyEventArgs) =
         match this.DataContext with
         | :? KeyboardShortcutInputViewModel as dc ->
-            dc.KeyboardShortcutKeyDown args.Key
+            dc.KeyDown args.Key
             args.Handled <- true
         | _ -> ()
 

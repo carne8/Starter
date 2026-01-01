@@ -46,10 +46,12 @@ type App() =
             let window = MainWindow(DataContext = MainWindowViewModel(config, resultScoreDb))
 
             // Register hotkey
-            PlatformInteropFactory.GetPlatformInterop().RegisterHotkey
-                config.KeyboardShortcut
-                window
-            |> ignore
+            let platformInterop = PlatformInteropFactory.GetPlatformInterop()
+            if platformInterop.HotkeyRegistrable then
+                platformInterop.RegisterHotkey
+                    config.KeyboardShortcut
+                    window
+                |> ignore
 
             logger.Debug "Launched"
         | _ -> ()

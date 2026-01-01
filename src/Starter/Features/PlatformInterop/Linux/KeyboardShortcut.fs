@@ -1,49 +1,7 @@
 module Starter.Features.PlatformInterop.Linux.KeyboardShortcut
 
 open Starter.Features.Config
-
-open System
-open System.Threading.Tasks
 open FsToolkit.ErrorHandling
-
-type DesktopEnvironment =
-    | Gnome
-    | KDE
-    | XFCE
-    | Cinnamon
-    | MATE
-    | Budgie
-    | Deepin
-    | LXDE
-    | LXQt
-    | Enlightenment
-    | Unknown
-
-    static member detectDesktopEnvironment () =
-        let xdgCurrent =
-            Environment.GetEnvironmentVariable "XDG_CURRENT_DESKTOP"
-            |> Option.ofObj
-            |> Option.map _.ToLowerInvariant()
-            |> Option.defaultValue ""
-
-        let xdgSession =
-            Environment.GetEnvironmentVariable "XDG_SESSION_DESKTOP"
-            |> Option.ofObj
-            |> Option.map _.ToLowerInvariant()
-            |> Option.defaultValue ""
-
-        // Check for specific desktop environments
-        if xdgCurrent.Contains "gnome" || xdgSession.Contains "gnome" then Gnome
-        elif xdgCurrent.Contains "kde" || xdgSession.Contains "plasma" then KDE
-        elif xdgCurrent.Contains "xfce" || xdgSession.Contains "xfce" then XFCE
-        elif xdgCurrent.Contains "cinnamon" || xdgSession.Contains "cinnamon" then Cinnamon
-        elif xdgCurrent.Contains "mate" || xdgSession.Contains "mate" then MATE
-        elif xdgCurrent.Contains "budgie" || xdgSession.Contains "budgie" then Budgie
-        elif xdgCurrent.Contains "deepin" || xdgSession.Contains "deepin" then Deepin
-        elif xdgCurrent.Contains "lxde" || xdgSession.Contains "lxde" then LXDE
-        elif xdgCurrent.Contains "lxqt" || xdgSession.Contains "lxqt" then LXQt
-        elif xdgCurrent.Contains "enlightenment" || xdgSession.Contains "enlightenment" then Enlightenment
-        else Unknown
 
 [<Literal>]
 let private StarterKeybindingName = "'Starter'"
@@ -52,40 +10,7 @@ let private StarterKeybindingCommand = "dbus-send --print-reply --dest=com.carne
 
 let setKeyboardShortcut de (keyboardShortcut: KeyboardShortcut) =
     match de with
-    | Gnome | Budgie | Cinnamon ->
-        // Gnome and Budgie and Cinnamon both use GNOME's gsettings backend
-        taskResult {
-            let! keybinding =
-                keyboardShortcut
-                |> Gnome.parseKeyboardShortcut
-                |> Result.requireValueSome $"Failed to convert keyboard shortcut in gsettings keybinding: %A{keyboardShortcut}"
-
-            let! keybindings = Gnome.findCustomKeybindings ()
-            let! starterKeybinding = Gnome.findKeybindingByName StarterKeybindingName keybindings
-
-            // Update keybinding list
-            let! keybindingPath =
-                match starterKeybinding with
-                | ValueSome keybinding ->
-                    keybinding.Path
-                    |> Ok
-                    |> ValueTask.FromResult
-                | ValueNone ->
-                    let newKeybindingIdx =
-                        match keybindings with
-                        | [| |] -> 0
-                        | _ -> (keybindings |> Array.maxBy _.Idx).Idx + 1
-
-                    let newKeybindingPath = $"/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom{newKeybindingIdx}/"
-
-                    seq { yield! keybindings; struct {| Path = newKeybindingPath; Idx = newKeybindingIdx |}}
-                    |> Gnome.setKeybindingList
-                    |> TaskResult.map (fun () -> newKeybindingPath)
-                    |> ValueTask<Result<_, _>>
-
-            return! Gnome.updateKeybinding keybindingPath StarterKeybindingName StarterKeybindingCommand keybinding
-        }
-
+    | Gnome -> Gnome.setKeyboardShortcut StarterKeybindingName StarterKeybindingCommand keyboardShortcut
     | _ ->
         "Not supported"
         |> Error

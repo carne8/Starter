@@ -4,14 +4,30 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="using:Starter.Features.InternalSearchEngines.Settings.ViewModels"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
              d:DesignHeight="450"
              d:DesignWidth="600"
              x:DataType="vm:KeyboardShortcutInputViewModel"
              mc:Ignorable="d">
-    <TextBox x:Name="TextBox"
-             IsReadOnly="True"
-             Text="{Binding Text}"
-             KeyDown="KeyboardShortcutKeyDown"
-             GotFocus="TextBoxGotFocus"
-             LostFocus="TextBoxLostFocus" />
+    <UserControl.Styles>
+        <Style Selector="ui|SettingsExpander.showDescription">
+            <Setter Property="Description">Your desktop environment is not supported. Please use your system settings.</Setter>
+        </Style>
+    </UserControl.Styles>
+
+    <ui:SettingsExpander Header="Keyboard shortcut" Classes.showDescription="{Binding !Enabled}">
+        <ui:SettingsExpander.IconSource>
+            <ic:SymbolIconSource Symbol="Keyboard" />
+        </ui:SettingsExpander.IconSource>
+        <ui:SettingsExpander.Footer>
+            <TextBox x:Name="TextBox"
+                     IsReadOnly="True"
+                     Text="{Binding Text}"
+                     IsEnabled="{Binding Enabled}"
+                     KeyDown="TextBoxKeyDown"
+                     GotFocus="TextBoxGotFocus"
+                     LostFocus="TextBoxLostFocus" />
+        </ui:SettingsExpander.Footer>
+    </ui:SettingsExpander>
 </UserControl>
