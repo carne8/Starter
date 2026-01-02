@@ -9,5 +9,6 @@
     <Project Path="src/Starter.UrlSearchEngine/Starter.UrlSearchEngine.fsproj" />
     <Project Path="src/Starter.UrlSearchEngine/Starter.UrlSearchEngine.Regex/Starter.UrlSearchEngine.Regex.csproj" />
   </Folder>
-  <Project Path="src/Starter/Starter.fsproj" />
+  <Project Path="src/Starter.Model/Starter.Model.fsproj" />
+  <Project Path="src/Starter.Desktop/Starter.Desktop.csproj" />
 </Solution>

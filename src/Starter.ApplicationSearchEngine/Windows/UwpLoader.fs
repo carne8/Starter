@@ -1,13 +1,14 @@
 ﻿module Starter.ApplicationSearchEngine.Windows.UwpLoader
 
-open System.Diagnostics
 open R3
-open Starter.ApplicationSearchEngine
 open Starter.SearchEngine
+open Starter.ApplicationSearchEngine
+open Starter.ApplicationSearchEngine.Logger
 
 open System
 open System.Collections.Generic
 open System.Collections.Concurrent
+open System.Diagnostics
 open System.IO
 open System.Security.Principal
 open System.Text
@@ -263,30 +264,34 @@ type AppxApplication(packageVersion: PackageVersion, installedLocation, packageI
         with _ -> None
 
     member this.ToSearchResult() : ISearchResult option =
-        option {
-            let! appId = this.GetId()
+        try
+            option {
+                let! appId = this.GetId()
 
-            let! nameResourceId = this.GetDisplayNameResourceId()
-            let! name = PackageResource.loadResourceFromPri packageId.FullName nameResourceId
+                let! nameResourceId = this.GetDisplayNameResourceId()
+                let! name = PackageResource.loadResourceFromPri packageId.FullName nameResourceId
 
-            let! lightIconPath, darkIconPath = this.GetIconPath()
-            let lightIconStream = lightIconPath |> File.OpenRead
-            let darkIconStream = darkIconPath |> File.OpenRead
-            let icon = StarterIconSource(
-                Bitmap.DecodeToHeight(lightIconStream, Constants.IconSize),
-                Bitmap.DecodeToHeight(darkIconStream, Constants.IconSize)
-            )
+                let! lightIconPath, darkIconPath = this.GetIconPath()
+                let lightIconStream = lightIconPath |> File.OpenRead
+                let darkIconStream = darkIconPath |> File.OpenRead
+                let icon = StarterIconSource(
+                    Bitmap.DecodeToHeight(lightIconStream, Constants.IconSize),
+                    Bitmap.DecodeToHeight(darkIconStream, Constants.IconSize)
+                )
 
-            do! match this.GetAppListEntry() with
-                | Some "none" -> None
-                | Some _ | None -> Some ()
+                do! match this.GetAppListEntry() with
+                    | Some "none" -> None
+                    | Some _ | None -> Some ()
 
-            return
-                { Id = packageId.FullName + appId
-                  Name = name
-                  PackageId = $"{packageId.FamilyName}!{appId}"
-                  Icon = icon } :> ISearchResult
-        }
+                return
+                    { Id = packageId.FullName + appId
+                      Name = name
+                      PackageId = $"{packageId.FamilyName}!{appId}"
+                      Icon = icon } :> ISearchResult
+            }
+        with exn ->
+            logger.Warning(exn, "Failed to convert package to search result")
+            None
 
 type AppxManifest(package: Package) =
     let manifestPath = Path.Combine(package.InstalledLocation.Path, "AppxManifest.xml")
