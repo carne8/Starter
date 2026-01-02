@@ -45,7 +45,6 @@
 
     <ItemGroup>
         <PackageReference Include="FsToolkit.ErrorHandling.TaskResult" Version="4.18.0" />
-        <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="11.3.6.2" />
         <PackageReference Include="Vanara.Windows.Shell" Version="4.2.1" />
         <PackageReference Update="FSharp.Core" Version="10.0.101" />
     </ItemGroup>
