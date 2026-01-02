@@ -1,7 +1,7 @@
-﻿namespace Starter
+﻿namespace Starter.Features
 
 open System
-open Starter.Features.ResultScores
+open Starter.Features
 open Starter.SearchEngine
 open Fusil.Fusil
 

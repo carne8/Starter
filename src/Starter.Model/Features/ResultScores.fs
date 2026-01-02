@@ -1,4 +1,4 @@
-namespace Starter.Features.ResultScores
+namespace Starter.Features
 
 // App score based on https://github.com/ajeetdsouza/zoxide/wiki/Algorithm
 open System

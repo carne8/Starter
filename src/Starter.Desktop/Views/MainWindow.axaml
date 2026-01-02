@@ -3,6 +3,7 @@
                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                             xmlns:vm="using:Starter.Desktop.ViewModels"
                             xmlns:controls="using:Starter.Desktop.Controls"
+                            xmlns:starter="using:Starter.SearchEngine"
                             Title="Starter"
                             Width="450"
                             MinHeight="50"
@@ -48,15 +49,18 @@
         <StackPanel>
             <!-- Main text box -->
             <Grid Margin="{DynamicResource GridMargin}" ColumnDefinitions="Auto, *">
-                <!-- <controls:SearchEnginePill x:Name="SearchEnginePill" -->
-                <!-- Margin="{DynamicResource SearchEnginePillMargin}" -->
-                <!-- IsVisible="False" /> -->
+                <ContentControl Margin="{DynamicResource SearchEnginePillMargin}" Content="{Binding Activator}">
+                    <ContentControl.ContentTemplate>
+                        <DataTemplate DataType="starter:ISearchEngineActivator">
+                            <controls:ActivatorPill />
+                        </DataTemplate>
+                    </ContentControl.ContentTemplate>
+                </ContentControl>
                 <TextBox x:Name="TextBox"
                          Grid.Column="1"
                          Theme="{StaticResource CustomTextBoxTheme}"
                          Watermark="Start anything..."
-                         Text="{Binding Text}"
-                         KeyDown="TextBox_OnKeyDown">
+                         Text="{Binding Text}">
                     <TextBox.KeyBindings>
                         <KeyBinding Command="{Binding SelectResultCommand}"
                                     CommandParameter="{Binding SelectedItem, ElementName=ResultList}"

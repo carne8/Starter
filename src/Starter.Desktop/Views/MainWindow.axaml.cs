@@ -7,6 +7,7 @@ using Avalonia.VisualTree;
 using Serilog;
 using Starter.Desktop.Controls;
 using Starter.Desktop.ViewModels;
+using Starter.Features;
 using Starter.Features.PlatformInterop;
 using R3;
 
@@ -26,6 +27,7 @@ public partial class MainWindow : TranslucentWindow
     {
         InitializeComponent();
         platformInterop.SetupHotkeyCallback(this);
+        TextBox.AddHandler(KeyDownEvent, TextBox_OnKeyDown, RoutingStrategies.Tunnel);
 
         Activated += (_, _) => OnActivated();
 #if !DEBUG
@@ -42,7 +44,11 @@ public partial class MainWindow : TranslucentWindow
         SetupKeyboardShortcuts();
 
         // Subscribe to view model commands
-        vm.ClearTextBox += (_, _) => TextBox.Clear();
+        vm.ClearTextBox += (_, prefixLength) => Dispatcher.UIThread.Post(() =>
+        {
+            TextBox.Text = TextBox.Text?[prefixLength..];
+            TextBox.CaretIndex -= prefixLength;
+        });
         vm.HideWindow += (_, _) => Dispatcher.UIThread.Post(Hide);
 
         // Bind zoomed mode
@@ -57,8 +63,6 @@ public partial class MainWindow : TranslucentWindow
 
         SetResourceDictionary(vm.Config.ZoomedMode);
         platformInterop.RegisterHotkey(vm.Config.KeyboardShortcut, this);
-
-        // TODO: Bind single-search-engine pill
     }
 
     private void OnActivated()
@@ -107,8 +111,8 @@ public partial class MainWindow : TranslucentWindow
         // Add escape key binding
         var onEscape = new RelayCommand(() =>
         {
-            // if (vm.CurrentActivator.Value.IsSome) vm.ResetActivator(); else
-            Dispatcher.UIThread.Post(Hide);
+            if (vm.Activator is not null) vm.ResetActivatorCommand.Execute(null);
+            else Dispatcher.UIThread.Post(Hide);
         });
 
         KeyBindings.Add(new KeyBinding()
@@ -130,17 +134,16 @@ public partial class MainWindow : TranslucentWindow
 
     private void TextBox_OnKeyDown(object? sender, KeyEventArgs e)
     {
+        // Remove activator if caret is at start
+        if (e.Key == Key.Back && vm.Activator is not null && TextBox.CaretIndex == 0)
+        {
+            vm.ResetActivatorCommand.Execute(null);
+            e.Handled = true;
+            return;
+        }
+
         // Set custom keyboard navigation
         // -> The goal is to be able to navigate in the listbox without losing the focus on the textbox
-
-        // Remove activator if caret is at start
-        // if (e.Key == Key.Back && vm.CurrentActivator is not null && TextBox.CaretIndex = 0)
-        // {
-        //     vm.ResetActivator();
-        //     e.Handled = true;
-        //     return;
-        // }
-
         int newSelectedIdx;
 
         if (e.Key == Key.Tab && vm.SearchResults.Count > 0)

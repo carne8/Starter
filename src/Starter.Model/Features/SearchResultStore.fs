@@ -1,19 +1,19 @@
-﻿module Starter.Features.SearchResultStore
+﻿namespace Starter.Features
 
 open System
 open System.Collections.Generic
+open System.Linq
 open System.Threading
 open Fusil
 open Fusil.Fusil
 open R3
 open Serilog
-open Starter
 open Starter.Features.CustomCollections
 open Starter.SearchEngine
 
-type SearchResultStore(resultScoreDb) =
+type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchEngine>) =
     let staticResults = new BehaviorSubject<_>(ResizeArray())
-    let dynamicSearchEngines = ResizeArray()
+    let dynamicSearchEngines = ResizeArray<DynamicSearchEngine>()
 
     let slab = Slab.createDefault()
     let comparer =
@@ -22,9 +22,109 @@ type SearchResultStore(resultScoreDb) =
         )
 
     let mutable queryCancellationTokenSource = new CancellationTokenSource()
-
     /// Output results
     let results = ObservableList<SearchResultData> 300
+
+    let queryAllSearchEngines ct query =
+        let normalizedText =
+            query
+            |> TextNormalization.String.normalize
+            |> Array.map System.Text.Rune.ToLowerInvariant // TODO: Do this in Fusil
+
+        let fuzzyMatchFunc =
+            fuzzyMatch false true true slab normalizedText
+            >> ValueOption.ofOption // TODO: Change this in Fusil
+
+        staticResults.Subscribe(fun staticResults ->
+            results.Clear()
+
+            // Dynamic results
+            dynamicSearchEngines |> Seq.iter (fun searchEngine ->
+                let struct (newResults, futureResults) = searchEngine.Search(query, ct, null) // TODO: Activator
+
+                let kind =
+                    match searchEngine.ImportantResults with
+                    | true -> SearchResultKind.DynamicUnique
+                    | false -> SearchResultKind.DynamicInstant
+
+                newResults
+                |> Seq.map (SearchResultData.createDynamic searchEngine kind)
+                |> results.AddRange
+
+                results.Sort comparer
+                results.NotifyChanged()
+
+                futureResults
+                |> Observable.subscribe (fun newResults ->
+                    newResults
+                    |> Seq.map (SearchResultData.createDynamic searchEngine SearchResultKind.Dynamic)
+                    |> results.AddRange
+
+                    results.Sort comparer
+                    results.NotifyChanged()
+                )
+                |> disposeOnCancelled ct
+            )
+
+            // Static results
+            staticResults
+            |> Seq.filter (fun result ->
+                let fuzzyRes = fuzzyMatchFunc result.SearchResult.Name
+                result.FuzzyMatchResult <- fuzzyRes
+
+                match fuzzyRes with
+                | ValueSome fusilResult when fusilResult.Score > 0s ->
+                    result.AccentuationMap <- fusilResult.MatchingPositions
+                    true
+                | _ -> false
+            )
+            |> results.AddRange
+            results.Sort comparer
+            results.NotifyChanged()
+        )
+        |> disposeOnCancelled ct
+
+    let queryStaticSearchEngine ct (activator: ISearchEngineActivator) query = // Show only this engine results
+        let normalizedText =
+            query
+            |> TextNormalization.String.normalize
+            |> Array.map System.Text.Rune.ToLowerInvariant
+
+        let fuzzyMatchFunc =
+            fuzzyMatch false true true slab normalizedText
+            >> ValueOption.ofOption
+
+        staticResults.Subscribe(fun staticResults ->
+            results.Clear()
+
+            match query with
+            | "" -> // Show all search engine results
+                staticResults |> Seq.filter (fun result ->
+                    if result.SearchEngineId <> activator.SearchEngineId then false else
+                    if result.SearchResult.ActivatorFilter |> Array.contains activator |> not then false else
+                    result.AccentuationMap <- null
+                    true
+                )
+            | _ -> // Show matching results
+                staticResults |> Seq.filter (fun result ->
+                    if result.SearchEngineId <> activator.SearchEngineId then false else
+                    if result.SearchResult.ActivatorFilter |> Array.contains activator |> not then false else
+
+                    let fuzzyRes = fuzzyMatchFunc result.SearchResult.Name
+                    result.FuzzyMatchResult <- fuzzyRes
+
+                    match fuzzyRes with
+                    | ValueSome fusilResult when fusilResult.Score > 0s ->
+                        result.AccentuationMap <- fusilResult.MatchingPositions
+                        true
+                    | _ -> false
+                )
+            |> results.AddRange
+
+            results.Sort comparer
+            results.NotifyChanged()
+        ) |> disposeOnCancelled ct
+
 
     interface IDisposable with
         member this.Dispose() = staticResults.Dispose()
@@ -73,65 +173,47 @@ type SearchResultStore(resultScoreDb) =
     member this.AddSource(searchEngine: DynamicSearchEngine) =
         dynamicSearchEngines.Add searchEngine
 
-    member this.Query(text: string) =
+    member this.ClearResults() =
+        queryCancellationTokenSource.Cancel()
+        results.Clear()
+        results.NotifyChanged()
+
+    member this.Query(text: string, activator: ISearchEngineActivator | null) =
         queryCancellationTokenSource.Cancel()
         queryCancellationTokenSource <- new CancellationTokenSource()
         let ct = queryCancellationTokenSource.Token
 
-        let normalizedText =
-            text
-            |> TextNormalization.String.normalize
-            |> Array.map System.Text.Rune.ToLowerInvariant // TODO: Do this in Fusil
+        match activator with
+        | null -> queryAllSearchEngines ct text
+        | activator ->
+            match searchEngines.TryGetValue activator.SearchEngineId with
+            | true, :? StaticSearchEngine -> queryStaticSearchEngine ct activator text
+            | true, (:? DynamicSearchEngine as searchEngine) ->
+                try
+                    results.Clear()
+                    let struct (instantResults, obs) = searchEngine.Search(text, ct, activator)
 
-        let fuzzyMatchFunc =
-            fuzzyMatch false true true slab normalizedText
-            >> ValueOption.ofOption // TODO: Change this in Fusil
+                    obs.ObserveOnUIThreadDispatcher().Subscribe(fun newResults ->
+                        newResults
+                        |> Seq.map (SearchResultData.createDynamic searchEngine SearchResultKind.Dynamic)
+                        |> results.AddRange
 
-        staticResults.Subscribe(fun staticResults ->
-            results.Clear()
+                        results.Sort comparer
+                        results.NotifyChanged()
+                    )
+                    |> disposeOnCancelled ct
 
-            // Dynamic results
-            dynamicSearchEngines |> Seq.iter (fun searchEngine ->
-                let struct (newResults, futureResults) = searchEngine.Search(text, ct, null) // TODO: Activator
+                    let instantSrKind =
+                        match searchEngine.ImportantResults with
+                        | true -> SearchResultKind.DynamicUnique
+                        | false -> SearchResultKind.DynamicInstant
 
-                let kind =
-                    match searchEngine.ImportantResults with
-                    | true -> SearchResultKind.DynamicUnique
-                    | false -> SearchResultKind.DynamicInstant
-
-                newResults
-                |> Seq.map (SearchResultData.createDynamic searchEngine kind)
-                |> results.AddRange
-
-                results.Sort comparer
-                results.NotifyChanged()
-
-                futureResults
-                |> Observable.subscribe (fun newResults ->
-                    newResults
-                    |> Seq.map (SearchResultData.createDynamic searchEngine SearchResultKind.Dynamic)
+                    instantResults
+                    |> Seq.map (SearchResultData.createDynamic searchEngine instantSrKind)
                     |> results.AddRange
 
                     results.Sort comparer
                     results.NotifyChanged()
-                )
-                |> disposeOnCancelled ct
-            )
-
-            // Static results
-            staticResults
-            |> Seq.filter (fun result ->
-                let fuzzyRes = fuzzyMatchFunc result.SearchResult.Name
-                result.FuzzyMatchResult <- fuzzyRes
-
-                match fuzzyRes with
-                | ValueSome fusilResult when fusilResult.Score > 0s ->
-                    result.AccentuationMap <- fusilResult.MatchingPositions
-                    true
-                | _ -> false
-            )
-            |> results.AddRange
-            results.Sort comparer
-            results.NotifyChanged()
-        )
-        |> disposeOnCancelled ct
+                with e ->
+                    Log.Error(e, $"Failed to get results from dynamic search engine: {searchEngine.Name}")
+            | _ -> Log.Error $"Cannot find search engine matching the current activator: {activator.Id}"

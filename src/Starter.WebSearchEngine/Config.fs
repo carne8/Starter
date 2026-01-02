@@ -47,7 +47,7 @@ let loadConfig (filePath: string) =
         ensureConfigFileExists filePath
 
         use stream = File.OpenRead filePath
-        let config = JsonSerializer.Deserialize<ConfigDTO> stream
+        let config = JsonSerializer.Deserialize<ConfigDTO> stream // TODO: Use something else than reflection
         config |> Config.ofConfigDto
 
     with e ->

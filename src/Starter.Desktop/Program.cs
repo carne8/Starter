@@ -2,7 +2,7 @@
 
 namespace Starter.Desktop;
 
-static class Program
+public static class Program
 {
     private const string MutexName = "Starter-426a2d89-cfe9-4554-b9a5-8c7d85417f25";
 

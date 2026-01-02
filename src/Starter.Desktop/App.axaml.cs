@@ -6,10 +6,9 @@ using Avalonia.Markup.Xaml;
 using Serilog;
 using Starter.Desktop.ViewModels;
 using Starter.Desktop.Views;
+using Starter.Features;
 using Starter.Features.Config;
 using Starter.Features.PlatformInterop;
-using Starter.Features.ResultScores;
-using Constants = Starter.Features.Constants;
 
 namespace Starter.Desktop;
 
@@ -34,9 +33,11 @@ public class App : Application
                 var config = LoadConfiguration();
                 var resultScoreDb = await ScoreDbModule.readFromFileAsync(Constants.ResultScoresFile);
                 var searchEngineStore = LoadSearchEngines();
+                var activatorStore = new ActivatorStore(config);
+                foreach (var kv in searchEngineStore.SearchEngines) activatorStore.AddSearchEngineActivators(kv.Value);
 
                 // Create the window
-                var viewModel = new MainWindowViewModel(config, resultScoreDb, searchEngineStore);
+                var viewModel = new MainWindowViewModel(config, resultScoreDb, searchEngineStore, activatorStore);
                 window = new MainWindow { DataContext = viewModel };
 
                 // Register hotkey

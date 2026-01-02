@@ -5,6 +5,7 @@
         <ParallelCompilation>true</ParallelCompilation>
         <Deterministic>false</Deterministic>
         <Nullable>enable</Nullable>
+        <RootNamespace>Starter</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -21,7 +22,6 @@
 
         <!-- Config -->
         <Compile Include="Features\Configuration\Config.fs" />
-        <Compile Include="Features\Configuration\ActivatorStore.fs" />
 
         <!-- Platform interop -->
         <Compile Include="Features\PlatformInterop\PlatformInterop.fs" />
@@ -37,6 +37,7 @@
         <!-- Others -->
         <Compile Include="Features\SearchEngineLoading\SearchEngineLoading.fs" />
         <Compile Include="Features\ResultScores.fs" />
+        <Compile Include="Features\ActivatorStore.fs" />
         <Compile Include="Features\CustomCollections.fs" />
         <Compile Include="Features\SearchResultData.fs" />
         <Compile Include="Features\SearchResultStore.fs" />
@@ -50,6 +51,7 @@
         <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
         <PackageReference Include="ObservableCollections" Version="3.3.4" />
         <PackageReference Include="R3" Version="1.3.0" />
+        <PackageReference Include="R3Extensions.Avalonia" Version="1.3.0" />
         <PackageReference Include="Serilog" Version="4.3.0" />
         <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
         <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
