@@ -29,7 +29,7 @@
             </ui:SettingsExpander>
 
             <!-- Keyboard shortcut -->
-            <!-- <controls:KeyboardShortcutInput DataContext="{Binding KeyboardShortcutViewModel}" ControlToFocus="{Binding #ComboBox}" /> -->
+            <controls:KeyboardShortcutInput DataContext="{Binding KeyboardShortcutViewModel}" ControlToFocus="{Binding #ComboBox}" />
 
             <TextBlock Classes="title2">Personalization</TextBlock>
 

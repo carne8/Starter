@@ -32,6 +32,11 @@ public partial class SettingsViewModel : ObservableObject
     // Zoomed mode
     [ObservableProperty] private bool zoomedMode;
 
+    // Keyboard shortcut
+    public KeyboardShortcutInputViewModel KeyboardShortcutViewModel { get; }
+
+    // TODO: Activator prefixes
+
     public SettingsViewModel(Configuration baseConfig, SearchEngineStore searchEngines)
     {
         Config = new BehaviorSubject<Configuration>(baseConfig);
@@ -39,14 +44,13 @@ public partial class SettingsViewModel : ObservableObject
         {
             Background.Tags.Acrylic => Backgrounds[0],
             Background.Tags.Mica => Backgrounds[1],
-            _ => Backgrounds[2]
+            /* Background.Tags.Mica */ _ => Backgrounds[2]
         };
         zoomedMode = baseConfig.ZoomedMode;
+        KeyboardShortcutViewModel = new KeyboardShortcutInputViewModel(baseConfig.KeyboardShortcut);
+        KeyboardShortcutViewModel.KeyboardShortcutChanged +=
+            shortcut => Config.OnNext(Config.Value.WithKeyboardShortcut(shortcut));
     }
-
-
-    // TODO: Activator prefixes
-    // TODO: Keyboard shortcut
 
     public void OnOpened()
     {
@@ -70,34 +74,6 @@ public partial class SettingsViewModel : ObservableObject
 //     member this.Prefix
 //         with get () = prefix
 //         and set v = prefix <- v; v |> onPrefixChanged
-//
-// type BackgroundComboBoxItemViewModel =
-//    { Name: string
-//      Value: Background
-//      IsEnabled: bool }
-//
-// [<AutoOpen>]
-// module private Helpers =
-//     type Background with
-//         static member toString =
-//             function
-//             | Background.Acrylic -> "Acrylic"
-//             | Background.Mica -> "Mica"
-//             | Background.None -> "None"
-//
-//         static member fromString =
-//             function
-//             | Background.Acrylic -> "Acrylic"
-//             | Background.Mica -> "Mica"
-//             | Background.None -> "None"
-
-
-
-//     // Keyboard shortcut
-//     let onKeyboardShortcutChanged newShortcut =
-//         { config.Value with KeyboardShortcut = newShortcut }
-//         |> config.OnNext
-//     let keyboardShortcutViewModel = KeyboardShortcutInputViewModel(baseConfig.KeyboardShortcut, onKeyboardShortcutChanged)
 //
 //     // Activator prefixes
 //     let onActivatorPrefixChanged activatorId newPrefix =
@@ -125,30 +101,3 @@ public partial class SettingsViewModel : ObservableObject
 //             SearchEngineActivatorsViewModel(searchEngine, activators, onActivatorPrefixChanged)
 //         ))
 //
-//     interface IDisposable with
-//         override _.Dispose() = config.Dispose()
-//
-//     member _.Configuration =
-//         config.Skip(1).Debounce(TimeSpan.FromMilliseconds 100L)
-//
-//     // --- Settings bindings ---
-//
-//     // Background
-//     member this.Backgrounds = backgrounds
-//     member this.SelectedBackgroundIdx
-//         with get () = backgrounds |> Array.findIndex (_.Value >> (=) config.Value.Background)
-//         and set v =
-//             let { Value = value } = backgrounds |> Array.item v
-//             config.OnNext <| { config.Value with Background = value }
-//     member this.BackgroundDescription : string | null =
-//         if OperatingSystem.IsLinux() then
-//             "Acrylic and Mica background are not supported on Linux"
-//         else null
-//
-//     // Search engine prefixes
-//     member this.SearchEngineActivators = seActivatorsVms
-//
-//     // Zoom mode activated
-//     member this.ZoomedModeActivated
-//         with get () = config.Value.ZoomedMode
-//         and set v = config.OnNext <| { config.Value with ZoomedMode = v }
