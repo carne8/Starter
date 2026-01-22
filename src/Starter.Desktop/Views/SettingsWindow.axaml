@@ -1,0 +1,45 @@
+﻿<controls:TranslucentWindow x:Class="Starter.Desktop.Views.SettingsWindow"
+                            xmlns="https://github.com/avaloniaui"
+                            xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                            xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                            xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                            xmlns:ui="using:FluentAvalonia.UI.Controls"
+                            xmlns:vm="using:Starter.Desktop.ViewModels"
+                            xmlns:views="using:Starter.Desktop.Views"
+                            xmlns:controls="using:Starter.Desktop.Controls"
+                            Title="Settings"
+                            Width="1050"
+                            Height="700"
+                            d:DesignWidth="600"
+                            d:DesignHeight="450"
+                            x:DataType="vm:SettingsWindowViewModel"
+                            ExtendClientAreaToDecorationsHint="True"
+                            FontFamily="{StaticResource JetBrainsMono}"
+                            AcrylicBackgroundColor="{DynamicResource WindowBackground}"
+                            BackgroundColor="{DynamicResource DefaultBackgroundColor}"
+                            mc:Ignorable="d">
+    <!-- TODO: BackgroundKind="{Binding Configuration^.Background, Mode=OneWay}"> -->
+
+    <DockPanel LastChildFill="True">
+        <Border x:Name="WindowTitle"
+                Height="30"
+                Padding="10,5,5,0"
+                DockPanel.Dock="Top"
+                IsHitTestVisible="False">
+            <StackPanel Spacing="10" Orientation="Horizontal">
+                <PathIcon Data="{StaticResource Flash}" />
+                <TextBlock VerticalAlignment="Center">Starter Settings</TextBlock>
+            </StackPanel>
+        </Border>
+
+        <ui:NavigationView x:Name="NavigationView"
+                           IsSettingsVisible="False"
+                           CompactModeThresholdWidth="0"
+                           ExpandedModeThresholdWidth="900"
+                           SelectedItem="{Binding SelectedPage}"
+                           MenuItemsSource="{Binding Pages}"
+                           MenuItemTemplate="{x:Static views:SettingsDataTemplates.MenuItem}">
+            <ContentControl x:Name="ContentControl" />
+        </ui:NavigationView>
+    </DockPanel>
+</controls:TranslucentWindow>

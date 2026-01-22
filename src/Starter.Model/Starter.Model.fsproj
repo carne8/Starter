@@ -32,8 +32,6 @@
         <Compile Include="Features\PlatformInterop\WindowsPlatformInterop.fs" />
         <Compile Include="Features\PlatformInterop\PlatformInteropFactory.fs" />
 
-        <!-- Internal search engines -->
-
         <!-- Others -->
         <Compile Include="Features\SearchEngineLoading\SearchEngineLoading.fs" />
         <Compile Include="Features\ResultScores.fs" />

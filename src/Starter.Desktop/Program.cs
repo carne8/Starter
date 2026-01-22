@@ -22,12 +22,13 @@ public static class Program
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
-    // Avalonia configuration, don't remove; also used by visual designer.
     private static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .UseR3()
             .With(new Win32PlatformOptions { WinUICompositionBackdropCornerRadius = 20 })
+            #if DEBUG
             .WithDeveloperTools()
+            #endif
             .LogToTrace();
 }

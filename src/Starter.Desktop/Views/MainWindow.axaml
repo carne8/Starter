@@ -16,10 +16,15 @@
                             WindowStartupLocation="Manual"
                             BackgroundColor="{DynamicResource DefaultBackgroundColor}"
                             AcrylicBackgroundColor="{DynamicResource WindowBackground}"
-                            BackgroundKind="{Binding Config.Background}"
+                            BackgroundKind="{Binding ConfigSystemObservable^.Background}"
                             CornerRadius="{DynamicResource CornerRadius}">
 
     <Window.Styles>
+        <!-- Fix corner window radius -->
+        <Style Selector="Window &gt; Panel &gt; Border">
+            <Setter Property="CornerRadius" Value="{DynamicResource CornerRadius}" />
+        </Style>
+
         <Style Selector="TextBlock">
             <Setter Property="FontFamily" Value="{StaticResource JetBrainsMono}" />
         </Style>

@@ -5,9 +5,9 @@ namespace Starter.Desktop;
 
 public class SearchEngineStore
 {
-    public List<StaticSearchEngine> StaticSearchEngines = [];
-    public List<DynamicSearchEngine> DynamicSearchEngines = [];
-    public Dictionary<string, Starter.SearchEngine.SearchEngine> SearchEngines = new();
+    public readonly List<StaticSearchEngine> StaticSearchEngines = [];
+    public readonly List<DynamicSearchEngine> DynamicSearchEngines = [];
+    public readonly Dictionary<string, Starter.SearchEngine.SearchEngine> SearchEngines = new();
 
     // public event EventHandler? SearchEnginesChanged;
 

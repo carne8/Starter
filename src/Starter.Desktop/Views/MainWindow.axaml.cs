@@ -52,17 +52,19 @@ public partial class MainWindow : TranslucentWindow
         vm.HideWindow += (_, _) => Dispatcher.UIThread.Post(Hide);
 
         // Bind zoomed mode
-        vm.ObservePropertyChanged(viewModel => viewModel.Config.ZoomedMode)
+        vm.Config
+            .Select(config => config.ZoomedMode)
             .DistinctUntilChanged()
             .Subscribe(SetResourceDictionary);
 
         // Refresh keyboard shortcut when needed
-        vm.ObservePropertyChanged(viewModel => viewModel.Config.KeyboardShortcut)
+        vm.Config
+            .Select(config => config.KeyboardShortcut)
             .DistinctUntilChanged()
             .Subscribe(shortcut => platformInterop.RegisterHotkey(shortcut, this));
 
-        SetResourceDictionary(vm.Config.ZoomedMode);
-        platformInterop.RegisterHotkey(vm.Config.KeyboardShortcut, this);
+        SetResourceDictionary(vm.Config.Value.ZoomedMode);
+        platformInterop.RegisterHotkey(vm.Config.Value.KeyboardShortcut, this);
     }
 
     private void OnActivated()

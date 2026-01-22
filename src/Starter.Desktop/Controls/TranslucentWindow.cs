@@ -11,6 +11,10 @@ public class TranslucentWindow : Window
     public static readonly StyledProperty<IBrush?> AcrylicBackgroundColorProperty = AvaloniaProperty.Register<TranslucentWindow, IBrush?>(nameof(AcrylicBackgroundColor));
     public static readonly StyledProperty<IBrush?> BackgroundColorProperty = AvaloniaProperty.Register<TranslucentWindow, IBrush?>(nameof(BackgroundColor));
 
+    private static readonly IReadOnlyList<WindowTransparencyLevel> NoneHint = [WindowTransparencyLevel.None];
+    private static readonly IReadOnlyList<WindowTransparencyLevel> AcrylicHint = [WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Blur, WindowTransparencyLevel.Transparent];
+    private static readonly IReadOnlyList<WindowTransparencyLevel> MicaHint = [WindowTransparencyLevel.Mica, WindowTransparencyLevel.Blur, WindowTransparencyLevel.Transparent];
+
     public Background? BackgroundKind
     {
         get => GetValue(BackgroundKindProperty);
@@ -38,17 +42,17 @@ public class TranslucentWindow : Window
             if (BackgroundKind is null) {}
             else if (BackgroundKind.IsNone)
             {
-                TransparencyLevelHint = [WindowTransparencyLevel.None];
+                TransparencyLevelHint = NoneHint;
                 Background = BackgroundColor;
             }
             else if (BackgroundKind.IsAcrylic)
             {
-                TransparencyLevelHint = [WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Blur];
+                TransparencyLevelHint = AcrylicHint;
                 Background = AcrylicBackgroundColor;
             }
             else if (BackgroundKind.IsMica)
             {
-                TransparencyLevelHint = [WindowTransparencyLevel.Mica, WindowTransparencyLevel.Transparent];
+                TransparencyLevelHint = MicaHint;
                 Background = null;
             }
         }

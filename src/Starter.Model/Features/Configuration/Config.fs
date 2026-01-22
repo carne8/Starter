@@ -66,6 +66,10 @@ type Configuration =
       ZoomedMode: bool
       ActivatorPrefixes: Map<string, string> }
 
+    member this.WithBackground newValue = { this with Background = newValue }
+    member this.WithZoomedMode newValue = { this with ZoomedMode = newValue }
+    member this.WithKeyboardShortcut newValue = { this with KeyboardShortcut = newValue }
+
     static member ensurePlatformCompatibility config =
         if OperatingSystem.IsLinux() then
             { config with Background = Background.None }

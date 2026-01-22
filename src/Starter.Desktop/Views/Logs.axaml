@@ -1,0 +1,56 @@
+﻿<UserControl x:Class="Starter.Desktop.Views.Logs"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Starter.Desktop.ViewModels"
+             xmlns:serilog="using:Serilog.Events"
+             x:DataType="vm:LogsViewModel">
+    <DockPanel Margin="20" LastChildFill="True">
+        <!-- Filters -->
+        <StackPanel Orientation="Horizontal"
+                    Spacing="20"
+                    DockPanel.Dock="Top">
+            <!-- Minimum Level -->
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <Label VerticalAlignment="Center" Target="MinimumLevelComboBox">
+                    Minimum log level
+                </Label>
+                <ComboBox x:Name="MinimumLevelComboBox"
+                          SelectedItem="{Binding MinimumLevel}"
+                          ItemsSource="{x:Static vm:LogsViewModel.LogLevels}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate DataType="serilog:LogEventLevel">
+                            <TextBlock VerticalAlignment="Center" Text="{Binding}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+
+            <!-- Filter logs -->
+            <StackPanel Orientation="Horizontal" Spacing="5">
+                <Label VerticalAlignment="Center" Target="SelectedLogContext">Filter</Label>
+                <ComboBox x:Name="SelectedLogContext"
+                          SelectedItem="{Binding SelectedLogContext}"
+                          ItemsSource="{Binding LogContexts}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate DataType="x:String">
+                            <TextBlock VerticalAlignment="Center" Text="{Binding}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Logs -->
+        <Border Margin="0,20,0,0"
+                Padding="10"
+                Background="{DynamicResource ExpanderHeaderBackground}"
+                BorderBrush="{DynamicResource ExpanderHeaderBorderBrush}"
+                BorderThickness="{DynamicResource ExpanderHeaderBorderThickness}"
+                CornerRadius="8">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <SelectableTextBlock Inlines="{Binding Lines}" TextWrapping="Wrap" />
+            </ScrollViewer>
+        </Border>
+    </DockPanel>
+
+</UserControl>

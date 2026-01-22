@@ -30,9 +30,10 @@ public class App : Application
 
                 Configuration.ensurePluginsSymlinkExists();
 
-                var config = LoadConfiguration();
+                var initialConfig = LoadConfiguration();
+                var (searchEngineStore, config) = LoadSearchEngines(initialConfig);
+
                 var resultScoreDb = await ScoreDbModule.readFromFileAsync(Constants.ResultScoresFile);
-                var searchEngineStore = LoadSearchEngines();
                 var activatorStore = new ActivatorStore(config);
                 foreach (var kv in searchEngineStore.SearchEngines) activatorStore.AddSearchEngineActivators(kv.Value);
 
@@ -43,7 +44,7 @@ public class App : Application
                 // Register hotkey
                 var platformInterop = PlatformInteropFactory.GetPlatformInterop();
                 if (platformInterop.HotkeyRegistrable)
-                    await platformInterop.RegisterHotkey(config.KeyboardShortcut, window);
+                    await platformInterop.RegisterHotkey(initialConfig.KeyboardShortcut, window);
 
                 Log.Debug("Launched");
             }
@@ -68,7 +69,7 @@ public class App : Application
         return configRes.ResultValue;
     }
 
-    private static SearchEngineStore LoadSearchEngines()
+    private static (SearchEngineStore, R3.BehaviorSubject<Configuration>) LoadSearchEngines(Configuration config)
     {
         var searchEngineStore = new SearchEngineStore();
 #if DEBUG
@@ -83,8 +84,16 @@ public class App : Application
 #else
         Directory.GetDirectories(Constants.PluginsDirectory);
 #endif
+
+        var settingsSearchEngine = new SettingsSearchEngine(
+            Log.Logger.ForContext("Context", "Starter/Settings"),
+            config,
+            searchEngineStore
+        );
+        searchEngineStore.AddSearchEngine(settingsSearchEngine);
+
         Log.Debug("Plugins loaded");
-        return searchEngineStore;
+        return (searchEngineStore, settingsSearchEngine.Config);
     }
 
     private static void DisableAvaloniaDataAnnotationValidation()

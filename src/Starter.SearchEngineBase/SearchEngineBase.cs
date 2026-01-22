@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Media;
 using R3;
-using Serilog.Core;
+using Serilog;
 
 #pragma warning disable CS9113 // Parameter unread
 
@@ -16,16 +16,16 @@ public class StarterIconSource()
 
     public StarterIconSource(IImage lightImage, IImage darkImage) : this()
     {
-        this.lightImage = lightImage;
-        this.darkImage = darkImage;
+        LightImage = lightImage;
+        DarkImage = darkImage;
     }
-
-    private readonly IImage? lightImage;
-    private readonly IImage? darkImage;
-    public IImage? GetImage(bool lightMode) => lightMode ? lightImage : darkImage;
-
     public StarterIconSource(Geometry geometry) : this() => Geometry = geometry;
+
     public readonly Geometry? Geometry;
+    public readonly IImage? LightImage;
+    public readonly IImage? DarkImage;
+
+    public IImage? GetImage(bool lightMode) => lightMode ? LightImage : DarkImage;
 }
 
 public interface ISearchEngineActivator
@@ -67,7 +67,7 @@ public interface ISearchResult
     ISearchEngineActivator[] ActivatorFilter { get; }
 }
 
-public abstract class SearchEngine(string pluginPath, string configDir, Logger logger)
+public abstract class SearchEngine(string pluginPath, string configDir, ILogger logger)
 {
     public abstract string Id { get; }
     public abstract string Name { get; }
@@ -86,7 +86,7 @@ public abstract class SearchEngine(string pluginPath, string configDir, Logger l
 /// Fuzzy finding is applicable on its results.
 /// Applicable for an application search engine.
 /// </summary>
-public abstract class StaticSearchEngine(string pluginPath, string configDir, Logger logger) : SearchEngine(pluginPath, configDir, logger)
+public abstract class StaticSearchEngine(string pluginPath, string configDir, ILogger logger) : SearchEngine(pluginPath, configDir, logger)
 {
     public abstract Task<(IEnumerable<ISearchResult>, Observable<IEnumerable<ISearchResult>>)> LoadResults();
 }
@@ -96,7 +96,7 @@ public abstract class StaticSearchEngine(string pluginPath, string configDir, Lo
 /// Fuzzy finding is not applicable for its results.
 /// Applicable for a web search engine.
 /// </summary>
-public abstract class DynamicSearchEngine(string pluginPath, string configDir, Logger logger) : SearchEngine(pluginPath, configDir, logger)
+public abstract class DynamicSearchEngine(string pluginPath, string configDir, ILogger logger) : SearchEngine(pluginPath, configDir, logger)
 {
     /// <summary>
     /// Indicate if the instant results from this search engine should be shown on
