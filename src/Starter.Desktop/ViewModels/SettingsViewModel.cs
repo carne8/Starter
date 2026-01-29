@@ -1,6 +1,7 @@
 ﻿using R3;
 using Starter.Features.Config;
 using Starter.Features.PlatformInterop;
+using Starter.SearchEngine;
 
 namespace Starter.Desktop.ViewModels;
 
@@ -35,9 +36,10 @@ public partial class SettingsViewModel : ObservableObject
     // Keyboard shortcut
     public KeyboardShortcutInputViewModel KeyboardShortcutViewModel { get; }
 
-    // TODO: Activator prefixes
+    // Activator prefixes
+    public ActivatorInputFieldViewModel[] ActivatorViewModels { get; }
 
-    public SettingsViewModel(Configuration baseConfig, SearchEngineStore searchEngines)
+    public SettingsViewModel(Configuration baseConfig, SearchEngineStore engines)
     {
         Config = new BehaviorSubject<Configuration>(baseConfig);
         selectedBackground = baseConfig.Background.Tag switch
@@ -47,9 +49,26 @@ public partial class SettingsViewModel : ObservableObject
             /* Background.Tags.Mica */ _ => Backgrounds[2]
         };
         zoomedMode = baseConfig.ZoomedMode;
+
         KeyboardShortcutViewModel = new KeyboardShortcutInputViewModel(baseConfig.KeyboardShortcut);
         KeyboardShortcutViewModel.KeyboardShortcutChanged +=
             shortcut => Config.OnNext(Config.Value.WithKeyboardShortcut(shortcut));
+
+        ActivatorViewModels = engines.SearchEngines.Values
+            .SelectMany(engine => engine.Activators)
+            .Select(activator => new ActivatorInputFieldViewModel(
+                activator,
+                baseConfig.ActivatorPrefixes,
+                ActivatorPrefixChanged
+            ))
+            .ToArray();
+    }
+
+    private void ActivatorPrefixChanged(ISearchEngineActivator activator, string newPrefix)
+    {
+        var newMap = Config.Value.ActivatorPrefixes.Add(activator.Id, newPrefix);
+        var newConfig = Config.Value.WithActivatorPrefixes(newMap);
+        Config.OnNext(newConfig);
     }
 
     public void OnOpened()
@@ -66,38 +85,3 @@ public partial class SettingsViewModel : ObservableObject
     partial void OnSelectedBackgroundChanged(BackgroundKind value) => Config.OnNext(Config.Value.WithBackground(value.Value));
     partial void OnZoomedModeChanged(bool value) => Config.OnNext(Config.Value.WithZoomedMode(value));
 }
-// type SearchEnginePrefixViewModel(se: SearchEngine, prefix: string, onPrefixChanged) =
-//     let mutable prefix = prefix
-//
-//     member this.Icon = se.Icon
-//     member this.Name = se.Name
-//     member this.Prefix
-//         with get () = prefix
-//         and set v = prefix <- v; v |> onPrefixChanged
-//
-//     // Activator prefixes
-//     let onActivatorPrefixChanged activatorId newPrefix =
-//         let newMap =
-//             config.Value.ActivatorPrefixes |> Map.change activatorId (
-//                 match newPrefix with
-//                 | "" -> fun _ -> None
-//                 | s -> fun _ -> Some s
-//             )
-//
-//         config.OnNext <| { config.Value with ActivatorPrefixes = newMap }
-//
-//     let seActivatorsVms =
-//         searchEngines |> Observable.map (Seq.map (fun kv ->
-//             let searchEngine = kv.Value
-//             let activators =
-//                 searchEngine.Activators |> Observable.map (Seq.map (fun activator ->
-//                     let prefix =
-//                         config.Value.ActivatorPrefixes
-//                         |> Map.tryFind activator.Id
-//                         |> Option.defaultValue String.Empty
-//                     struct (activator, prefix)
-//                 ))
-//
-//             SearchEngineActivatorsViewModel(searchEngine, activators, onActivatorPrefixChanged)
-//         ))
-//

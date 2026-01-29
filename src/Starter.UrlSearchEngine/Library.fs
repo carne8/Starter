@@ -49,6 +49,7 @@ type UrlSearchEngine(pluginPath, configDir, logger) =
     override this.ShortName = "Link"
     override this.Icon = icon
     override this.ImportantResults = false
+    override this.Activators = [| DefaultSearchEngineActivator(this) |]
 
     override this.Search(query, _ct, _) =
         query

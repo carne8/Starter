@@ -32,6 +32,7 @@ internal class SettingsSearchEngine : StaticSearchEngine
     public override string Name => "Settings";
     public override string ShortName => "Settings";
     public override StarterIconSource Icon => Icons.Settings;
+    public override ISearchEngineActivator[] Activators => [];
 
     private static readonly IEnumerable<ISearchResult> Results =
     [

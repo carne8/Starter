@@ -69,6 +69,7 @@ type Configuration =
     member this.WithBackground newValue = { this with Background = newValue }
     member this.WithZoomedMode newValue = { this with ZoomedMode = newValue }
     member this.WithKeyboardShortcut newValue = { this with KeyboardShortcut = newValue }
+    member this.WithActivatorPrefixes newValue = { this with ActivatorPrefixes = newValue }
 
     static member ensurePlatformCompatibility config =
         if OperatingSystem.IsLinux() then

@@ -84,6 +84,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
     override _.Name = "Applications"
     override _.ShortName = "Apps"
     override _.Icon = icon
+    override this.Activators = [| DefaultSearchEngineActivator(this) |]
 
     override _.SearchResultSelected(searchResult) =
         match searchResult with

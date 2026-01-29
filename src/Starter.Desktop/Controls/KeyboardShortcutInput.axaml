@@ -6,7 +6,7 @@
              xmlns:ic="using:FluentIcons.Avalonia.Fluent"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:Starter.Desktop.ViewModels"
-             xmlns:viewModels="clr-namespace:Starter.Desktop.ViewModels"
+             xmlns:viewModels="using:Starter.Desktop.ViewModels"
              x:DataType="vm:KeyboardShortcutInputViewModel"
              d:DesignWidth="800"
              d:DesignHeight="450"

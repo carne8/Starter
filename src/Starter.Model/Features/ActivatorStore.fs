@@ -37,23 +37,15 @@ type ActivatorStore(configObservable: BehaviorSubject<Configuration>) as this =
             pairList.AddRange(newListContent)
 
     member _.AddSearchEngineActivators(searchEngine: SearchEngine) =
-        searchEngine.LoadActivators()
-        searchEngine.Activators.Subscribe(fun activators ->
-            // Remove previous activators associated with this search engine
-            pairList.RemoveAll(fun pair -> pair.Activator.SearchEngineId = searchEngine.Id) |> ignore
-            activatorList.RemoveAll(fun activator -> activator.SearchEngineId = searchEngine.Id) |> ignore
-
-            // Add activators
-            activators |> activatorList.AddRange
-
-            activators
-            |> Seq.choose (fun activator ->
-                config.ActivatorPrefixes
-                |> Map.tryFind activator.Id
-                |> Option.map (fun prefix -> { Activator = activator; Prefix = prefix })
-            )
-            |> pairList.AddRange
-        ) |> ignore
+        // Add activators
+        searchEngine.Activators |> activatorList.AddRange
+        searchEngine.Activators
+        |> Array.choose (fun activator ->
+            config.ActivatorPrefixes
+            |> Map.tryFind activator.Id
+            |> Option.map (fun prefix -> { Activator = activator; Prefix = prefix })
+        )
+        |> pairList.AddRange
 
     member _.GetActivatorFromText(text: string) =
         pairList

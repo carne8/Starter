@@ -2,9 +2,9 @@
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
              xmlns:vm="using:Starter.Desktop.ViewModels"
              xmlns:controls="using:Starter.Desktop.Controls"
              d:DesignHeight="450"
@@ -73,14 +73,23 @@
             <TextBlock Classes="title2">Search engine activation prefixes</TextBlock>
 
             <!-- Activator prefixes -->
-            <!-- <ItemsControl x:Name="ActivatorPrefixes"> -->
-            <!-- ~1~ Item template and ItemSource bound from code-behind @1@ -->
-            <!--     <ItemsControl.ItemsPanel> -->
-            <!--         <ItemsPanelTemplate> -->
-            <!--             <StackPanel Spacing="4" /> -->
-            <!--         </ItemsPanelTemplate> -->
-            <!--     </ItemsControl.ItemsPanel> -->
-            <!-- </ItemsControl> -->
+            <ItemsControl ItemsSource="{Binding ActivatorViewModels}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="vm:ActivatorInputFieldViewModel">
+
+                        <ui:SettingsExpander Header="{Binding Name}"
+                                             Footer="{Binding}"
+                                             IconSource="{Binding IconSource}">
+                            <ui:SettingsExpander.FooterTemplate>
+                                <DataTemplate DataType="vm:ActivatorInputFieldViewModel">
+                                    <TextBox Text="{Binding ActivationString}" />
+                                </DataTemplate>
+                            </ui:SettingsExpander.FooterTemplate>
+                        </ui:SettingsExpander>
+
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

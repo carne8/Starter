@@ -74,8 +74,7 @@ public abstract class SearchEngine(string pluginPath, string configDir, ILogger 
     public abstract string ShortName { get; }
     public abstract StarterIconSource Icon { get; }
 
-    public readonly BehaviorSubject<IEnumerable<ISearchEngineActivator>> Activators = new([]);
-    public void LoadActivators() => Activators.OnNext([new DefaultSearchEngineActivator(this)]);
+    public abstract ISearchEngineActivator[] Activators { get; }
 
     public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
     public abstract Control? LoadSettingsControl();

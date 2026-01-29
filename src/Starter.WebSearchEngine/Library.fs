@@ -50,6 +50,7 @@ type WebSearchEngine(pluginPath, configDir, logger) =
     override this.ShortName = searchEngine.Value.ShortName
     override this.Icon = searchEngine.Value.StarterIcon
     override this.ImportantResults = false
+    override this.Activators = [| DefaultSearchEngineActivator(this) |]
 
     member this.SimpleSearch(query) =
         let r =
