@@ -1,0 +1,32 @@
+﻿<ui:SettingsExpander x:Class="Starter.Desktop.Controls.CustomSettingsExpander"
+                     xmlns="https://github.com/avaloniaui"
+                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                     xmlns:ui="using:FluentAvalonia.UI.Controls"
+                     xmlns:controls="using:Starter.Desktop.Controls"
+                     Theme="{StaticResource CustomTheme}">
+    <ui:SettingsExpander.Resources>
+        <ControlTheme x:Key="CustomTheme" TargetType="controls:CustomSettingsExpander">
+            <Setter Property="Background" Value="{DynamicResource ExpanderBackground}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource ExpanderHeaderBorderBrush}" />
+            <Setter Property="BorderThickness" Value="{DynamicResource ExpanderHeaderBorderThickness}" />
+            <Setter Property="Padding" Value="{DynamicResource SettingsExpanderPadding}" />
+            <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+            <Setter Property="MinHeight" Value="{DynamicResource SettingsExpanderMinHeight}" />
+            <Setter Property="ItemsPanel">
+                <ItemsPanelTemplate>
+                    <StackPanel Spacing="1" />
+                </ItemsPanelTemplate>
+            </Setter>
+            <!-- ReSharper disable once Xaml.StaticResourceNotResolved -->
+            <Setter Property="Template" Value="{StaticResource DefaultSettingsExpanderControlTemplate}" />
+
+            <Style Selector="^:empty /template/ ItemsPresenter#ItemsHost">
+                <Setter Property="IsVisible" Value="False" />
+            </Style>
+
+            <Style Selector="^ /template/ Expander#Expander">
+                <Setter Property="ui:ExpanderExt.ExpanderAnimationType" Value="FluentV2" />
+            </Style>
+        </ControlTheme>
+    </ui:SettingsExpander.Resources>
+</ui:SettingsExpander>

@@ -1,5 +1,4 @@
-﻿using FluentAvalonia.UI.Controls;
-using Microsoft.FSharp.Collections;
+﻿using Microsoft.FSharp.Collections;
 using Starter.SearchEngine;
 
 namespace Starter.Desktop.ViewModels;
@@ -10,7 +9,7 @@ public partial class ActivatorInputFieldViewModel : ObservableObject
     private readonly Action<ISearchEngineActivator, string> activatorPrefixChanged;
 
     public string Name => activator.Name;
-    public IconSource IconSource { get; }
+    public StarterIconSource Icon { get; }
     [ObservableProperty] private string activationString;
 
     public ActivatorInputFieldViewModel(
@@ -26,9 +25,7 @@ public partial class ActivatorInputFieldViewModel : ObservableObject
                 : string.Empty;
 
         this.activatorPrefixChanged = activatorPrefixChanged;
-
-        // TODO: Make it change with system
-        IconSource = Views.SettingsDataTemplates.BuildIconSource(activator.Icon, true);
+        Icon = activator.Icon;
     }
 
     partial void OnActivationStringChanged(string value) => activatorPrefixChanged.Invoke(activator, value);

@@ -77,15 +77,18 @@
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="vm:ActivatorInputFieldViewModel">
 
-                        <ui:SettingsExpander Header="{Binding Name}"
-                                             Footer="{Binding}"
-                                             IconSource="{Binding IconSource}">
-                            <ui:SettingsExpander.FooterTemplate>
+                        <controls:CustomSettingsExpander Header="{Binding Name}"
+                                                         Footer="{Binding}"
+                                                         StarterIconSource="{Binding Icon}"
+                                                         Theme="{DynamicResource SettingsExpanderExpanderStyle}">
+                            <controls:CustomSettingsExpander.Template />
+
+                            <controls:CustomSettingsExpander.FooterTemplate>
                                 <DataTemplate DataType="vm:ActivatorInputFieldViewModel">
                                     <TextBox Text="{Binding ActivationString}" />
                                 </DataTemplate>
-                            </ui:SettingsExpander.FooterTemplate>
-                        </ui:SettingsExpander>
+                            </controls:CustomSettingsExpander.FooterTemplate>
+                        </controls:CustomSettingsExpander>
 
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
