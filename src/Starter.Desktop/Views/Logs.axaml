@@ -4,13 +4,27 @@
              xmlns:vm="using:Starter.Desktop.ViewModels"
              xmlns:serilog="using:Serilog.Events"
              x:DataType="vm:LogsViewModel">
+    <UserControl.Styles>
+        <Style Selector="ScrollViewer">
+            <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
+        </Style>
+        <Style Selector="ScrollViewer.wrapText">
+            <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
+        </Style>
+        <Style Selector="ScrollViewer.wrapText &gt; SelectableTextBlock">
+            <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+    </UserControl.Styles>
+
     <DockPanel Margin="20" LastChildFill="True">
         <!-- Filters -->
         <StackPanel Orientation="Horizontal"
                     Spacing="20"
                     DockPanel.Dock="Top">
             <!-- Minimum Level -->
-            <StackPanel Orientation="Horizontal" Spacing="5">
+            <StackPanel VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="5">
                 <Label VerticalAlignment="Center" Target="MinimumLevelComboBox">
                     Minimum log level
                 </Label>
@@ -26,7 +40,9 @@
             </StackPanel>
 
             <!-- Filter logs -->
-            <StackPanel Orientation="Horizontal" Spacing="5">
+            <StackPanel VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="5">
                 <Label VerticalAlignment="Center" Target="SelectedLogContext">Filter</Label>
                 <ComboBox x:Name="SelectedLogContext"
                           SelectedItem="{Binding SelectedLogContext}"
@@ -38,6 +54,18 @@
                     </ComboBox.ItemTemplate>
                 </ComboBox>
             </StackPanel>
+
+            <!-- Wrap text -->
+            <StackPanel VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="5">
+                <Label VerticalAlignment="Center" Target="WrapTextToggle">Wrap text</Label>
+                <ToggleSwitch x:Name="WrapTextToggle"
+                              Margin="0,-9,0,-5"
+                              IsChecked="{Binding WrapText}"
+                              OnContent="{x:Null}"
+                              OffContent="{x:Null}" />
+            </StackPanel>
         </StackPanel>
 
         <!-- Logs -->
@@ -47,8 +75,8 @@
                 BorderBrush="{DynamicResource ExpanderHeaderBorderBrush}"
                 BorderThickness="{DynamicResource ExpanderHeaderBorderThickness}"
                 CornerRadius="8">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <SelectableTextBlock Inlines="{Binding Lines}" TextWrapping="Wrap" />
+            <ScrollViewer VerticalScrollBarVisibility="Auto" Classes.wrapText="{Binding WrapText}">
+                <SelectableTextBlock Inlines="{Binding Lines}" />
             </ScrollViewer>
         </Border>
     </DockPanel>

@@ -38,6 +38,7 @@ public partial class LogsViewModel : ObservableObject
 
     [ObservableProperty] private LogEventLevel minimumLevel = LogEventLevel.Information;
     [ObservableProperty] private InlineCollection lines = new();
+    [ObservableProperty] private bool wrapText;
     [ObservableProperty] private string selectedLogContext = "None";
     public ObservableCollection<string> LogContexts { get; } = [ "None" ];
 
