@@ -8,8 +8,8 @@ public partial class ActivatorInputFieldViewModel : ObservableObject
     private readonly ISearchEngineActivator activator;
     private readonly Action<ISearchEngineActivator, string> activatorPrefixChanged;
 
-    public string Name => activator.Name;
-    public StarterIconSource Icon { get; }
+    [ObservableProperty] private string name;
+    [ObservableProperty] private StarterIconSource icon;
     [ObservableProperty] private string activationString;
 
     public ActivatorInputFieldViewModel(
@@ -18,13 +18,22 @@ public partial class ActivatorInputFieldViewModel : ObservableObject
         Action<ISearchEngineActivator, string> activatorPrefixChanged
     )
     {
+        this.activatorPrefixChanged = activatorPrefixChanged;
+
         this.activator = activator;
         this.activationString =
             activatorPrefixes.TryGetValue(activator.Id, out var activationString)
                 ? activationString
                 : string.Empty;
 
-        this.activatorPrefixChanged = activatorPrefixChanged;
+        name = activator.Name;
+        icon = activator.Icon;
+        if (activator is ISearchEngineDynamicActivator dynActivator) dynActivator.Changed += DynamicActivatorOnChanged;
+    }
+
+    private void DynamicActivatorOnChanged(object? sender, EventArgs e)
+    {
+        Name = activator.Name;
         Icon = activator.Icon;
     }
 

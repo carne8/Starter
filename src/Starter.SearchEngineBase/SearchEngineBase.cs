@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,6 +38,11 @@ public interface ISearchEngineActivator
     StarterIconSource Icon { get; }
 }
 
+public interface ISearchEngineDynamicActivator : ISearchEngineActivator
+{
+    public event EventHandler? Changed;
+}
+
 /// <summary>
 /// Activator used when a search engine doesn't declare
 /// activators and the user used the single-search-engine mode
@@ -73,6 +79,8 @@ public abstract class SearchEngine(string pluginPath, string configDir, ILogger 
     public abstract string Name { get; }
     public abstract string ShortName { get; }
     public abstract StarterIconSource Icon { get; }
+    public event EventHandler? Changed;
+    protected void OnChanged() => Changed?.Invoke(this, EventArgs.Empty);
 
     public abstract ISearchEngineActivator[] Activators { get; }
 

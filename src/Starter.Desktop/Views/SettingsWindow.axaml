@@ -1,8 +1,6 @@
 ﻿<controls:TranslucentWindow x:Class="Starter.Desktop.Views.SettingsWindow"
                             xmlns="https://github.com/avaloniaui"
                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                            xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-                            xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
                             xmlns:ui="using:FluentAvalonia.UI.Controls"
                             xmlns:vm="using:Starter.Desktop.ViewModels"
                             xmlns:views="using:Starter.Desktop.Views"
@@ -10,16 +8,12 @@
                             Title="Settings"
                             Width="1050"
                             Height="700"
-                            d:DesignWidth="600"
-                            d:DesignHeight="450"
                             x:DataType="vm:SettingsWindowViewModel"
                             ExtendClientAreaToDecorationsHint="True"
                             FontFamily="{StaticResource JetBrainsMono}"
                             AcrylicBackgroundColor="{DynamicResource WindowBackground}"
                             BackgroundColor="{DynamicResource DefaultBackgroundColor}"
-                            mc:Ignorable="d">
-    <!-- TODO: BackgroundKind="{Binding Configuration^.Background, Mode=OneWay}"> -->
-
+                            BackgroundKind="{Binding ConfigSystemObservable^.Background}">
     <DockPanel LastChildFill="True">
         <Border x:Name="WindowTitle"
                 Height="30"
@@ -37,8 +31,12 @@
                            CompactModeThresholdWidth="0"
                            ExpandedModeThresholdWidth="900"
                            SelectedItem="{Binding SelectedPage}"
-                           MenuItemsSource="{Binding Pages}"
-                           MenuItemTemplate="{x:Static views:SettingsDataTemplates.MenuItem}">
+                           MenuItemsSource="{Binding Pages}">
+            <ui:NavigationView.MenuItemTemplate>
+                <DataTemplate DataType="vm:MenuItemViewModel">
+                    <controls:CustomNavigationViewItem StarterIconSource="{Binding Icon}" Content="{Binding Title}" />
+                </DataTemplate>
+            </ui:NavigationView.MenuItemTemplate>
             <ContentControl x:Name="ContentControl" />
         </ui:NavigationView>
     </DockPanel>

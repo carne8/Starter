@@ -5,11 +5,19 @@ using Starter.SearchEngine;
 
 namespace Starter.Desktop.ViewModels;
 
-public record MenuItemViewModel(
-    string Title,
-    StarterIconSource Icon,
-    Control Control
-);
+public partial class MenuItemViewModel(
+    string title,
+    StarterIconSource icon,
+    Control control
+) : ObservableObject
+{
+    public string Title { get; init; } = title;
+    public Control Control { get; init; } = control;
+    [ObservableProperty] private StarterIconSource icon = icon;
+
+    public MenuItemViewModel(SearchEngine.SearchEngine engine, Control control) : this(engine.Name, engine.Icon, control) =>
+        engine.Changed += (_, _) => Icon = engine.Icon;
+}
 
 public partial class SettingsWindowViewModel : ObservableObject
 {
@@ -18,10 +26,12 @@ public partial class SettingsWindowViewModel : ObservableObject
 
     private readonly SettingsViewModel settingsVm;
     public BehaviorSubject<Configuration> Config => settingsVm.Config;
+    public IObservable<Configuration> ConfigSystemObservable { get; private set; }
 
     public SettingsWindowViewModel(Configuration config, SearchEngineStore searchEngineStore)
     {
         settingsVm = new SettingsViewModel(config, searchEngineStore);
+        ConfigSystemObservable = Config.AsSystemObservable();
 
         // Add Starter settings
         Pages.Add(new MenuItemViewModel(
@@ -43,7 +53,7 @@ public partial class SettingsWindowViewModel : ObservableObject
         {
             var control = kv.Value.LoadSettingsControl();
             if (control == null) continue;
-            Pages.Add(new MenuItemViewModel(kv.Value.Name, kv.Value.Icon, control));
+            Pages.Add(new MenuItemViewModel(kv.Value, control));
         }
     }
 }

@@ -19,7 +19,7 @@ type Workspace =
       Path: string
       Open: unit -> unit }
 
-/// Loads workspaces. For instance it can represents a vscode installation
+/// Loads workspaces. For instance, it can represent a vscode installation
 type WorkspaceSource =
     { Id: string
       Name: string
