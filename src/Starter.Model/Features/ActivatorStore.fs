@@ -17,10 +17,15 @@ type ActivatorStore(configObservable: BehaviorSubject<Configuration>) as this =
     let pairList = List<ActivatorPrefixPair>()
 
     let mutable config = configObservable.Value
-    let sub = configObservable.Subscribe this.SetConfig
+    let mutable sub = null
+
+    do sub <- configObservable.Subscribe this.SetConfig
 
     interface IDisposable with
-        member _.Dispose() = sub.Dispose()
+        member _.Dispose() =
+            match sub with
+            | null -> ()
+            | s -> s.Dispose()
 
     member _.SetConfig(newConfig) =
         config <- newConfig

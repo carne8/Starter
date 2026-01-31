@@ -2,28 +2,26 @@
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Starter.Features"
-             xmlns:views="using:Starter.Desktop.Controls"
+             xmlns:controls="using:Starter.Desktop.Controls"
              x:DataType="vm:SearchResultData">
 
     <Border Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
         <StackPanel Orientation="Horizontal" Spacing="10">
             <Border CornerRadius="4" ClipToBounds="True">
-                <views:StarterIcon Width="{DynamicResource SearchResultIconSize}"
-                                   Height="{DynamicResource SearchResultIconSize}"
-                                   VerticalAlignment="Center"
-                                   IconSource="{Binding SearchResult.Icon}"
-                                   FontSize="{DynamicResource SearchResultIconSize}"
-                                   ExtraPaddingForSymbol="4" />
+                <controls:StarterIcon Width="{DynamicResource SearchResultIconSize}"
+                                      Height="{DynamicResource SearchResultIconSize}"
+                                      VerticalAlignment="Center"
+                                      IconSource="{Binding SearchResult.Icon}"
+                                      FontSize="{DynamicResource SearchResultIconSize}"
+                                      ExtraPaddingForSymbol="4" />
             </Border>
 
             <StackPanel VerticalAlignment="Center">
-                <!-- TODO -->
-                <!-- controls:AccentuatedTextBlock -->
-                <!-- AccentuationMap="{Binding AccentuationMap}" -->
-                <TextBlock FontSize="{DynamicResource SearchResultFontSize}"
-                           Foreground="{DynamicResource TextForeground}"
-                           Text="{Binding SearchResult.Name}"
-                           FontFamily="{StaticResource JetBrainsMono}" />
+                <controls:AccentuatedTextBlock FontSize="{DynamicResource SearchResultFontSize}"
+                                               Foreground="{DynamicResource TextForeground}"
+                                               Text="{Binding SearchResult.Name}"
+                                               FontFamily="{StaticResource JetBrainsMono}"
+                                               AccentuationMap="{Binding AccentuationMap}" />
                 <TextBlock Text="{Binding SearchResult.Description}"
                            IsVisible="{Binding SearchResult.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                            FontSize="12"

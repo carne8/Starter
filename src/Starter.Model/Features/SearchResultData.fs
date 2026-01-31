@@ -30,7 +30,7 @@ type SearchResultData =
           SearchResultKind = kind
           SearchEngineId = searchEngine.Id
           FuzzyMatchResult = ValueNone
-          AccentuationMap = Array.create searchResult.Name.Length false }
+          AccentuationMap = Array.create searchResult.Name.Length false } // TODO: Make fusil update this array instead of creating a new one
 
     // Returns a low number for a result that should be on top of the list
     static member getWeight resultScoreDb (sr: SearchResultData) =

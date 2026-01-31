@@ -34,7 +34,9 @@
                            MenuItemsSource="{Binding Pages}">
             <ui:NavigationView.MenuItemTemplate>
                 <DataTemplate DataType="vm:MenuItemViewModel">
-                    <controls:CustomNavigationViewItem StarterIconSource="{Binding Icon}" Content="{Binding Title}" />
+                    <controls:CustomNavigationViewItem Content="{Binding Title}"
+                                                       StarterIconSource="{Binding Icon}"
+                                                       FontFamily="{StaticResource JetBrainsMono}" />
                 </DataTemplate>
             </ui:NavigationView.MenuItemTemplate>
             <ContentControl x:Name="ContentControl" />
