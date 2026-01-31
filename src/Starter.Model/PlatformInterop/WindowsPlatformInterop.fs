@@ -93,12 +93,16 @@ type WindowsPlatformInterop() =
                 |> VK.fromKey
                 |> Result.ofValueOption $"Failed to parse key: {shortcut.Key}"
 
-            User32.RegisterHotKey(
+            let res = User32.RegisterHotKey(
                 platformHandle.Handle,
                 hotkeyId,
                 shortcut.Modifiers |> HotKeyModifiers.fromKeys,
                 key
-            ) |> ignore
+            )
+
+            match res with
+            | false -> return! Error "Failed to setup hotkey"
+            | true -> return ()
         }
         |> function
             | Ok () -> ValueTask.FromResult false

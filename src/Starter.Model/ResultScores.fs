@@ -52,20 +52,6 @@ module ScoreDb =
             | null -> Dictionary() :> IDictionary<_, _>
             | scores -> scores
 
-    let readFromFileAsync filePath =
-        task {
-            try
-                use file = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Read)
-                let! scores = MemoryPackSerializer.DeserializeAsync<ScoreDb> file
-
-                match scores with
-                | null -> return Dictionary() :> IDictionary<_, _>
-                | scores -> return scores
-
-            with _ ->
-                return Dictionary()
-        }
-
     // Remove excessive entries from the database
     // Behaviour documented (and copied) here: https://github.com/ajeetdsouza/zoxide/wiki/Algorithm#aging
     let runMaxAgingPolicy maxAge (scores: ScoreDb) =

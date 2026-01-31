@@ -63,10 +63,10 @@ let logger =
         .WriteTo.Console(
             outputTemplate = logTemplate,
             theme = Sinks.SystemConsole.Themes.ConsoleTheme.None,
-            levelSwitch = LoggingLevelSwitch LogEventLevel.Verbose
+            restrictedToMinimumLevel = LogEventLevel.Verbose
         )
         #endif
         .CreateLogger()
         .ForContext("Context", "Starter")
 
-Log.Logger <- logger
+let setupLogger () = Log.Logger <- logger

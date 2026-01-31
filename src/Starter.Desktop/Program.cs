@@ -1,4 +1,5 @@
 ﻿using Avalonia;
+using Serilog;
 
 namespace Starter.Desktop;
 
@@ -10,7 +11,7 @@ public static class Program
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
     // yet and stuff might break.
     [STAThread]
-    public static void Main(string[] args)
+    public static async Task Main(string[] args)
     {
         using var mutex = new Mutex(true, MutexName, out var createdNew);
         if (!createdNew)
@@ -19,7 +20,20 @@ public static class Program
             return;
         }
 
-        BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        try
+        {
+            Features.Logging.setupLogger();
+            Log.Information("---*--- Starting up ---*---");
+            BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+        }
+        catch (Exception e)
+        {
+            Log.Fatal(e, "Fatal error, exiting.");
+        }
+        finally
+        {
+            await Log.CloseAndFlushAsync();
+        }
     }
 
     private static AppBuilder BuildAvaloniaApp()

@@ -12,28 +12,27 @@
         <ProjectReference Include="..\Starter.SearchEngineBase\Starter.SearchEngineBase.csproj" />
     </ItemGroup>
 
-    <!-- Features -->
     <ItemGroup>
-        <Compile Include="Features\Constants.fs" />
-        <Compile Include="Features\Helpers.fs" />
-        <Compile Include="Features\Logging.fs" />
-        <Compile Include="Features\Config.fs" />
+        <Compile Include="Constants.fs" />
+        <Compile Include="Helpers.fs" />
+        <Compile Include="Logging.fs" />
+        <Compile Include="Config.fs" />
 
         <!-- Platform interop -->
-        <Compile Include="Features\PlatformInterop\PlatformInterop.fs" />
-        <Compile Include="Features\PlatformInterop\Linux\Common.fs" />
-        <Compile Include="Features\PlatformInterop\Linux\Gnome.fs" />
-        <Compile Include="Features\PlatformInterop\Linux\KeyboardShortcut.fs" />
-        <Compile Include="Features\PlatformInterop\LinuxPlatformInterop.fs" />
-        <Compile Include="Features\PlatformInterop\WindowsPlatformInterop.fs" />
-        <Compile Include="Features\PlatformInterop\PlatformInteropFactory.fs" />
+        <Compile Include="PlatformInterop\PlatformInterop.fs" />
+        <Compile Include="PlatformInterop\Linux\Common.fs" />
+        <Compile Include="PlatformInterop\Linux\Gnome.fs" />
+        <Compile Include="PlatformInterop\Linux\KeyboardShortcut.fs" />
+        <Compile Include="PlatformInterop\LinuxPlatformInterop.fs" />
+        <Compile Include="PlatformInterop\WindowsPlatformInterop.fs" />
+        <Compile Include="PlatformInterop\PlatformInteropFactory.fs" />
 
-        <Compile Include="Features\SearchEngineLoading.fs" />
-        <Compile Include="Features\ResultScores.fs" />
-        <Compile Include="Features\ActivatorStore.fs" />
-        <Compile Include="Features\CustomCollections.fs" />
-        <Compile Include="Features\SearchResultData.fs" />
-        <Compile Include="Features\SearchResultStore.fs" />
+        <Compile Include="SearchEngineLoading.fs" />
+        <Compile Include="ResultScores.fs" />
+        <Compile Include="ActivatorStore.fs" />
+        <Compile Include="CustomCollections.fs" />
+        <Compile Include="SearchResultData.fs" />
+        <Compile Include="SearchResultStore.fs" />
     </ItemGroup>
 
     <ItemGroup>

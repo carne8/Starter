@@ -9,6 +9,7 @@ using Starter.Desktop.Views;
 using Starter.Features;
 using Starter.Features.Config;
 using Starter.Features.PlatformInterop;
+using Vanara.PInvoke;
 
 namespace Starter.Desktop;
 
@@ -18,43 +19,67 @@ public class App : Application
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
-    public override async void OnFrameworkInitializationCompleted()
+    public override void OnFrameworkInitializationCompleted()
     {
+        if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime lifetime)
+        {
+            Log.Fatal("Unexpected ApplicationLifetime is not initialized.");
+            throw new Exception("Unexpected ApplicationLifetime is not initialized.");
+        }
+
+        DisableAvaloniaDataAnnotationValidation();
+        lifetime.Exit += (_, _) =>
+        {
+            Log.Information("---*--- Exiting ---*---");
+            Log.CloseAndFlush();
+        };
+
         try
         {
-            if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime)
-            {
-                // Avoid duplicate validations from both Avalonia and the CommunityToolkit.
-                // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
-                DisableAvaloniaDataAnnotationValidation();
-
-                Configuration.ensurePluginsSymlinkExists();
-
-                var initialConfig = LoadConfiguration();
-                var (searchEngineStore, config) = LoadSearchEngines(initialConfig);
-
-                var resultScoreDb = await ScoreDbModule.readFromFileAsync(Constants.ResultScoresFile);
-                var activatorStore = new ActivatorStore(config);
-                foreach (var kv in searchEngineStore.SearchEngines) activatorStore.AddSearchEngineActivators(kv.Value);
-
-                // Create the window
-                var viewModel = new MainWindowViewModel(config, resultScoreDb, searchEngineStore, activatorStore);
-                window = new MainWindow { DataContext = viewModel };
-
-                // Register hotkey
-                var platformInterop = PlatformInteropFactory.GetPlatformInterop();
-                if (platformInterop.HotkeyRegistrable)
-                    await platformInterop.RegisterHotkey(initialConfig.KeyboardShortcut, window);
-
-                Log.Debug("Launched");
-            }
-
-            base.OnFrameworkInitializationCompleted();
+            Launch(lifetime);
         }
         catch (Exception e)
         {
-            throw; // TODO handle exception
+            Log.Fatal(e, "Fatal error during initialization.");
+            lifetime.Shutdown();
         }
+
+        base.OnFrameworkInitializationCompleted();
+    }
+
+    private void Launch(IClassicDesktopStyleApplicationLifetime lifetime)
+    {
+        Configuration.ensurePluginsSymlinkExists();
+
+        var initialConfig = LoadConfiguration();
+        var (searchEngineStore, config) = LoadSearchEngines(initialConfig);
+
+        var resultScoreDb = ScoreDbModule.readFromFile(Constants.ResultScoresFile);
+        var activatorStore = new ActivatorStore(config);
+        foreach (var kv in searchEngineStore.SearchEngines) activatorStore.AddSearchEngineActivators(kv.Value);
+
+        // Create the window
+        var viewModel = new MainWindowViewModel(config, resultScoreDb, searchEngineStore, activatorStore);
+        window = new MainWindow { DataContext = viewModel };
+
+        // Register hotkey
+        var keyboardShortcut = initialConfig.KeyboardShortcut;
+        var platformInterop = PlatformInteropFactory.GetPlatformInterop();
+        if (!platformInterop.HotkeyRegistrable) return;
+
+        platformInterop
+            .RegisterHotkey(keyboardShortcut, window)
+            .AsTask()
+            .ContinueWith(task =>
+            {
+                if (task.IsFaulted)
+                {
+                    Log.Error(task.Exception, "Failed to setup keyboard shortcut");
+                    lifetime.Shutdown();
+                    return;
+                }
+                Log.Debug("Launched");
+            });
     }
 
     private static Configuration LoadConfiguration()
@@ -65,6 +90,7 @@ public class App : Application
             Log.Fatal("Failed to decode configuration: {ConfigErrorValue}", configRes.ErrorValue);
             throw new Exception($"Failed to decode configuration: {configRes.ErrorValue}");
         }
+
         Log.Debug("Config loaded");
         return configRes.ResultValue;
     }
@@ -98,6 +124,9 @@ public class App : Application
 
     private static void DisableAvaloniaDataAnnotationValidation()
     {
+        // Avoid duplicate validations from both Avalonia and the CommunityToolkit.
+        // More info: https://docs.avaloniaui.net/docs/guides/development-guides/data-validation#manage-validationplugins
+
         // Get an array of plugins to remove
         var dataValidationPluginsToRemove =
             BindingPlugins.DataValidators.OfType<DataAnnotationsValidationPlugin>().ToArray();
