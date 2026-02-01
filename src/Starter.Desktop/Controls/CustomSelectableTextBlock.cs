@@ -16,19 +16,19 @@ public class CustomSelectableTextBlock : SelectableTextBlock
         set => SetValue(InlinesSourceProperty, value);
     }
 
-    private INotifyCollectionChanged? previousBindedCollection;
+    private INotifyCollectionChanged? previousBoundCollection;
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         if (change.Property == InlinesSourceProperty)
         {
-            previousBindedCollection?.CollectionChanged -= OnCollectionChanged;
+            previousBoundCollection?.CollectionChanged -= OnCollectionChanged;
             Inlines?.Clear();
 
             if (InlinesSource is not null)
             {
                 InlinesSource.CollectionChanged += OnCollectionChanged;
-                previousBindedCollection = InlinesSource;
+                previousBoundCollection = InlinesSource;
             }
         }
 

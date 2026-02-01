@@ -11,7 +11,7 @@ public static class Program
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
     // yet and stuff might break.
     [STAThread]
-    public static async Task Main(string[] args)
+    public static void Main(string[] args)
     {
         using var mutex = new Mutex(true, MutexName, out var createdNew);
         if (!createdNew)
@@ -32,7 +32,7 @@ public static class Program
         }
         finally
         {
-            await Log.CloseAndFlushAsync();
+            Log.CloseAndFlushAsync().AsTask().Wait();
         }
     }
 

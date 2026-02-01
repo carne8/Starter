@@ -31,7 +31,7 @@ public class App : Application
         lifetime.Exit += (_, _) =>
         {
             Log.Information("---*--- Exiting ---*---");
-            Log.CloseAndFlush();
+            Log.CloseAndFlushAsync().AsTask().Wait();
         };
 
         try

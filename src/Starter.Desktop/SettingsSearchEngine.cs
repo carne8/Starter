@@ -57,8 +57,9 @@ internal class SettingsSearchEngine : StaticSearchEngine
         if (selectedSearchResult is not SettingsSearchResult result) return;
         switch (result.TargetPage)
         {
-            case TargetPage.Logs: break; // TODO: Open logs
-            case TargetPage.Settings: break; // TODO: Open settings
+            case TargetPage.Logs: windowVm.OpenLogsPage(); break;
+            case TargetPage.Settings: windowVm.OpenSettingsPage(); break;
+            default: Log.Warning("Unexpected settings page: {Page}", result.TargetPage); break;
         }
 
         try
@@ -69,7 +70,7 @@ internal class SettingsSearchEngine : StaticSearchEngine
         }
         catch (Exception)
         {
-            Log.Debug("Failed to show window");
+            Log.Verbose("Failed to show window");
             window = new Views.SettingsWindow { DataContext = windowVm };
             window.Show();
         }

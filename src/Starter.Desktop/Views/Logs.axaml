@@ -12,7 +12,7 @@
         <Style Selector="ScrollViewer.wrapText">
             <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
         </Style>
-        <Style Selector="ScrollViewer.wrapText > controls|CustomSelectableTextBlock">
+        <Style Selector="ScrollViewer.wrapText &gt; controls|CustomSelectableTextBlock">
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
     </UserControl.Styles>
@@ -77,7 +77,7 @@
                 BorderThickness="{DynamicResource ExpanderHeaderBorderThickness}"
                 CornerRadius="8">
             <ScrollViewer VerticalScrollBarVisibility="Auto" Classes.wrapText="{Binding WrapText}">
-                <controls:CustomSelectableTextBlock InlinesSource="{Binding Lines}" />
+                <controls:CustomSelectableTextBlock InlinesSource="{Binding Lines}" SelectionBrush="{DynamicResource TextControlSelectionHighlightColor}" />
             </ScrollViewer>
         </Border>
     </DockPanel>
