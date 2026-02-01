@@ -64,9 +64,9 @@ public partial class AccentuatedTextBlock : Control
 
         var textMemory = Text.AsMemory();
 
-        if (AccentuationMap.Length == 0)
+        if (AccentuationMap is null || AccentuationMap.Length == 0)
             RenderUniform(context, Text, textMemory);
-        else RenderAccentuated(context, Text, textMemory);
+        else RenderAccentuated(context, Text, textMemory, AccentuationMap);
     }
 
     public void RenderUniform(DrawingContext context, string text, ReadOnlyMemory<char> textMemory)
@@ -79,7 +79,7 @@ public partial class AccentuatedTextBlock : Control
         DrawGlyphRun(context, normalTypeface.GlyphTypeface, textMemory, glyphIndices);
     }
 
-    public void RenderAccentuated(DrawingContext context, string text, ReadOnlyMemory<char> textMemory)
+    public void RenderAccentuated(DrawingContext context, string text, ReadOnlyMemory<char> textMemory, bool[] accentuationMap)
     {
         var glyphIndices = new ushort[textMemory.Length];
 
@@ -87,14 +87,14 @@ public partial class AccentuatedTextBlock : Control
         var rangeStart = 0;
         var advance = 0.0;
 
-        for (int charIdx = 0; charIdx <= text.Length; charIdx++)
+        for (var charIdx = 0; charIdx <= text.Length; charIdx++)
         {
-            if (charIdx == text.Length || prevCharAccentuation != AccentuationMap[charIdx])
+            if (charIdx == text.Length || prevCharAccentuation != accentuationMap[charIdx])
             {
                 var rangeEnd = charIdx - 1;
                 var rangeLength = rangeEnd - rangeStart + 1;
                 var typeface =
-                    AccentuationMap[rangeStart]
+                    accentuationMap[rangeStart]
                         ? accentuatedTypeface.GlyphTypeface
                         : normalTypeface.GlyphTypeface;
 
@@ -115,7 +115,7 @@ public partial class AccentuatedTextBlock : Control
                     );
 
                     // Update advance for next range
-                    var scale = AccentuationMap[rangeStart] ? accentuatedScale : normalScale;
+                    var scale = accentuationMap[rangeStart] ? accentuatedScale : normalScale;
                     advance = 0;
                     for (var i = 0; i < rangeLength; i++)
                         advance += scale * typeface.GetGlyphAdvance(glyphIndices[i]);
@@ -124,7 +124,7 @@ public partial class AccentuatedTextBlock : Control
                 }
             }
 
-            if (charIdx != text.Length) prevCharAccentuation = AccentuationMap[charIdx];
+            if (charIdx != text.Length) prevCharAccentuation = accentuationMap[charIdx];
         }
     }
 

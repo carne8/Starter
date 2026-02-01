@@ -2,10 +2,8 @@
 
 open System
 open System.Collections.Generic
-open System.Linq
 open System.Threading
 open Fusil
-open Fusil.Fusil
 open R3
 open Serilog
 open Starter.Features.CustomCollections
@@ -15,7 +13,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
     let staticResults = new BehaviorSubject<_>(ResizeArray())
     let dynamicSearchEngines = ResizeArray<DynamicSearchEngine>()
 
-    let slab = Slab.createDefault()
+    let slab = Memory.Slab.createDefault()
     let comparer =
         Comparison<SearchResultData>(fun e1 e2 ->
             compare (SearchResultData.getWeight resultScoreDb e1) (SearchResultData.getWeight resultScoreDb e2)
@@ -29,18 +27,16 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
         let normalizedText =
             query
             |> TextNormalization.String.normalize
-            |> Array.map System.Text.Rune.ToLowerInvariant // TODO: Do this in Fusil
+            |> Array.map System.Text.Rune.ToLowerInvariant
 
-        let fuzzyMatchFunc =
-            fuzzyMatch false true true slab normalizedText
-            >> ValueOption.ofOption // TODO: Change this in Fusil
+        let fuzzyMatchFunc = fuzzyMatch false true true slab normalizedText
 
         staticResults.Subscribe(fun staticResults ->
             results.Clear()
 
             // Dynamic results
             dynamicSearchEngines |> Seq.iter (fun searchEngine ->
-                let struct (newResults, futureResults) = searchEngine.Search(query, ct, null) // TODO: Activator
+                let struct (newResults, futureResults) = searchEngine.Search(query, ct, null)
 
                 let kind =
                     match searchEngine.ImportantResults with
@@ -90,9 +86,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
             |> TextNormalization.String.normalize
             |> Array.map System.Text.Rune.ToLowerInvariant
 
-        let fuzzyMatchFunc =
-            fuzzyMatch false true true slab normalizedText
-            >> ValueOption.ofOption
+        let fuzzyMatchFunc = fuzzyMatch false true true slab normalizedText
 
         staticResults.Subscribe(fun staticResults ->
             results.Clear()
@@ -124,6 +118,35 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
             results.Sort comparer
             results.NotifyChanged()
         ) |> disposeOnCancelled ct
+
+    let queryDynamicSearchEngine ct (activator: ISearchEngineActivator) query (engine: DynamicSearchEngine) = // Show only this engine results
+        try
+            results.Clear()
+            let struct (instantResults, obs) = engine.Search(query, ct, activator)
+
+            obs.ObserveOnUIThreadDispatcher().Subscribe(fun newResults ->
+                newResults
+                |> Seq.map (SearchResultData.createDynamic engine SearchResultKind.Dynamic)
+                |> results.AddRange
+
+                results.Sort comparer
+                results.NotifyChanged()
+            )
+            |> disposeOnCancelled ct
+
+            let instantSrKind =
+                match engine.ImportantResults with
+                | true -> SearchResultKind.DynamicUnique
+                | false -> SearchResultKind.DynamicInstant
+
+            instantResults
+            |> Seq.map (SearchResultData.createDynamic engine instantSrKind)
+            |> results.AddRange
+
+            results.Sort comparer
+            results.NotifyChanged()
+        with e ->
+            Log.Error(e, $"Failed to get results from dynamic search engine: {engine.Name}")
 
 
     interface IDisposable with
@@ -188,32 +211,5 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
         | activator ->
             match searchEngines.TryGetValue activator.SearchEngineId with
             | true, :? StaticSearchEngine -> queryStaticSearchEngine ct activator text
-            | true, (:? DynamicSearchEngine as searchEngine) ->
-                try
-                    results.Clear()
-                    let struct (instantResults, obs) = searchEngine.Search(text, ct, activator)
-
-                    obs.ObserveOnUIThreadDispatcher().Subscribe(fun newResults ->
-                        newResults
-                        |> Seq.map (SearchResultData.createDynamic searchEngine SearchResultKind.Dynamic)
-                        |> results.AddRange
-
-                        results.Sort comparer
-                        results.NotifyChanged()
-                    )
-                    |> disposeOnCancelled ct
-
-                    let instantSrKind =
-                        match searchEngine.ImportantResults with
-                        | true -> SearchResultKind.DynamicUnique
-                        | false -> SearchResultKind.DynamicInstant
-
-                    instantResults
-                    |> Seq.map (SearchResultData.createDynamic searchEngine instantSrKind)
-                    |> results.AddRange
-
-                    results.Sort comparer
-                    results.NotifyChanged()
-                with e ->
-                    Log.Error(e, $"Failed to get results from dynamic search engine: {searchEngine.Name}")
+            | true, (:? DynamicSearchEngine as searchEngine) -> queryDynamicSearchEngine ct activator text searchEngine
             | _ -> Log.Error $"Cannot find search engine matching the current activator: {activator.Id}"

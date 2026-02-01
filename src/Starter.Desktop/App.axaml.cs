@@ -9,7 +9,7 @@ using Starter.Desktop.Views;
 using Starter.Features;
 using Starter.Features.Config;
 using Starter.Features.PlatformInterop;
-using Vanara.PInvoke;
+using Const = Starter.Features.Constants;
 
 namespace Starter.Desktop;
 
@@ -54,7 +54,7 @@ public class App : Application
         var initialConfig = LoadConfiguration();
         var (searchEngineStore, config) = LoadSearchEngines(initialConfig);
 
-        var resultScoreDb = ScoreDbModule.readFromFile(Constants.ResultScoresFile);
+        var resultScoreDb = ScoreDbModule.readFromFile(Const.ResultScoresFile);
         var activatorStore = new ActivatorStore(config);
         foreach (var kv in searchEngineStore.SearchEngines) activatorStore.AddSearchEngineActivators(kv.Value);
 
@@ -84,7 +84,7 @@ public class App : Application
 
     private static Configuration LoadConfiguration()
     {
-        var configRes = Configuration.loadFromFile(Constants.ConfigFile);
+        var configRes = Configuration.loadFromFile(Const.ConfigFile);
         if (configRes.IsError)
         {
             Log.Fatal("Failed to decode configuration: {ConfigErrorValue}", configRes.ErrorValue);

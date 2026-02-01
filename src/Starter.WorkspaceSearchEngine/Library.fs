@@ -44,7 +44,7 @@ type WorkspaceSearchEngine(pluginPath, settingsDir, logger) =
             finally semaphore.Release() |> ignore
         } |> ignore
 
-    override this.Id = nameof WorkspaceSearchEngine
+    override this.Id = Constants.searchEngineId
     override this.Name = "Dev workspaces"
     override this.ShortName = "workspaces"
     override this.Icon = Icons.searchEngineIcon

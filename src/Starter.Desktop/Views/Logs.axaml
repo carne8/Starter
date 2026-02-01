@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Starter.Desktop.ViewModels"
              xmlns:serilog="using:Serilog.Events"
+             xmlns:controls="using:Starter.Desktop.Controls"
              x:DataType="vm:LogsViewModel">
     <UserControl.Styles>
         <Style Selector="ScrollViewer">
@@ -11,16 +12,16 @@
         <Style Selector="ScrollViewer.wrapText">
             <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
         </Style>
-        <Style Selector="ScrollViewer.wrapText &gt; SelectableTextBlock">
+        <Style Selector="ScrollViewer.wrapText > controls|CustomSelectableTextBlock">
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
     </UserControl.Styles>
 
     <DockPanel Margin="20" LastChildFill="True">
         <!-- Filters -->
-        <StackPanel Orientation="Horizontal"
-                    Spacing="20"
-                    DockPanel.Dock="Top">
+        <WrapPanel Orientation="Horizontal"
+                   ItemSpacing="20"
+                   DockPanel.Dock="Top">
             <!-- Minimum Level -->
             <StackPanel VerticalAlignment="Center"
                         Orientation="Horizontal"
@@ -66,7 +67,7 @@
                               OnContent="{x:Null}"
                               OffContent="{x:Null}" />
             </StackPanel>
-        </StackPanel>
+        </WrapPanel>
 
         <!-- Logs -->
         <Border Margin="0,20,0,0"
@@ -76,7 +77,7 @@
                 BorderThickness="{DynamicResource ExpanderHeaderBorderThickness}"
                 CornerRadius="8">
             <ScrollViewer VerticalScrollBarVisibility="Auto" Classes.wrapText="{Binding WrapText}">
-                <SelectableTextBlock Inlines="{Binding Lines}" />
+                <controls:CustomSelectableTextBlock InlinesSource="{Binding Lines}" />
             </ScrollViewer>
         </Border>
     </DockPanel>

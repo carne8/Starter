@@ -7,12 +7,11 @@ namespace Starter.Desktop.Controls;
 
 public partial class AccentuatedTextBlock
 {
-     private static readonly bool[] EmptyArray = [];
      public static readonly AttachedProperty<FontFamily> FontFamilyProperty = TextElement.FontFamilyProperty.AddOwner<AccentuatedTextBlock>();
      public static readonly AttachedProperty<double> FontSizeProperty = TextElement.FontSizeProperty.AddOwner<AccentuatedTextBlock>();
      public static readonly AttachedProperty<IBrush?> ForegroundProperty = TextElement.ForegroundProperty.AddOwner<AccentuatedTextBlock>();
      public static readonly StyledProperty<string?> TextProperty = TextBlock.TextProperty.AddOwner<AccentuatedTextBlock>();
-     public static readonly StyledProperty<bool[]> AccentuationMapProperty = AvaloniaProperty.Register<AccentuatedTextBlock, bool[]>(nameof(AccentuationMap), EmptyArray);
+     public static readonly StyledProperty<bool[]?> AccentuationMapProperty = AvaloniaProperty.Register<AccentuatedTextBlock, bool[]?>(nameof(AccentuationMap));
 
      public FontFamily FontFamily
      {
@@ -34,7 +33,7 @@ public partial class AccentuatedTextBlock
           get => GetValue(TextProperty);
           set => SetValue(TextProperty, value);
      }
-     public bool[] AccentuationMap
+     public bool[]? AccentuationMap
      {
           get => GetValue(AccentuationMapProperty);
           set => SetValue(AccentuationMapProperty, value);

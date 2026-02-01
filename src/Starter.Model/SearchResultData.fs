@@ -3,7 +3,7 @@
 open System
 open Starter.Features
 open Starter.SearchEngine
-open Fusil.Fusil
+open Fusil
 
 type SearchResultKind =
     | DynamicUnique = 0s
@@ -30,7 +30,7 @@ type SearchResultData =
           SearchResultKind = kind
           SearchEngineId = searchEngine.Id
           FuzzyMatchResult = ValueNone
-          AccentuationMap = Array.create searchResult.Name.Length false } // TODO: Make fusil update this array instead of creating a new one
+          AccentuationMap = null }
 
     // Returns a low number for a result that should be on top of the list
     static member getWeight resultScoreDb (sr: SearchResultData) =

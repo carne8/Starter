@@ -37,7 +37,7 @@ public partial class LogsViewModel : ObservableObject
     ];
 
     [ObservableProperty] private LogEventLevel minimumLevel = LogEventLevel.Information;
-    [ObservableProperty] private InlineCollection lines = new();
+    [ObservableProperty] private ObservableCollection<Inline> lines = [];
     [ObservableProperty] private bool wrapText;
     [ObservableProperty] private string selectedLogContext = "None";
     public ObservableCollection<string> LogContexts { get; } = [ "None" ];
@@ -53,7 +53,7 @@ public partial class LogsViewModel : ObservableObject
                 var logContext = rawLogContext.Substring(1, rawLogContext.Length - 2);
                 if (!LogContexts.Contains(logContext)) LogContexts.Add(logContext);
 
-                PrintLogEvent(logEvent); // TODO: Notify lines changed
+                PrintLogEvent(logEvent);
             });
     }
 

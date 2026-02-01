@@ -12,6 +12,9 @@ module Logger =
     let mutable logger: Serilog.ILogger = unbox null
 open Logger
 
+module Constants =
+    let [<Literal>] searchEngineId = "WorkspaceSearchEngine"
+
 /// Represents a workspace from an app like vscode or rider
 type Workspace =
     { Id: string
@@ -36,7 +39,7 @@ type WorkspaceSource =
         member this.Icon = this.Icon
         member this.Name = this.Name
         member this.ShortName = this.ShortName
-        member this.SearchEngineId = "WorkspaceSearchEngine" // TODO
+        member this.SearchEngineId = Constants.searchEngineId
 
 type WorkspaceSourceBuilder =
     { Id: string
