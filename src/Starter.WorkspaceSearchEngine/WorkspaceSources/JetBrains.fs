@@ -196,7 +196,7 @@ let detectWorkspaceChanges (configPath: string) =
     watcher :> IDisposable
 
 
-let private findIdeExecutable ide = // TODO: Add logs
+let private findIdeExecutable ide =
     match OperatingSystem.IsLinux() with
     | true ->
         ide
@@ -207,17 +207,26 @@ let private findIdeExecutable ide = // TODO: Add logs
         let ideExecutableName = ide |> JetBrainsIDE.getExecutableNameWindows
 
         seq {
-            Path.Combine(Environment.SpecialFolder.ProgramFilesX86 |> Environment.GetFolderPath, "JetBrains/Installations")
-            Path.Combine(Environment.SpecialFolder.ProgramFiles |> Environment.GetFolderPath, "JetBrains/Installations")
-            Path.Combine(Environment.SpecialFolder.LocalApplicationData |> Environment.GetFolderPath, "JetBrains/Installations")
+            Path.Combine(Environment.SpecialFolder.ProgramFilesX86 |> Environment.GetFolderPath, "JetBrains/Installations"), ideName + "*"
+            Path.Combine(Environment.SpecialFolder.ProgramFilesX86 |> Environment.GetFolderPath, "JetBrains/Installations"), $"JetBrains {ideName} *"
+            Path.Combine(Environment.SpecialFolder.ProgramFiles |> Environment.GetFolderPath, "JetBrains/Installations"), ideName + "*"
+            Path.Combine(Environment.SpecialFolder.ProgramFiles |> Environment.GetFolderPath, "JetBrains/Installations"), $"JetBrains {ideName} *"
+            Path.Combine(Environment.SpecialFolder.LocalApplicationData |> Environment.GetFolderPath, "JetBrains/Installations"), ideName + "*"
+            Path.Combine(Environment.SpecialFolder.LocalApplicationData |> Environment.GetFolderPath, "JetBrains/Installations"), $"JetBrains {ideName} *"
+            Path.Combine(Environment.SpecialFolder.ProgramFilesX86 |> Environment.GetFolderPath, "JetBrains"), ideName + "*"
+            Path.Combine(Environment.SpecialFolder.ProgramFilesX86 |> Environment.GetFolderPath, "JetBrains"), $"JetBrains {ideName} *"
+            Path.Combine(Environment.SpecialFolder.ProgramFiles |> Environment.GetFolderPath, "JetBrains"), ideName + "*"
+            Path.Combine(Environment.SpecialFolder.ProgramFiles |> Environment.GetFolderPath, "JetBrains"), $"JetBrains {ideName} *"
+            Path.Combine(Environment.SpecialFolder.LocalApplicationData |> Environment.GetFolderPath, "JetBrains"), ideName + "*"
+            Path.Combine(Environment.SpecialFolder.LocalApplicationData |> Environment.GetFolderPath, "JetBrains"), $"JetBrains {ideName} *"
         }
-        |> Seq.tryPick (fun dir -> option {
+        |> Seq.tryPick (fun (dir, pattern) -> option {
             do! dir
                 |> Directory.Exists
                 |> function false -> None | true -> Some ()
 
             let! directories =
-                match Directory.GetDirectories(dir, ideName + "*", EnumerationOptions(MatchCasing = MatchCasing.CaseInsensitive)) with
+                match Directory.GetDirectories(dir, pattern, EnumerationOptions(MatchCasing = MatchCasing.CaseInsensitive)) with
                 | [| |] -> None
                 | arr -> Some arr
 

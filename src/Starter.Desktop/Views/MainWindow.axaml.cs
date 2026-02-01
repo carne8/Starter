@@ -18,11 +18,6 @@ public partial class MainWindow : TranslucentWindow
     private MainWindowViewModel vm = null!;
     private readonly PlatformInterop platformInterop = PlatformInteropFactory.GetPlatformInterop();
 
-    private ScrollViewer? ResultListScrollViewer => ResultList
-            .GetVisualDescendants()
-            .FirstOrDefault(e => e.Name == "PART_ScrollViewer")
-        as ScrollViewer;
-
     public MainWindow()
     {
         InitializeComponent();
@@ -93,7 +88,7 @@ public partial class MainWindow : TranslucentWindow
 
         // Scroll to top to preserve the top padding
         if (ResultList.ItemCount != 0)
-            ResultListScrollViewer?.ScrollToHome();
+            ResultList.Scroll?.Offset = new Vector(0, 0); // Scroll to home
     }
 
     private void SetResourceDictionary(bool zoomedMode)
@@ -162,8 +157,11 @@ public partial class MainWindow : TranslucentWindow
 
         // TODO: Always keep bottom padding
         // Scroll to top or bottom to preserve the paddings
-        if (newSelectedIdx == 0) ResultListScrollViewer?.ScrollToHome();
-        else if (newSelectedIdx == ResultList.ItemCount - 1) ResultListScrollViewer?.ScrollToEnd();
+        if (ResultList.Scroll is not null)
+        {
+            if (newSelectedIdx == 0) ResultList.Scroll.Offset = new Vector(0, 0);
+            else if (newSelectedIdx == ResultList.ItemCount - 1) ResultList.Scroll.Offset = new Vector(0, ResultList.Scroll.Extent.Height);
+        }
 
         // Select next item
         ResultList.Selection.SelectedIndex = newSelectedIdx;

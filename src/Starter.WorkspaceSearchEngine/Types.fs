@@ -53,7 +53,10 @@ type WorkspaceSourceBuilder =
 
     static member build showIfNoActivator pluginPath (builder: WorkspaceSourceBuilder) =
         option {
-            let! executablePath = builder.FindExecutablePath()
+            let! executablePath =
+                builder.FindExecutablePath() |> Option.teeNone (fun () ->
+                    logger.Debug $"Executable not found: {builder.Name}"
+                )
             let! dbPath =
                 builder.FindWorkspacesDb() |> Option.teeNone (fun () ->
                     logger.Debug $"DB path not found while executable exists: {builder.Name}"
