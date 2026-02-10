@@ -65,14 +65,16 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
             // Static results
             staticResults
             |> Seq.filter (fun result ->
-                let fuzzyRes = fuzzyMatchFunc result.SearchResult.Name
-                result.FuzzyMatchResult <- fuzzyRes
+                result.SearchResult.ShowIfNoActivator && (
+                    let fuzzyRes = fuzzyMatchFunc result.SearchResult.Name
+                    result.FuzzyMatchResult <- fuzzyRes
 
-                match fuzzyRes with
-                | ValueSome fusilResult when fusilResult.Score > 0s ->
-                    result.AccentuationMap <- fusilResult.MatchingPositions
-                    true
-                | _ -> false
+                    match fuzzyRes with
+                    | ValueSome fusilResult when fusilResult.Score > 0s ->
+                        result.AccentuationMap <- fusilResult.MatchingPositions
+                        true
+                    | _ -> false
+                )
             )
             |> results.AddRange
             results.Sort comparer

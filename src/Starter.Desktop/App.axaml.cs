@@ -108,7 +108,8 @@ public class App : Application
                 : "./src/Starter.ApplicationSearchEngine/bin/Debug/net10.0/"
         );
 #else
-        Directory.GetDirectories(Constants.PluginsDirectory);
+        foreach (var pluginDir in Directory.GetDirectories(Const.PluginsDirectory))
+            searchEngineStore.LoadSearchEnginesFromDirectory(pluginDir);
 #endif
 
         var settingsSearchEngine = new SettingsSearchEngine(

@@ -49,9 +49,8 @@ type SettingsViewModel(workspaceSources: WorkspaceSource array, settings: Settin
             match workspaceSourceVm with
             | None -> logger.Error($"A workspace source is present in the settings but not in the view model list: {workspaceSourceId}")
             | Some workspaceSourceVm ->
-                let x = workspaceSourceVm.SuppressChangeNotifications()
+                use _ = workspaceSourceVm.SuppressChangeNotifications()
                 workspaceSourceVm.SetShowIfNoActivatorValue args.NewItem.Value
-                x.Dispose()
         )
 
     do settings.ShowIfNoActivator.add_CollectionChanged(onSettingsShowIfNoActivatorChanges)
