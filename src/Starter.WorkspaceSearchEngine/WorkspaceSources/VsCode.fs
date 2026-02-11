@@ -1,6 +1,7 @@
 ﻿module Starter.WorkspaceSearchEngine.WorkspaceSources.VsCode
 
 open Starter.WorkspaceSearchEngine
+open Starter.WorkspaceSearchEngine.WorkspaceSources.Common
 
 open System
 open System.IO
@@ -8,19 +9,19 @@ open System.Text
 open System.Text.Json
 open System.Diagnostics
 open R3
+open FsToolkit.ErrorHandling
 
-let private formatPath (path: string) =
+/// Capitalize the drive letter on Windows
+let private formatFilePath (path: string) =
     if OperatingSystem.IsWindows() then
-        let stringBuilder = StringBuilder(path.Length - 1)
+        let stringBuilder = StringBuilder(path.Length)
 
-        path[1]
+        path[0]
         |> Char.ToUpperInvariant
         |> stringBuilder.Append
         |> ignore
 
-        for i in 2..path.Length-1 do
-            path[i] |> stringBuilder.Append |> ignore
-
+        stringBuilder.Append(path, 1, path.Length-1) |> ignore
         stringBuilder.ToString()
     else
         path
@@ -52,18 +53,42 @@ let loadWorkspaces configPath vsCodePath =
 
         while workspaceEnumerator.MoveNext() do
             let property = workspaceEnumerator.Current
-            let file = property.Name
+            let file = property.Name |> Uri.UnescapeDataString
 
-            match Uri.TryCreate(file, UriKind.Absolute) with
-            | false, _ -> ()
-            | true, uri ->
-                let path = uri.LocalPath |> formatPath
+            let protocol =
+                file.TryIndexOf ':'
+                |> ValueOption.map (fun idx -> file.Substring(0, idx))
+
+            match protocol with
+            | ValueSome "file" ->
+                let pathStartIdx = "file:///".Length
+                let path = file.Substring(pathStartIdx)
 
                 { Id = path
                   Name = path |> Path.GetFileName
-                  Path = path
+                  Path = path |> formatFilePath
                   Open = fun () -> openWorkspace vsCodePath path }
                 |> workspaces.Add
+
+            | ValueSome "vscode-remote" ->
+                    let protocolSeparatorIdx = "vscode-remote://".Length
+                    file.TryIndexOf('/', protocolSeparatorIdx + 1)
+                    |> ValueOption.iter (fun remoteSeparatorIdx ->
+                        let remote = file.Substring(protocolSeparatorIdx, remoteSeparatorIdx - protocolSeparatorIdx)
+                        let path = file.Substring(remoteSeparatorIdx + 1)
+                        let name =
+                            if remote.StartsWith "wsl" then
+                                $"WSL - {path |> Path.GetFileName}"
+                            else
+                                $"{remote} - {path |> Path.GetFileName}"
+
+                        { Id = path
+                          Name = name
+                          Path = path
+                          Open = fun () -> openWorkspace vsCodePath $"--remote {remote} {path}" }
+                        |> workspaces.Add
+                    )
+            | _ -> ()
 
         return workspaces :> _ seq
     }
@@ -87,7 +112,7 @@ let detectWorkspaceChanges (configPath: string) =
 
 let findVsCode insiders =
     match OperatingSystem.IsLinux() with
-    | true -> Common.findCommandPath (if insiders then "code-insiders" else "code")
+    | true -> findCommandPath (if insiders then "code-insiders" else "code")
     | false ->
         let relativeInstallPath =
             match insiders with

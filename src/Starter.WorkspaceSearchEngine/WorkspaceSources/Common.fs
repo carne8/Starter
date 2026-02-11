@@ -17,3 +17,14 @@ let findCommandPath command =
         | true -> Some path
         | false -> None
     )
+
+type private String with
+    member inline this.TryIndexOf(c: char) =
+        match this.IndexOf c with
+        | -1 -> ValueNone
+        | n -> ValueSome n
+
+    member inline this.TryIndexOf(c: char, startIndex: int) =
+        match this.IndexOf(c, startIndex) with
+        | -1 -> ValueNone
+        | n -> ValueSome n
