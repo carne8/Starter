@@ -39,7 +39,7 @@ let private findWorkspaceDbPath insiders =
 let private openWorkspace vsCodePath workspacePath =
     ProcessStartInfo(FileName = vsCodePath, Arguments = workspacePath)
     |> Process.Start
-    |> _.Dispose()
+    |> function null -> () | d -> d.Dispose()
 
 let loadWorkspaces configPath vsCodePath =
     task {

@@ -99,7 +99,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
                 CreateNoWindow = true
             )
             |> Process.Start
-            |> _.Dispose()
+            |> function null -> () | d -> d.Dispose()
 
             // TODO: DBus Activation -> https://specifications.freedesktop.org/desktop-entry-spec/latest/dbus.html
             // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html

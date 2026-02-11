@@ -4,6 +4,7 @@ using Starter.Features;
 using Starter.Features.Config;
 using Starter.Features.CustomCollections;
 using Starter.SearchEngine;
+using Const = Starter.Features.Constants;
 
 namespace Starter.ViewModels;
 
@@ -12,6 +13,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly SearchResultStore searchResultStore;
     private readonly SearchEngineStore searchEngineStore;
     private readonly ActivatorStore activatorStore;
+    private readonly IDictionary<string, ScoreDbEntry> resultScoreDb;
 
     public event EventHandler? HideWindow;
     public event EventHandler<int>? ClearTextBox;
@@ -34,10 +36,20 @@ public partial class MainWindowViewModel : ObservableObject
 
         this.activatorStore = activatorStore;
         this.searchEngineStore = searchEngineStore;
+        this.resultScoreDb = resultScoreDb;
 
         searchResultStore = new SearchResultStore(resultScoreDb, searchEngineStore.SearchEngines);
         foreach (var se in searchEngineStore.StaticSearchEngines) searchResultStore.AddSource(se);
         foreach (var se in searchEngineStore.DynamicSearchEngines) searchResultStore.AddSource(se);
+    }
+
+    private void IncreaseResultScore(ISearchResult searchResult)
+    {
+        if (searchResult.Id is null) return;
+        ScoreDbModule.increaseResultScore(searchResult.Id, resultScoreDb);
+        ScoreDbModule.runMaxAgingPolicy(Const.ScoresMaxAging, resultScoreDb);
+        ScoreDbModule.writeToFile(Const.ResultScoresFile, resultScoreDb);
+        searchResultStore.SortResults(); // Sort results for next opening
     }
 
     partial void OnTextChanged(string value)
@@ -68,6 +80,7 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         searchEngine.SearchResultSelected(searchResult.SearchResult);
+        IncreaseResultScore(searchResult.SearchResult);
     }
 
     [RelayCommand]

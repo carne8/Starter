@@ -215,3 +215,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
             | true, :? StaticSearchEngine -> queryStaticSearchEngine ct activator text
             | true, (:? DynamicSearchEngine as searchEngine) -> queryDynamicSearchEngine ct activator text searchEngine
             | _ -> Log.Error $"Cannot find search engine matching the current activator: {activator.Id}"
+
+    member this.SortResults() =
+        results.Sort comparer
+        results.NotifyChanged()

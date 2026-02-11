@@ -81,7 +81,7 @@ module ScoreDb =
         | true, resultScore -> resultScore |> ScoreDbEntry.computeScore
 
     /// Increase app score in the database
-    let increaseAppScore (resultId: string) (scores: ScoreDb) =
+    let increaseResultScore (resultId: string) (scores: ScoreDb) =
         match scores.TryGetValue resultId with
         | true, prevResultScore ->
             scores[resultId] <-

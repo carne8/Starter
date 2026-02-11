@@ -146,7 +146,7 @@ let private findWorkspaceDbPath ide =
 let openWorkspace ideExePath workspacePath = // TODO: Use setsid on Linux
     ProcessStartInfo(FileName = ideExePath, Arguments = workspacePath)
     |> Process.Start
-    |> _.Dispose()
+    |> function null -> () | d -> d.Dispose()
 
 let loadWorkspaces (configFilePath: string) ideExePath =
     task {

@@ -320,7 +320,7 @@ let runApp (app: UwpApplication) =
         UseShellExecute = true
     )
     |> Process.Start
-    |> _.Dispose()
+    |> function null -> () | d -> d.Dispose()
 
 let loadApplications (logger: Serilog.ILogger) : Task<ISearchResult seq> =
     let packageManager = PackageManager()

@@ -76,7 +76,7 @@ type UrlSearchEngine(pluginPath, configDir, logger) =
                 UseShellExecute = true
             )
             |> Process.Start
-            |> ignore
+            |> function null -> () | d -> d.Dispose()
         | _ -> ()
 
     override this.LoadSettingsControl() = null
