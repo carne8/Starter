@@ -1,0 +1,30 @@
+﻿<UserControl x:Class="Starter.Controls.ActivatorPill"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Starter.Controls"
+             xmlns:vm="using:Starter.SearchEngine"
+             Height="27"
+             Margin="0,0,10,0"
+             Padding="7,5,6,5"
+             x:DataType="vm:ISearchEngineActivator"
+             Background="{DynamicResource SearchEnginePillBackground}"
+             CornerRadius="100">
+    <StackPanel Orientation="Horizontal" Spacing="5">
+        <controls:StarterIcon Width="17"
+                              Height="17"
+                              Margin="-2,0,0,0"
+                              VerticalAlignment="Stretch"
+                              FontSize="17"
+                              IsVisible="{Binding Icon, TargetNullValue=False}"
+                              IconSource="{Binding Icon}" />
+
+        <TextBlock x:Name="Text"
+                   Margin="0,-1.5,0,0"
+                   VerticalAlignment="Stretch"
+                   FontSize="16"
+                   FontWeight="Bold"
+                   Foreground="{DynamicResource SearchEnginePillForeground}"
+                   Text="{Binding ShortName}"
+                   LineHeight="17" />
+    </StackPanel>
+</UserControl>

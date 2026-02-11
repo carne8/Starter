@@ -44,10 +44,11 @@ type WorkspaceSearchEngine(pluginPath, settingsDir, logger) =
             finally semaphore.Release() |> ignore
         } |> ignore
 
-    override this.Id = nameof WorkspaceSearchEngine
+    override this.Id = Constants.searchEngineId
     override this.Name = "Dev workspaces"
     override this.ShortName = "workspaces"
     override this.Icon = Icons.searchEngineIcon
+    override this.Activators = workspaceSources |> Array.map (fun s -> s :> ISearchEngineActivator)
 
     override this.LoadResults() =
         // Load workspaces for each source
@@ -55,11 +56,6 @@ type WorkspaceSearchEngine(pluginPath, settingsDir, logger) =
             source |> loadWorkspaces
             source.WorkspacesChanged.Subscribe(fun () -> source |> loadWorkspaces) |> ignore
         )
-
-        // Tell Starter what are the activators
-        workspaceSources
-        |> Seq.cast<ISearchEngineActivator>
-        |> this.Activators.OnNext
 
         // Returns the loaded workspaces
         struct (Seq.empty, workspaces.AsObservable().Cast<_, IEnumerable<ISearchResult>>()) |> Task.singleton

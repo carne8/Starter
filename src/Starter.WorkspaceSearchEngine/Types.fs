@@ -12,6 +12,9 @@ module Logger =
     let mutable logger: Serilog.ILogger = unbox null
 open Logger
 
+module Constants =
+    let [<Literal>] searchEngineId = "WorkspaceSearchEngine"
+
 /// Represents a workspace from an app like vscode or rider
 type Workspace =
     { Id: string
@@ -19,7 +22,7 @@ type Workspace =
       Path: string
       Open: unit -> unit }
 
-/// Loads workspaces. For instance it can represents a vscode installation
+/// Loads workspaces. For instance, it can represent a vscode installation
 type WorkspaceSource =
     { Id: string
       Name: string
@@ -36,7 +39,7 @@ type WorkspaceSource =
         member this.Icon = this.Icon
         member this.Name = this.Name
         member this.ShortName = this.ShortName
-        member this.SearchEngineId = "WorkspaceSearchEngine" // TODO
+        member this.SearchEngineId = Constants.searchEngineId
 
 type WorkspaceSourceBuilder =
     { Id: string
@@ -50,7 +53,10 @@ type WorkspaceSourceBuilder =
 
     static member build showIfNoActivator pluginPath (builder: WorkspaceSourceBuilder) =
         option {
-            let! executablePath = builder.FindExecutablePath()
+            let! executablePath =
+                builder.FindExecutablePath() |> Option.teeNone (fun () ->
+                    logger.Debug $"Executable not found: {builder.Name}"
+                )
             let! dbPath =
                 builder.FindWorkspacesDb() |> Option.teeNone (fun () ->
                     logger.Debug $"DB path not found while executable exists: {builder.Name}"

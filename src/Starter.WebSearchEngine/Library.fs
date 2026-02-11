@@ -11,7 +11,7 @@ open System.Diagnostics
 
 open R3
 
-type WebSearchEngine(pluginPath, configDir, logger) =
+type WebSearchEngine(pluginPath, configDir, logger) as this =
     inherit DynamicSearchEngine(pluginPath, configDir, logger)
 
     do setLogger logger
@@ -23,7 +23,13 @@ type WebSearchEngine(pluginPath, configDir, logger) =
     let suggestionRequests = new Subject<string * CancellationToken>()
     let suggestions = new Subject<ISearchResult seq>()
 
-    do
+    do this.Initialize()
+
+    member this.Initialize() =
+        this.OnChanged
+        |> searchEngine.Subscribe
+        |> ignore
+
         suggestionRequests
             .Debounce(TimeSpan.FromMilliseconds 60L)
             .Subscribe(fun (query, ct) ->
@@ -45,11 +51,26 @@ type WebSearchEngine(pluginPath, configDir, logger) =
             )
         |> ignore
 
+    member this.OnChanged _ = base.OnChanged()
+
     override this.Id = nameof(WebSearchEngine)
     override this.Name = "Web search"
     override this.ShortName = searchEngine.Value.ShortName
     override this.Icon = searchEngine.Value.StarterIcon
     override this.ImportantResults = false
+    override this.Activators =
+        let evt = DelegateEvent<EventHandler>()
+        searchEngine.Subscribe(fun engine -> evt.Trigger([| null; EventArgs.Empty |])) |> ignore
+
+        [| { new ISearchEngineDynamicActivator with
+               member _.Id = this.Id
+               member _.Icon = this.Icon
+               member _.Name = this.Name
+               member _.ShortName = this.ShortName
+               member _.SearchEngineId = this.Id
+
+               [<CLIEvent>]
+               member _.Changed = evt.Publish } |]
 
     member this.SimpleSearch(query) =
         let r =
@@ -92,7 +113,7 @@ type WebSearchEngine(pluginPath, configDir, logger) =
                 UseShellExecute = true
             )
             |> Process.Start
-            |> _.Dispose()
+            |> function null -> () | d -> d.Dispose()
         | _ -> ()
 
     override this.LoadSettingsControl() =

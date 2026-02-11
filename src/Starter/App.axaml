@@ -1,18 +1,15 @@
-<Application xmlns="https://github.com/avaloniaui"
+<Application x:Class="Starter.App"
+             xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             x:Class="Starter.App"
-             xmlns:local="using:Starter"
-             xmlns:sty="using:FluentAvalonia.Styling">
-
-    <Application.DataTemplates>
-        <local:ViewLocator />
-    </Application.DataTemplates>
+             xmlns:sty="using:FluentAvalonia.Styling"
+             RequestedThemeVariant="Default">
 
     <Application.Resources>
         <ResourceDictionary>
             <FontFamily x:Key="JetBrainsMono">avares://Starter/Assets/Fonts#JetBrains Mono</FontFamily>
             <ResourceDictionary.MergedDictionaries>
                 <MergeResourceInclude Source="/Styles/Resources.axaml" />
+                <MergeResourceInclude Source="/Styles/ZoomModes.axaml" />
                 <MergeResourceInclude Source="/Styles/CustomTextBox.axaml" />
                 <MergeResourceInclude Source="/Styles/CustomListBox.axaml" />
             </ResourceDictionary.MergedDictionaries>
@@ -21,6 +18,6 @@
 
     <Application.Styles>
         <sty:FluentAvaloniaTheme PreferSystemTheme="True" PreferUserAccentColor="True" />
-        <StyleInclude Source="/Styles/FontStyle.axaml"/>
+        <StyleInclude Source="/Styles/FontStyle.axaml" />
     </Application.Styles>
 </Application>

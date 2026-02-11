@@ -1,10 +1,10 @@
-<ResourceDictionary xmlns="https://github.com/avaloniaui"
-                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Design.PreviewWith>
         <Border Padding="20">
-            <ListBox ItemContainerTheme="{StaticResource CustomListBoxItem}"
-                     SelectedIndex="0"
-                     Width="200" Height="200">
+            <ListBox Width="200"
+                     Height="200"
+                     ItemContainerTheme="{StaticResource CustomListBoxItem}"
+                     SelectedIndex="0">
                 <ListBoxItem>Test1</ListBoxItem>
                 <ListBoxItem>Test2</ListBoxItem>
                 <ListBoxItem>Test3</ListBoxItem>
@@ -24,6 +24,7 @@
     </ResourceDictionary.ThemeDictionaries>
 
     <!-- Derived of ListBoxStyles.axaml from https://github.com/amwx/FluentAvalonia -->
+    <!-- https://github.com/amwx/FluentAvalonia/tree/master/src/FluentAvalonia/Styling/ControlThemes/BasicControls/ListBoxStyles.axaml -->
     <ControlTheme x:Key="CustomListBoxItem" TargetType="ListBoxItem">
         <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
         <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
@@ -35,18 +36,17 @@
         <Setter Property="MinHeight" Value="{DynamicResource ListViewItemMinHeight}" />
         <Setter Property="Template">
             <ControlTemplate>
-                <ContentPresenter
-                    x:Name="PART_ContentPresenter"
-                    Background="{TemplateBinding Background}"
-                    BorderBrush="{TemplateBinding BorderBrush}"
-                    BorderThickness="{TemplateBinding BorderThickness}"
-                    ContentTemplate="{TemplateBinding ContentTemplate}"
-                    Content="{TemplateBinding Content}"
-                    Padding="{TemplateBinding Padding}"
-                    VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                    CornerRadius="{TemplateBinding CornerRadius}"
-                    Margin="0"/>
+                <ContentPresenter x:Name="PART_ContentPresenter"
+                                  Margin="0"
+                                  Padding="{TemplateBinding Padding}"
+                                  HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                  VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                  Background="{TemplateBinding Background}"
+                                  BorderBrush="{TemplateBinding BorderBrush}"
+                                  BorderThickness="{TemplateBinding BorderThickness}"
+                                  ContentTemplate="{TemplateBinding ContentTemplate}"
+                                  Content="{TemplateBinding Content}"
+                                  CornerRadius="{TemplateBinding CornerRadius}" />
             </ControlTemplate>
         </Setter>
 
@@ -114,7 +114,6 @@
                 </Style>
                 <Style Selector="^ /template/ Rectangle#SelectionIndicator">
                     <Setter Property="Fill" Value="{DynamicResource ListViewItemSelectionIndicatorPressedBrush}" />
-                    <!-- TODO: Uncomment when Avalonia fixes selection to work on pointer up -->
                     <!--<Setter Property="RenderTransform" Value="scaleY(0.5)" />-->
                 </Style>
             </Style>

@@ -84,6 +84,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
     override _.Name = "Applications"
     override _.ShortName = "Apps"
     override _.Icon = icon
+    override this.Activators = [| DefaultSearchEngineActivator(this) |]
 
     override _.SearchResultSelected(searchResult) =
         match searchResult with
@@ -98,7 +99,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
                 CreateNoWindow = true
             )
             |> Process.Start
-            |> _.Dispose()
+            |> function null -> () | d -> d.Dispose()
 
             // TODO: DBus Activation -> https://specifications.freedesktop.org/desktop-entry-spec/latest/dbus.html
             // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
