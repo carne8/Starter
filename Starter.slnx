@@ -10,5 +10,5 @@
     <Project Path="src/Starter.UrlSearchEngine/Starter.UrlSearchEngine.Regex/Starter.UrlSearchEngine.Regex.csproj" />
   </Folder>
   <Project Path="src/Starter.Model/Starter.Model.fsproj" />
-  <Project Path="src/Starter.Desktop/Starter.Desktop.csproj" />
+  <Project Path="src/Starter/Starter.csproj" />
 </Solution>

@@ -140,15 +140,28 @@ type Configuration =
                 |> Encode.toString 2
 
             // Create directory if it doesn't exist
-            match filePath |> Path.GetDirectoryName with
-            | null -> failwith "Invalid file path"
-            | fileDir -> fileDir |> Directory.CreateDirectory |> ignore
+            do! match filePath |> Path.GetDirectoryName with
+                | null -> Error "Invalid file path"
+                | fileDir ->
+                    fileDir
+                    |> Directory.CreateDirectory
+                    |> ignore
+                    Ok()
 
             // Save config
-            if not <| File.Exists filePath then
-                filePath |> File.Create |> _.Dispose()
+            do! try
+                    if not <| File.Exists filePath then
+                        filePath |> File.Create |> _.Dispose()
+                    Ok()
+                with err -> Error $"Failed to create config file: {err.Message}"
 
             do! File.WriteAllTextAsync(filePath, json)
+                |> Task.ofUnit
+                |> Task.catch
+                |> Task.map (function
+                    | Choice1Of2 () -> Ok ()
+                    | Choice2Of2 e -> Error $"Failed to write to config file: {e.Message}"
+                )
         }
 
     static member ensurePluginsSymlinkExists () =
