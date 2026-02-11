@@ -28,28 +28,36 @@ type Config =
 [<Literal>]
 let ConfigFilename = "web-search-config.json"
 
-let loadConfig (filePath: string) =
-    try
-        use stream = File.OpenRead filePath
-        let config = JsonSerializer.Deserialize<ConfigDTO> stream
-        config |> Config.ofConfigDto
-
-    with e ->
-        logger.Warning(e, "Failed to load config")
-        Config.defaultConfig |> saveConfig filePath
-        Config.defaultConfig
-
-let ensureFileExists (filePath: string) =
+let ensureConfigFileExists (filePath: string) =
     let fileDir = filePath |> Path.GetDirectoryName
     if fileDir |> Directory.Exists |> not then
         fileDir |> Directory.CreateDirectory |> ignore
 
     if filePath |> File.Exists |> not then
-        filePath |> File.Create |> _.Dispose()
+        logger.Information "Config file does not exist. Creating it."
+        use file = File.Create filePath
+
+        Config.defaultConfig
+        |> Config.toConfigDto
+        |> JsonSerializer.SerializeToUtf8Bytes
+        |> file.Write
+
+let loadConfig (filePath: string) =
+    try
+        ensureConfigFileExists filePath
+
+        use stream = File.OpenRead filePath
+        let config = JsonSerializer.Deserialize<ConfigDTO> stream
+        config |> Config.ofConfigDto
+
+    with e ->
+        logger.Error(e, "Failed to load config")
+        Config.defaultConfig |> saveConfig filePath
+        Config.defaultConfig
 
 let saveConfig (filePath: string) (config: Config) =
     try
-        ensureFileExists filePath
+        ensureConfigFileExists filePath
 
         let json =
             config
@@ -59,5 +67,5 @@ let saveConfig (filePath: string) (config: Config) =
         File.WriteAllBytes(filePath, json)
 
     with e ->
-        logger.Warning(e, "Failed to save config")
+        logger.Error(e, "Failed to save config")
         failwith "Failed to save config"

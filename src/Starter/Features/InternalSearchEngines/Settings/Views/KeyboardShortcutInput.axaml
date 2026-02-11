@@ -1,0 +1,33 @@
+<UserControl x:Class="Starter.Features.InternalSearchEngines.Settings.Views.KeyboardShortcutInput"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="using:Starter.Features.InternalSearchEngines.Settings.ViewModels"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             d:DesignHeight="450"
+             d:DesignWidth="600"
+             x:DataType="vm:KeyboardShortcutInputViewModel"
+             mc:Ignorable="d">
+    <UserControl.Styles>
+        <Style Selector="ui|SettingsExpander.showDescription">
+            <Setter Property="Description">Your desktop environment is not supported. Please use your system settings.</Setter>
+        </Style>
+    </UserControl.Styles>
+
+    <ui:SettingsExpander Header="Keyboard shortcut" Classes.showDescription="{Binding !Enabled}">
+        <ui:SettingsExpander.IconSource>
+            <ic:SymbolIconSource Symbol="Keyboard" />
+        </ui:SettingsExpander.IconSource>
+        <ui:SettingsExpander.Footer>
+            <TextBox x:Name="TextBox"
+                     IsReadOnly="True"
+                     Text="{Binding Text}"
+                     IsEnabled="{Binding Enabled}"
+                     KeyDown="TextBoxKeyDown"
+                     GotFocus="TextBoxGotFocus"
+                     LostFocus="TextBoxLostFocus" />
+        </ui:SettingsExpander.Footer>
+    </ui:SettingsExpander>
+</UserControl>

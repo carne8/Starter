@@ -1,5 +1,6 @@
-﻿module Starter.ApplicationSearchEngine.Loaders.Uwp
+﻿module Starter.ApplicationSearchEngine.Windows.UwpLoader
 
+open System.Diagnostics
 open R3
 open Starter.ApplicationSearchEngine
 open Starter.SearchEngine
@@ -19,6 +20,21 @@ open Avalonia.Media.Imaging
 open Windows.ApplicationModel
 open Windows.Management.Deployment
 open Vanara
+
+type UwpApplication =
+    { Id: string
+      Name: string
+      PackageId: string
+      Icon: StarterIconSource }
+
+    interface ISearchResult with
+        member this.Id = this.Id
+        member this.Name = this.Name
+        member this.Description = "Application"
+        member this.Keywords = Array.empty
+        member this.Icon = this.Icon
+        member this.ShowIfNoActivator = true
+        member this.ActivatorFilter = Array.empty
 
 module Xml =
     let getNamespaces (xml: XDocument) =
@@ -268,7 +284,7 @@ type AppxApplication(packageVersion: PackageVersion, installedLocation, packageI
             return
                 { Id = packageId.FullName + appId
                   Name = name
-                  EntryPoint = EntryPoint.UwpApp $"{packageId.FamilyName}!{appId}"
+                  PackageId = $"{packageId.FamilyName}!{appId}"
                   Icon = icon } :> ISearchResult
         }
 
@@ -293,6 +309,13 @@ type AppxManifest(package: Package) =
             ).ToSearchResult()
         )
 
+let runApp (app: UwpApplication) =
+    ProcessStartInfo(
+        FileName = $"shell:AppsFolder\\{app.PackageId}",
+        UseShellExecute = true
+    )
+    |> Process.Start
+    |> _.Dispose()
 
 let loadApplications (logger: Serilog.ILogger) : Task<ISearchResult seq> =
     let packageManager = PackageManager()

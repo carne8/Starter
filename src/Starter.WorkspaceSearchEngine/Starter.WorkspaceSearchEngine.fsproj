@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
+        <ParallelCompilation>true</ParallelCompilation>
+        <Deterministic>false</Deterministic>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <EnableDynamicLoading>true</EnableDynamicLoading>
     </PropertyGroup>
@@ -19,21 +21,22 @@
         </Content>
         <Compile Include="Types.fs" />
         <Compile Include="Icons.fs" />
+        <Compile Include="WorkspaceSources\Common.fs" />
         <Compile Include="WorkspaceSources\VsCode.fs" />
         <Compile Include="WorkspaceSources\JetBrains.fs" />
         <Compile Include="WorkspaceSources\AndroidStudio.fs" />
         <Compile Include="WorkspaceSources\WorkspaceSourceProvider.fs" />
         <Compile Include="Settings.axaml.fs" />
-        
+
         <Compile Include="Library.fs" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia.ReactiveUI" Version="11.3.1" />
-        <PackageReference Include="FluentAvaloniaUI" Version="2.3.0" />
-        <PackageReference Include="FsToolkit.ErrorHandling" Version="5.0.1" />
+        <PackageReference Include="Avalonia.ReactiveUI" Version="11.3.8" />
+        <PackageReference Include="FluentAvaloniaUI" Version="2.4.1" />
+        <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
         <PackageReference Include="ObservableCollections" Version="3.3.4" />
-        <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="11.3.0.1" />
+        <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="11.3.6.2" />
     </ItemGroup>
 
 </Project>

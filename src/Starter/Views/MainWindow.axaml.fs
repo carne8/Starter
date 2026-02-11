@@ -1,13 +1,11 @@
 namespace Starter.Views
 
-open System
 open Starter
 open Starter.Controls
-open Starter.Features
 open Starter.Features.Logging
 open Starter.Features.PlatformInterop
 
-open System.Collections.Generic
+open System
 open System.Windows.Input
 
 open Avalonia
@@ -19,7 +17,7 @@ open Avalonia.VisualTree
 open R3
 
 type MainWindow() as this =
-    inherit Window()
+    inherit TranslucentWindow()
 
     static let normalResourceDictionary = ResourceDictionary()
     static let zoomedResourceDictionary = ResourceDictionary()
@@ -71,26 +69,35 @@ type MainWindow() as this =
         this.AttachDevTools()
         #endif
 
-        match PlatformInteropFactory.GetPlatformInterop() with
-        | :? Windows as platform -> platform.SetupHotkeyCallback this
-        | _ -> ()
+        let platformInterop = PlatformInteropFactory.GetPlatformInterop()
+        platformInterop.SetupHotkeyCallback this
 
         this.Loaded.Add(fun _ ->
             this.SetupKeyboardShortcuts()
 
             // Bind config changes
-            this.ViewModel.Config.Subscribe(fun config ->
-                this.TransparencyLevelHint <-
-                    match config.Background with
-                    | Config.Background.Acrylic -> [| WindowTransparencyLevel.AcrylicBlur |].AsReadOnly()
-                    | Config.Background.Mica -> [| WindowTransparencyLevel.Mica |].AsReadOnly()
-                    | Config.Background.None -> [| WindowTransparencyLevel.None |].AsReadOnly()
+            this.ViewModel.Config
+                .DistinctUntilChangedBy(_.Background)
+                .Subscribe(fun config -> this.BackgroundKind <- config.Background)
+            |> ignore
 
-                this.Resources <-
-                    match config.ZoomedMode with
-                    | false -> normalResourceDictionary
-                    | true -> zoomedResourceDictionary
-            )
+            this.ViewModel.Config
+                .DistinctUntilChangedBy(_.ZoomedMode)
+                .Subscribe(fun config ->
+                    this.Resources <-
+                        match config.ZoomedMode with
+                        | false -> normalResourceDictionary
+                        | true -> zoomedResourceDictionary
+                )
+            |> ignore
+
+            this.ViewModel.Config
+                .DistinctUntilChangedBy(_.KeyboardShortcut)
+                .Subscribe(fun config ->
+                    this
+                    |> platformInterop.RegisterHotkey config.KeyboardShortcut
+                    |> ignore
+                )
             |> ignore
 
             // Bind single-search-engine pill
@@ -137,16 +144,24 @@ type MainWindow() as this =
 
         this.Activated.Add (fun _ ->
             // Center window
-            match this.Screens.Primary with
-            | null ->
+            let screen =
+                this
+                |> this.Screens.ScreenFromTopLevel
+                |> ValueOption.ofObj
+                |> ValueOption.orElse (this.Screens.Primary |> ValueOption.ofObj)
+
+            match screen with
+            | ValueNone ->
                 logger.Error "No screen available. Can't center window"
                 failwith "No screen available. Can't center window"
-            | screen ->
+            | ValueSome screen ->
                 this.Position <-
                     PixelPoint(
                         round ((float screen.WorkingArea.Width - (this.Width * screen.Scaling)) / 2.) |> int,
                         float screen.WorkingArea.Height * (5./16.) |> int
                     )
+                    +
+                    screen.WorkingArea.TopLeft
 
             // Reset focus
             this.TextBox.Focus() |> ignore
@@ -217,7 +232,7 @@ type MainWindow() as this =
 
             match newSelectedIdx with
             | None -> ()
-            | Some newSelectedIdx ->
+            | Some newSelectedIdx -> // TODO: Always keep bottom padding
                 // Scroll to top or bottom to preserve the paddings
                 let scrollViewer = this.ResultListScrollViewer()
                 if newSelectedIdx = 0 then

@@ -56,6 +56,9 @@ type Settings(viewModel: SettingsViewModel) as this =
 
     do this.InitializeComponent()
 
+    // Prevent Avalonia compiler to warn
+    new() = Settings(failwith "Settings control should not be initialized without parameters")
+
     member this.InitializeComponent() =
         AvaloniaXamlLoader.Load this
 

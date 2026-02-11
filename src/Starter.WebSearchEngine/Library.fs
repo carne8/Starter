@@ -25,7 +25,7 @@ type WebSearchEngine(pluginPath, configDir, logger) =
 
     do
         suggestionRequests
-            .Debounce(TimeSpan.FromMilliseconds 60)
+            .Debounce(TimeSpan.FromMilliseconds 60L)
             .Subscribe(fun (query, ct) ->
                 if query |> String.IsNullOrEmpty |> not then
                     task {
@@ -92,7 +92,7 @@ type WebSearchEngine(pluginPath, configDir, logger) =
                 UseShellExecute = true
             )
             |> Process.Start
-            |> ignore
+            |> _.Dispose()
         | _ -> ()
 
     override this.LoadSettingsControl() =

@@ -1,7 +1,7 @@
 namespace Starter.Features.InternalSearchEngines.Settings.Views
 
-open Starter.Features.InternalSearchEngines.Settings.ViewModels
 open Starter.Features.InternalSearchEngines.Settings.Views
+open Starter.Features.InternalSearchEngines.Settings.ViewModels
 
 open Avalonia.Controls
 open Avalonia.Markup.Xaml

@@ -34,7 +34,7 @@ type App() =
                 match Configuration.loadFromFile Constants.ConfigFile with
                 | Error e ->
                     logger.Error $"Failed to decode configuration: {e}"
-                    failwith $"Failed to decode configuration: {e}"
+                    failwith "Failed to decode configuration. For more information, see logs."
                 | Ok config ->
                     logger.Information "Config loaded"
                     config
@@ -46,11 +46,14 @@ type App() =
             let window = MainWindow(DataContext = MainWindowViewModel(config, resultScoreDb))
 
             // Register hotkey
-            match PlatformInteropFactory.GetPlatformInterop() with
-            | :? Windows as platform -> platform.RegisterHotkey window
-            | _ -> ()
+            let platformInterop = PlatformInteropFactory.GetPlatformInterop()
+            if platformInterop.HotkeyRegistrable then
+                platformInterop.RegisterHotkey
+                    config.KeyboardShortcut
+                    window
+                |> ignore
 
-            logger.Information "Launched"
+            logger.Debug "Launched"
         | _ -> ()
 
         base.OnFrameworkInitializationCompleted()

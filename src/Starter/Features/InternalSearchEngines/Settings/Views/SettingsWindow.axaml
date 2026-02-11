@@ -1,22 +1,25 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:ui="using:FluentAvalonia.UI.Controls"
-        xmlns:vm="using:Starter.Features.InternalSearchEngines.Settings.ViewModels"
-        mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
-        x:Class="Starter.Features.InternalSearchEngines.Settings.Views.SettingsWindow"
-        x:DataType="vm:SettingsWindowViewModel"
-        Title="Settings"
-        Width="1050"
-        Height="700"
-        TransparencyLevelHint="Mica"
-        Background="Transparent"
-        ExtendClientAreaToDecorationsHint="True"
-        FontFamily="{StaticResource JetBrainsMono}">
+<controls:TranslucentWindow
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ui="using:FluentAvalonia.UI.Controls"
+    xmlns:vm="using:Starter.Features.InternalSearchEngines.Settings.ViewModels"
+    xmlns:controls="using:Starter.Controls"
+    mc:Ignorable="d" d:DesignWidth="600" d:DesignHeight="450"
+    x:Class="Starter.Features.InternalSearchEngines.Settings.Views.SettingsWindow"
+    x:DataType="vm:SettingsWindowViewModel"
+    Title="Settings"
+    Width="1050"
+    Height="700"
+    ExtendClientAreaToDecorationsHint="True"
+    FontFamily="{StaticResource JetBrainsMono}"
+    BackgroundColor="{DynamicResource DefaultBackgroundColor}"
+    AcrylicBackgroundColor="{DynamicResource WindowBackground}"
+    BackgroundKind="{Binding Configuration^.Background, Mode=OneWay}">
 
     <DockPanel LastChildFill="True">
-        <Border DockPanel.Dock="Top" Height="30" Padding="10, 5, 5, 0" IsHitTestVisible="False">
+        <Border x:Name="Title" DockPanel.Dock="Top" Height="30" Padding="10, 5, 5, 0" IsHitTestVisible="False">
             <StackPanel Spacing="10" Orientation="Horizontal">
                 <PathIcon Data="{StaticResource Flash}" />
                 <TextBlock VerticalAlignment="Center">Starter Settings</TextBlock>
@@ -27,12 +30,10 @@
                            IsSettingsVisible="False"
                            CompactModeThresholdWidth="0"
                            ExpandedModeThresholdWidth="900"
-                           SelectedItem="{Binding SelectedPage}"> <!-- MenuItemsSource bound from code-behind -->
-            <!-- Menu data template is set from code-behind -->
-            <!-- Content -->
-            <ScrollViewer>
-                <Border x:Name="ContentControl" Margin="20" /> <!-- Child bound from code-behind (otherwise it doesn't work) -->
-            </ScrollViewer>
+                           MenuItemsSource="{Binding MenuItems^}"
+                           SelectedItem="{Binding SelectedPage}">
+                           <!-- Menu data template is set from code-behind -->
+            <ContentControl x:Name="ContentControl" /> <!-- Content bound from code-behind (otherwise it doesn't work) -->
         </ui:NavigationView>
     </DockPanel>
-</Window>
+</controls:TranslucentWindow>

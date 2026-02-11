@@ -1,9 +1,13 @@
 namespace Starter.Features.Config
 
-open Starter.Features
+open System
 open System.IO
-open FsToolkit.ErrorHandling
+
+open Starter.Features
 open Starter.Features.Logging
+
+open Avalonia.Input
+open FsToolkit.ErrorHandling
 open Thoth.Json.Net
 
 [<RequireQualifiedAccess>]
@@ -19,32 +23,73 @@ type Background =
         | None -> "none" |> Encode.string
 
     static member decoder: Decoder<Background> =
-        Decode.string
-        |> Decode.andThen (function
+        Decode.string |> Decode.andThen (function
             | "acrylic" -> Acrylic |> Decode.succeed
             | "mica" -> Mica |> Decode.succeed
             | "none" -> None |> Decode.succeed
             | other -> Decode.fail $"{other} is not a valid background value."
         )
 
+module Key =
+    let encode = Key.GetName >> Encode.string
+    let decode =
+        Decode.string |> Decode.andThen (fun keyName ->
+            match Key.TryParse keyName with
+            | true, key -> key |> Decode.succeed
+            | false, _ -> Decode.fail $"{keyName} is not a valid key name."
+        )
+
+[<Struct>]
+type KeyboardShortcut =
+    { Modifiers: Key array
+      Key: Key }
+
+    static member encode shortcut =
+        Encode.object [
+            "modifiers",
+            shortcut.Modifiers
+            |> Array.map Key.encode
+            |> Encode.array
+
+            "key", shortcut.Key |> Key.encode
+        ]
+
+    static member decode =
+        Decode.object (fun get ->
+            { Modifiers = get.Required.Field "modifiers" (Decode.array Key.decode)
+              Key = get.Required.Field "key" Key.decode }
+        )
+
 type Configuration =
-    { Background: Background
-      ActivatorPrefixes: Map<string, string>
-      ZoomedMode: bool }
+    { KeyboardShortcut: KeyboardShortcut
+      Background: Background
+      ZoomedMode: bool
+      ActivatorPrefixes: Map<string, string> }
+
+    static member ensurePlatformCompatibility config =
+        if OperatingSystem.IsLinux() then
+            { config with Background = Background.None }
+        else
+            config
 
     static member Default =
-        { Background = Background.Mica
-          ActivatorPrefixes = Map.empty
-          ZoomedMode = false }
+        { KeyboardShortcut = { Modifiers = [| Key.LeftAlt |]; Key = Key.Space }
+          Background = Background.Mica
+          ZoomedMode = false
+          ActivatorPrefixes = Map.empty }
+        |> Configuration.ensurePlatformCompatibility
 
     static member encoder config =
         Encode.object [
+            "keyboardShortcut",
+            KeyboardShortcut.encode config.KeyboardShortcut
+
             if config.Background <> Configuration.Default.Background then
                 "background", Background.encoder config.Background
 
             "searchEnginePrefixes",
             config.ActivatorPrefixes
-            |> Map.map (fun _ v -> v |> Encode.string)
+            |> Map.map (fun _ -> Encode.string)
             |> Encode.dict
 
             "zoomedMode", config.ZoomedMode |> Encode.bool
@@ -52,16 +97,19 @@ type Configuration =
 
     static member decoder: Decoder<Configuration> =
         Decode.object (fun get ->
-            { Background =
+            { KeyboardShortcut =
+                get.Optional.Field "keyboardShortcut" KeyboardShortcut.decode
+                |> Option.defaultValue Configuration.Default.KeyboardShortcut
+              Background =
                 get.Optional.Field "background" Background.decoder
-                |> Option.defaultValue Background.Mica
+                |> Option.defaultValue Configuration.Default.Background
+              ZoomedMode =
+                get.Optional.Field "zoomedMode" Decode.bool
+                |> Option.defaultValue Configuration.Default.ZoomedMode
               ActivatorPrefixes =
                 Decode.dict Decode.string
                 |> get.Optional.Field "searchEnginePrefixes"
-                |> Option.defaultValue Map.empty
-              ZoomedMode =
-                get.Optional.Field "zoomedMode" Decode.bool
-                |> Option.defaultValue false }
+                |> Option.defaultValue Configuration.Default.ActivatorPrefixes }
         )
 
     // Read the config from the config file or return the default config
@@ -74,7 +122,11 @@ type Configuration =
                 // Load config
                 match filePath |> File.ReadAllText with
                 | "" -> return Configuration.Default
-                | json -> return! Decode.fromString Configuration.decoder json
+                | json ->
+                    return!
+                        json
+                        |> Decode.fromString Configuration.decoder
+                        |> Result.map Configuration.ensurePlatformCompatibility
         }
 
     static member save (filePath: string) (config: Configuration) =
@@ -113,9 +165,16 @@ type Configuration =
             |> ignore
 
         // Ensure symlink exists
-        if Constants.PluginsSymlinkPath |> Directory.Exists |> not then
-            logger.Debug "Plugins symlink directory doesn't exist, creating it"
+        try
+            if Constants.PluginsSymlinkPath |> File.Exists then
+                File.Delete Constants.PluginsSymlinkPath
+
+            if Constants.PluginsSymlinkPath |> Directory.Exists then
+                Directory.Delete Constants.PluginsSymlinkPath
+
             Directory.CreateSymbolicLink(
                 Constants.PluginsSymlinkPath,
                 Constants.PluginsDirectory
             ) |> ignore
+        with e ->
+            logger.Error(e, "Failed to create symlink to plugins in config directory")

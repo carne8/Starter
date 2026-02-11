@@ -46,6 +46,7 @@ type SettingsWindowViewModel(baseConfig, searchEngines: Dictionary<string, Searc
 
     let mutable selectedPage = starterSettingsMenuItem
     let menuItems = new BehaviorSubject<_ array>(Array.empty)
+    let menuItemsObservable = menuItems.AsSystemObservable()
 
     let sub =
         searchEngines.ObserveOnUIThreadDispatcher()
@@ -66,12 +67,18 @@ type SettingsWindowViewModel(baseConfig, searchEngines: Dictionary<string, Searc
             >> menuItems.OnNext
         )
 
+    let configObservable = starterSettingsVM.Configuration.AsSystemObservable()
+
     interface IDisposable with
-        member _.Dispose() = sub.Dispose()
+        member _.Dispose() =
+            sub.Dispose()
+            menuItems.Dispose()
+            (starterSettingsVM :> IDisposable).Dispose()
 
-    member this.Configuration = starterSettingsVM.Configuration
+    member this.Configuration = configObservable
+    member this.BaseConfiguration = baseConfig
 
-    member this.MenuItems = menuItems
+    member this.MenuItems = menuItemsObservable
     member this.SelectedPage
         with get () = selectedPage
         and set v = this.RaiseAndSetIfChanged(&selectedPage, v) |> ignore

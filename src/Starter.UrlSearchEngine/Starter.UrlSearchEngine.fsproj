@@ -1,7 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net10.0</TargetFramework>
+        <ParallelCompilation>true</ParallelCompilation>
+        <Deterministic>false</Deterministic>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <EnableDynamicLoading>true</EnableDynamicLoading>
     </PropertyGroup>
@@ -18,4 +20,7 @@
         <Compile Include="Library.fs" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
+    </ItemGroup>
 </Project>

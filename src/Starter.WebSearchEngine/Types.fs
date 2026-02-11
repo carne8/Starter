@@ -148,6 +148,7 @@ type SearchResult =
         member this.Id = this.Uri
         member this.Name = this.Name
         member this.Description = this.Description
+        member this.Keywords = Array.empty
         member this.Icon = this.Icon
         member this.ShowIfNoActivator = true
         member this.ActivatorFilter = Array.empty

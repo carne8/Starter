@@ -4,8 +4,8 @@ open System
 
 type PlatformInteropFactory() =
     static let platformInterop: PlatformInterop =
-        if OperatingSystem.IsWindows() then Windows()
-        elif OperatingSystem.IsLinux() then Linux()
+        if OperatingSystem.IsWindows() then WindowsPlatformInterop()
+        elif OperatingSystem.IsLinux() then LinuxPlatformInterop()
         else failwith "Not supported platform"
 
     static member GetPlatformInterop() = platformInterop

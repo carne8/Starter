@@ -1,5 +1,6 @@
 namespace Starter.ViewModels
 
+open System
 open Starter.Features
 open Starter.Features.Config
 open Starter.Features.InternalSearchEngines.Settings
@@ -76,6 +77,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
     let mutable text = "starter"
     let mutable searchCts = new CancellationTokenSource()
     let mutable currentActivator = new BehaviorSubject<ISearchEngineActivator option>(None)
+    let timer = System.Diagnostics.Stopwatch()
 
     let setStaticResultForSearchEngine (se: StaticSearchEngine) results =
         Dispatcher.UIThread.Post(fun () ->
@@ -130,6 +132,7 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
             logger.Error(e, $"Failed to get results from dynamic search engine: {se.Name}")
 
     let onTextChanged (newText: string) =
+        timer.Restart()
         // Cancel previous search
         searchCts.Cancel()
         searchCts <- new CancellationTokenSource()
@@ -152,7 +155,23 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                 |> String.normalize
                 |> Array.map System.Text.Rune.ToLowerInvariant
 
-            let fuzzyMatch = Fusil.fuzzyMatch false true true fusilSlab query
+            let inline fuzzyMatch i = Fusil.fuzzyMatch false true true fusilSlab query i
+            let fuzzyMatchKeywords (result: SearchResultViewModel) =
+                let inline fuzzyMatch i = Fusil.fuzzyMatch false false false fusilSlab query i // TODO: Normalize keywords
+                match result.SearchResult.Keywords with
+                | null -> ValueNone
+                | arr ->
+                    arr |> Array.fold
+                        (fun max keyword ->
+                            match max with
+                            | ValueNone -> keyword |> fuzzyMatch |> Option.toValueOption // TODO: Make fusil use voption
+                            | ValueSome max' ->
+                                match keyword |> fuzzyMatch with
+                                | None -> max
+                                | Some res when res.Score < max'.Score -> max
+                                | Some res -> ValueSome res
+                        )
+                        ValueNone
 
             currentActivator.Subscribe(fun activator ->
                 let targetSearchEngine =
@@ -198,8 +217,15 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                                         match result.Name |> fuzzyMatch with
                                         | Some fusilResult when fusilResult.Score > 0s ->
                                             result.AccentuationMap <- fusilResult.MatchingPositions
+                                            result.FuzzyMatchScore <- fusilResult.Score
                                             true
-                                        | _ -> false
+                                        | _ ->
+                                            match result |> fuzzyMatchKeywords with
+                                            | ValueSome fusilResult when fusilResult.Score > 0s ->
+                                                result.AccentuationMap <- Array.empty
+                                                result.FuzzyMatchScore <- fusilResult.Score
+                                                true
+                                            | _ -> false
                                     | _ -> false
                             )
                             |> searchResults.AddRange
@@ -217,11 +243,20 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
                         staticResults
                         |> Array.filter (fun result ->
                             if result.SearchResult.ShowIfNoActivator then
+                                timer.Restart()
                                 match result.Name |> fuzzyMatch with
                                 | Some fusilResult when fusilResult.Score > 0s ->
                                     result.AccentuationMap <- fusilResult.MatchingPositions
+                                    result.FuzzyMatchScore <- fusilResult.Score
                                     true
-                                | _ -> false
+                                | _ ->
+                                    match result |> fuzzyMatchKeywords with
+                                    | ValueSome fusilResult when fusilResult.Score > 0s ->
+                                        result.AccentuationMap <- Array.empty
+                                        result.FuzzyMatchScore <- fusilResult.Score
+                                        true
+                                    | _ ->
+                                        false
                             else false
                         )
                         |> searchResults.AddRange
@@ -232,6 +267,9 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
 
                 | Choice4Of4 () -> logger.Error $"Failed to find search engine associated with activator: {activator |> Option.map _.Id}"
             ) |> disposeOnCancelled searchCts.Token
+
+            printfn "%A" timer.ElapsedMilliseconds
+            timer.Stop()
 
     let validateResult (result: SearchResultViewModel) =
         match result.SearchResult.Id with
@@ -259,10 +297,13 @@ type MainWindowViewModel(baseConfig: Configuration, resultScoreDb: ResultScores.
         // Load search engines
         let pluginDirectories =
             #if DEBUG
-            [| Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.UrlSearchEngine/bin/Debug/net9.0/")
-               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.ApplicationSearchEngine/bin/Debug/net9.0-windows10.0.19041.0/")
-               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.WebSearchEngine/bin/Debug/net9.0/")
-               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.WorkspaceSearchEngine/bin/Debug/net9.0/") |]
+            [| Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.UrlSearchEngine/bin/Debug/net10.0/")
+               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.WebSearchEngine/bin/Debug/net10.0/")
+               Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.WorkspaceSearchEngine/bin/Debug/net10.0/")
+               if OperatingSystem.IsWindows() then
+                Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.ApplicationSearchEngine/bin/Debug/net10.0-windows10.0.19041.0/")
+               else
+                Path.Combine(__SOURCE_DIRECTORY__, "../../Starter.ApplicationSearchEngine/bin/Debug/net10.0/") |]
             #else
             Constants.PluginsDirectory |> Directory.GetDirectories
             #endif

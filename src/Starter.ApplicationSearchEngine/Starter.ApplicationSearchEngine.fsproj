@@ -1,7 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>net9.0;net9.0-windows10.0.19041.0</TargetFrameworks>
+        <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
+        <ParallelCompilation>true</ParallelCompilation>
+        <Deterministic>false</Deterministic>
+        <EnableWindowsTargeting>true</EnableWindowsTargeting>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <EnableDynamicLoading>true</EnableDynamicLoading>
     </PropertyGroup>
@@ -15,15 +18,36 @@
 
     <ItemGroup>
         <Compile Include="Types.fs" />
-        <Compile Include="Loaders\IconHelper.fs" Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'" />
-        <Compile Include="Loaders\UwpLoader.fs" Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'" />
-        <Compile Include="Loaders\ExecutableFilesLoader.fs" Condition="'$(TargetFramework)' == 'net9.0-windows10.0.19041.0'" />
-        <Compile Include="Library.fs" />
+        <Compile Include="Logger.fs" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.19041.0'">
+        <Compile Include="Windows\IconHelper.fs" />
+        <Compile Include="Windows\UwpLoader.fs" />
+        <Compile Include="Windows\ExecutableFilesLoader.fs" />
+        <Compile Include="Windows\Library.fs" />
+    </ItemGroup>
+
+    <ItemGroup Condition="'$(TargetFramework)' != 'net10.0-windows10.0.19041.0'">
+        <Compile Include="Linux\Types.fs" />
+        <Compile Include="Linux\Helpers.fs" />
+
+        <Compile Include="Linux\XDGDesktopFileParser.fs" />
+        <Compile Include="Linux\Theme\Types.fs" />
+        <Compile Include="Linux\Theme\IconThemeParser.fs" />
+        <Compile Include="Linux\Theme\IconLookup.fs" />
+        <Compile Include="Linux\Theme\ThemeDetection.fs" />
+        <Compile Include="Linux\Theme\IconLoader.fs" />
+
+        <Compile Include="Linux\AppsLoader.fs" />
+        <Compile Include="Linux\Library.fs" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="FsToolkit.ErrorHandling.TaskResult" Version="4.18.0" />
-        <PackageReference Include="Vanara.Windows.Shell" Version="4.1.4" />
+        <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="11.3.6.2" />
+        <PackageReference Include="Vanara.Windows.Shell" Version="4.2.1" />
+        <PackageReference Update="FSharp.Core" Version="10.0.101" />
     </ItemGroup>
 
 </Project>

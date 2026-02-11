@@ -1,21 +1,25 @@
 namespace Starter.WorkspaceSearchEngine
 
-open FsToolkit.ErrorHandling
-open ObservableCollections
-open Starter.SearchEngine
 open System
 open System.Threading.Tasks
+
+open Starter.SearchEngine
+open ObservableCollections
+open FsToolkit.ErrorHandling
 open R3
 
 module Logger =
     let mutable logger: Serilog.ILogger = unbox null
+open Logger
 
+/// Represents a workspace from an app like vscode or rider
 type Workspace =
     { Id: string
       Name: string
       Path: string
       Open: unit -> unit }
 
+/// Loads workspaces. For instance it can represents a vscode installation
 type WorkspaceSource =
     { Id: string
       Name: string
@@ -42,12 +46,16 @@ type WorkspaceSourceBuilder =
       FindExecutablePath: unit -> string option
       FindWorkspacesDb: unit -> string option
       LoadWorkspaces: string -> string -> Task<Workspace seq>
-      GetChangesObservable: string -> Observable<unit> * IDisposable  }
+      GetChangesObservable: string -> Observable<unit> * IDisposable }
 
     static member build showIfNoActivator pluginPath (builder: WorkspaceSourceBuilder) =
         option {
             let! executablePath = builder.FindExecutablePath()
-            let! dbPath = builder.FindWorkspacesDb()
+            let! dbPath =
+                builder.FindWorkspacesDb() |> Option.teeNone (fun () ->
+                    logger.Debug $"DB path not found while executable exists: {builder.Name}"
+                )
+
             let workspacesChanged, watcher = builder.GetChangesObservable dbPath
 
             return
@@ -73,6 +81,7 @@ type SearchResult =
         member this.Id = this.Id
         member this.Name = this.Name
         member this.Description = this.Path
+        member this.Keywords = Array.empty
         member this.Icon = this.Source.Icon
         member this.ShowIfNoActivator = this.Source.ShowIfNoActivator
         member this.ActivatorFilter = [| this.Source |]
@@ -91,46 +100,46 @@ type Settings =
 module Settings =
     open System.IO
     open System.Text.Json
-    open Logger
 
     [<Literal>]
     let private SettingsFilename = "settings.json"
 
     let getFilePath settingsDirectory = Path.Combine(settingsDirectory, SettingsFilename)
 
-    let ensureFileExists (filePath: string) =
+    let ensureConfigFileExists (filePath: string) =
         let fileDir = filePath |> Path.GetDirectoryName
         if fileDir |> Directory.Exists |> not then
             fileDir |> Directory.CreateDirectory |> ignore
 
         if filePath |> File.Exists |> not then
-            filePath |> File.Create |> _.Dispose()
+            logger.Information "Config file does not exist. Creating it."
+            use file = File.Create filePath
+
+            Settings.defaultSettings
+            |> JsonSerializer.SerializeToUtf8Bytes
+            |> file.Write
 
     let saveSettings (filePath: string) (settings: Settings) =
         try
-            ensureFileExists filePath
+            ensureConfigFileExists filePath
             let json = settings |> JsonSerializer.SerializeToUtf8Bytes
             File.WriteAllBytes(filePath, json)
         with e ->
-            logger.Warning(e, "Failed to save settings")
-            failwith "Failed to save settings"
+            logger.Error(e, "Failed to save config")
 
     let loadSettings (filePath: string) =
         try
+            ensureConfigFileExists filePath
             use stream = File.OpenRead filePath
             JsonSerializer.Deserialize<Settings> stream
         with
-        | :? DirectoryNotFoundException ->
-            logger.Information("Settings file doesn't exists. Creating it.")
-            Settings.defaultSettings |> saveSettings filePath
-            Settings.defaultSettings
         | e ->
-            logger.Warning(e, "Failed to load settings")
+            logger.Error(e, "Failed to load config")
             Settings.defaultSettings |> saveSettings filePath
             Settings.defaultSettings
 
 type SettingsSaver(settings: Settings, settingsFilePath) =
     do
-        settings.ShowIfNoActivator.add_CollectionChanged(NotifyCollectionChangedEventHandler(fun args ->
+        settings.ShowIfNoActivator.add_CollectionChanged(NotifyCollectionChangedEventHandler(fun _args ->
             settings |> Settings.saveSettings settingsFilePath
         ))

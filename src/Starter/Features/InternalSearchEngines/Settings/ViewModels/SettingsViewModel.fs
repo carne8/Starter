@@ -11,6 +11,35 @@ open System.Threading.Tasks
 open ReactiveUI
 open R3
 
+type SearchEnginePrefixViewModel(se: SearchEngine, prefix: string, onPrefixChanged) =
+    let mutable prefix = prefix
+
+    member this.Icon = se.Icon
+    member this.Name = se.Name
+    member this.Prefix
+        with get () = prefix
+        and set v = prefix <- v; v |> onPrefixChanged
+
+type BackgroundComboBoxItemViewModel =
+   { Name: string
+     Value: Background
+     IsEnabled: bool }
+
+[<AutoOpen>]
+module private Helpers =
+    type Background with
+        static member toString =
+            function
+            | Background.Acrylic -> "Acrylic"
+            | Background.Mica -> "Mica"
+            | Background.None -> "None"
+
+        static member fromString =
+            function
+            | Background.Acrylic -> "Acrylic"
+            | Background.Mica -> "Mica"
+            | Background.None -> "None"
+
 type SettingsViewModel(baseConfig: Configuration, searchEngines: Dictionary<string, SearchEngine> BehaviorSubject) =
     inherit ReactiveObject() // Equivalent to ViewModelBase
 
@@ -21,12 +50,23 @@ type SettingsViewModel(baseConfig: Configuration, searchEngines: Dictionary<stri
     let mutable launchAtStartup = false
     let mutable launchAtStartupLoading = true
 
+    // Keyboard shortcut
+    let onKeyboardShortcutChanged newShortcut =
+        { config.Value with KeyboardShortcut = newShortcut }
+        |> config.OnNext
+    let keyboardShortcutViewModel = KeyboardShortcutInputViewModel(baseConfig.KeyboardShortcut, onKeyboardShortcutChanged)
+
     // Background
-    let transparencyHints =
-        [| "Acrylic", Background.Acrylic
-           "Mica", Background.Mica
-           "None", Background.None |]
-        |> Array.unzip
+    let backgrounds =
+        [| { Name = "Acrylic"
+             Value = Background.Acrylic
+             IsEnabled = not <| OperatingSystem.IsLinux() } // TODO: I18n
+           { Name = "Mica"
+             Value = Background.Mica
+             IsEnabled = not <| OperatingSystem.IsLinux() }
+           { Name = "None"
+             Value = Background.None
+             IsEnabled = true } |]
 
     // Activator prefixes
     let onActivatorPrefixChanged activatorId newPrefix =
@@ -58,7 +98,7 @@ type SettingsViewModel(baseConfig: Configuration, searchEngines: Dictionary<stri
         override _.Dispose() = config.Dispose()
 
     member _.Configuration =
-        config.Skip(1).Debounce(TimeSpan.FromMilliseconds 100)
+        config.Skip(1).Debounce(TimeSpan.FromMilliseconds 100L)
 
     // --- Settings bindings ---
 
@@ -80,13 +120,20 @@ type SettingsViewModel(baseConfig: Configuration, searchEngines: Dictionary<stri
             this.RaiseAndSetIfChanged(&launchAtStartup, v) |> ignore
             Task.Run<unit>(fun () -> platform.ToggleLaunchAtStartup v) |> ignore
 
+    // Keyboard shortcut
+    member this.KeyboardShortcutViewModel = keyboardShortcutViewModel
+
     // Background
-    member this.Backgrounds = transparencyHints |> fst
+    member this.Backgrounds = backgrounds
     member this.SelectedBackgroundIdx
-        with get () = transparencyHints |> snd |> Array.findIndex ((=) config.Value.Background)
+        with get () = backgrounds |> Array.findIndex (_.Value >> (=) config.Value.Background)
         and set v =
-            let v' = transparencyHints |> snd |> Array.item v
-            config.OnNext <| { config.Value with Background = v' }
+            let { Value = value } = backgrounds |> Array.item v
+            config.OnNext <| { config.Value with Background = value }
+    member this.BackgroundDescription : string | null =
+        if OperatingSystem.IsLinux() then
+            "Acrylic and Mica background are not supported on Linux"
+        else null
 
     // Search engine prefixes
     member this.SearchEngineActivators = seActivatorsVms

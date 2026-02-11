@@ -25,6 +25,7 @@ type private SettingsSearchResult =
         member this.Id = this.Id
         member this.Name = this.Name
         member this.Description = this.Description
+        member this.Keywords = Array.empty
         member this.Icon =
             match this.TargetPage with
             | TargetPage.Settings -> Icons.settingsIcon

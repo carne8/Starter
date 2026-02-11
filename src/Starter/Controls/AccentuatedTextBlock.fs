@@ -27,7 +27,9 @@ type AccentuatedTextBlock() =
     let mutable normalScale = 12. / (float normalGlyphTypeface.Metrics.DesignEmHeight)
     let mutable accentuatedScale = 12. / (float accentuatedGlyphTypeface.Metrics.DesignEmHeight)
 
-    do AccentuatedTextBlock.AffectsRender(ForegroundProperty)
+    do
+        AccentuatedTextBlock.AffectsRender(ForegroundProperty, FontSizeProperty)
+        AccentuatedTextBlock.AffectsMeasure(FontSizeProperty)
 
     member this.FontFamily
         with get () = this.GetValue(FontFamilyProperty)

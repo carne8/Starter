@@ -30,9 +30,9 @@ jobs:
       - name: Build Apps plugin
         working-directory: src/Starter.ApplicationSearchEngine
         run: |
-          FRAMEWORK="net9.0"
+          FRAMEWORK="net10.0"
           if [[ "${{ matrix.rid }}" == win-* ]]; then
-          FRAMEWORK="net9.0-windows10.0.19041.0"
+          FRAMEWORK="net10.0-windows10.0.19041.0"
           fi
           dotnet publish --configuration Release --runtime ${{ matrix.rid }} --framework $FRAMEWORK -p:EnableWindowsTargeting=true -o ../../build/Plugins/ApplicationSearchEngine
 
@@ -45,7 +45,7 @@ jobs:
         working-directory: src/Starter.WebSearchEngine
 
       - name: Build Workspace plugin
-        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/WorkspaceSearcheEngine
+        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/WorkspaceSearchEngine
         working-directory: src/Starter.WorkspaceSearchEngine
 
       - name: Upload artifacts
