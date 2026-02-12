@@ -29,7 +29,7 @@ public class App : Application
         }
 
         DisableAvaloniaDataAnnotationValidation();
-        lifetime.Exit += (_, _) =>
+        lifetime.ShutdownRequested += (_, _) =>
         {
             Log.Information("---*--- Exiting ---*---");
             Log.CloseAndFlushAsync().AsTask().Wait();
@@ -134,6 +134,8 @@ public class App : Application
         );
         settingsSearchEngine.Config.Subscribe(UpdateConfiguration);
         searchEngineStore.AddSearchEngine(settingsSearchEngine);
+
+        searchEngineStore.AddSearchEngine(new ExitSearchEngine());
 
         Log.Debug("Plugins loaded");
         return (searchEngineStore, settingsSearchEngine.Config);

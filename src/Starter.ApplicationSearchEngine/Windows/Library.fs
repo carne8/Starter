@@ -27,7 +27,10 @@ type WindowsAppsSearchEngine(pluginPath, configDir, logger) =
 
                         let observable, disposable = UwpLoader.observeApplicationChanges apps
                         disposables.Add disposable
-                        observable.Subscribe(fun () -> apps.ToArray() |> resultsObservable.OnNext) |> ignore
+                        observable.Subscribe(fun () ->
+                            logger.Verbose "UWP apps changed"
+                            apps.ToArray() |> resultsObservable.OnNext
+                        ) |> ignore
 
                         apps.AddRange uwpApps
                         apps.ToArray() |> resultsObservable.OnNext
@@ -42,7 +45,10 @@ type WindowsAppsSearchEngine(pluginPath, configDir, logger) =
 
                         let observable, disposable = ExeLoader.observeApplicationChanges apps exeFolderConfig
                         disposables.Add disposable
-                        observable.Subscribe(fun () -> apps.ToArray() |> resultsObservable.OnNext) |> ignore
+                        observable.Subscribe(fun () ->
+                            logger.Verbose "Exe apps changed"
+                            apps.ToArray() |> resultsObservable.OnNext
+                        ) |> ignore
 
                         apps.AddRange exeApps
                         apps.ToArray() |> resultsObservable.OnNext

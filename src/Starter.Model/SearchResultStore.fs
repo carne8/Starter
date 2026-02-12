@@ -23,13 +23,31 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
     /// Output results
     let results = ObservableList<SearchResultData> 300
 
+    let fuzzyMatchResult normalizedText result =
+        let res = fuzzyMatch false true true slab normalizedText result.SearchResult.Name
+        result.FuzzyMatchResult <- res
+
+        match res with
+        | ValueSome fusilResult when fusilResult.Score > 0s ->
+            result.AccentuationMap <- fusilResult.MatchingPositions
+            true
+        | _ ->
+            result.SearchResult.Keywords <> null &&
+            result.SearchResult.Keywords
+            |> Array.exists (fun keyword ->
+                match fuzzyMatch false true false slab normalizedText keyword with
+                | ValueSome res when res.Score > 0s ->
+                    result.AccentuationMap <- null
+                    result.FuzzyMatchResult <- ValueSome res
+                    true
+                | _ -> false
+            )
+
     let queryAllSearchEngines ct query =
         let normalizedText =
             query
             |> TextNormalization.String.normalize
             |> Array.map System.Text.Rune.ToLowerInvariant
-
-        let fuzzyMatchFunc = fuzzyMatch false true true slab normalizedText
 
         staticResults.Subscribe(fun staticResults ->
             results.Clear()
@@ -64,18 +82,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
 
             // Static results
             staticResults
-            |> Seq.filter (fun result ->
-                result.SearchResult.ShowIfNoActivator && (
-                    let fuzzyRes = fuzzyMatchFunc result.SearchResult.Name
-                    result.FuzzyMatchResult <- fuzzyRes
-
-                    match fuzzyRes with
-                    | ValueSome fusilResult when fusilResult.Score > 0s ->
-                        result.AccentuationMap <- fusilResult.MatchingPositions
-                        true
-                    | _ -> false
-                )
-            )
+            |> Seq.filter (fun result -> result.SearchResult.ShowIfNoActivator && fuzzyMatchResult normalizedText result)
             |> results.AddRange
             results.Sort comparer
             results.NotifyChanged()
@@ -87,8 +94,6 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
             query
             |> TextNormalization.String.normalize
             |> Array.map System.Text.Rune.ToLowerInvariant
-
-        let fuzzyMatchFunc = fuzzyMatch false true true slab normalizedText
 
         staticResults.Subscribe(fun staticResults ->
             results.Clear()
@@ -103,17 +108,9 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
                 )
             | _ -> // Show matching results
                 staticResults |> Seq.filter (fun result ->
-                    if result.SearchEngineId <> activator.SearchEngineId then false else
-                    if result.SearchResult.ActivatorFilter |> Array.contains activator |> not then false else
-
-                    let fuzzyRes = fuzzyMatchFunc result.SearchResult.Name
-                    result.FuzzyMatchResult <- fuzzyRes
-
-                    match fuzzyRes with
-                    | ValueSome fusilResult when fusilResult.Score > 0s ->
-                        result.AccentuationMap <- fusilResult.MatchingPositions
-                        true
-                    | _ -> false
+                    result.SearchEngineId = activator.SearchEngineId
+                    && result.SearchResult.ActivatorFilter |> Array.contains activator
+                    && fuzzyMatchResult normalizedText result
                 )
             |> results.AddRange
 

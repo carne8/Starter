@@ -28,6 +28,7 @@ file class SettingsSearchResult(string name, string description, TargetPage targ
 
 internal class SettingsSearchEngine : StaticSearchEngine
 {
+    private readonly ILogger logger;
     public override string Id => nameof(SettingsSearchEngine);
     public override string Name => "Settings";
     public override string ShortName => "Settings";
@@ -48,6 +49,7 @@ internal class SettingsSearchEngine : StaticSearchEngine
 
     public SettingsSearchEngine(ILogger logger, Configuration config, SearchEngineStore searchEngineStore) : base("", "", logger)
     {
+        this.logger = logger;
         windowVm = new SettingsWindowViewModel(config, searchEngineStore);
         window = new Views.SettingsWindow { DataContext = windowVm };
     }
@@ -59,7 +61,7 @@ internal class SettingsSearchEngine : StaticSearchEngine
         {
             case TargetPage.Logs: windowVm.OpenLogsPage(); break;
             case TargetPage.Settings: windowVm.OpenSettingsPage(); break;
-            default: Log.Warning("Unexpected settings page: {Page}", result.TargetPage); break;
+            default: logger.Warning("Unexpected settings page: {Page}", result.TargetPage); break;
         }
 
         try
@@ -70,7 +72,7 @@ internal class SettingsSearchEngine : StaticSearchEngine
         }
         catch (Exception)
         {
-            Log.Verbose("Failed to show window");
+            logger.Verbose("Failed to show window");
             window = new Views.SettingsWindow { DataContext = windowVm };
             window.Show();
         }
