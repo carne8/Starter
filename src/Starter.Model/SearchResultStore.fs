@@ -101,15 +101,18 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
             match query with
             | "" -> // Show all search engine results
                 staticResults |> Seq.filter (fun result ->
-                    if result.SearchEngineId <> activator.SearchEngineId then false else
-                    if result.SearchResult.ActivatorFilter |> Array.contains activator |> not then false else
-                    result.AccentuationMap <- null
-                    true
+                    if result.SearchEngineId = activator.SearchEngineId
+                       && (result.SearchResult.ActivatorFilter |> Array.isEmpty
+                           || result.SearchResult.ActivatorFilter |> Array.contains activator) then
+                        result.AccentuationMap <- null
+                        true
+                    else false
                 )
             | _ -> // Show matching results
                 staticResults |> Seq.filter (fun result ->
                     result.SearchEngineId = activator.SearchEngineId
-                    && result.SearchResult.ActivatorFilter |> Array.contains activator
+                    && (result.SearchResult.ActivatorFilter |> Array.isEmpty
+                        || result.SearchResult.ActivatorFilter |> Array.contains activator)
                     && fuzzyMatchResult normalizedText result
                 )
             |> results.AddRange
