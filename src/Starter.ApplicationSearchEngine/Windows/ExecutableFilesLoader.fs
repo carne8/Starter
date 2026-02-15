@@ -5,6 +5,7 @@ open R3
 open Starter.SearchEngine
 open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Windows.IconHelper
+open Starter.ApplicationSearchEngine.Logger
 
 open System
 open System.IO
@@ -47,17 +48,18 @@ let runApp (app: ExeApplication) =
     |> function null -> () | d -> d.Dispose()
 
 let private getAppFromFile (file: string) =
-    option {
-        do! match file |> Path.GetExtension |> _.ToLowerInvariant() with
-            | ".exe" | ".lnk" -> Some ()
-            | _ -> None
+    voption {
+        let! ext = file |> Path.GetExtension
+        do! match ext.ToLowerInvariant() with
+            | ".exe" | ".lnk" -> ValueSome ()
+            | _ -> ValueNone
 
         use shellItem = new ShellItem(file)
-        let name = shellItem.GetDisplayName(ShellItemDisplayString.NormalDisplay)
+        let! name = shellItem.GetDisplayName(ShellItemDisplayString.NormalDisplay)
         let! icon =
             file
             |> IconHelper.getFileIcon Constants.iconPixelSize
-            |> Option.defaultWith (fun () ->
+            |> ValueOption.defaultWith (fun () ->
                 shellItem
                     .Images
                     .GetImage(Vanara.PInvoke.SIZE(Constants.IconSize, Constants.IconSize), ShellItemGetImageOptions.IconOnly)
@@ -68,15 +70,29 @@ let private getAppFromFile (file: string) =
             { Id = file
               Name = name
               Path = file
-              Icon = StarterIconSource(icon, icon) } :> ISearchResult
+              Icon = StarterIconSource(icon, icon) }
     }
 
-let loadApplications (config: FolderConfiguration) : Task<ISearchResult seq> =
-    Task.Run<ISearchResult seq>(fun () ->
-        config.Folders
-        |> Seq.collect (fun dir -> Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
-        |> Seq.filter (FolderConfiguration.isFileExcluded config >> not)
-        |> Seq.choose getAppFromFile
+let loadApplications (config: FolderConfiguration) =
+    Task.Run(fun () ->
+        let appFiles =
+            config.Folders
+            |> Seq.collect (fun dir -> Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+            |> Seq.filter (FolderConfiguration.isFileExcluded config >> not)
+
+        // Load apps according to the config order to prevent duplicate names
+        let apps = Dictionary()
+        appFiles |> Seq.iter (fun appFile ->
+            appFile
+            |> getAppFromFile
+            |> ValueOption.iter (fun app ->
+                match apps.TryAdd(app.Name, app :> ISearchResult) with
+                | false -> logger.Verbose $"Duplicate app (this file is ignored): {app.Path}"
+                | true -> ()
+            )
+        )
+
+        apps.Values
     )
 
 let observeApplicationChanges (appList: List<ISearchResult>) (config: FolderConfiguration) =
@@ -94,8 +110,10 @@ let observeApplicationChanges (appList: List<ISearchResult>) (config: FolderConf
         watcher.Created.Add(fun args ->
             args.FullPath
             |> getAppFromFile
-            |> Option.iter appList.Add
-            subject.OnNext()
+            |> ValueOption.iter (fun app ->
+                appList.Add app
+                subject.OnNext()
+            )
         )
         watcher.Deleted.Add(fun args ->
             appList.FindIndex(_.Id >> (=) args.FullPath) |> appList.RemoveAt
@@ -106,11 +124,13 @@ let observeApplicationChanges (appList: List<ISearchResult>) (config: FolderConf
 
             args.FullPath
             |> getAppFromFile
-            |> Option.iter appList.Add
-            subject.OnNext()
+            |> ValueOption.iter (fun app ->
+                appList.Add app
+                subject.OnNext()
+            )
         )
 
-        watcher.IncludeSubdirectories <- true // TODO: Is this correct ?
+        watcher.IncludeSubdirectories <- true
         watcher.EnableRaisingEvents <- true
         watcher
     )

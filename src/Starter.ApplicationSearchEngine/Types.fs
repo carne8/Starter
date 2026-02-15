@@ -2,7 +2,8 @@ namespace Starter.ApplicationSearchEngine
 
 [<Struct>]
 type FolderConfiguration =
-    { Folders: string array
+    { /// Folders to search for apps in decreasing order of priority
+      Folders: string array
       ExcludedFolders: string array }
 
     static member isFileExcluded config (file: string) =

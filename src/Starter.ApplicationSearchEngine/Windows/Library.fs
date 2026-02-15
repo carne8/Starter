@@ -22,19 +22,17 @@ type WindowsAppsSearchEngine(pluginPath, configDir, logger) =
         else
             Parallel.Invoke(
                 (fun () ->
-                    task {
-                        let! uwpApps = UwpLoader.loadApplications logger
+                    let uwpApps = UwpLoader.loadApplications logger
 
-                        let observable, disposable = UwpLoader.observeApplicationChanges apps
-                        disposables.Add disposable
-                        observable.Subscribe(fun () ->
-                            logger.Verbose "UWP apps changed"
-                            apps.ToArray() |> resultsObservable.OnNext
-                        ) |> ignore
-
-                        apps.AddRange uwpApps
+                    let observable, disposable = UwpLoader.observeApplicationChanges apps
+                    disposables.Add disposable
+                    observable.Subscribe(fun () ->
+                        logger.Verbose "UWP apps changed"
                         apps.ToArray() |> resultsObservable.OnNext
-                    } |> ignore
+                    ) |> ignore
+
+                    apps.AddRange uwpApps
+                    apps.ToArray() |> resultsObservable.OnNext
                 ),
                 (fun () ->
                     task {

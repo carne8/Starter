@@ -7,12 +7,10 @@ open Starter.ApplicationSearchEngine.Logger
 
 open System
 open System.Collections.Generic
-open System.Collections.Concurrent
 open System.Diagnostics
 open System.IO
 open System.Security.Principal
 open System.Text
-open System.Threading.Tasks
 open System.Xml.Linq
 
 open FsToolkit.ErrorHandling
@@ -74,51 +72,59 @@ type PackageVersion =
 module PackageResource =
     /// Retrieve the files corresponding to the resource
     let getResourceFiles (installedPath: string) (resource: string) =
-        let resourceFolder = resource |> Path.GetDirectoryName
-        let absolutePath = Path.Combine(installedPath, resourceFolder)
+        voption {
+            let! resourceFolder = resource |> Path.GetDirectoryName
+            let absolutePath = Path.Combine(installedPath, resourceFolder)
 
-        let resourceName = Path.GetFileNameWithoutExtension resource
-        let resourceExt = Path.GetExtension resource
+            let! resourceName = Path.GetFileNameWithoutExtension resource
+            let! resourceExt = Path.GetExtension resource
 
-        if not <| Directory.Exists absolutePath then
-            Array.empty
-        else
-        Directory.GetFiles(absolutePath, $"{resourceName}*{resourceExt}")
-        |> Array.map (fun file ->
-            let fileName =
-                file
-                |> Path.GetFileNameWithoutExtension
-                |> _.ToLowerInvariant()
+            return
+                if not <| Directory.Exists absolutePath then Array.empty
+                else
+                Directory.GetFiles(absolutePath, $"{resourceName}*{resourceExt}")
+                |> Array.choose (fun file ->
+                    voption {
+                        // Check file access
+                        try let stream = file |> File.OpenRead
+                            stream.Dispose()
+                        with _ -> return! ValueNone
 
-            if fileName = resourceName then // Is no qualifiers
-                file, dict []
-            else
-                // Parse qualifiers (ex: fileName = logo.contrast-high_scale-400)
-                let qualifiers =
-                    fileName.Split(".")
-                    |> Array.last
-                    |> _.Split("_")
-                    |> Array.map (fun qualifier ->
-                        if qualifier.Contains "-" then
-                            let arr = qualifier.Split "-"
-                            arr[0], arr[1]
+                        let! fileName = file |> Path.GetFileNameWithoutExtension
+                        let fileName = fileName.ToLowerInvariant()
+
+                        if fileName = resourceName then // No qualifiers
+                            return file, dict []
                         else
-                            qualifier, ""
-                    )
-                    |> dict
+                            // Parse qualifiers (ex: fileName = logo.contrast-high_scale-400)
+                            let qualifiers =
+                                fileName.Split(".")
+                                |> Array.last
+                                |> _.Split("_")
+                                |> Array.map (fun qualifier ->
+                                    if qualifier.Contains "-" then
+                                        let arr = qualifier.Split "-"
+                                        arr[0], arr[1]
+                                    else
+                                        qualifier, ""
+                                )
+                                |> dict
 
-                file, qualifiers
-        )
+                            return file, qualifiers
+                    }
+                    |> Option.ofValueOption
+                )
+        }
 
-    /// Return a low score for a resource that matches the criteria of a good app icon for Starter
-    let getResourceScore (_file, qualifiers: IDictionary<string, string>) =
-        let contrastScore =
+    /// Return a low malus for a resource that matches the criteria of a good app icon for Starter
+    let getResourceMalus (_file, qualifiers: IDictionary<string, string>) =
+        let contrastMalus =
             match qualifiers.TryGetValue("contrast") with
             | false, _
             | true, "standard" -> 0
             | _ -> 100
 
-        let targetSizeScore =
+        let targetSizeMalus =
             match qualifiers.TryGetValue("targetsize") with
             | false, _ -> 44 // Because Square44x44Logo
             | true, size ->
@@ -127,7 +133,7 @@ module PackageResource =
                 | false, _ -> Int32.MaxValue
             |> fun scale -> 100 - scale |> abs
 
-        let scaleScore =
+        let scaleMalus =
             match qualifiers.TryGetValue("scale") with
             | false, _ -> 100
             | true, scale ->
@@ -136,12 +142,12 @@ module PackageResource =
                 | false, _ -> Int32.MaxValue
             |> fun scale -> 200 - scale |> abs // Distance to 200
 
-        let qualifiersCountScore = qualifiers.Count
+        let qualifiersCountMalus = qualifiers.Count
 
-        contrastScore*100_000
-        + targetSizeScore*10_000
-        + scaleScore*100
-        + qualifiersCountScore
+        contrastMalus*100_000
+        + targetSizeMalus*10_000
+        + scaleMalus*100
+        + qualifiersCountMalus
 
     let private tryLoadIndirectString (source: string) (stringBuilder: StringBuilder) =
         let res = PInvoke.ShlwApi.SHLoadIndirectString(source, stringBuilder, uint stringBuilder.Capacity)
@@ -185,93 +191,105 @@ module PackageResource =
         | None, None -> None
         | Some resourceValue, _ -> Some resourceValue
 
-type AppxApplication(packageVersion: PackageVersion, installedLocation, packageId: PackageId, xml: XElement) =
+type AppxApplication(packageVersion: PackageVersion, installLocation, packageId: PackageId, xml: XElement) =
     let uapNamespace = XNamespace.Get("http://schemas.microsoft.com/appx/manifest/uap/windows10")
 
     let iconKey =
         match packageVersion with
-        | Windows10 -> Some "Square44x44Logo"
-        | Windows81 -> Some "Square30x30Logo"
-        | Windows8 -> Some "SmallLogo"
-        | Unknown -> None
+        | Windows10 -> ValueSome "Square44x44Logo"
+        | Windows81 -> ValueSome "Square30x30Logo"
+        | Windows8 -> ValueSome "SmallLogo"
+        | Unknown -> ValueNone
 
     // App assets documentation: https://learn.microsoft.com/windows/uwp/controls-and-patterns/tiles-and-notifications-app-assets
     // Windows 10 https://msdn.microsoft.com/library/windows/apps/dn934817.aspx
     // Windows 8.1 https://msdn.microsoft.com/library/windows/apps/hh965372.aspx#target_size
     // Windows 8 https://msdn.microsoft.com/library/windows/apps/br211475.aspx
     member private this.GetIconName() =
-        iconKey |> Option.bind (fun key ->
-            try
-                xml.Element(uapNamespace + "VisualElements")
-                |> _.Attribute(key)
-                |> _.Value
-                |> Some
-            with _ -> None
-        )
-
-    member private this.GetIconPath() =
-        option {
-            let! resourceName = this.GetIconName()
-            let resourceFiles = resourceName |> PackageResource.getResourceFiles installedLocation
-
-            let lightResources, darkResources =
-                resourceFiles |> Array.partition (fun (file, _) ->
-                    let fileName =
-                        file
-                        |> Path.GetFileNameWithoutExtension
-                        |> _.ToLowerInvariant()
-
-                    fileName.Contains "theme-light" || fileName.Contains "altform-lightunplated"
+        voption {
+            let! iconKey = iconKey
+            return!
+                xml.Elements(uapNamespace + "VisualElements")
+                |> Seq.tryPick (fun visualElement ->
+                    visualElement.Attribute iconKey
+                    |> Option.ofObj
+                    |> Option.map _.Value
                 )
+        }
+
+    member private this.GetIconPath(iconName) =
+        voption {
+            let! resourceFiles = iconName |> PackageResource.getResourceFiles installLocation
+
+            let lightResources = ResizeArray()
+            let darkResources = ResizeArray()
+            resourceFiles |> Array.iter (fun (file, qualifiers) ->
+                file
+                |> Path.GetFileNameWithoutExtension
+                |> ValueOption.ofObj
+                |> ValueOption.iter (fun fileName ->
+                    let fileName = fileName.ToLowerInvariant()
+
+                    if fileName.Contains "theme-light" || fileName.Contains "altform-lightunplated" then
+                        lightResources.Add (file, qualifiers)
+                    else
+                        darkResources.Add (file, qualifiers)
+                )
+            )
 
             let lightIcon =
-                lightResources
-                |> Array.sortBy PackageResource.getResourceScore
-                |> Array.tryHead
-                |> Option.map fst
+                if lightResources.Count = 0 then ValueNone else
+                    lightResources
+                    |> Seq.minBy PackageResource.getResourceMalus
+                    |> fst
+                    |> ValueSome
 
             let darkIcon =
-                darkResources
-                |> Array.sortBy PackageResource.getResourceScore
-                |> Array.tryHead
-                |> Option.map fst
+                if darkResources.Count = 0 then ValueNone else
+                    darkResources
+                    |> Seq.minBy PackageResource.getResourceMalus
+                    |> fst
+                    |> ValueSome
 
             match lightIcon, darkIcon with
-            | Some f, None
-            | None, Some f -> return f, f
-            | Some l, Some d -> return l, d
-            | None, None -> return! None
+            | ValueSome l, ValueSome d -> return l, d
+            | ValueSome f, ValueNone | ValueNone, ValueSome f -> return f, f
+            | ValueNone, ValueNone -> return! ValueNone
         }
 
     member private this.GetId() =
-        try Some <| xml.Attribute("Id").Value
-        with _ -> None
+        xml.Attribute "Id"
+        |> ValueOption.ofObj
+        |> ValueOption.map _.Value
 
     member private this.GetAppListEntry() =
-        try
-            xml.Element(uapNamespace + "VisualElements")
-            |> _.Attribute("AppListEntry")
-            |> _.Value
-            |> Some
-        with _ -> None
+        xml.Elements(uapNamespace + "VisualElements")
+        |> Seq.tryPick (fun visualElement ->
+            visualElement.Attribute "AppListEntry"
+            |> Option.ofObj
+            |> Option.map _.Value
+        )
+        |> ValueOption.ofOption
 
     member private this.GetDisplayNameResourceId() =
-        try
-            xml.Element(uapNamespace + "VisualElements")
-            |> _.Attribute("DisplayName")
-            |> _.Value
-            |> Some
-        with _ -> None
+        xml.Elements(uapNamespace + "VisualElements")
+        |> Seq.tryPick (fun visualElement ->
+            visualElement.Attribute "DisplayName"
+            |> Option.ofObj
+            |> Option.map _.Value
+        )
+        |> ValueOption.ofOption
 
-    member this.ToSearchResult() : ISearchResult option =
+    member this.ToSearchResult() : ISearchResult voption =
         try
-            option {
+            voption {
                 let! appId = this.GetId()
-
                 let! nameResourceId = this.GetDisplayNameResourceId()
                 let! name = PackageResource.loadResourceFromPri packageId.FullName nameResourceId
 
-                let! lightIconPath, darkIconPath = this.GetIconPath()
+                let! iconName = this.GetIconName()
+                let! lightIconPath, darkIconPath = this.GetIconPath(iconName)
+
                 let lightIconStream = lightIconPath |> File.OpenRead
                 let darkIconStream = darkIconPath |> File.OpenRead
                 let icon = StarterIconSource(
@@ -280,8 +298,8 @@ type AppxApplication(packageVersion: PackageVersion, installedLocation, packageI
                 )
 
                 do! match this.GetAppListEntry() with
-                    | Some "none" -> None
-                    | Some _ | None -> Some ()
+                    | ValueSome "none" -> ValueNone
+                    | _ -> ValueSome ()
 
                 return
                     { Id = packageId.FullName + appId
@@ -291,7 +309,7 @@ type AppxApplication(packageVersion: PackageVersion, installedLocation, packageI
             }
         with exn ->
             logger.Warning(exn, "Failed to convert package to search result")
-            None
+            ValueNone
 
 type AppxManifest(package: Package) =
     let manifestPath = Path.Combine(package.InstalledLocation.Path, "AppxManifest.xml")
@@ -304,15 +322,21 @@ type AppxManifest(package: Package) =
         |> Option.get
 
     member this.GetApplications() =
-        let ns = xml.Root.GetDefaultNamespace()
-        xml.Descendants(ns + "Application") |> Seq.choose (fun xml ->
-            AppxApplication(
-                packageVersion,
-                package.InstalledPath,
-                package.Id,
-                xml
-            ).ToSearchResult()
-        )
+        voption {
+            let! root = xml.Root
+            let ns = root.GetDefaultNamespace()
+
+            return xml.Descendants(ns + "Application") |> Seq.choose (fun xml -> // TODO: Seq.tryPick and Seq.choose to voption
+                AppxApplication(
+                    packageVersion,
+                    package.InstalledPath,
+                    package.Id,
+                    xml
+                ).ToSearchResult()
+                |> Option.ofValueOption
+            )
+        }
+        |> ValueOption.defaultValue Seq.empty
 
 let runApp (app: UwpApplication) =
     ProcessStartInfo(
@@ -322,27 +346,22 @@ let runApp (app: UwpApplication) =
     |> Process.Start
     |> function null -> () | d -> d.Dispose()
 
-let loadApplications (logger: Serilog.ILogger) : Task<ISearchResult seq> =
-    let packageManager = PackageManager()
-    let currentUser = WindowsIdentity.GetCurrent().Owner
-
+let loadApplications (logger: Serilog.ILogger) : ISearchResult seq =
     try
-        task {
-            let bag = ConcurrentBag()
+        let packageManager = PackageManager()
 
-            do! Parallel.ForEachAsync(
-                packageManager.FindPackagesForUser(currentUser.Value),
-                Func<_, _, _>(fun package _ ->
-                    AppxManifest(package).GetApplications() |> Seq.iter bag.Add
-                    ValueTask.CompletedTask
-                )
-            )
+        WindowsIdentity.GetCurrent().Owner
+        |> ValueOption.ofObj
+        |> ValueOption.map (fun currentUser ->
+            currentUser.Value
+            |> packageManager.FindPackagesForUser
+            |> Seq.collect (fun package -> AppxManifest(package).GetApplications())
+        )
+        |> ValueOption.defaultValue Seq.empty
 
-            return bag :> ISearchResult seq
-        }
     with e ->
         logger.Error(e, "Failed to load applications from Windows packages.")
-        Seq.empty |> Task.FromResult
+        Seq.empty
 
 let observeApplicationChanges (appList: List<ISearchResult>) =
     let catalog = PackageCatalog.OpenForCurrentUser()
@@ -359,14 +378,22 @@ let observeApplicationChanges (appList: List<ISearchResult>) =
     let remove =
         Windows.Foundation.TypedEventHandler<_, PackageUninstallingEventArgs>(fun _ evt ->
             if evt.IsComplete then
-                appList.RemoveAll(_.Id >> _.StartsWith(evt.Package.Id.FullName)) |> ignore
+                appList.RemoveAll (fun app ->
+                    match app.Id with
+                    | null -> false
+                    | id -> id.StartsWith(evt.Package.Id.FullName)
+                ) |> ignore
                 subject.OnNext()
         )
 
     let update =
         Windows.Foundation.TypedEventHandler<_, PackageUpdatingEventArgs>(fun _ evt ->
             if evt.IsComplete then
-                appList.RemoveAll(_.Id >> _.StartsWith(evt.SourcePackage.Id.FullName)) |> ignore
+                appList.RemoveAll (fun app ->
+                    match app.Id with
+                    | null -> false
+                    | id -> id.StartsWith(evt.SourcePackage.Id.FullName)
+                ) |> ignore
                 AppxManifest(evt.TargetPackage).GetApplications() |> appList.AddRange
                 subject.OnNext()
         )

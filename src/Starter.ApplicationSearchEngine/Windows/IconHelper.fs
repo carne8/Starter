@@ -68,7 +68,7 @@ module IconHelper =
             failwith "Failed to retrieve icon info"
 
         match fileInfo.iIcon with
-        | 0 | 2 -> None // Avoid default icons
+        | 0 | 2 -> ValueNone // Avoid default icons
         | _ ->
             use hIcon = imageList.GetIcon(
                 fileInfo.iIcon,
@@ -76,8 +76,8 @@ module IconHelper =
             )
 
             match hIcon.IsNull with
-            | true -> None
-            | false -> hIcon.ToAvaloniaBitmap() |> Some
+            | true -> ValueNone
+            | false -> hIcon.ToAvaloniaBitmap() |> ValueSome
 
     let private isValidIcon (bitmap: Avalonia.Media.Imaging.Bitmap) =
         // Some .exe files doesn't have high resolution icon
@@ -92,7 +92,7 @@ module IconHelper =
         pixels |> Array.exists ((<>) 0uy)
 
     let getFileIcon desiredSize (filePath: string) =
-        option {
+        voption {
             use! jumboIcon = getFileHIcon Shell32.SHIL.SHIL_JUMBO filePath
 
             match isValidIcon jumboIcon with
