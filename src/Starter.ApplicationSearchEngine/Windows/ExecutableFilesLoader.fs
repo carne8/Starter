@@ -13,19 +13,21 @@ open System.Threading.Tasks
 open System.Collections.Generic
 
 open FsToolkit.ErrorHandling
+open Vanara.PInvoke
 open Vanara.Windows.Shell
 
 type ExeApplication =
     { Id: string
       Name: string
       Path: string
+      Keywords: string array
       Icon: StarterIconSource }
 
     interface ISearchResult with
         member this.Id = this.Id
         member this.Name = this.Name
         member this.Description = "Application"
-        member this.Keywords = Array.empty
+        member this.Keywords = this.Keywords
         member this.Icon = this.Icon
         member this.ShowIfNoActivator = true
         member this.ActivatorFilter = Array.empty
@@ -50,19 +52,21 @@ let runApp (app: ExeApplication) =
 let private getAppFromFile (file: string) =
     voption {
         let! ext = file |> Path.GetExtension
-        do! match ext.ToLowerInvariant() with
-            | ".exe" | ".lnk" -> ValueSome ()
+        let ext = ext.ToLowerInvariant()
+        do! match ext with
+            | ".exe" | ".lnk" | ".url" -> ValueSome ()
             | _ -> ValueNone
 
         use shellItem = new ShellItem(file)
         let! name = shellItem.GetDisplayName(ShellItemDisplayString.NormalDisplay)
-        let! icon =
-            file
-            |> IconHelper.getFileIcon Constants.iconPixelSize
+        let icon =
+            match ext = ".url" with
+            | false -> file |> IconHelper.getFileIcon Constants.iconPixelSize
+            | true -> file |> IconHelper.getUrlFileIcon
             |> ValueOption.defaultWith (fun () ->
                 shellItem
                     .Images
-                    .GetImage(Vanara.PInvoke.SIZE(Constants.IconSize, Constants.IconSize), ShellItemGetImageOptions.IconOnly)
+                    .GetImage(SIZE(Constants.IconSize, Constants.IconSize), ShellItemGetImageOptions.IconOnly)
                     .ToAvaloniaBitmap()
             )
 
@@ -70,6 +74,7 @@ let private getAppFromFile (file: string) =
             { Id = file
               Name = name
               Path = file
+              Keywords = [| ext |]
               Icon = StarterIconSource(icon, icon) }
     }
 

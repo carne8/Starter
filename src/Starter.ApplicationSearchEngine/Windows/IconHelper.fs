@@ -100,3 +100,16 @@ module IconHelper =
                 return jumboIcon.CreateScaledBitmap(desiredSize, Avalonia.Media.Imaging.BitmapInterpolationMode.HighQuality)
             | false -> return! getFileHIcon Shell32.SHIL.SHIL_EXTRALARGE filePath
         }
+
+    let getUrlFileIcon (file: string) =
+        file
+        |> File.ReadAllLines
+        |> Array.tryFind _.StartsWith("IconFile=")
+        |> Option.bind (fun line ->
+            let file = line.Substring "IconFile=".Length
+
+            match File.Exists file with
+            | false -> None
+            | true -> new Avalonia.Media.Imaging.Bitmap(file) |> Some
+        )
+        |> Option.toValueOption

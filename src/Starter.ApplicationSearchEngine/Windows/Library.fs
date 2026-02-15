@@ -12,7 +12,7 @@ type WindowsAppsSearchEngine(pluginPath, configDir, logger) =
 
     let apps = ResizeArray<ISearchResult>(100)
     let mutable disposables = ResizeArray(2) // Btw: keep a reference of the UWP watcher and prevent it from being garbage collected
-    let resultsObservable = new Subject<ISearchResult seq>()
+    let resultsObservable = new BehaviorSubject<ISearchResult seq>(Seq.empty)
 
     do Logger.logger <- logger
 
