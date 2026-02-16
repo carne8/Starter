@@ -4,7 +4,8 @@ namespace Starter.ApplicationSearchEngine
 type FolderConfiguration =
     { /// Folders to search for apps in decreasing order of priority
       Folders: string array
-      ExcludedFolders: string array }
+      ExcludedFolders: string array
+      AllowDuplicates: bool }
 
     static member isFileExcluded config (file: string) =
         config.ExcludedFolders |> Array.exists file.StartsWith

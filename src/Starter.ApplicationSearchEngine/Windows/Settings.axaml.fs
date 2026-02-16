@@ -26,6 +26,7 @@ type SettingsViewModel(configDir) =
 
     let config = new BehaviorSubject<FolderConfiguration>(baseConfig)
 
+    let mutable allowDuplicates = baseConfig.AllowDuplicates
     let folders = ObservableCollection()
     let excludedFolders = ObservableCollection()
     let foldersChanged = new Subject<unit>()
@@ -55,6 +56,12 @@ type SettingsViewModel(configDir) =
         ) |> ignore
 
     member this.Config = config
+    member this.AllowDuplicates
+        with get () = allowDuplicates
+        and set v =
+            allowDuplicates <- v
+            { config.Value with AllowDuplicates = v } |> config.OnNext
+
     member this.Folders = folders
     member this.ExcludedFolders = excludedFolders
 

@@ -21,12 +21,13 @@ type ExeApplication =
       Name: string
       Path: string
       Keywords: string array
+      mutable AlternativeDescription: bool
       Icon: StarterIconSource }
 
     interface ISearchResult with
         member this.Id = this.Id
         member this.Name = this.Name
-        member this.Description = "Application"
+        member this.Description = if this.AlternativeDescription then this.Path else "Application"
         member this.Keywords = this.Keywords
         member this.Icon = this.Icon
         member this.ShowIfNoActivator = true
@@ -69,6 +70,7 @@ let private getAppFromFile (file: string) =
               Name = name
               Path = file
               Keywords = [| ext |]
+              AlternativeDescription = false
               Icon = StarterIconSource(icon, icon) }
     }
 
@@ -80,21 +82,35 @@ let loadApplications (ct: CancellationToken) (config: FolderConfiguration) =
             |> Seq.filter (FolderConfiguration.isFileExcluded config >> not)
 
         // Load apps according to the config order to prevent duplicate names
-        let apps = Dictionary()
+        let appsDict = Dictionary()
+        let apps = ResizeArray()
+
         let rec loop (enumerator: IEnumerator<_>) =
             if enumerator.MoveNext() && not ct.IsCancellationRequested then
                 enumerator.Current
                 |> getAppFromFile
                 |> ValueOption.iter (fun app ->
-                    match apps.TryAdd(app.Name, app :> ISearchResult) with
-                    | false -> logger.Verbose $"Duplicate app (this file is ignored): {app.Path}"
-                    | true -> ()
+                    if config.AllowDuplicates then
+                        match appsDict.TryAdd(app.Name, app) with
+                        | false ->
+                            logger.Verbose $"Duplicate app: {app.Path}"
+                            appsDict[app.Name].AlternativeDescription <- true
+                            app.AlternativeDescription <- true
+                        | true -> ()
+
+                        app
+                        :> ISearchResult
+                        |> apps.Add
+                    else
+                        match appsDict.TryAdd(app.Name, app) with
+                        | false -> logger.Verbose $"Duplicate app (file is ignored): {app.Path}"
+                        | true -> app :> ISearchResult |> apps.Add
                 )
 
                 loop enumerator
 
         appFiles.GetEnumerator() |> loop
-        apps.Values
+        apps
     )
 
 let observeFolder added removed (folder: string) =

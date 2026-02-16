@@ -25,7 +25,8 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
 
     static let defaultFolderConfig =
         { Folders = defaultDataDirectories
-          ExcludedFolders = Array.empty }
+          ExcludedFolders = Array.empty
+          AllowDuplicates = true } // Not applicable for Linux
 
     let apps = ResizeArray<ISearchResult> 200
     let results = new Subject<ISearchResult seq>()
@@ -47,7 +48,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
     do
         Logger.logger <- logger
         if not useGtkLaunch then
-            logger.Information $"gtk-launch not available"
+            logger.Information "gtk-launch not available"
 
     member private this.LoadApps() =
         task {

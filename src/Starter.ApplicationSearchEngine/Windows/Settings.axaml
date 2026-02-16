@@ -2,6 +2,8 @@
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Starter.ApplicationSearchEngine.Windows"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
              x:DataType="vm:SettingsViewModel">
     <UserControl.Resources>
         <StreamGeometry x:Key="Plus">M14.5,13 L14.5,3.75378577 C14.5,3.33978577 14.164,3.00378577 13.75,3.00378577 C13.336,3.00378577 13,3.33978577 13,3.75378577 L13,13 L3.75387573,13 C3.33987573,13 3.00387573,13.336 3.00387573,13.75 C3.00387573,14.164 3.33987573,14.5 3.75387573,14.5 L13,14.5 L13,23.7523651 C13,24.1663651 13.336,24.5023651 13.75,24.5023651 C14.164,24.5023651 14.5,24.1663651 14.5,23.7523651 L14.5,14.5 L23.7498262,14.5030754 C24.1638262,14.5030754 24.4998262,14.1670754 24.4998262,13.7530754 C24.4998262,13.3390754 24.1638262,13.0030754 23.7498262,13.0030754 L14.5,13 Z</StreamGeometry>
@@ -20,12 +22,28 @@
         </DataTemplate>
     </UserControl.Resources>
 
+    <UserControl.Styles>
+        <Style Selector="StackPanel.enableSpacing">
+            <Setter Property="Spacing" Value="8" />
+        </Style>
+    </UserControl.Styles>
+
     <ScrollViewer>
         <StackPanel Margin="20" Spacing="4">
             <TextBlock Classes="title1">Applications settings</TextBlock>
 
+            <TextBlock Classes="title2">Duplicates</TextBlock>
+            <ui:SettingsExpander Header="Allow duplicate applications">
+                <ui:SettingsExpander.IconSource>
+                    <ic:SymbolIconSource Symbol="Multiplier2x" />
+                </ui:SettingsExpander.IconSource>
+                <ui:SettingsExpander.Footer>
+                    <ToggleSwitch IsChecked="{Binding AllowDuplicates}" />
+                </ui:SettingsExpander.Footer>
+            </ui:SettingsExpander>
+
             <TextBlock Classes="title2">Additional application folders</TextBlock>
-            <StackPanel Spacing="8">
+            <StackPanel Classes.enableSpacing="{Binding Folders.Count}">
                 <ItemsRepeater ItemsSource="{Binding Folders}" ItemTemplate="{StaticResource FolderDataTemplate}">
                     <ItemsRepeater.Layout>
                         <StackLayout Spacing="8" />
@@ -39,7 +57,7 @@
             </StackPanel>
 
             <TextBlock Classes="title2">Application folders to exclude</TextBlock>
-            <StackPanel Spacing="8">
+            <StackPanel Classes.enableSpacing="{Binding ExcludedFolders.Count}">
                 <ItemsRepeater ItemsSource="{Binding ExcludedFolders}" ItemTemplate="{StaticResource FolderDataTemplate}">
                     <ItemsRepeater.Layout>
                         <StackLayout Spacing="8" />

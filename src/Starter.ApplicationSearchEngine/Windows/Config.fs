@@ -14,7 +14,8 @@ let ConfigFilename = "applications-config.json"
 module FolderConfiguration =
     let Empty =
         { Folders = Array.empty
-          ExcludedFolders = Array.empty }
+          ExcludedFolders = Array.empty
+          AllowDuplicates = false }
 
     let Default =
         { Folders =
@@ -22,7 +23,8 @@ module FolderConfiguration =
                Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms) |]
           ExcludedFolders =
             [| Environment.GetFolderPath(Environment.SpecialFolder.Startup)
-               Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup) |]  }
+               Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup) |]
+          AllowDuplicates = false }
 
     let normalize folderConfig =
         { Folders =
@@ -30,7 +32,8 @@ module FolderConfiguration =
             |> Array.filter Directory.Exists
           ExcludedFolders =
             Array.append folderConfig.ExcludedFolders Default.ExcludedFolders
-            |> Array.filter Directory.Exists }
+            |> Array.filter Directory.Exists
+          AllowDuplicates = folderConfig.AllowDuplicates }
 
 module private ValueOption =
     let inline ofPair (r: bool, v: 'a | null) =
@@ -50,6 +53,15 @@ module private JsonNode =
     let parseString (node: JsonNode | null) =
         match node with
         | :? JsonValue as value -> value.TryGetValue<string>() |> ValueOption.ofPair
+        | _ -> ValueNone
+
+    let parseBool (node: JsonNode | null) =
+        match node with
+        | :? JsonValue as value ->
+            match value.GetValueKind() with
+            | JsonValueKind.False -> ValueSome false
+            | JsonValueKind.True -> ValueSome true
+            | _ -> ValueNone
         | _ -> ValueNone
 
 let private ensureFileExists (file: string) =
@@ -77,6 +89,8 @@ let load (file: string) =
                 logger.Error(e, "Failed to open file for read")
                 ValueNone
 
+        let! allowDuplicates = node["allowDuplicates"] |> JsonNode.parseBool
+
         let! foldersJson = node["folders"] |> JsonNode.parseArray
         let folders =
             foldersJson
@@ -93,13 +107,16 @@ let load (file: string) =
             | ValueNone -> Array.empty
 
         return { Folders = folders
-                 ExcludedFolders = excludedFolders }
+                 ExcludedFolders = excludedFolders
+                 AllowDuplicates = allowDuplicates }
     }
     |> ValueOption.defaultValue FolderConfiguration.Empty
 
 let save (file: string) config =
     result {
         let json = JsonObject()
+
+        json["allowDuplicates"] <- config.AllowDuplicates |> JsonValue.Create
 
         json["folders"] <-
             config.Folders
