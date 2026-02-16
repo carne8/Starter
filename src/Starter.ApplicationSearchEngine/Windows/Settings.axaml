@@ -1,0 +1,57 @@
+﻿<UserControl x:Class="Starter.ApplicationSearchEngine.Windows.Settings"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Starter.ApplicationSearchEngine.Windows"
+             x:DataType="vm:SettingsViewModel">
+    <UserControl.Resources>
+        <StreamGeometry x:Key="Plus">M14.5,13 L14.5,3.75378577 C14.5,3.33978577 14.164,3.00378577 13.75,3.00378577 C13.336,3.00378577 13,3.33978577 13,3.75378577 L13,13 L3.75387573,13 C3.33987573,13 3.00387573,13.336 3.00387573,13.75 C3.00387573,14.164 3.33987573,14.5 3.75387573,14.5 L13,14.5 L13,23.7523651 C13,24.1663651 13.336,24.5023651 13.75,24.5023651 C14.164,24.5023651 14.5,24.1663651 14.5,23.7523651 L14.5,14.5 L23.7498262,14.5030754 C24.1638262,14.5030754 24.4998262,14.1670754 24.4998262,13.7530754 C24.4998262,13.3390754 24.1638262,13.0030754 23.7498262,13.0030754 L14.5,13 Z</StreamGeometry>
+        <StreamGeometry x:Key="Cross">M3.52499419,3.71761187 L3.61611652,3.61611652 C4.0717282,3.16050485 4.79154862,3.13013074 5.28238813,3.52499419 L5.38388348,3.61611652 L14,12.233 L22.6161165,3.61611652 C23.1042719,3.12796116 23.8957281,3.12796116 24.3838835,3.61611652 C24.8720388,4.10427189 24.8720388,4.89572811 24.3838835,5.38388348 L15.767,14 L24.3838835,22.6161165 C24.8394952,23.0717282 24.8698693,23.7915486 24.4750058,24.2823881 L24.3838835,24.3838835 C23.9282718,24.8394952 23.2084514,24.8698693 22.7176119,24.4750058 L22.6161165,24.3838835 L14,15.767 L5.38388348,24.3838835 C4.89572811,24.8720388 4.10427189,24.8720388 3.61611652,24.3838835 C3.12796116,23.8957281 3.12796116,23.1042719 3.61611652,22.6161165 L12.233,14 L3.61611652,5.38388348 C3.16050485,4.9282718 3.13013074,4.20845138 3.52499419,3.71761187 L3.61611652,3.61611652 L3.52499419,3.71761187 Z</StreamGeometry>
+        <DataTemplate x:Key="FolderDataTemplate" DataType="vm:FolderViewModel">
+            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
+                <TextBox Grid.Column="0" Text="{Binding Path}" />
+                <Button Grid.Column="1"
+                        VerticalAlignment="Stretch"
+                        Command="{Binding Remove}">
+                    <PathIcon Width="14"
+                              Height="14"
+                              Data="{StaticResource Cross}" />
+                </Button>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <ScrollViewer>
+        <StackPanel Margin="20" Spacing="4">
+            <TextBlock Classes="title1">Applications settings</TextBlock>
+
+            <TextBlock Classes="title2">Additional application folders</TextBlock>
+            <StackPanel Spacing="8">
+                <ItemsRepeater ItemsSource="{Binding Folders}" ItemTemplate="{StaticResource FolderDataTemplate}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="8" />
+                    </ItemsRepeater.Layout>
+                </ItemsRepeater>
+                <Button HorizontalAlignment="Stretch" Command="{Binding AddFolder}">
+                    <PathIcon Width="14"
+                              Height="14"
+                              Data="{StaticResource Plus}" />
+                </Button>
+            </StackPanel>
+
+            <TextBlock Classes="title2">Application folders to exclude</TextBlock>
+            <StackPanel Spacing="8">
+                <ItemsRepeater ItemsSource="{Binding ExcludedFolders}" ItemTemplate="{StaticResource FolderDataTemplate}">
+                    <ItemsRepeater.Layout>
+                        <StackLayout Spacing="8" />
+                    </ItemsRepeater.Layout>
+                </ItemsRepeater>
+                <Button HorizontalAlignment="Stretch" Command="{Binding AddExcludedFolder}">
+                    <PathIcon Width="14"
+                              Height="14"
+                              Data="{StaticResource Plus}" />
+                </Button>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

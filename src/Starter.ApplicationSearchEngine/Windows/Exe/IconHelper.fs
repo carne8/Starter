@@ -1,4 +1,4 @@
-module Starter.ApplicationSearchEngine.Windows.IconHelper
+module Starter.ApplicationSearchEngine.Windows.Exe.IconHelper
 
 #nowarn 9
 
@@ -66,6 +66,9 @@ module IconHelper =
 
         if res = IntPtr.Zero then
             failwith "Failed to retrieve icon info"
+
+        // Dispose the useless HICON
+        new User32.SafeHICON(fileInfo.hIcon) |> _.Dispose()
 
         match fileInfo.iIcon with
         | 0 | 2 -> ValueNone // Avoid default icons

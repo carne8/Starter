@@ -1,39 +1,20 @@
-﻿module Starter.ApplicationSearchEngine.Windows.UwpLoader
-
-open R3
-open Starter.SearchEngine
-open Starter.ApplicationSearchEngine
-open Starter.ApplicationSearchEngine.Logger
+﻿namespace Starter.ApplicationSearchEngine.Windows.Uwp.AppxManifest
 
 open System
 open System.Collections.Generic
-open System.Diagnostics
 open System.IO
-open System.Security.Principal
 open System.Text
 open System.Xml.Linq
 
-open FsToolkit.ErrorHandling
+open Starter.ApplicationSearchEngine
+open Starter.ApplicationSearchEngine.Windows.Uwp
+open Starter.ApplicationSearchEngine.Logger
+
 open Avalonia.Media.Imaging
-
-open Windows.ApplicationModel
-open Windows.Management.Deployment
+open FsToolkit.ErrorHandling
+open Starter.SearchEngine
 open Vanara
-
-type UwpApplication =
-    { Id: string
-      Name: string
-      PackageId: string
-      Icon: StarterIconSource }
-
-    interface ISearchResult with
-        member this.Id = this.Id
-        member this.Name = this.Name
-        member this.Description = "Application"
-        member this.Keywords = Array.empty
-        member this.Icon = this.Icon
-        member this.ShowIfNoActivator = true
-        member this.ActivatorFilter = Array.empty
+open Windows.ApplicationModel
 
 module Xml =
     let getNamespaces (xml: XDocument) =
@@ -337,75 +318,3 @@ type AppxManifest(package: Package) =
             )
         }
         |> ValueOption.defaultValue Seq.empty
-
-let runApp (app: UwpApplication) =
-    ProcessStartInfo(
-        FileName = $"shell:AppsFolder\\{app.PackageId}",
-        UseShellExecute = true
-    )
-    |> Process.Start
-    |> function null -> () | d -> d.Dispose()
-
-let loadApplications (logger: Serilog.ILogger) : ISearchResult seq =
-    try
-        let packageManager = PackageManager()
-
-        WindowsIdentity.GetCurrent().Owner
-        |> ValueOption.ofObj
-        |> ValueOption.map (fun currentUser ->
-            currentUser.Value
-            |> packageManager.FindPackagesForUser
-            |> Seq.collect (fun package -> AppxManifest(package).GetApplications())
-        )
-        |> ValueOption.defaultValue Seq.empty
-
-    with e ->
-        logger.Error(e, "Failed to load applications from Windows packages.")
-        Seq.empty
-
-let observeApplicationChanges (appList: List<ISearchResult>) =
-    let catalog = PackageCatalog.OpenForCurrentUser()
-    let subject = new Subject<unit>()
-
-    let add =
-        Windows.Foundation.TypedEventHandler<_, PackageInstallingEventArgs>(fun _ evt ->
-            if evt.IsComplete then
-                let oldCount = appList.Count
-                AppxManifest(evt.Package).GetApplications() |> appList.AddRange
-                if oldCount <> appList.Count then subject.OnNext()
-        )
-
-    let remove =
-        Windows.Foundation.TypedEventHandler<_, PackageUninstallingEventArgs>(fun _ evt ->
-            if evt.IsComplete then
-                appList.RemoveAll (fun app ->
-                    match app.Id with
-                    | null -> false
-                    | id -> id.StartsWith(evt.Package.Id.FullName)
-                ) |> ignore
-                subject.OnNext()
-        )
-
-    let update =
-        Windows.Foundation.TypedEventHandler<_, PackageUpdatingEventArgs>(fun _ evt ->
-            if evt.IsComplete then
-                appList.RemoveAll (fun app ->
-                    match app.Id with
-                    | null -> false
-                    | id -> id.StartsWith(evt.SourcePackage.Id.FullName)
-                ) |> ignore
-                AppxManifest(evt.TargetPackage).GetApplications() |> appList.AddRange
-                subject.OnNext()
-        )
-
-    catalog.add_PackageInstalling(add)
-    catalog.add_PackageUninstalling(remove)
-    catalog.add_PackageUpdating(update)
-
-    subject,
-    { new IDisposable with
-        member this.Dispose() =
-            catalog.remove_PackageInstalling(add)
-            catalog.remove_PackageUninstalling(remove)
-            catalog.remove_PackageUpdating(update)
-            subject.Dispose() }
