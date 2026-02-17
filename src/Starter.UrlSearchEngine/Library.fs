@@ -50,7 +50,9 @@ type UrlSearchEngine(pluginPath, configDir, logger) =
     override this.Icon = icon
     override this.ImportantResults = false
     override this.Activators = [| DefaultSearchEngineActivator(this) |]
+    override this.UseAsyncEnumerable = false
 
+    override this.SearchAsync(_, _) = failwith "todo"
     override this.Search(query, _ct, _) =
         query
         |> regex.Matches

@@ -3,6 +3,7 @@
 open System
 open System.Collections.Generic
 open System.Threading
+open System.Threading.Tasks
 open Fusil
 open R3
 open Serilog
@@ -150,6 +151,35 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
         with e ->
             Log.Error(e, $"Failed to get results from dynamic search engine: {engine.Name}")
 
+    let queryDynamicSearchEngineAsync ct (activator: ISearchEngineActivator) query (engine: DynamicSearchEngine) = // Show only this engine results
+        try
+            results.Clear()
+            let s = new Subject<unit>()
+            let engineResults = engine.SearchAsync(query, activator)
+
+            s
+                .Debounce(TimeSpan.FromMilliseconds 100.)
+                .Subscribe(fun () -> results.NotifyChanged())
+            |> ignore
+
+            Task.Run<unit>(fun () -> task {
+                let enumerator = engineResults.GetAsyncEnumerator(ct)
+                while! enumerator.MoveNextAsync() do
+                    let res =
+                        SearchResultData.createDynamic
+                            engine
+                            SearchResultKind.Dynamic
+                            enumerator.Current
+
+                    match results.FindIndex(fun r -> comparer.Invoke(r, res) >= 0) with
+                    | -1 -> results.Add res
+                    | idx -> results.Insert(idx, res)
+
+                    s.OnNext()
+            }) |> ignore
+        with e ->
+            Log.Error(e, $"Failed to get results from dynamic search engine: {engine.Name}")
+
 
     interface IDisposable with
         member this.Dispose() = staticResults.Dispose()
@@ -213,7 +243,10 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
         | activator ->
             match searchEngines.TryGetValue activator.SearchEngineId with
             | true, :? StaticSearchEngine -> queryStaticSearchEngine ct activator text
-            | true, (:? DynamicSearchEngine as searchEngine) -> queryDynamicSearchEngine ct activator text searchEngine
+            | true, (:? DynamicSearchEngine as searchEngine) ->
+                match searchEngine.UseAsyncEnumerable with
+                | false -> queryDynamicSearchEngine ct activator text searchEngine
+                | true -> queryDynamicSearchEngineAsync ct activator text searchEngine
             | _ -> Log.Error $"Cannot find search engine matching the current activator: {activator.Id}"
 
     member this.SortResults() =

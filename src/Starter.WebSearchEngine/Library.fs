@@ -58,6 +58,7 @@ type WebSearchEngine(pluginPath, configDir, logger) as this =
     override this.ShortName = searchEngine.Value.ShortName
     override this.Icon = searchEngine.Value.StarterIcon
     override this.ImportantResults = false
+    override this.UseAsyncEnumerable = false
     override this.Activators =
         let evt = DelegateEvent<EventHandler>()
         searchEngine.Subscribe(fun engine -> evt.Trigger([| null; EventArgs.Empty |])) |> ignore
@@ -99,6 +100,7 @@ type WebSearchEngine(pluginPath, configDir, logger) as this =
         suggestionRequests.OnNext(query, ct)
         struct (r, suggestions.AsObservable())
 
+    override this.SearchAsync(_, _) = failwith "todo"
     override this.Search(query, ct, usedActivator) =
         if usedActivator <> null then
             this.SuggestionsSearch(query, ct)

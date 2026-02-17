@@ -111,7 +111,11 @@ public abstract class DynamicSearchEngine(string pluginPath, string configDir, I
     /// should be shown in the last results (like for the URL search engine)
     /// </summary>
     public abstract bool ImportantResults { get; }
+
+    public abstract bool UseAsyncEnumerable { get; }
+
     public abstract (IEnumerable<ISearchResult>, Observable<IEnumerable<ISearchResult>>) Search(string query, CancellationToken cancellationToken, ISearchEngineActivator? activator);
+    public abstract IAsyncEnumerable<ISearchResult> SearchAsync(string query, ISearchEngineActivator? activator);
 }
 
 public static class Constants
