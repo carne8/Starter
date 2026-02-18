@@ -5,6 +5,8 @@ open System.IO
 open System.Reflection
 open System.Runtime.Loader
 
+open FsToolkit.ErrorHandling
+open Starter.Features.Logging
 open Starter.SearchEngine
 
 type private SearchEngineLoadContext(dllPath) =
@@ -47,37 +49,36 @@ let private loadAssembly (assemblyPath: string) =
     |> AssemblyName.GetAssemblyName
     |> loadContext.LoadFromAssemblyName
 
-/// Loads search engines from an assembly
-let private loadAssemblySearchEngines<'SearchEngineKind> (assemblyDir: string, assembly: Assembly) =
-    let expectedType = typeof<'SearchEngineKind>
-
-    assembly.GetTypes()
-    |> Array.choose (fun type' ->
-        if expectedType.IsAssignableFrom type' then
-            let logger = Logging.logger.ForContext("Context", type'.Name)
-            let configDir = Constants.PluginConfigDirectory type'.Name
-
-            match Activator.CreateInstance(type', assemblyDir, configDir, logger) with
-            | null -> None
-            | searchEngine ->
-                searchEngine
-                |> unbox<'SearchEngineKind>
-                |> Some
+/// Loads search engine factories from an assembly
+let private loadAssemblyFactories (assemblyDir: string, assembly: Assembly) =
+    assembly.GetTypes() |> Array.choose (fun type' ->
+        if typeof<SearchEngineFactory>.IsAssignableFrom type' then
+            Activator.CreateInstance(type', assemblyDir)
+            |> Option.ofObj
+            |> Option.map unbox<SearchEngineFactory>
         else
             None
     )
 
-/// Load all search engines in a directory (not recursive)
-let loadSearchEngineFromDirectory directoryPath =
-    let assemblies =
-        Directory.GetFiles(Path.GetFullPath(directoryPath), "*SearchEngine.dll")
-        |> Array.map loadAssembly
-
-    struct (
-        assemblies |> Array.collect loadAssemblySearchEngines<StaticSearchEngine>,
-        assemblies |> Array.collect loadAssemblySearchEngines<DynamicSearchEngine>
+let loadSearchEnginesFromFactory (factory: SearchEngineFactory) =
+    factory.LoadSearchEngineIds() |> Seq.choose (fun id ->
+        match id.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 with
+        | true ->
+            logger.Error $"Invalid search engine id: {id}"
+            None
+        | false ->
+            factory.LoadSearchEngine(
+                id,
+                Constants.PluginConfigDirectory id,
+                logger.ForContext("Context", id)
+            )
+            |> Some
     )
 
+/// Load all search engines in a directory (not recursive)
+let loadFactoriesFromDirectory directoryPath =
+    Directory.GetFiles(Path.GetFullPath(directoryPath), "*SearchEngine.dll")
+    |> Seq.collect (loadAssembly >> loadAssemblyFactories)
 
 
 // /// Precompile methods for a dynamic search engine

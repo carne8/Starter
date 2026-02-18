@@ -26,14 +26,16 @@ file class SettingsSearchResult(string name, string description, TargetPage targ
     public ISearchEngineActivator[] ActivatorFilter => [];
 }
 
-internal class SettingsSearchEngine : StaticSearchEngine
+internal class SettingsSearchEngine : IStaticSearchEngine
 {
     private readonly ILogger logger;
-    public override string Id => nameof(SettingsSearchEngine);
-    public override string Name => "Settings";
-    public override string ShortName => "Settings";
-    public override StarterIconSource Icon => Icons.Settings;
-    public override ISearchEngineActivator[] Activators => [];
+    public string Id => nameof(SettingsSearchEngine);
+    public string Name => "Settings";
+    public string ShortName => "Settings";
+    public StarterIconSource Icon => Icons.Settings;
+    public ISearchEngineActivator[] Activators => [];
+    public event EventHandler? Changed;
+    public event EventHandler<IEnumerable<ISearchResult>>? ResultsChanged;
 
     private static readonly IEnumerable<ISearchResult> Results =
     [
@@ -47,14 +49,14 @@ internal class SettingsSearchEngine : StaticSearchEngine
 
     public BehaviorSubject<Configuration> Config => windowVm.Config;
 
-    public SettingsSearchEngine(ILogger logger, Configuration config, SearchEngineStore searchEngineStore) : base("", "", logger)
+    public SettingsSearchEngine(ILogger logger, Configuration config, SearchEngineStore searchEngineStore)
     {
         this.logger = logger;
         windowVm = new SettingsWindowViewModel(config, searchEngineStore);
         window = new Views.SettingsWindow { DataContext = windowVm };
     }
 
-    public override void SearchResultSelected(ISearchResult selectedSearchResult)
+    public void SearchResultSelected(ISearchResult selectedSearchResult)
     {
         if (selectedSearchResult is not SettingsSearchResult result) return;
         switch (result.TargetPage)
@@ -78,11 +80,5 @@ internal class SettingsSearchEngine : StaticSearchEngine
         }
     }
 
-    public override Control? LoadSettingsControl() => null;
-
-    public override Task<(IEnumerable<ISearchResult>, Observable<IEnumerable<ISearchResult>>)> LoadResults() =>
-        Task.FromResult((
-            Results,
-            Observable.Empty<IEnumerable<ISearchResult>>()
-        ));
+    public ValueTask<IEnumerable<ISearchResult>> LoadResults() => ValueTask.FromResult(Results);
 }

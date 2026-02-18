@@ -23,9 +23,7 @@ type SearchResult =
         member this.ShowIfNoActivator = true
         member this.ActivatorFilter = Array.empty
 
-type UrlSearchEngine(pluginPath, configDir, logger) =
-    inherit DynamicSearchEngine(pluginPath, configDir, logger)
-
+type UrlSearchEngine() =
     let regex = UriRegex.Regex()
 
     let tryParseUri (match': Match) =
@@ -44,41 +42,48 @@ type UrlSearchEngine(pluginPath, configDir, logger) =
     do  // Warm-up the regex for faster first result
         regex.Matches "" |> ignore
 
-    override this.Id = nameof UrlSearchEngine
-    override this.Name = "Link opener"
-    override this.ShortName = "Link"
-    override this.Icon = icon
-    override this.ImportantResults = false
-    override this.Activators = [| DefaultSearchEngineActivator(this) |]
-    override this.UseAsyncEnumerable = false
+    interface IDynamicSearchEngine with
+        member this.Id = nameof UrlSearchEngine
+        member this.Name = "Link opener"
+        member this.ShortName = "Link"
+        member this.Icon = icon
+        member this.Activators = [| DefaultSearchEngineActivator(this) |]
+        member this.ImportantResults = false
+        member this.BufferResults = false
 
-    override this.SearchAsync(_, _) = failwith "todo"
-    override this.Search(query, _ct, _) =
-        query
-        |> regex.Matches
-        |> Seq.collect (
-            tryParseUri
-            >> Option.map (fun uri ->
-                match uri.Host with
-                | "localhost" ->
-                    [| { Uri = uri } :> ISearchResult
-                       { Uri = Uri("https://localhost:8080") }
-                       { Uri = Uri("https://localhost:5174") } |] // TODO: Allow the user to set custom values
-                | _ -> [| { Uri = uri } |]
-            )
-            >> Option.defaultValue Array.empty
-        ),
-        Observable.Empty()
+        member this.Search(query, _ct, _) =
+            query
+            |> regex.Matches
+            |> Seq.collect (
+                tryParseUri
+                >> Option.map (fun uri ->
+                    match uri.Host with
+                    | "localhost" ->
+                        [| { Uri = uri } :> ISearchResult
+                           { Uri = Uri("https://localhost:8080") }
+                           { Uri = Uri("https://localhost:5174") } |] // TODO: Allow the user to set custom values
+                    | _ -> [| { Uri = uri } |]
+                )
+                >> Option.defaultValue Array.empty
+            ),
+            Observable.Empty()
 
-    override this.SearchResultSelected(searchResult) =
-        match searchResult with
-        | :? SearchResult as sr ->
-            ProcessStartInfo(
-                FileName = sr.Uri.AbsoluteUri,
-                UseShellExecute = true
-            )
-            |> Process.Start
-            |> function null -> () | d -> d.Dispose()
-        | _ -> ()
+        member this.SearchResultSelected(searchResult) =
+            match searchResult with
+            | :? SearchResult as sr ->
+                ProcessStartInfo(
+                    FileName = sr.Uri.AbsoluteUri,
+                    UseShellExecute = true
+                )
+                |> Process.Start
+                |> function null -> () | d -> d.Dispose()
+            | _ -> ()
 
-    override this.LoadSettingsControl() = null
+        member this.add_Changed _ = ()
+        member this.remove_Changed _ = ()
+
+type Factory(pluginPath) =
+    inherit SearchEngineFactory(pluginPath)
+
+    override this.LoadSearchEngineIds() = [| nameof UrlSearchEngine |]
+    override this.LoadSearchEngine(_, _, _) = UrlSearchEngine(), null

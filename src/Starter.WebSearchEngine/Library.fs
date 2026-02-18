@@ -1,34 +1,25 @@
 namespace Starter.WebSearchEngine
 
+open System.Net.Http
 open Starter.SearchEngine
 open Starter.WebSearchEngine
 open Starter.WebSearchEngine.Logger
 
 open System
 open System.Threading
-open System.Net.Http
 open System.Diagnostics
 
 open R3
 
-type WebSearchEngine(pluginPath, configDir, logger) as this =
-    inherit DynamicSearchEngine(pluginPath, configDir, logger)
-
-    do setLogger logger
-    let httpClient = new HttpClient()
-
-    let settings = Views.SettingsViewModel(pluginPath, configDir, httpClient)
-    let searchEngine = settings.SearchEngine
-
+type WebSearchEngine(searchEngine: BehaviorSubject<SearchEngine>) as this =
     let suggestionRequests = new Subject<string * CancellationToken>()
     let suggestions = new Subject<ISearchResult seq>()
+    let changed = DelegateEvent<EventHandler>()
 
     do this.Initialize()
 
     member this.Initialize() =
-        this.OnChanged
-        |> searchEngine.Subscribe
-        |> ignore
+        searchEngine.Subscribe(fun _ -> changed.Trigger [| null; EventArgs.Empty |]) |> ignore
 
         suggestionRequests
             .Debounce(TimeSpan.FromMilliseconds 60L)
@@ -51,29 +42,7 @@ type WebSearchEngine(pluginPath, configDir, logger) as this =
             )
         |> ignore
 
-    member this.OnChanged _ = base.OnChanged()
-
-    override this.Id = nameof(WebSearchEngine)
-    override this.Name = "Web search"
-    override this.ShortName = searchEngine.Value.ShortName
-    override this.Icon = searchEngine.Value.StarterIcon
-    override this.ImportantResults = false
-    override this.UseAsyncEnumerable = false
-    override this.Activators =
-        let evt = DelegateEvent<EventHandler>()
-        searchEngine.Subscribe(fun engine -> evt.Trigger([| null; EventArgs.Empty |])) |> ignore
-
-        [| { new ISearchEngineDynamicActivator with
-               member _.Id = this.Id
-               member _.Icon = this.Icon
-               member _.Name = this.Name
-               member _.ShortName = this.ShortName
-               member _.SearchEngineId = this.Id
-
-               [<CLIEvent>]
-               member _.Changed = evt.Publish } |]
-
-    member this.SimpleSearch(query) =
+    member this.SimpleSearch(query) : struct (_ * _) =
         let r =
             if query |> String.IsNullOrEmpty then Seq.empty
             else
@@ -84,9 +53,9 @@ type WebSearchEngine(pluginPath, configDir, logger) as this =
                 :> ISearchResult
                 |> Seq.singleton
 
-        struct (r, Observable.Empty())
+        r, Observable.Empty()
 
-    member this.SuggestionsSearch(query, ct) =
+    member this.SuggestionsSearch(query, ct) : struct (_ * _) =
         let r =
             if query = "" then Seq.empty
             else
@@ -98,29 +67,62 @@ type WebSearchEngine(pluginPath, configDir, logger) as this =
                 |> Seq.singleton
 
         suggestionRequests.OnNext(query, ct)
-        struct (r, suggestions.AsObservable())
+        r, suggestions.AsObservable()
 
-    override this.SearchAsync(_, _) = failwith "todo"
-    override this.Search(query, ct, usedActivator) =
-        if usedActivator <> null then
-            this.SuggestionsSearch(query, ct)
-        else
-            this.SimpleSearch(query)
+    member this.Id = nameof(WebSearchEngine)
+    member this.Name = "Web search"
+    member this.ShortName = searchEngine.Value.ShortName
+    member this.Icon = searchEngine.Value.StarterIcon
 
-    override this.SearchResultSelected(searchResult) =
-        match searchResult with
-        | :? SearchResult as sr ->
-            ProcessStartInfo(
-                FileName = sr.Uri,
-                UseShellExecute = true
-            )
-            |> Process.Start
-            |> function null -> () | d -> d.Dispose()
-        | _ -> ()
+    interface IDynamicSearchEngine with
+        member this.Id = this.Id
+        member this.Name = this.Name
+        member this.ShortName = this.ShortName
+        member this.Icon = this.Icon
+        member this.ImportantResults = false
+        member this.BufferResults = false
+        member this.Activators =
+            let evt = DelegateEvent<EventHandler>()
+            searchEngine.Subscribe(fun engine -> evt.Trigger([| null; EventArgs.Empty |])) |> ignore
 
-    override this.LoadSettingsControl() =
-        try
-            Views.Settings(settings)
-        with e ->
-            logger.Error(e, "Failed to create settings view")
-            failwith "Failed to create settings view"
+            [| { new ISearchEngineDynamicActivator with
+                   member _.Id = this.Id
+                   member _.Name = this.Name
+                   member _.ShortName = this.ShortName
+                   member _.Icon = this.Icon
+                   member _.SearchEngineId = this.Id
+
+                   [<CLIEvent>]
+                   member _.Changed = evt.Publish } |]
+
+        member this.Search(query, ct, usedActivator) =
+            match usedActivator with
+            | null -> this.SimpleSearch(query)
+            | _ -> this.SuggestionsSearch(query, ct)
+
+        member this.SearchResultSelected(searchResult) =
+            match searchResult with
+            | :? SearchResult as sr ->
+                ProcessStartInfo(
+                    FileName = sr.Uri,
+                    UseShellExecute = true
+                )
+                |> Process.Start
+                |> function null -> () | d -> d.Dispose()
+            | _ -> ()
+
+        [<CLIEvent>]
+        member this.Changed = changed.Publish
+
+type Factory(pluginPath) =
+    inherit SearchEngineFactory(pluginPath)
+
+    override this.LoadSearchEngineIds() = [| nameof WebSearchEngine |]
+    override this.LoadSearchEngine(_, pluginConfigDirectory, logger) =
+        setLogger logger
+
+        let httpClient = new HttpClient()
+        let settings = Views.SettingsViewModel(pluginPath, pluginConfigDirectory, httpClient)
+        let searchEngine = settings.SearchEngine
+
+        WebSearchEngine searchEngine, Views.Settings(settings)

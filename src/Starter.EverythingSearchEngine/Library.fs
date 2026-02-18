@@ -1,13 +1,11 @@
 ﻿namespace Starter.EverythingSearchEngine
 
-open System.Collections.Generic
 open System.Diagnostics
 open System.Runtime.InteropServices
 open System.Text
-open System.Threading
 open System.Threading.Tasks
-open FsToolkit.ErrorHandling
 open R3
+open Serilog
 open Starter.EverythingSearchEngine
 open Starter.SearchEngine
 open Vanara
@@ -32,12 +30,11 @@ type SearchResult =
         member this.ActivatorFilter = Array.empty
 
 
-type EverythingSearchEngine(pluginPath, configDir, logger) =
-    inherit DynamicSearchEngine(pluginPath, configDir, logger)
-
-    let emptyResult = struct (Seq.empty, Observable.Empty())
-
+type EverythingSearchEngine(logger: ILogger) =
     let pathStrBuilder = StringBuilder(300)
+    let [<Literal>] maxResultsCount = 300u
+
+    let resultsObservable = new Subject<_>()
 
     let loadResultIcon (path: string) =
         try
@@ -52,70 +49,70 @@ type EverythingSearchEngine(pluginPath, configDir, logger) =
         with _ -> StarterIconSource.Empty
 
     let readResult i =
-        task {
-            let name =
-                i
-                |> Everything_GetResultFileName
-                |> Marshal.PtrToStringUni
+        let name =
+            i
+            |> Everything_GetResultFileName
+            |> Marshal.PtrToStringUni
 
+        match name with
+        | null -> ValueNone
+        | name ->
             pathStrBuilder.Clear() |> ignore
             Everything_GetResultFullPathName(i, pathStrBuilder, uint pathStrBuilder.Capacity)
             let path = pathStrBuilder.ToString()
 
             let icon = loadResultIcon path
 
-            return { Name = name
-                     Path = path
-                     Icon = icon } :> ISearchResult
-        }
+            { Name = name
+              Path = path
+              Icon = icon }
+            :> ISearchResult
+            |> ValueSome
 
-    override this.Id = nameof EverythingSearchEngine
-    override this.Name = "Everything"
-    override this.ShortName = "Everything"
-    override this.Icon = StarterIconSource.Empty
-    override this.Activators = [| DefaultSearchEngineActivator(this) |]
-    override this.ImportantResults = false
-    override this.UseAsyncEnumerable = true
+    interface IDynamicSearchEngine with
+        member this.Id = nameof EverythingSearchEngine
+        member this.Name = "Everything"
+        member this.ShortName = "Everything"
+        member this.Icon = StarterIconSource.Empty
+        member this.Activators = [| DefaultSearchEngineActivator(this) |]
+        member this.ImportantResults = false
+        member this.BufferResults = true
 
-    override this.Search(_, _, _) = emptyResult
-    override this.SearchAsync(query, _) =
-        // Query Everything
-        Everything_SetSearchW query |> ignore
-        Everything_SetRequestFlags (RequestFlags.FILE_NAME ||| RequestFlags.PATH)
-        Everything_SetMax 100u
-        Everything_QueryW true |> ignore
+        member this.Search(query, ct, _) =
+            // Query Everything
+            Everything_SetSearchW query |> ignore
+            Everything_SetRequestFlags (RequestFlags.FILE_NAME ||| RequestFlags.PATH)
+            Everything_SetMax maxResultsCount
+            Everything_QueryW true |> ignore
 
-        // Gather results
-        let count = Everything_GetNumResults()
-        logger.Verbose $"Request succeed: {count}"
+            // Gather results
+            let count = Everything_GetNumResults()
+            logger.Verbose $"Request succeed: {count}"
 
-        let enumerator (ct: CancellationToken) = // TODO: Compare with ResizeArray and Observable
-            let mutable current = ValueNone
-            let mutable i = 0u
-            { new IAsyncEnumerator<ISearchResult> with
-                member this.MoveNextAsync() =
-                    match i < count && not ct.IsCancellationRequested with
-                    | false -> ValueTask.FromResult false
-                    | true ->
-                        task {
-                            let! result = readResult i
-                            current <- ValueSome result
-                            i <- i + 1u
-                            return true
-                        } |> ValueTask<bool>
+            Task.Run<unit>(fun () -> task {
+                let mutable i = 0u
+                while i < count && not ct.IsCancellationRequested do
+                    i
+                    |> readResult
+                    |> ValueOption.iter (Seq.singleton >> resultsObservable.OnNext)
+                    i <- i + 1u
+            }) |> ignore
 
-                member this.Current = current |> ValueOption.get
-                member this.DisposeAsync() = ValueTask.CompletedTask }
+            Seq.empty, resultsObservable
 
-        { new IAsyncEnumerable<ISearchResult> with
-            member this.GetAsyncEnumerator(ct) = enumerator ct }
+        member this.SearchResultSelected(selectedSearchResult) =
+            match selectedSearchResult with
+            | :? SearchResult as sr ->
+                ProcessStartInfo(sr.Path, UseShellExecute = true)
+                |> Process.Start
+                |> function null -> () | d -> d.Dispose()
+            | _ -> ()
 
-    override this.SearchResultSelected(selectedSearchResult) =
-        match selectedSearchResult with
-        | :? SearchResult as sr ->
-            ProcessStartInfo(sr.Path, UseShellExecute = true)
-            |> Process.Start
-            |> function null -> () | d -> d.Dispose()
-        | _ -> ()
+        member this.add_Changed _ = ()
+        member this.remove_Changed _ = ()
 
-    override this.LoadSettingsControl() = null
+type Factory(pluginPath) =
+    inherit SearchEngineFactory(pluginPath)
+
+    override this.LoadSearchEngineIds() = [| nameof EverythingSearchEngine |]
+    override this.LoadSearchEngine(_, _, logger) = EverythingSearchEngine logger, null

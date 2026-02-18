@@ -1,6 +1,6 @@
 ﻿module Starter.WebSearchEngine.Logger
 
-open Serilog.Core
+open Serilog
 
-let mutable logger: Logger = null
+let mutable logger: ILogger = null
 let setLogger l = logger <- l

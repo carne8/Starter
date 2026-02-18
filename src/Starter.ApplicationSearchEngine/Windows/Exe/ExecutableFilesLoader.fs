@@ -176,8 +176,8 @@ type ExeAppsLoader() =
                         changedEvent.Trigger()
                 )
                 (fun appPathToRemove ->
-                    apps.RemoveAll(fun app -> app.Id = appPathToRemove) |> ignore
-                    changedEvent.Trigger()
+                    let removedCount = apps.RemoveAll(fun app -> app.Id = appPathToRemove)
+                    if removedCount <> 0 then changedEvent.Trigger()
                 )
         )
 

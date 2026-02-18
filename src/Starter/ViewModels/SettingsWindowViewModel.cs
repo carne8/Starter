@@ -15,7 +15,7 @@ public partial class MenuItemViewModel(
     public Control Control { get; init; } = control;
     [ObservableProperty] private StarterIconSource icon = icon;
 
-    public MenuItemViewModel(SearchEngine.SearchEngine engine, Control control) : this(engine.Name, engine.Icon, control) =>
+    public MenuItemViewModel(ISearchEngine engine, Control control) : this(engine.Name, engine.Icon, control) =>
         engine.Changed += (_, _) => Icon = engine.Icon;
 }
 
@@ -54,11 +54,10 @@ public partial class SettingsWindowViewModel : ObservableObject
         selectedPage = settingsPage;
 
         // Add search engine settings
-        foreach (var kv in searchEngineStore.SearchEngines)
+        foreach (var kv in searchEngineStore.SettingsControls)
         {
-            var control = kv.Value.LoadSettingsControl();
-            if (control == null) continue;
-            Pages.Add(new MenuItemViewModel(kv.Value, control));
+            if (!searchEngineStore.SearchEngines.TryGetValue(kv.Key, out var engine)) continue;
+            Pages.Add(new MenuItemViewModel(engine, kv.Value));
         }
     }
 

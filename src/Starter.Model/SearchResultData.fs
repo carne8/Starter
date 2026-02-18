@@ -18,14 +18,14 @@ type SearchResultData =
       mutable FuzzyMatchResult: FuzzyResult voption
       mutable AccentuationMap: bool array | null }
 
-    static member createStatic (searchEngine: StaticSearchEngine) searchResult =
+    static member createStatic (searchEngine: IStaticSearchEngine) searchResult =
         { SearchResult = searchResult
           SearchResultKind = SearchResultKind.Static
           SearchEngineId = searchEngine.Id
           FuzzyMatchResult = ValueNone
           AccentuationMap = null }
 
-    static member createDynamic (searchEngine: DynamicSearchEngine) kind searchResult =
+    static member createDynamic (searchEngine: IDynamicSearchEngine) kind searchResult =
         { SearchResult = searchResult
           SearchResultKind = kind
           SearchEngineId = searchEngine.Id

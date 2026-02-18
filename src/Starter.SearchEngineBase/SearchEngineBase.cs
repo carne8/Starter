@@ -47,7 +47,7 @@ public interface ISearchEngineDynamicActivator : ISearchEngineActivator
 /// Activator used when a search engine doesn't declare
 /// activators and the user used the single-search-engine mode
 /// </summary>
-public readonly struct DefaultSearchEngineActivator(SearchEngine se) : ISearchEngineActivator
+public readonly struct DefaultSearchEngineActivator(ISearchEngine se) : ISearchEngineActivator
 {
     public string Id { get; } = se.Id;
     public string SearchEngineId { get; } = se.Id;
@@ -73,19 +73,15 @@ public interface ISearchResult
     ISearchEngineActivator[] ActivatorFilter { get; }
 }
 
-public abstract class SearchEngine(string pluginPath, string configDir, ILogger logger)
+public interface ISearchEngine
 {
-    public abstract string Id { get; }
-    public abstract string Name { get; }
-    public abstract string ShortName { get; }
-    public abstract StarterIconSource Icon { get; }
+    public string Id { get; }
+    public string Name { get; }
+    public string ShortName { get; }
+    public StarterIconSource Icon { get; }
+    public ISearchEngineActivator[] Activators { get; }
     public event EventHandler? Changed;
-    protected void OnChanged() => Changed?.Invoke(this, EventArgs.Empty);
-
-    public abstract ISearchEngineActivator[] Activators { get; }
-
-    public abstract void SearchResultSelected(ISearchResult selectedSearchResult);
-    public abstract Control? LoadSettingsControl();
+    public void SearchResultSelected(ISearchResult selectedSearchResult);
 }
 
 /// <summary>
@@ -93,9 +89,10 @@ public abstract class SearchEngine(string pluginPath, string configDir, ILogger 
 /// Fuzzy finding is applicable on its results.
 /// Applicable for an application search engine.
 /// </summary>
-public abstract class StaticSearchEngine(string pluginPath, string configDir, ILogger logger) : SearchEngine(pluginPath, configDir, logger)
+public interface IStaticSearchEngine : ISearchEngine
 {
-    public abstract Task<(IEnumerable<ISearchResult>, Observable<IEnumerable<ISearchResult>>)> LoadResults();
+    public ValueTask<IEnumerable<ISearchResult>> LoadResults();
+    public event EventHandler<IEnumerable<ISearchResult>>? ResultsChanged;
 }
 
 /// <summary>
@@ -103,19 +100,36 @@ public abstract class StaticSearchEngine(string pluginPath, string configDir, IL
 /// Fuzzy finding is not applicable for its results.
 /// Applicable for a web search engine.
 /// </summary>
-public abstract class DynamicSearchEngine(string pluginPath, string configDir, ILogger logger) : SearchEngine(pluginPath, configDir, logger)
+public interface IDynamicSearchEngine : ISearchEngine
 {
     /// <summary>
     /// Indicate if the instant results from this search engine should be shown on
     /// top of others results (like for the calculator search engine) or if they
     /// should be shown in the last results (like for the URL search engine)
     /// </summary>
-    public abstract bool ImportantResults { get; }
+    public bool ImportantResults { get; }
 
-    public abstract bool UseAsyncEnumerable { get; }
+    /// <summary>
+    /// Indicate if the results from the observable should be buffered or not.
+    /// Add some lag when true.
+    /// </summary>
+    public bool BufferResults { get; }
 
-    public abstract (IEnumerable<ISearchResult>, Observable<IEnumerable<ISearchResult>>) Search(string query, CancellationToken cancellationToken, ISearchEngineActivator? activator);
-    public abstract IAsyncEnumerable<ISearchResult> SearchAsync(string query, ISearchEngineActivator? activator);
+    public (IEnumerable<ISearchResult>, Observable<IEnumerable<ISearchResult>>) Search(string query, CancellationToken cancellationToken, ISearchEngineActivator? activator);
+}
+
+public abstract class SearchEngineFactory(string pluginDirectory)
+{
+    /// <remarks>
+    /// Returned ids should contain only valid filename characters
+    /// </remarks>
+    public abstract string[] LoadSearchEngineIds();
+
+    public abstract (ISearchEngine, Control?) LoadSearchEngine(
+        string searchEngineId,
+        string pluginConfigDirectory,
+        ILogger logger
+    );
 }
 
 public static class Constants
