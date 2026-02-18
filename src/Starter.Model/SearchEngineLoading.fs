@@ -63,22 +63,34 @@ let private loadAssemblyFactories (assemblyDir: string, assembly: Assembly) =
 let loadSearchEnginesFromFactory (factory: SearchEngineFactory) =
     factory.LoadSearchEngineIds() |> Seq.choose (fun id ->
         match id.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 with
-        | true ->
+        | false ->
             logger.Error $"Invalid search engine id: {id}"
             None
-        | false ->
-            factory.LoadSearchEngine(
-                id,
-                Constants.PluginConfigDirectory id,
-                logger.ForContext("Context", id)
-            )
-            |> Some
+        | true ->
+            try
+                factory.LoadSearchEngine(
+                    id,
+                    Constants.PluginConfigDirectory id,
+                    logger.ForContext("Context", id)
+                )
+                |> Some
+            with exn ->
+                logger.Error(exn, "Failed to create search engine.")
+                None
     )
 
 /// Load all search engines in a directory (not recursive)
 let loadFactoriesFromDirectory directoryPath =
     Directory.GetFiles(Path.GetFullPath(directoryPath), "*SearchEngine.dll")
-    |> Seq.collect (loadAssembly >> loadAssemblyFactories)
+    |> Seq.collect (fun dir ->
+        try
+            dir
+            |> loadAssembly
+            |> loadAssemblyFactories
+        with exn ->
+            logger.Error(exn, "Failed to load assembly.")
+            Array.empty
+    )
 
 
 // /// Precompile methods for a dynamic search engine

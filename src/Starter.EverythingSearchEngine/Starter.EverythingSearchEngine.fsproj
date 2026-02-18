@@ -23,9 +23,15 @@
         <Content Include="Everything64.dll">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
-        <Compile Include="IconHelper.fs" />
+        <Content Include="Everything-arm64.dll">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Compile Include="EverythingAPI\x64.fs" />
+        <Compile Include="EverythingAPI\x86.fs" />
+        <Compile Include="EverythingAPI\arm64.fs" />
+        <Compile Include="EverythingAPI\Common.fs" />
         
-        <Compile Include="EverythingAPI.fs" />
+        <Compile Include="IconHelper.fs" />
         <Compile Include="Library.fs" />
     </ItemGroup>
 

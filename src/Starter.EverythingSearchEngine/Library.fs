@@ -30,7 +30,7 @@ type SearchResult =
         member this.ActivatorFilter = Array.empty
 
 
-type EverythingSearchEngine(logger: ILogger) =
+type EverythingSearchEngine(logger: ILogger, api: IEverything) =
     let pathStrBuilder = StringBuilder(300)
     let [<Literal>] maxResultsCount = 300u
 
@@ -51,14 +51,14 @@ type EverythingSearchEngine(logger: ILogger) =
     let readResult i =
         let name =
             i
-            |> Everything_GetResultFileName
+            |> api.GetResultFileName
             |> Marshal.PtrToStringUni
 
         match name with
         | null -> ValueNone
         | name ->
             pathStrBuilder.Clear() |> ignore
-            Everything_GetResultFullPathName(i, pathStrBuilder, uint pathStrBuilder.Capacity)
+            api.GetResultFullPathName i pathStrBuilder (uint pathStrBuilder.Capacity)
             let path = pathStrBuilder.ToString()
 
             let icon = loadResultIcon path
@@ -80,13 +80,13 @@ type EverythingSearchEngine(logger: ILogger) =
 
         member this.Search(query, ct, _) =
             // Query Everything
-            Everything_SetSearchW query |> ignore
-            Everything_SetRequestFlags (RequestFlags.FILE_NAME ||| RequestFlags.PATH)
-            Everything_SetMax maxResultsCount
-            Everything_QueryW true |> ignore
+            api.SetSearch query |> ignore
+            api.SetRequestFlags (RequestFlags.FILE_NAME ||| RequestFlags.PATH)
+            api.SetMax maxResultsCount
+            api.Query true |> ignore
 
             // Gather results
-            let count = Everything_GetNumResults()
+            let count = api.GetNumResults()
             logger.Verbose $"Request succeed: {count}"
 
             Task.Run<unit>(fun () -> task {
@@ -114,5 +114,15 @@ type EverythingSearchEngine(logger: ILogger) =
 type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)
 
+    let api =
+        match RuntimeInformation.ProcessArchitecture with
+        | Architecture.X86 -> Everything32() :> IEverything |> ValueSome
+        | Architecture.X64 -> Everything64() :> IEverything |> ValueSome
+        | Architecture.Arm64 -> EverythingArm64() :> IEverything |> ValueSome
+        | _ -> ValueNone
+
     override this.LoadSearchEngineIds() = [| nameof EverythingSearchEngine |]
-    override this.LoadSearchEngine(_, _, logger) = EverythingSearchEngine logger, null
+    override this.LoadSearchEngine(_, _, logger) =
+        match api with
+        | ValueNone -> raise <| System.PlatformNotSupportedException()
+        | ValueSome api -> EverythingSearchEngine(logger, api), null
