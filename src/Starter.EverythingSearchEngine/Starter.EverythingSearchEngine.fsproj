@@ -26,6 +26,9 @@
         <Content Include="Everything-arm64.dll">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
+        <Content Include="icon.svg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
         <Compile Include="EverythingAPI\x64.fs" />
         <Compile Include="EverythingAPI\x86.fs" />
         <Compile Include="EverythingAPI\arm64.fs" />

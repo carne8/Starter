@@ -1,17 +1,19 @@
 ﻿namespace Starter.EverythingSearchEngine
 
 open System.Diagnostics
+open System.IO
 open System.Runtime.InteropServices
 open System.Text
 open System.Threading.Tasks
-open R3
-open Serilog
-open Starter.EverythingSearchEngine
-open Starter.SearchEngine
-open Vanara
 
 open EverythingAPI
 open IconHelper
+open Starter.SearchEngine
+
+open Avalonia.Svg.Skia
+open R3
+open Serilog
+open Vanara
 open Vanara.Windows.Shell
 
 [<Struct>]
@@ -30,7 +32,7 @@ type SearchResult =
         member this.ActivatorFilter = Array.empty
 
 
-type EverythingSearchEngine(logger: ILogger, api: IEverything) =
+type EverythingSearchEngine(logger: ILogger, icon, api: IEverything) =
     let pathStrBuilder = StringBuilder(300)
     let [<Literal>] maxResultsCount = 300u
 
@@ -46,7 +48,7 @@ type EverythingSearchEngine(logger: ILogger, api: IEverything) =
 
             let bitmap = hBitmap.ToAvaloniaBitmap()
             StarterIconSource(bitmap, bitmap)
-        with _ -> StarterIconSource.Empty
+        with _ -> icon
 
     let readResult i =
         let name =
@@ -73,7 +75,7 @@ type EverythingSearchEngine(logger: ILogger, api: IEverything) =
         member this.Id = nameof EverythingSearchEngine
         member this.Name = "Everything"
         member this.ShortName = "Everything"
-        member this.Icon = StarterIconSource.Empty
+        member this.Icon = icon
         member this.Activators = [| DefaultSearchEngineActivator(this) |]
         member this.ImportantResults = false
         member this.BufferResults = true
@@ -94,6 +96,7 @@ type EverythingSearchEngine(logger: ILogger, api: IEverything) =
                 while i < count && not ct.IsCancellationRequested do
                     i
                     |> readResult
+                    |> ValueOption.filter (fun _ -> not ct.IsCancellationRequested) // Recheck because `readResult` takes time
                     |> ValueOption.iter (Seq.singleton >> resultsObservable.OnNext)
                     i <- i + 1u
             }) |> ignore
@@ -125,4 +128,9 @@ type Factory(pluginPath) =
     override this.LoadSearchEngine(_, _, logger) =
         match api with
         | ValueNone -> raise <| System.PlatformNotSupportedException()
-        | ValueSome api -> EverythingSearchEngine(logger, api), null
+        | ValueSome api ->
+            let svgSource = Path.Combine(pluginPath, "icon.svg") |> SvgSource.Load
+            let svg = SvgImage(Source = svgSource)
+            let icon = StarterIconSource(svg, svg)
+
+            EverythingSearchEngine(logger, icon, api), null
