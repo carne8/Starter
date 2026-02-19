@@ -1,0 +1,47 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ParallelCompilation>true</ParallelCompilation>
+        <Deterministic>false</Deterministic>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Starter.SearchEngineBase\Starter.SearchEngineBase.csproj">
+            <Private>false</Private>
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </ProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="Everything32.dll">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Everything64.dll">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Include="Everything-arm64.dll">
+            <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+        </Content>
+        <Content Include="icon.svg">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </Content>
+        <Compile Include="EverythingAPI\x64.fs" />
+        <Compile Include="EverythingAPI\x86.fs" />
+        <Compile Include="EverythingAPI\arm64.fs" />
+        <Compile Include="EverythingAPI\Common.fs" />
+        
+        <Compile Include="IconHelper.fs" />
+        <Compile Include="Helpers.fs" />
+        <Compile Include="Library.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
+        <PackageReference Include="Vanara.Windows.Shell" Version="5.0.0" />
+    </ItemGroup>
+
+</Project>

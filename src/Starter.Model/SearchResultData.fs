@@ -5,29 +5,23 @@ open Starter.Features
 open Starter.SearchEngine
 open Fusil
 
-type SearchResultKind =
-    | DynamicUnique = 0s
-    | Static = 1s
-    | DynamicInstant = 2s
-    | Dynamic = 3s
-
 type SearchResultData =
     { SearchResult: ISearchResult
-      SearchResultKind: SearchResultKind
+      Priority: ResultPriority
       SearchEngineId: string
       mutable FuzzyMatchResult: FuzzyResult voption
       mutable AccentuationMap: bool array | null }
 
-    static member createStatic (searchEngine: StaticSearchEngine) searchResult =
+    static member createStatic (searchEngine: IStaticSearchEngine) searchResult =
         { SearchResult = searchResult
-          SearchResultKind = SearchResultKind.Static
+          Priority = ResultPriority.Static
           SearchEngineId = searchEngine.Id
           FuzzyMatchResult = ValueNone
           AccentuationMap = null }
 
-    static member createDynamic (searchEngine: DynamicSearchEngine) kind searchResult =
+    static member createDynamic (searchEngine: IDynamicSearchEngine) searchResult =
         { SearchResult = searchResult
-          SearchResultKind = kind
+          Priority = searchEngine.ResultsPriority
           SearchEngineId = searchEngine.Id
           FuzzyMatchResult = ValueNone
           AccentuationMap = null }
@@ -46,7 +40,7 @@ type SearchResultData =
             | ValueNone -> 0.
 
         struct (
-            sr.SearchResultKind,
+            sr.Priority,
             -(fuzzyMatchScore + (2. * usageScore)),
             d,
             sr.SearchResult.Name.Length,

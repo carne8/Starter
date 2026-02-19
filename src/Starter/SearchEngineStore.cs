@@ -1,37 +1,53 @@
-﻿using Starter.Features;
+﻿using Avalonia.Controls;
+using Serilog;
+using Starter.Features;
 using Starter.SearchEngine;
 
 namespace Starter;
 
 public class SearchEngineStore
 {
-    public readonly List<StaticSearchEngine> StaticSearchEngines = [];
-    public readonly List<DynamicSearchEngine> DynamicSearchEngines = [];
-    public readonly Dictionary<string, Starter.SearchEngine.SearchEngine> SearchEngines = new();
+    public readonly List<IStaticSearchEngine> StaticSearchEngines = [];
+    public readonly List<IDynamicSearchEngine> DynamicSearchEngines = [];
+    public readonly Dictionary<string, ISearchEngine> SearchEngines = new();
+    public readonly Dictionary<string, Control> SettingsControls = new();
 
     // public event EventHandler? SearchEnginesChanged;
 
     public void LoadSearchEnginesFromDirectory(string directory)
     {
-        var (staticSe, dynamicSe) = SearchEngineLoading.loadSearchEngineFromDirectory(directory);
-
-        StaticSearchEngines.AddRange(staticSe);
-        DynamicSearchEngines.AddRange(dynamicSe);
-
-        foreach (var se in staticSe) SearchEngines.Add(se.Id, se);
-        foreach (var se in dynamicSe) SearchEngines.Add(se.Id, se);
+        foreach (var factory in SearchEngineLoading.loadFactoriesFromDirectory(directory))
+            LoadSearchEnginesFromFactory(factory);
 
         // SearchEnginesChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public void AddSearchEngine(StaticSearchEngine se)
+    private void LoadSearchEnginesFromFactory(SearchEngineFactory factory)
+    {
+        foreach (var (engine, settingsControl) in SearchEngineLoading.loadSearchEnginesFromFactory(factory))
+        {
+            switch (engine)
+            {
+                case IStaticSearchEngine staticEngine: StaticSearchEngines.Add(staticEngine); break;
+                case IDynamicSearchEngine dynamicEngine: DynamicSearchEngines.Add(dynamicEngine); break;
+                default:
+                    Log.Warning("Unknown search engine type: {Engine}", engine);
+                    return;
+            }
+
+            SearchEngines.Add(engine.Id, engine);
+            if (settingsControl is not null) SettingsControls.Add(engine.Id, settingsControl);
+        }
+    }
+
+    public void AddSearchEngine(IStaticSearchEngine se)
     {
         StaticSearchEngines.Add(se);
         SearchEngines.Add(se.Id, se);
         // SearchEnginesChanged?.Invoke(this, EventArgs.Empty);
     }
 
-    public void AddSearchEngine(DynamicSearchEngine se)
+    public void AddSearchEngine(IDynamicSearchEngine se)
     {
         DynamicSearchEngines.Add(se);
         SearchEngines.Add(se.Id, se);

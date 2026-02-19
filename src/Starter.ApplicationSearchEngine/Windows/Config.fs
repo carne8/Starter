@@ -84,10 +84,10 @@ let load (file: string) =
 
         let json = File.ReadAllText file
         let! node =
-            try JsonNode.Parse json |> ValueSome
+            try JsonNode.Parse json
             with e ->
                 logger.Error(e, "Failed to open file for read")
-                ValueNone
+                null
 
         let! allowDuplicates = node["allowDuplicates"] |> JsonNode.parseBool
 

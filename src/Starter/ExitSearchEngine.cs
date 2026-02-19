@@ -1,7 +1,4 @@
-﻿using Avalonia.Controls;
-using Avalonia.Threading;
-using R3;
-using Serilog;
+﻿using Avalonia.Threading;
 using Starter.SearchEngine;
 
 namespace Starter;
@@ -17,21 +14,27 @@ internal class ExitSearchResult : ISearchResult
     public ISearchEngineActivator[] ActivatorFilter => [];
 }
 
-internal class ExitSearchEngine() : StaticSearchEngine("", "", Log.Logger)
+internal class ExitSearchEngine : IStaticSearchEngine
 {
-    public override string Id => nameof(ExitSearchEngine);
-    public override string Name => "Exit";
-    public override string ShortName => "Exit";
-    public override StarterIconSource Icon => Icons.Exit;
-    public override ISearchEngineActivator[] Activators => [];
+    public string Id => nameof(ExitSearchEngine);
+    public string Name => "Exit";
+    public string ShortName => "Exit";
+    public StarterIconSource Icon => Icons.Exit;
+    public ISearchEngineActivator[] Activators => [];
+
+    public event EventHandler? Changed
+    {
+        add { }
+        remove { }
+    }
+    public event EventHandler<IEnumerable<ISearchResult>>? ResultsChanged
+    {
+        add { }
+        remove { }
+    }
 
     private static readonly IEnumerable<ISearchResult> SearchResults = [new ExitSearchResult()];
 
-    public override void SearchResultSelected(ISearchResult selectedSearchResult) => Dispatcher.UIThread.InvokeShutdown();
-    public override Control? LoadSettingsControl() => null;
-    public override Task<(IEnumerable<ISearchResult>, Observable<IEnumerable<ISearchResult>>)> LoadResults() =>
-        Task.FromResult((
-            SearchResults,
-            Observable.Empty<IEnumerable<ISearchResult>>()
-        ));
+    public void SearchResultSelected(ISearchResult selectedSearchResult) => Dispatcher.UIThread.InvokeShutdown();
+    public ValueTask<IEnumerable<ISearchResult>> LoadResults() => ValueTask.FromResult(SearchResults);
 }

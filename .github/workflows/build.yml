@@ -36,6 +36,13 @@ jobs:
           fi
           dotnet publish --configuration Release --runtime ${{ matrix.rid }} --framework $FRAMEWORK -p:EnableWindowsTargeting=true -o ../../build/Plugins/ApplicationSearchEngine
 
+      - name: Build Everything plugin
+        run: |
+          if [[ "${{ matrix.rid }}" == win-* ]]; then
+            dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/EverythingSearchEngine
+          fi
+        working-directory: src/Starter.EverythingSearchEngine
+
       - name: Build Url plugin
         run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/UrlSearchEngine
         working-directory: src/Starter.UrlSearchEngine

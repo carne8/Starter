@@ -122,6 +122,9 @@ public class App : Application
                 ? "./src/Starter.ApplicationSearchEngine/bin/Debug/net10.0-windows10.0.19041.0/"
                 : "./src/Starter.ApplicationSearchEngine/bin/Debug/net10.0/"
         );
+
+        if (OperatingSystem.IsWindows())
+            searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.EverythingSearchEngine/bin/Debug/net10.0/");
 #else
         foreach (var pluginDir in Directory.GetDirectories(Const.PluginsDirectory))
             searchEngineStore.LoadSearchEnginesFromDirectory(pluginDir);

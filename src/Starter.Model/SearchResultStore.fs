@@ -9,9 +9,9 @@ open Serilog
 open Starter.Features.CustomCollections
 open Starter.SearchEngine
 
-type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchEngine>) =
+type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearchEngine>) =
     let staticResults = new BehaviorSubject<_>(ResizeArray())
-    let dynamicSearchEngines = ResizeArray<DynamicSearchEngine>()
+    let dynamicSearchEngines = ResizeArray<IDynamicSearchEngine>()
 
     let slab = Memory.Slab.createDefault()
     let comparer =
@@ -32,53 +32,66 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
             result.AccentuationMap <- fusilResult.MatchingPositions
             true
         | _ ->
-            result.SearchResult.Keywords <> null &&
-            result.SearchResult.Keywords
-            |> Array.exists (fun keyword ->
-                match fuzzyMatch false true false slab normalizedText keyword with
-                | ValueSome res when res.Score > 0s ->
-                    result.AccentuationMap <- null
-                    result.FuzzyMatchResult <- ValueSome res
-                    true
-                | _ -> false
-            )
+            match result.SearchResult.Keywords with
+            | null -> false
+            | keywords ->
+                keywords |> Array.exists (fun keyword ->
+                    match fuzzyMatch false true false slab normalizedText keyword with
+                    | ValueSome res when res.Score > 0s ->
+                        result.AccentuationMap <- null
+                        result.FuzzyMatchResult <- ValueSome res
+                        true
+                    | _ -> false
+                )
 
-    let queryAllSearchEngines ct query =
+
+    let querySingleDynamicSearchEngine ct (activator: ISearchEngineActivator | null) query (engine: IDynamicSearchEngine) = // Show only this engine results
+        try
+            let struct (instantResults, futureResults) = engine.Search(query, ct, activator)
+
+            let inline addResults r =
+                results.AddRange r
+                results.Sort comparer
+                results.NotifyChanged()
+
+            instantResults
+            |> Seq.map (SearchResultData.createDynamic engine)
+            |> addResults
+
+            match engine.BufferResults with
+            | false ->
+                futureResults
+                    .Select(Seq.map (SearchResultData.createDynamic engine))
+                    .ObserveOnUIThreadDispatcher()
+                    .Subscribe addResults
+            | true ->
+                futureResults
+                    .Chunk(TimeSpan.FromMilliseconds 200L)
+                    .Select(Seq.collect (Seq.map (SearchResultData.createDynamic engine)))
+                    .ObserveOnUIThreadDispatcher()
+                    .Subscribe addResults
+            |> disposeOnCancelled ct
+        with e ->
+            Log.Error(e, $"Failed to get results from dynamic search engine: {engine.Name}")
+
+    let queryAllSearchEngines (ct: CancellationToken) query =
         let normalizedText =
             query
             |> TextNormalization.String.normalize
             |> Array.map System.Text.Rune.ToLowerInvariant
 
+        let mutable cts = new CancellationTokenSource()
+
         staticResults.Subscribe(fun staticResults ->
+            // Make sure to not call dynamic engines without cancelling the previous request
+            cts.Cancel()
+            cts <- new CancellationTokenSource()
+            ct.Register(fun () -> cts.Cancel()) |> ignore
+
             results.Clear()
 
             // Dynamic results
-            dynamicSearchEngines |> Seq.iter (fun searchEngine ->
-                let struct (newResults, futureResults) = searchEngine.Search(query, ct, null)
-
-                let kind =
-                    match searchEngine.ImportantResults with
-                    | true -> SearchResultKind.DynamicUnique
-                    | false -> SearchResultKind.DynamicInstant
-
-                newResults
-                |> Seq.map (SearchResultData.createDynamic searchEngine kind)
-                |> results.AddRange
-
-                results.Sort comparer
-                results.NotifyChanged()
-
-                futureResults
-                |> Observable.subscribe (fun newResults ->
-                    newResults
-                    |> Seq.map (SearchResultData.createDynamic searchEngine SearchResultKind.Dynamic)
-                    |> results.AddRange
-
-                    results.Sort comparer
-                    results.NotifyChanged()
-                )
-                |> disposeOnCancelled ct
-            )
+            dynamicSearchEngines |> Seq.iter (querySingleDynamicSearchEngine cts.Token null query)
 
             // Static results
             staticResults
@@ -89,7 +102,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
         )
         |> disposeOnCancelled ct
 
-    let queryStaticSearchEngine ct (activator: ISearchEngineActivator) query = // Show only this engine results
+    let querySingleStaticSearchEngine ct (activator: ISearchEngineActivator) query = // Show only this engine results
         let normalizedText =
             query
             |> TextNormalization.String.normalize
@@ -121,81 +134,49 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
             results.NotifyChanged()
         ) |> disposeOnCancelled ct
 
-    let queryDynamicSearchEngine ct (activator: ISearchEngineActivator) query (engine: DynamicSearchEngine) = // Show only this engine results
-        try
-            results.Clear()
-            let struct (instantResults, obs) = engine.Search(query, ct, activator)
-
-            obs.ObserveOnUIThreadDispatcher().Subscribe(fun newResults ->
-                newResults
-                |> Seq.map (SearchResultData.createDynamic engine SearchResultKind.Dynamic)
-                |> results.AddRange
-
-                results.Sort comparer
-                results.NotifyChanged()
-            )
-            |> disposeOnCancelled ct
-
-            let instantSrKind =
-                match engine.ImportantResults with
-                | true -> SearchResultKind.DynamicUnique
-                | false -> SearchResultKind.DynamicInstant
-
-            instantResults
-            |> Seq.map (SearchResultData.createDynamic engine instantSrKind)
-            |> results.AddRange
-
-            results.Sort comparer
-            results.NotifyChanged()
-        with e ->
-            Log.Error(e, $"Failed to get results from dynamic search engine: {engine.Name}")
-
 
     interface IDisposable with
         member this.Dispose() = staticResults.Dispose()
 
     member this.Results = results
 
-    member this.AddSource(searchEngine: StaticSearchEngine) =
+    member this.AddSource(searchEngine: IStaticSearchEngine) =
         task {
             try
-                let! results, resultsChanged = searchEngine.LoadResults()
+                let! results = searchEngine.LoadResults()
 
                 Log.Debug $"{searchEngine.Name}: %A{results}"
 
                 results
                 |> Seq.map (SearchResultData.createStatic searchEngine)
-                |> Seq.sortBy (SearchResultData.getWeight resultScoreDb)
-                |> Seq.toArray
+                |> Seq.cache
                 |> function
-                    | [||] -> ()
-                    | arr ->
-                        staticResults.Value.AddRange arr
+                    | s when Seq.isEmpty s -> ()
+                    | s ->
+                        staticResults.Value.AddRange s
                         staticResults.Value |> staticResults.OnNext
                         Log.Information $"{searchEngine.Name} results loaded"
 
-                resultsChanged.Subscribe(fun newResults ->
-                    let othersResults =
-                        staticResults.Value
-                        |> Seq.filter (_.SearchEngineId >> (<>) searchEngine.Id)
+                searchEngine.ResultsChanged.Subscribe(fun newResults ->
+                    // Remove old results
+                    staticResults.Value.RemoveAll(fun res -> res.SearchEngineId = searchEngine.Id) |> ignore
 
+                    // Add new results
                     newResults
                     |> Seq.map (SearchResultData.createStatic searchEngine)
-                    |> Seq.append othersResults
-                    |> Seq.sortBy (SearchResultData.getWeight resultScoreDb)
-                    |> Seq.toArray
+                    |> Seq.cache
                     |> function
-                        | [||] -> ()
-                        | arr ->
-                            staticResults.Value.Clear()
-                            staticResults.Value.AddRange arr
+                        | s when Seq.isEmpty s -> ()
+                        | s ->
+                            staticResults.Value.AddRange s
+                            staticResults.Value.Sort comparer
                             staticResults.Value |> staticResults.OnNext
                             Log.Information $"{searchEngine.Name} results loaded"
                 ) |> ignore
             with e -> Log.Error(e, $"{searchEngine.Name} failed to load results:\n{e.Message}")
         }
 
-    member this.AddSource(searchEngine: DynamicSearchEngine) =
+    member this.AddSource(searchEngine: IDynamicSearchEngine) =
         dynamicSearchEngines.Add searchEngine
 
     member this.ClearResults() =
@@ -212,8 +193,10 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchE
         | null -> queryAllSearchEngines ct text
         | activator ->
             match searchEngines.TryGetValue activator.SearchEngineId with
-            | true, :? StaticSearchEngine -> queryStaticSearchEngine ct activator text
-            | true, (:? DynamicSearchEngine as searchEngine) -> queryDynamicSearchEngine ct activator text searchEngine
+            | true, :? IStaticSearchEngine -> querySingleStaticSearchEngine ct activator text
+            | true, (:? IDynamicSearchEngine as searchEngine) ->
+                results.Clear()
+                querySingleDynamicSearchEngine ct activator text searchEngine
             | _ -> Log.Error $"Cannot find search engine matching the current activator: {activator.Id}"
 
     member this.SortResults() =

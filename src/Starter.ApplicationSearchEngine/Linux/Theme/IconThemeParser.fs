@@ -7,6 +7,7 @@ open System.Text.RegularExpressions
 open Starter.ApplicationSearchEngine.Logger
 open Starter.ApplicationSearchEngine.Linux.Theme
 open FsToolkit.ErrorHandling
+open Helpers
 
 /// Parse the index.theme file and return directory information
 let parseIndexTheme (indexPath: string) =

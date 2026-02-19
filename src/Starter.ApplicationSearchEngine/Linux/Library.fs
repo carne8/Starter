@@ -7,21 +7,25 @@ open System.Threading.Tasks
 open R3
 open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Linux
+open Starter.ApplicationSearchEngine.Logger
 open Starter.SearchEngine
 
-type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
-    inherit StaticSearchEngine(pluginPath, configDir, logger)
+type LinuxAppsSearchEngine() =
     static let icon = Constants.icon
 
     static let defaultDataDirectories = // TODO: Make it respect the hierarchy and prioritize the first matches
-        "XDG_DATA_DIRS"
-        |> Environment.GetEnvironmentVariable
-        |> fun s -> s.Split ':'
-        |> Array.append
-            [| (Environment.SpecialFolder.UserProfile |> Environment.GetFolderPath,
-                ".local/share")
-               |> Path.Combine |]
-        |> Array.filter Directory.Exists
+        let userShare =
+            Path.Combine(
+                Environment.GetFolderPath Environment.SpecialFolder.UserProfile,
+                ".local/share"
+            )
+
+        match Environment.GetEnvironmentVariable "XDG_DATA_DIRS" with
+        | null -> Seq.empty
+        | xdgDataDirs -> xdgDataDirs.Split ':'
+        |> Seq.append (Seq.singleton userShare)
+        |> Seq.filter Directory.Exists
+        |> Seq.toArray
 
     static let defaultFolderConfig =
         { Folders = defaultDataDirectories
@@ -29,7 +33,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
           AllowDuplicates = true } // Not applicable for Linux
 
     let apps = ResizeArray<ISearchResult> 200
-    let results = new Subject<ISearchResult seq>()
+    let resultsChanged = DelegateEvent<EventHandler<ISearchResult seq>>()
     let mutable disposables = ResizeArray 3 // Btw: keep a reference of the app watcher and prevent it from being garbage collected
 
     let useGtkLaunch =
@@ -42,13 +46,13 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
                     RedirectStandardError = true
                 )
                 |> Process.Start
-            proc.WaitForExit(TimeSpan.FromSeconds 3L) && proc.ExitCode = 0
+            match proc with
+            | null -> false
+            | proc -> proc.WaitForExit(TimeSpan.FromSeconds 3L) && proc.ExitCode = 0
         with _ -> false
 
-    do
-        Logger.logger <- logger
-        if not useGtkLaunch then
-            logger.Information "gtk-launch not available"
+    do if not useGtkLaunch then
+        logger.Information "gtk-launch not available"
 
     member private this.LoadApps() =
         task {
@@ -60,7 +64,7 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
                     defaultFolderConfig
 
             newApps |> apps.AddRange
-            apps.ToArray() |> results.OnNext
+            resultsChanged.Trigger [| null; apps |]
 
             let observable, disposable =
                 AppsLoader.observeApplicationChanges
@@ -70,40 +74,53 @@ type LinuxAppsSearchEngine(pluginPath, configDir, logger) =
                     defaultFolderConfig
 
             disposables.Add disposable
-            observable.Subscribe(fun () -> apps.ToArray() |> results.OnNext) |> ignore
+            observable.Subscribe(fun () -> resultsChanged.Trigger [| null; apps |]) |> ignore
         }
 
-    override this.LoadResults() =
-        if not <| OperatingSystem.IsLinux() then
-            logger.Warning "This search engine is not supported on this platform."
-        else
-            this.LoadApps |> Task.Run<unit> |> ignore
+    interface IStaticSearchEngine with
+        member this.LoadResults() =
+            if not <| OperatingSystem.IsLinux() then
+                logger.Warning "This search engine is not supported on this platform."
+            else
+                this.LoadApps |> Task.Run<unit> |> ignore
 
-        struct (Seq.empty, results.AsObservable()) |> Task.FromResult
+            ValueTask.FromResult Seq.empty
 
-    override _.Id = nameof LinuxAppsSearchEngine
-    override _.Name = "Applications"
-    override _.ShortName = "Apps"
-    override _.Icon = icon
-    override this.Activators = [| DefaultSearchEngineActivator(this) |]
+        member _.Id = nameof LinuxAppsSearchEngine
+        member _.Name = "Applications"
+        member _.ShortName = "Apps"
+        member _.Icon = icon
+        member this.Activators = [| DefaultSearchEngineActivator(this) |]
 
-    override _.SearchResultSelected(searchResult) =
-        match searchResult with
-        | :? DesktopApplication as app ->
-            ProcessStartInfo(
-                FileName = "setsid",
-                Arguments = app.Exec,
-                #if DEBUG // Hide process logs
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                #endif
-                CreateNoWindow = true
-            )
-            |> Process.Start
-            |> function null -> () | d -> d.Dispose()
+        member _.SearchResultSelected(searchResult) =
+            match searchResult with
+            | :? DesktopApplication as app ->
+                ProcessStartInfo(
+                    FileName = "setsid",
+                    Arguments = app.Exec,
+                    #if DEBUG // Hide process logs
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    #endif
+                    CreateNoWindow = true
+                )
+                |> Process.Start
+                |> function null -> () | d -> d.Dispose()
 
-            // TODO: DBus Activation -> https://specifications.freedesktop.org/desktop-entry-spec/latest/dbus.html
-            // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
-            // TODO: Maybe this https://specifications.freedesktop.org/desktop-entry-spec/latest/extra-actions.html
-        | _ -> ()
-    override this.LoadSettingsControl() = null
+                // TODO: DBus Activation -> https://specifications.freedesktop.org/desktop-entry-spec/latest/dbus.html
+                // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
+                // TODO: Maybe this https://specifications.freedesktop.org/desktop-entry-spec/latest/extra-actions.html
+            | _ -> ()
+
+        [<CLIEvent>]
+        member this.ResultsChanged = resultsChanged.Publish
+        member this.add_Changed _ = ()
+        member this.remove_Changed _ = ()
+
+type Factory(pluginPath) =
+    inherit SearchEngineFactory(pluginPath)
+
+    override this.LoadSearchEngineIds() = [| nameof LinuxAppsSearchEngine |]
+    override this.LoadSearchEngine(_, _, logger) =
+        Logger.logger <- logger
+        LinuxAppsSearchEngine(), null

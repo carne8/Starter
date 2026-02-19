@@ -41,7 +41,7 @@ type ActivatorStore(configObservable: BehaviorSubject<Configuration>) as this =
             pairList.Clear()
             pairList.AddRange(newListContent)
 
-    member _.AddSearchEngineActivators(searchEngine: SearchEngine) =
+    member _.AddSearchEngineActivators(searchEngine: ISearchEngine) =
         // Add activators
         searchEngine.Activators |> activatorList.AddRange
         searchEngine.Activators
