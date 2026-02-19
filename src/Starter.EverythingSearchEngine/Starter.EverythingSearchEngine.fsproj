@@ -35,6 +35,7 @@
         <Compile Include="EverythingAPI\Common.fs" />
         
         <Compile Include="IconHelper.fs" />
+        <Compile Include="Helpers.fs" />
         <Compile Include="Library.fs" />
     </ItemGroup>
 

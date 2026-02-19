@@ -54,25 +54,20 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
                 results.Sort comparer
                 results.NotifyChanged()
 
-            let instantSrKind =
-                match engine.ImportantResults with
-                | true -> SearchResultKind.DynamicUnique
-                | false -> SearchResultKind.DynamicInstant
-
             instantResults
-            |> Seq.map (SearchResultData.createDynamic engine instantSrKind)
+            |> Seq.map (SearchResultData.createDynamic engine)
             |> addResults
 
             match engine.BufferResults with
             | false ->
                 futureResults
-                    .Select(Seq.map (SearchResultData.createDynamic engine SearchResultKind.Dynamic))
+                    .Select(Seq.map (SearchResultData.createDynamic engine))
                     .ObserveOnUIThreadDispatcher()
                     .Subscribe addResults
             | true ->
                 futureResults
                     .Chunk(TimeSpan.FromMilliseconds 200L)
-                    .Select(Seq.collect (Seq.map (SearchResultData.createDynamic engine SearchResultKind.Dynamic)))
+                    .Select(Seq.collect (Seq.map (SearchResultData.createDynamic engine)))
                     .ObserveOnUIThreadDispatcher()
                     .Subscribe addResults
             |> disposeOnCancelled ct

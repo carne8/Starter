@@ -48,7 +48,7 @@ type UrlSearchEngine() =
         member this.ShortName = "Link"
         member this.Icon = icon
         member this.Activators = [| DefaultSearchEngineActivator(this) |]
-        member this.ImportantResults = false
+        member this.ResultsPriority = ResultPriority.Fallback
         member this.BufferResults = false
 
         member this.Search(query, _ct, _) =

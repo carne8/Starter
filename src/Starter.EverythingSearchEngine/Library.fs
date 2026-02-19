@@ -1,18 +1,20 @@
 ﻿namespace Starter.EverythingSearchEngine
 
+open System
 open System.Diagnostics
 open System.IO
 open System.Runtime.InteropServices
 open System.Text
+open System.Threading
 open System.Threading.Tasks
 
 open EverythingAPI
 open IconHelper
+open Helpers
 open Starter.SearchEngine
 
 open Avalonia.Svg.Skia
 open R3
-open Serilog
 open Vanara
 open Vanara.Windows.Shell
 
@@ -31,11 +33,8 @@ type SearchResult =
         member this.ShowIfNoActivator = true
         member this.ActivatorFilter = Array.empty
 
-
-type EverythingSearchEngine(logger: ILogger, icon, api: IEverything) =
+type EverythingSearchEngine(icon, api: IEverything) =
     let pathStrBuilder = StringBuilder(300)
-    let [<Literal>] maxResultsCount = 300u
-
     let resultsObservable = new Subject<_>()
 
     let loadResultIcon (path: string) =
@@ -71,35 +70,40 @@ type EverythingSearchEngine(logger: ILogger, icon, api: IEverything) =
             :> ISearchResult
             |> ValueSome
 
+    let queryEverything (ct: CancellationToken) maxResultsCount query =
+        Task.Run<unit>(fun () -> earlyReturn {
+            // Query Everything
+            do! api.SetSearch query = CallResult.OK
+            api.SetRequestFlags (RequestFlags.FILE_NAME ||| RequestFlags.PATH)
+            api.SetMax maxResultsCount
+            do! api.Query true
+
+            // Gather results
+            let count = api.GetNumResults()
+
+            let mutable i = 0u
+            while i < count && not ct.IsCancellationRequested do
+                i
+                |> readResult
+                |> ValueOption.filter (fun _ -> not ct.IsCancellationRequested) // Recheck because `readResult` takes time
+                |> ValueOption.iter (Seq.singleton >> resultsObservable.OnNext)
+                i <- i + 1u
+        }) |> ignore
+
     interface IDynamicSearchEngine with
         member this.Id = nameof EverythingSearchEngine
         member this.Name = "Everything"
         member this.ShortName = "Everything"
         member this.Icon = icon
         member this.Activators = [| DefaultSearchEngineActivator(this) |]
-        member this.ImportantResults = false
+        member this.ResultsPriority = ResultPriority.Search
         member this.BufferResults = true
 
-        member this.Search(query, ct, _) =
-            // Query Everything
-            api.SetSearch query |> ignore
-            api.SetRequestFlags (RequestFlags.FILE_NAME ||| RequestFlags.PATH)
-            api.SetMax maxResultsCount
-            api.Query true |> ignore
-
-            // Gather results
-            let count = api.GetNumResults()
-            logger.Verbose $"Request succeed: {count}"
-
-            Task.Run<unit>(fun () -> task {
-                let mutable i = 0u
-                while i < count && not ct.IsCancellationRequested do
-                    i
-                    |> readResult
-                    |> ValueOption.filter (fun _ -> not ct.IsCancellationRequested) // Recheck because `readResult` takes time
-                    |> ValueOption.iter (Seq.singleton >> resultsObservable.OnNext)
-                    i <- i + 1u
-            }) |> ignore
+        member this.Search(query, ct, activator) =
+            if activator <> null then
+                queryEverything ct 300u query
+            elif query |> String.IsNullOrWhiteSpace |> not then
+                queryEverything ct 30u query
 
             Seq.empty, resultsObservable
 
@@ -125,12 +129,12 @@ type Factory(pluginPath) =
         | _ -> ValueNone
 
     override this.LoadSearchEngineIds() = [| nameof EverythingSearchEngine |]
-    override this.LoadSearchEngine(_, _, logger) =
+    override this.LoadSearchEngine(_, _, _) =
         match api with
-        | ValueNone -> raise <| System.PlatformNotSupportedException()
+        | ValueNone -> raise <| PlatformNotSupportedException()
         | ValueSome api ->
             let svgSource = Path.Combine(pluginPath, "icon.svg") |> SvgSource.Load
             let svg = SvgImage(Source = svgSource)
             let icon = StarterIconSource(svg, svg)
 
-            EverythingSearchEngine(logger, icon, api), null
+            EverythingSearchEngine(icon, api), null

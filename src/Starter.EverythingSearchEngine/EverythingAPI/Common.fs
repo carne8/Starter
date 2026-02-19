@@ -2,15 +2,15 @@
 
 open System
 
-type CallResult =
-    | EVERYTHING_OK = 0u
-    | EVERYTHING_ERROR_MEMORY = 1u
-    | EVERYTHING_ERROR_IPC = 2u
-    | EVERYTHING_ERROR_REGISTERCLASSEX = 3u
-    | EVERYTHING_ERROR_CREATEWINDOW = 4u
-    | EVERYTHING_ERROR_CREATETHREAD = 5u
-    | EVERYTHING_ERROR_INVALIDINDEX = 6u
-    | EVERYTHING_ERROR_INVALIDCALL = 7u
+module CallResult =
+    let [<Literal>] OK = 0u
+    let [<Literal>] ERROR_MEMORY = 1u
+    let [<Literal>] ERROR_IPC = 2u
+    let [<Literal>] ERROR_REGISTERCLASSEX = 3u
+    let [<Literal>] ERROR_CREATEWINDOW = 4u
+    let [<Literal>] ERROR_CREATETHREAD = 5u
+    let [<Literal>] ERROR_INVALIDINDEX = 6u
+    let [<Literal>] ERROR_INVALIDCALL = 7u
 
 module RequestFlags =
     let [<Literal>] FILE_NAME = 0x00000001u

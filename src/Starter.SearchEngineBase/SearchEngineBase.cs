@@ -95,6 +95,27 @@ public interface IStaticSearchEngine : ISearchEngine
     public event EventHandler<IEnumerable<ISearchResult>>? ResultsChanged;
 }
 
+public enum ResultPriority
+{
+    /// <summary>
+    /// Suitable for calculator engine results
+    /// </summary>
+    Unique,
+    /// <summary>
+    /// Automatically set by Starter for static search engines
+    /// </summary>
+    Static,
+    /// <summary>
+    /// Suitable for a search engine that produces results not directly
+    /// linked to the query. For instance web search engine.
+    /// </summary>
+    Fallback,
+    /// <summary>
+    /// Suitable for a search engine that emits a lot of results
+    /// </summary>
+    Search
+}
+
 /// <summary>
 /// A search engine that generates results for each query.
 /// Fuzzy finding is not applicable for its results.
@@ -107,7 +128,7 @@ public interface IDynamicSearchEngine : ISearchEngine
     /// top of others results (like for the calculator search engine) or if they
     /// should be shown in the last results (like for the URL search engine)
     /// </summary>
-    public bool ImportantResults { get; }
+    public ResultPriority ResultsPriority { get; }
 
     /// <summary>
     /// Indicate if the results from the observable should be buffered or not.
