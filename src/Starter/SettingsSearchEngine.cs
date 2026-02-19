@@ -34,8 +34,17 @@ internal class SettingsSearchEngine : IStaticSearchEngine
     public string ShortName => "Settings";
     public StarterIconSource Icon => Icons.Settings;
     public ISearchEngineActivator[] Activators => [];
-    public event EventHandler? Changed;
-    public event EventHandler<IEnumerable<ISearchResult>>? ResultsChanged;
+
+    public event EventHandler? Changed
+    {
+        add { }
+        remove { }
+    }
+    public event EventHandler<IEnumerable<ISearchResult>>? ResultsChanged
+    {
+        add { }
+        remove { }
+    }
 
     private static readonly IEnumerable<ISearchResult> Results =
     [

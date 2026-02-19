@@ -21,8 +21,17 @@ internal class ExitSearchEngine : IStaticSearchEngine
     public string ShortName => "Exit";
     public StarterIconSource Icon => Icons.Exit;
     public ISearchEngineActivator[] Activators => [];
-    public event EventHandler? Changed;
-    public event EventHandler<IEnumerable<ISearchResult>>? ResultsChanged;
+
+    public event EventHandler? Changed
+    {
+        add { }
+        remove { }
+    }
+    public event EventHandler<IEnumerable<ISearchResult>>? ResultsChanged
+    {
+        add { }
+        remove { }
+    }
 
     private static readonly IEnumerable<ISearchResult> SearchResults = [new ExitSearchResult()];
 
