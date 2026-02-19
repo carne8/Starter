@@ -129,7 +129,11 @@ type Factory(pluginPath) =
         | _ -> ValueNone
 
     override this.LoadSearchEngineIds() = [| nameof EverythingSearchEngine |]
+
     override this.LoadSearchEngine(_, _, _) =
+        if OperatingSystem.IsWindows() |> not then
+            raise <| PlatformNotSupportedException("Unsupported OS")
+
         match api with
         | ValueNone -> raise <| PlatformNotSupportedException()
         | ValueSome api ->

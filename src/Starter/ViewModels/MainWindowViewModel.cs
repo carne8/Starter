@@ -79,7 +79,15 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        searchEngine.SearchResultSelected(searchResult.SearchResult);
+        try
+        {
+            searchEngine.SearchResultSelected(searchResult.SearchResult);
+        }
+        catch (Exception exn)
+        {
+            Log.Error(exn, "Failed to select result: {Result}", searchResult.SearchResult.Name);
+        }
+
         IncreaseResultScore(searchResult.SearchResult);
     }
 
