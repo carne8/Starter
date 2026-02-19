@@ -90,7 +90,11 @@ let observeApplicationChanges iconThemes useGtkLaunch (appList: ResizeArray<ISea
                 do! semaphore.WaitAsync()
 
                 // Remove old apps
-                appList.RemoveAll(fun e -> e.Id.Contains desktopFile) |> ignore
+                appList.RemoveAll(fun e ->
+                    match e.Id with
+                    | null -> false
+                    | id -> id.Contains desktopFile
+                ) |> ignore
 
                 // Add new apps
                 for entry in newEntries do
@@ -106,8 +110,14 @@ let observeApplicationChanges iconThemes useGtkLaunch (appList: ResizeArray<ISea
     let removeFromList (desktopFile: string) =
         task {
             do! semaphore.WaitAsync()
-            appList.RemoveAll(fun e -> e.Id.Contains desktopFile) |> ignore
-            subject.OnNext()
+            appList.RemoveAll(fun e ->
+                match e.Id with
+                | null -> false
+                | id -> id.Contains desktopFile
+            )
+            |> function
+                | 0 -> ()
+                | _ -> subject.OnNext()
             semaphore.Release() |> ignore
         }
         |> ignore

@@ -24,22 +24,19 @@ let orElse = OrElseBuilder()
 
 [<RequireQualifiedAccess>]
 module Array =
-    let inline private checkNonNull argName arg =
-        if isNull arg then
-            nullArg argName
+    let tryPickV chooser (array: _ array | null) =
+        match array with
+        | null -> nullArg "array"
+        | array ->
+            let rec loop i =
+                if i >= array.Length then
+                    ValueNone
+                else
+                    match chooser array[i] with
+                    | ValueNone -> loop (i + 1)
+                    | res -> res
 
-    let tryPickV chooser (array: _ array) =
-        checkNonNull "array" array
-
-        let rec loop i =
-            if i >= array.Length then
-                ValueNone
-            else
-                match chooser array[i] with
-                | ValueNone -> loop (i + 1)
-                | res -> res
-
-        loop 0
+            loop 0
 
 [<RequireQualifiedAccess>]
 module Seq =
@@ -47,14 +44,15 @@ module Seq =
         if isNull arg then
             nullArg argName
 
-    let tryHeadV (source: seq<_>) =
-        checkNonNull "source" source
-        use e = source.GetEnumerator()
-
-        if e.MoveNext() then
-            ValueSome e.Current
-        else
-            ValueNone
+    let tryHeadV (source: seq<_> | null) =
+        match source with
+        | null -> nullArg "source"
+        | source ->
+            use e = source.GetEnumerator()
+            if e.MoveNext() then
+                ValueSome e.Current
+            else
+                ValueNone
 
 [<RequireQualifiedAccess>]
 module Task =
@@ -67,3 +65,10 @@ module Task =
             with e ->
                 return onError e
         }
+
+[<RequireQualifiedAccess>]
+module Result =
+    let inline requireNotNull (error: 'error) (value: 'ok | null) : Result<'ok, 'error> =
+        match value with
+        | null -> Error error
+        | nonnull -> Ok nonnull

@@ -1,6 +1,6 @@
 module Starter.EverythingSearchEngine.IconHelper
 
-// #nowarn 9
+#nowarn 9
 
 open System
 open System.IO

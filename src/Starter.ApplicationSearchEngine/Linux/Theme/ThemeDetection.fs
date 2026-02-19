@@ -23,9 +23,9 @@ type DesktopEnvironment =
 
 /// Run a command and capture its output
 let private runCommand (command: string) args : Task<string option> =
-    task {
+    taskOption {
         try
-            use proc =
+            use! proc =
                 ProcessStartInfo(
                     FileName = command,
                     Arguments = args,
@@ -35,16 +35,17 @@ let private runCommand (command: string) args : Task<string option> =
                     CreateNoWindow = true
                 )
                 |> Process.Start
+                |> Option.ofObj
 
             let! output = proc.StandardOutput.ReadToEndAsync()
             do! proc.WaitForExitAsync()
 
             if proc.ExitCode = 0 && not (String.IsNullOrWhiteSpace output) then
-                return Some <| output.Trim().Trim('\'', '"') // Remove quotes and trim
+                return output.Trim().Trim('\'', '"') // Remove quotes and trim
             else
-                return None
+                return! None
         with
-        | _ -> return None
+        | _ -> return! None
     }
 
 /// Parse INI-style config file

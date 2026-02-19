@@ -22,20 +22,18 @@ module private StarterIconSource =
                 StarterIconSource(svg, svg)
             with exn ->
                 logger.Warning $"Failed to load svg: {exn}"
-                null
+                StarterIconSource.Empty
         )
         |> _.GetTask()
 
     let fromPng iconFile =
         try
             use stream = File.OpenRead iconFile
-
-            Bitmap.DecodeToWidth(stream, 128)
-            |> fun bmp -> StarterIconSource(bmp, bmp)
-            |> ValueSome
+            let bmp = Bitmap.DecodeToWidth(stream, 128)
+            StarterIconSource(bmp, bmp)
         with exn ->
             logger.Warning $"Failed to load icon {iconFile}: {exn}"
-            ValueNone
+            StarterIconSource.Empty
 
 let private loadAppIconFile themes (iconName: string) =
     match iconName |> Path.IsPathFullyQualified with
@@ -56,7 +54,7 @@ let loadAppIcon themes (desktopEntry: XDGDesktopFileParser.DesktopEntry) =
         |> ValueOption.bind (loadAppIconFile themes)
 
     match iconFile with
-    | ValueNone -> ValueTask.FromResult null
+    | ValueNone -> ValueTask.FromResult StarterIconSource.Empty
     | ValueSome file ->
         match Path.GetExtension file with
         | ".svg" ->
@@ -67,5 +65,4 @@ let loadAppIcon themes (desktopEntry: XDGDesktopFileParser.DesktopEntry) =
         | _ ->
             file
             |> StarterIconSource.fromPng
-            |> ValueOption.defaultValue null
             |> ValueTask.FromResult

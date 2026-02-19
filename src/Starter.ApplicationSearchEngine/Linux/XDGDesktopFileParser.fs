@@ -27,9 +27,9 @@ module Seq =
 type DesktopEntry =
     { Name: string
       Exec: string
-      WorkingDirectory: string ValueOption
-      IconName: string ValueOption
-      AdditionalSearchKeywords: string array
+      WorkingDirectory: string voption
+      IconName: string voption
+      AdditionalSearchKeywords: string array | null
       DesktopFilePath: string }
 
 let private groupLinesByEntry (desktopFileLines: string array) =

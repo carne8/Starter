@@ -14,14 +14,18 @@ type LinuxAppsSearchEngine() =
     static let icon = Constants.icon
 
     static let defaultDataDirectories = // TODO: Make it respect the hierarchy and prioritize the first matches
-        "XDG_DATA_DIRS"
-        |> Environment.GetEnvironmentVariable
-        |> fun s -> s.Split ':'
-        |> Array.append
-            [| (Environment.SpecialFolder.UserProfile |> Environment.GetFolderPath,
-                ".local/share")
-               |> Path.Combine |]
-        |> Array.filter Directory.Exists
+        let userShare =
+            Path.Combine(
+                Environment.GetFolderPath Environment.SpecialFolder.UserProfile,
+                ".local/share"
+            )
+
+        match Environment.GetEnvironmentVariable "XDG_DATA_DIRS" with
+        | null -> Seq.empty
+        | xdgDataDirs -> xdgDataDirs.Split ':'
+        |> Seq.append (Seq.singleton userShare)
+        |> Seq.filter Directory.Exists
+        |> Seq.toArray
 
     static let defaultFolderConfig =
         { Folders = defaultDataDirectories
@@ -42,7 +46,9 @@ type LinuxAppsSearchEngine() =
                     RedirectStandardError = true
                 )
                 |> Process.Start
-            proc.WaitForExit(TimeSpan.FromSeconds 3L) && proc.ExitCode = 0
+            match proc with
+            | null -> false
+            | proc -> proc.WaitForExit(TimeSpan.FromSeconds 3L) && proc.ExitCode = 0
         with _ -> false
 
     do if not useGtkLaunch then

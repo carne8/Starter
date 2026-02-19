@@ -6,7 +6,7 @@ open System.Threading.Tasks
 open System.Collections.Generic
 
 open FsToolkit.ErrorHandling
-open Starter.ApplicationSearchEngine
+open Starter.ApplicationSearchEngine.Logger
 open Starter.ApplicationSearchEngine.Linux.Theme
 
 let private extensions = [| "svg"; "png"; "xpm" |]
@@ -43,7 +43,7 @@ let private fallbackThemes =
         themes
         |> Array.map (fun theme -> $"({theme.Name}, {theme.ThemePath})")
         |> fun arr -> "Fallback themes: " + String.Join("; ", arr)
-        |> Logger.logger.Debug
+        |> logger.Debug
 
         themes
 
@@ -73,11 +73,7 @@ let buildIconLookupDb (iconThemeName: string) : struct (string * Dictionary<stri
 
         let db =
             themes |> Array.map (fun theme ->
-                let d =
-                    { new IEqualityComparer<string> with
-                        member _.Equals(x, y) = x.Equals(y, StringComparison.InvariantCultureIgnoreCase)
-                        member _.GetHashCode s = s.GetHashCode StringComparison.InvariantCultureIgnoreCase }
-                    |> Dictionary
+                let d = Dictionary StringComparer.InvariantCultureIgnoreCase
                 d.Add(theme.Name, theme)
 
                 let rec addParents theme =
@@ -99,7 +95,7 @@ let buildIconLookupDb (iconThemeName: string) : struct (string * Dictionary<stri
             d |> Seq.map (fun kv -> struct (kv.Value.Name, kv.Value.ThemePath))
         )
         |> fun seq -> "Themes used: " + String.Join("; ", seq)
-        |> Starter.ApplicationSearchEngine.Logger.logger.Debug
+        |> logger.Debug
 
         return db
     }

@@ -9,7 +9,7 @@ type DesktopApplication =
       WorkingDirectory: string ValueOption
       Icon: StarterIconSource
       Description: string
-      Keywords: string array }
+      Keywords: string array | null }
 
     interface ISearchResult with
         member this.Id = this.Id
