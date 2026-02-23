@@ -70,6 +70,7 @@ type WindowsAppsSearchEngine(config: Observable<FolderConfiguration>) =
 type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)
 
+    override this.LoadDataTemplates() = null
     override this.LoadSearchEngineIds() = [| nameof WindowsAppsSearchEngine |]
     override this.LoadSearchEngine(_, pluginConfigDirectory, logger) =
         Logger.logger <- logger

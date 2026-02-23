@@ -46,9 +46,3 @@ type SearchResultData =
             sr.SearchResult.Name.Length,
             sr.SearchResult.Name
         )
-
-    member this.IsCustomSearchResult = this.SearchResult :? ICustomSearchResult
-    member this.CustomControl =
-        match this.SearchResult  with
-        | :? ICustomSearchResult as r -> r.Control
-        | _ -> null

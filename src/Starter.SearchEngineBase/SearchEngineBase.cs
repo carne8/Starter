@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Avalonia.Media;
 using R3;
 using Serilog;
@@ -73,9 +74,10 @@ public interface ISearchResult
     ISearchEngineActivator[] ActivatorFilter { get; }
 }
 
-public interface ICustomSearchResult : ISearchResult
+public interface IControlSearchResult : ISearchResult
 {
-    Control Control { get; }
+    bool ShowIcon { get; }
+    object ControlDataContext { get; }
 }
 
 public interface ISearchEngine
@@ -156,6 +158,8 @@ public abstract class SearchEngineFactory(string pluginDirectory)
         string pluginConfigDirectory,
         ILogger logger
     );
+
+    public abstract IEnumerable<IDataTemplate>? LoadDataTemplates();
 }
 
 public static class Constants

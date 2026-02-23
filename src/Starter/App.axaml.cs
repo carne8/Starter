@@ -110,7 +110,7 @@ public class App : Application
         }
     }
 
-    private static (SearchEngineStore, BehaviorSubject<Configuration>) LoadSearchEngines(Configuration config)
+    private(SearchEngineStore, BehaviorSubject<Configuration>) LoadSearchEngines(Configuration config)
     {
         var searchEngineStore = new SearchEngineStore();
 #if DEBUG
@@ -140,6 +140,9 @@ public class App : Application
         searchEngineStore.AddSearchEngine(settingsSearchEngine);
 
         searchEngineStore.AddSearchEngine(new ExitSearchEngine());
+
+        DataTemplates.AddRange(searchEngineStore.DataTemplates);
+        searchEngineStore.DataTemplates.Clear();
 
         Log.Debug("Plugins loaded");
         return (searchEngineStore, settingsSearchEngine.Config);

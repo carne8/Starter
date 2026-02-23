@@ -21,11 +21,13 @@
         <!--    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>-->
         <!--</Content>-->
         <Compile Include="Types.fs" />
+        <Compile Include="Expression.fs" />
         <Compile Include="Parser.fs" />
         <Compile Include="Simplifications.fs" />
         <Compile Include="Evaluate.fs" />
         <Compile Include="LaTeX.fs" />
         <Compile Include="Tests.fs" />
+        <Compile Include="ResultControl.fs" />
         <Compile Include="Library.fs" />
     </ItemGroup>
 

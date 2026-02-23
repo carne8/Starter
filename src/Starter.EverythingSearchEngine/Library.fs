@@ -142,3 +142,5 @@ type Factory(pluginPath) =
             let icon = StarterIconSource(svg, svg)
 
             EverythingSearchEngine(icon, api), null
+
+    override this.LoadDataTemplates() = null

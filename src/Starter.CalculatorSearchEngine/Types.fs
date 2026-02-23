@@ -1,6 +1,8 @@
 namespace Starter.CalculatorSearchEngine.Types
 
+open Avalonia.Media
 open MathNet.Numerics
+open Starter.SearchEngine
 
 [<Struct>]
 type Constant = E | I | Pi
@@ -29,79 +31,34 @@ type Expression =
     | Function of Function * Expression
     | Undefined
 
-[<RequireQualifiedAccess>]
-module Expression =
-    let private (|UnFunc|_|) f1 f2 expr =
-        match expr with
-        | f', Function(f'', e) when f' = f1 && f'' = f2 || f' = f2 && f'' = f1 -> ValueSome e
-        | _ -> ValueNone
+module Icon =
+    let icon =
+        "M13.5,2 C14.8807,2 16,3.11929 16,4.5 L16,15.5 C16,16.8807 14.8807,18 13.5,18 L6.5,18 C5.11929,18 4,16.8807 4,15.5 L4,4.5 C4,3.11929 5.11929,2 6.5,2 L13.5,2 Z M13.5,3 L6.5,3 C5.67157,3 5,3.67157 5,4.5 L5,15.5 C5,16.3284 5.67157,17 6.5,17 L13.5,17 C14.3284,17 15,16.3284 15,15.5 L15,4.5 C15,3.67157 14.3284,3 13.5,3 Z M7,13 C7.55228,13 8,13.4477 8,14 C8,14.5523 7.55228,15 7,15 C6.44772,15 6,14.5523 6,14 C6,13.4477 6.44772,13 7,13 Z M13,13 C13.5523,13 14,13.4477 14,14 C14,14.5523 13.5523,15 13,15 C12.4477,15 12,14.5523 12,14 C12,13.4477 12.4477,13 13,13 Z M10,13 C10.5523,13 11,13.4477 11,14 C11,14.5523 10.5523,15 10,15 C9.44772,15 9,14.5523 9,14 C9,13.4477 9.44772,13 10,13 Z M7,10 C7.55228,10 8,10.4477 8,11 C8,11.5523 7.55228,12 7,12 C6.44772,12 6,11.5523 6,11 C6,10.4477 6.44772,10 7,10 Z M13,10 C13.5523,10 14,10.4477 14,11 C14,11.5523 13.5523,12 13,12 C12.4477,12 12,11.5523 12,11 C12,10.4477 12.4477,10 13,10 Z M10,10 C10.5523,10 11,10.4477 11,11 C11,11.5523 10.5523,12 10,12 C9.44772,12 9,11.5523 9,11 C9,10.4477 9.44772,10 10,10 Z M12.5,4 C13.2796706,4 13.9204457,4.59488554 13.9931332,5.35553954 L14,5.5 L14,6.5 C14,7.27969882 13.4050879,7.920449 12.6444558,7.99313345 L12.5,8 L7.5,8 C6.72030118,8 6.079551,7.40511446 6.00686655,6.64446046 L6,6.5 L6,5.5 C6,4.72030118 6.59488554,4.079551 7.35553954,4.00686655 L7.5,4 L12.5,4 Z M12.5,5 L7.5,5 C7.25454222,5 7.0503921,5.17687704 7.00805575,5.41012499 L7,5.5 L7,6.5 C7,6.74545778 7.17687704,6.9496079 7.41012499,6.99194425 L7.5,7 L12.5,7 C12.7454222,7 12.9496,6.82312296 12.9919429,6.58987501 L13,6.5 L13,5.5 C13,5.25454222 12.8230914,5.0503921 12.5898645,5.00805575 L12.5,5 Z"
+        |> StreamGeometry.Parse
+        |> StarterIconSource
 
-    let constant = Constant
-    let int = BigRational.FromInt >> Number
-    let frac x y = BigRational.FromIntFraction(x, y) |> Number
+type LaTeXSearchResult =
+    { LaTeX: string }
 
-    let rec sum x y =
-        match x, y with
-        | Number x, Number y -> x + y |> Number
-        | Product(x1, x2), Product(y1, y2) when x1 = y1 -> multiply x1 (sum x2 y2)
-        | Product(x1, x2), Product(y1, y2) when x1 = y2 -> multiply x1 (sum x2 y1)
-        | Product(x1, x2), Product(y1, y2) when x2 = y1 -> multiply x2 (sum x1 y2)
-        | Product(x1, x2), Product(y1, y2) when x2 = y2 -> multiply x2 (sum x1 y1)
-        | _ -> Sum(x, y)
-    and multiply x y =
-        match x, y with
-        | Number x, Number y -> x * y |> Number
-        | Number x, Product(Number n, y)
-        | Product(Number n, y), Number x -> Product(Number (x * n), y)
-        | Power(base1, exp1), Power(base2, exp2) when base1 = base2 -> Power(base1, sum exp1 exp2)
-        | _ -> Product(x, y)
+    interface IControlSearchResult with
+        member this.Id = null
+        member this.Name = ""
+        member this.Description = null
+        member this.Keywords = Array.empty
+        member this.Icon = Icon.icon
+        member this.ShowIfNoActivator = true
+        member this.ActivatorFilter = Array.empty
+        member this.ShowIcon = true
+        member this.ControlDataContext = this
 
-    let negate = function
-        | Number n -> Number -n
-        | e -> Product(int -1, e)
+type NumberSearchResult =
+    { Result: string }
 
-    let subtract x y = sum x (negate y)
-
-    let pow x y =
-        match x, y with
-        | Number n, _ when n = BigRational.Zero -> int 0
-        | Number n, _ when n = BigRational.One -> int 1
-
-        | _, Number n when n = BigRational.Zero -> int 1
-        | x, Number n when n = BigRational.One -> x
-
-        | Number x, Number y when y.IsInteger -> BigRational.Pow(x, BigRational.ToInt32 y) |> Number
-        | Power(base', exp), _ -> Power(base', multiply exp y)
-        | _ -> Power(x, y)
-
-    let invert x =
-        match x with
-        | Number x -> x |> BigRational.Reciprocal |> Number
-        | _ -> pow x (int -1)
-
-    let divide x y = multiply x (invert y)
-
-    let apply func expr =
-        match func, expr with
-        | UnFunc Ln Exp e
-        | UnFunc Sin Asin e
-        | UnFunc Cos Acos e
-        | UnFunc Tan Atan e
-        | UnFunc Sec Asec e
-        | UnFunc Csc Acsc e
-        | UnFunc Cot Acot e
-        | UnFunc Sh Ash e
-        | UnFunc Ch Ach e
-        | UnFunc Th Ath e
-        | UnFunc Sech Asech e
-        | UnFunc Csch Acsch e
-        | UnFunc Coth Acoth e
-        | UnFunc Asech Sech e
-        | UnFunc Acsch Csch e
-        | UnFunc Acoth Coth e -> e
-        | Lg, Function(Exp, e) -> // lg = ln e / ln 10
-            Function(Ln, int 10)
-            |> invert
-            |> multiply e
-        | Abs, Number n -> BigRational.Abs n |> Number
-        | _ -> Function(func, expr)
+    interface ISearchResult with
+        member this.Id = null
+        member this.Name = this.Result
+        member this.Description = null
+        member this.Keywords = Array.empty
+        member this.Icon = Icon.icon
+        member this.ShowIfNoActivator = true
+        member this.ActivatorFilter = Array.empty

@@ -79,3 +79,5 @@ type Factory(pluginPath) =
 
         WorkspaceSearchEngine(workspaceSources, settingsSaver),
         Views.SettingsView(DataContext = settingsVm)
+
+    override this.LoadDataTemplates() = null

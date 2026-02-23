@@ -112,9 +112,7 @@
                 </ListBox.Styles>
 
                 <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <controls:SearchResult />
-                    </DataTemplate>
+                    <controls:SearchResultDataTemplate />
                 </ListBox.ItemTemplate>
             </ListBox>
         </StackPanel>

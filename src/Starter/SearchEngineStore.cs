@@ -1,4 +1,5 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Controls.Templates;
 using Serilog;
 using Starter.Features;
 using Starter.SearchEngine;
@@ -11,13 +12,18 @@ public class SearchEngineStore
     public readonly List<IDynamicSearchEngine> DynamicSearchEngines = [];
     public readonly Dictionary<string, ISearchEngine> SearchEngines = new();
     public readonly Dictionary<string, Control> SettingsControls = new();
+    public readonly List<IDataTemplate> DataTemplates = new();
 
     // public event EventHandler? SearchEnginesChanged;
 
     public void LoadSearchEnginesFromDirectory(string directory)
     {
         foreach (var factory in SearchEngineLoading.loadFactoriesFromDirectory(directory))
+        {
             LoadSearchEnginesFromFactory(factory);
+            if (factory.LoadDataTemplates() is { } dataTemplates)
+                DataTemplates.AddRange(dataTemplates);
+        }
 
         // SearchEnginesChanged?.Invoke(this, EventArgs.Empty);
     }

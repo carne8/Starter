@@ -49,9 +49,9 @@ let rec fromExpression expr =
         | Function(Sec, e) -> str.AppendFunction "\\sec" (fun () -> loop 0 str e)
         | Function(Csc, e) -> str.AppendFunction "\\csc" (fun () -> loop 0 str e)
         | Function(Cot, e) -> str.AppendFunction "\\cot" (fun () -> loop 0 str e)
-        | Function(Sh, e) -> str.AppendFunction "\\sh" (fun () -> loop 0 str e)
-        | Function(Ch, e) -> str.AppendFunction "\\ch" (fun () -> loop 0 str e)
-        | Function(Th, e) -> str.AppendFunction "\\th" (fun () -> loop 0 str e)
+        | Function(Sh, e) -> str.AppendFunction "\\sinh" (fun () -> loop 0 str e)
+        | Function(Ch, e) -> str.AppendFunction "\\cosh" (fun () -> loop 0 str e)
+        | Function(Th, e) -> str.AppendFunction "\\tanh" (fun () -> loop 0 str e)
         | Function(Sech, e) -> str.AppendFunction "\\operatorname{sech}" (fun () -> loop 0 str e)
         | Function(Csch, e) -> str.AppendFunction "\\operatorname{csch}" (fun () -> loop 0 str e)
         | Function(Coth, e) -> str.AppendFunction "\\coth" (fun () -> loop 0 str e)
@@ -92,7 +92,7 @@ let rec fromExpression expr =
             str.Append "{" |> ignore
             loop 3 str base'
             str.Append "}^{" |> ignore
-            loop 3 str exp
+            loop 0 str exp
             str.Append "}" |> ignore
             if 3 < precedence then
                 str.Append "\\right)" |> ignore

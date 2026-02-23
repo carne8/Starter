@@ -1,15 +1,18 @@
-﻿<UserControl x:Class="Starter.Controls.SearchResult"
+﻿<UserControl x:Class="Starter.Controls.ControlSearchResult"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Starter.SearchEngine"
              xmlns:controls="using:Starter.Controls"
-             x:DataType="vm:ISearchResult">
+             x:DataType="vm:IControlSearchResult">
 
     <Border Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
         <StackPanel Orientation="Horizontal" Spacing="10">
-            <Border CornerRadius="4" ClipToBounds="True">
+            <Border CornerRadius="4"
+                    ClipToBounds="True"
+                    IsVisible="{Binding ShowIcon}">
                 <controls:StarterIcon Width="{DynamicResource SearchResultIconSize}"
                                       Height="{DynamicResource SearchResultIconSize}"
+                                      Margin="0,6"
                                       VerticalAlignment="Center"
                                       IconSource="{Binding Icon}"
                                       FontSize="{DynamicResource SearchResultIconSize}"
@@ -17,11 +20,7 @@
             </Border>
 
             <StackPanel VerticalAlignment="Center">
-                <controls:AccentuatedTextBlock x:Name="NameTextBlock"
-                                               FontSize="{DynamicResource SearchResultFontSize}"
-                                               Foreground="{DynamicResource TextForeground}"
-                                               Text="{Binding Name}"
-                                               FontFamily="{StaticResource JetBrainsMono}" />
+                <ContentControl FontFamily="{StaticResource JetBrainsMono}" Content="{Binding ControlDataContext}" />
 
                 <TextBlock Text="{Binding Description}"
                            IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"

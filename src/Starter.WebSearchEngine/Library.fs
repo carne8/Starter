@@ -126,3 +126,5 @@ type Factory(pluginPath) =
         let searchEngine = settings.SearchEngine
 
         WebSearchEngine searchEngine, Views.Settings(settings)
+
+    override this.LoadDataTemplates() = null
