@@ -117,6 +117,7 @@ public class App : Application
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.UrlSearchEngine/bin/Debug/net10.0/");
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.WebSearchEngine/bin/Debug/net10.0/");
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.WorkspaceSearchEngine/bin/Debug/net10.0/");
+        searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.CalculatorSearchEngine/bin/Debug/net10.0/");
         searchEngineStore.LoadSearchEnginesFromDirectory(
             OperatingSystem.IsWindows()
                 ? "./src/Starter.ApplicationSearchEngine/bin/Debug/net10.0-windows10.0.19041.0/"

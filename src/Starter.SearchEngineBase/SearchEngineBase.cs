@@ -73,6 +73,11 @@ public interface ISearchResult
     ISearchEngineActivator[] ActivatorFilter { get; }
 }
 
+public interface ICustomSearchResult : ISearchResult
+{
+    Control Control { get; }
+}
+
 public interface ISearchEngine
 {
     public string Id { get; }

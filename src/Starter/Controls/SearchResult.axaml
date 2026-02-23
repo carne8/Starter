@@ -21,7 +21,14 @@
                                                Foreground="{DynamicResource TextForeground}"
                                                Text="{Binding SearchResult.Name}"
                                                FontFamily="{StaticResource JetBrainsMono}"
-                                               AccentuationMap="{Binding AccentuationMap}" />
+                                               AccentuationMap="{Binding AccentuationMap}"
+                                               IsVisible="{Binding !IsCustomSearchResult}" />
+
+                <ContentControl Margin="0,6"
+                                IsVisible="{Binding IsCustomSearchResult}"
+                                Content="{Binding CustomControl}"
+                                FontFamily="{StaticResource JetBrainsMono}" />
+
                 <TextBlock Text="{Binding SearchResult.Description}"
                            IsVisible="{Binding SearchResult.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                            FontSize="12"

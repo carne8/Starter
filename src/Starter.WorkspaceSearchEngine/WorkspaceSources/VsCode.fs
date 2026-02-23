@@ -66,7 +66,7 @@ let loadWorkspaces configPath vsCodePath =
 
                 { Id = path
                   Name = path |> Path.GetFileName
-                  Path = path |> formatFilePath
+                  Path = path |> formatFilePath // TODO: Doesn't work
                   Open = fun () -> openWorkspace vsCodePath path }
                 |> workspaces.Add
 
