@@ -79,7 +79,7 @@ module Trigo =
 
 module Factorial =
     let simplify = function
-        | Number n when n.IsInteger && n > BigRational.FromInt 170 -> Undefined
+        | Number n when n.IsInteger && n > BigRational.FromInt 170 -> Function(Factorial, Number n)
         | Number n when n.IsInteger && (n.IsZero || n.IsPositive) ->
             n
             |> BigRational.ToBigInt

@@ -60,7 +60,7 @@ let private loadAssemblyFactories (assemblyDir: string, assembly: Assembly) =
             None
     )
 
-let loadSearchEnginesFromFactory (factory: SearchEngineFactory) =
+let loadSearchEnginesFromFactory clipboard (factory: SearchEngineFactory) =
     factory.LoadSearchEngineIds() |> Seq.choose (fun id ->
         match id.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 with
         | false ->
@@ -71,7 +71,8 @@ let loadSearchEnginesFromFactory (factory: SearchEngineFactory) =
                 factory.LoadSearchEngine(
                     id,
                     Constants.PluginConfigDirectory id,
-                    logger.ForContext("Context", id)
+                    logger.ForContext("Context", id),
+                    clipboard
                 )
                 |> Some
             with exn ->

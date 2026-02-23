@@ -31,10 +31,7 @@ let rec fromExpression expr =
         | Constant E -> str.Append "e" |> ignore
         | Constant I -> str.Append "i" |> ignore
         | Constant Pi -> str.Append "\\pi" |> ignore
-        | Number n when n.IsInteger ->
-            str.Append "{" |> ignore
-            str.Append n.Numerator |> ignore
-            str.Append "}" |> ignore
+        | Number n when n.IsInteger -> str.Append n.Numerator |> ignore
         | Number n ->
             str.Append "\\frac{" |> ignore
             str.Append n.Numerator |> ignore

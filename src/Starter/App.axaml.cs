@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Data.Core.Plugins;
+using Avalonia.Input.Platform;
 using Avalonia.Markup.Xaml;
 using R3;
 using Serilog;
@@ -50,18 +51,19 @@ public class App : Application
 
     private void Launch(IClassicDesktopStyleApplicationLifetime lifetime)
     {
+        window = new MainWindow();
+        if (window.Clipboard is null) throw new Exception("No clipboard");
         Configuration.ensurePluginsSymlinkExists();
 
         var initialConfig = LoadConfiguration();
-        var (searchEngineStore, config) = LoadSearchEngines(initialConfig);
+        var (searchEngineStore, config) = LoadSearchEngines(initialConfig, window.Clipboard);
 
         var resultScoreDb = ScoreDbModule.readFromFile(Const.ResultScoresFile);
         var activatorStore = new ActivatorStore(config);
         foreach (var kv in searchEngineStore.SearchEngines) activatorStore.AddSearchEngineActivators(kv.Value);
 
         // Create the window
-        var viewModel = new MainWindowViewModel(config, resultScoreDb, searchEngineStore, activatorStore);
-        window = new MainWindow { DataContext = viewModel };
+        window.DataContext = new MainWindowViewModel(config, resultScoreDb, searchEngineStore, activatorStore);
 
         // Register hotkey
         var keyboardShortcut = initialConfig.KeyboardShortcut;
@@ -110,25 +112,26 @@ public class App : Application
         }
     }
 
-    private(SearchEngineStore, BehaviorSubject<Configuration>) LoadSearchEngines(Configuration config)
+    private(SearchEngineStore, BehaviorSubject<Configuration>) LoadSearchEngines(Configuration config, IClipboard clipboard)
     {
         var searchEngineStore = new SearchEngineStore();
 #if DEBUG
-        searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.UrlSearchEngine/bin/Debug/net10.0/");
-        searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.WebSearchEngine/bin/Debug/net10.0/");
-        searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.WorkspaceSearchEngine/bin/Debug/net10.0/");
-        searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.CalculatorSearchEngine/bin/Debug/net10.0/");
+        searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.UrlSearchEngine/bin/Debug/net10.0/", clipboard);
+        searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.WebSearchEngine/bin/Debug/net10.0/", clipboard);
+        searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.WorkspaceSearchEngine/bin/Debug/net10.0/", clipboard);
+        searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.CalculatorSearchEngine/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory(
             OperatingSystem.IsWindows()
                 ? "./src/Starter.ApplicationSearchEngine/bin/Debug/net10.0-windows10.0.19041.0/"
-                : "./src/Starter.ApplicationSearchEngine/bin/Debug/net10.0/"
+                : "./src/Starter.ApplicationSearchEngine/bin/Debug/net10.0/",
+            clipboard
         );
 
         if (OperatingSystem.IsWindows())
-            searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.EverythingSearchEngine/bin/Debug/net10.0/");
+            searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.EverythingSearchEngine/bin/Debug/net10.0/", clipboard);
 #else
         foreach (var pluginDir in Directory.GetDirectories(Const.PluginsDirectory))
-            searchEngineStore.LoadSearchEnginesFromDirectory(pluginDir);
+            searchEngineStore.LoadSearchEnginesFromDirectory(pluginDir, clipboard);
 #endif
 
         var settingsSearchEngine = new SettingsSearchEngine(

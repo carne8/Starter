@@ -130,7 +130,7 @@ type Factory(pluginPath) =
 
     override this.LoadSearchEngineIds() = [| nameof EverythingSearchEngine |]
 
-    override this.LoadSearchEngine(_, _, _) =
+    override this.LoadSearchEngine(_, _, _, _) =
         if OperatingSystem.IsWindows() |> not then
             raise <| PlatformNotSupportedException("Unsupported OS")
 

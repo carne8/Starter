@@ -122,6 +122,6 @@ type Factory(pluginPath) =
 
     override this.LoadDataTemplates() = null
     override this.LoadSearchEngineIds() = [| nameof LinuxAppsSearchEngine |]
-    override this.LoadSearchEngine(_, _, logger) =
+    override this.LoadSearchEngine(_, _, logger, _) =
         Logger.logger <- logger
         LinuxAppsSearchEngine(), null

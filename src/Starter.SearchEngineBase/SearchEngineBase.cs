@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+using Avalonia.Input.Platform;
 using Avalonia.Media;
 using R3;
 using Serilog;
@@ -156,7 +157,8 @@ public abstract class SearchEngineFactory(string pluginDirectory)
     public abstract (ISearchEngine, Control?) LoadSearchEngine(
         string searchEngineId,
         string pluginConfigDirectory,
-        ILogger logger
+        ILogger logger,
+        IClipboard clipboard
     );
 
     public abstract IEnumerable<IDataTemplate>? LoadDataTemplates();

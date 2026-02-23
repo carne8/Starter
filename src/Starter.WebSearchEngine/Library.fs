@@ -118,7 +118,7 @@ type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)
 
     override this.LoadSearchEngineIds() = [| nameof WebSearchEngine |]
-    override this.LoadSearchEngine(_, pluginConfigDirectory, logger) =
+    override this.LoadSearchEngine(_, pluginConfigDirectory, logger, _) =
         setLogger logger
 
         let httpClient = new HttpClient()

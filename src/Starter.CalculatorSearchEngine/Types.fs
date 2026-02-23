@@ -43,7 +43,7 @@ type LaTeXSearchResult =
     interface IControlSearchResult with
         member this.Id = null
         member this.Name = ""
-        member this.Description = null
+        member this.Description = ""
         member this.Keywords = Array.empty
         member this.Icon = Icon.icon
         member this.ShowIfNoActivator = true
