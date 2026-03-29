@@ -36,6 +36,8 @@ public class SearchResultDataTemplate : IRecyclingDataTemplate
     public Control? Build(object? param, Control? existing)
     {
         if (param is not SearchResultData data) return null;
+
+        // Control search result
         if (data.SearchResult is IControlSearchResult controlSr)
         {
             return existing is ControlSearchResult
@@ -43,15 +45,18 @@ public class SearchResultDataTemplate : IRecyclingDataTemplate
                 : new ControlSearchResult { DataContext = controlSr };
         }
 
+        // Normal search result
         if (existing is SearchResult srControl)
         {
-            srControl[!SearchResult.AccentuationMapProperty] = new Binding(nameof(data.AccentuationMap));
+            srControl.AccentuationMap = data.AccentuationMap;
+            return srControl;
         }
 
+        // No recycling
         return new SearchResult
             {
                 DataContext = data.SearchResult,
-                [!SearchResult.AccentuationMapProperty] = new Binding(nameof(data.AccentuationMap))
+                AccentuationMap = data.AccentuationMap
             };
     }
 
