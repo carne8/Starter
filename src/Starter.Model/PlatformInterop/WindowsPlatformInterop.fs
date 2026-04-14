@@ -6,6 +6,7 @@ open System.Threading.Tasks
 open Avalonia.Controls
 open Avalonia.Input
 open Avalonia.Win32.Input
+open Serilog
 open Starter.Features
 open Starter.Features.Logging
 open Vanara.PInvoke
@@ -62,20 +63,22 @@ type WindowsPlatformInterop() =
     static let hotkeyId = 0
 
     override _.ToggleLaunchAtStartup(enable) =
-        match enable, File.Exists startupFile with
-        | false, true -> File.Delete startupFile
-        | true, false ->
-            use shortcut = new ShellLink(
-                Constants.Platform.Windows.StartupFile,
-                null,
-                startupFolder,
-                TargetPath = Constants.ProcessExecutableFile,
-                Description = "Starter",
-                IconLocation = IconLocation(Constants.ProcessExecutableFile, 0)
-            )
+        try
+            match enable, File.Exists startupFile with
+            | false, true -> File.Delete startupFile
+            | true, false ->
+                use shortcut = new ShellLink(
+                    Constants.ProcessExecutableFile,
+                    null,
+                    Constants.ProcessDirectory,
+                    "Starter",
+                    IconLocation = IconLocation(Constants.ProcessExecutableFile, 0)
+                )
 
-            shortcut.SaveAs startupFile
-        | _ -> ()
+                shortcut.SaveAs startupFile
+            | _ -> ()
+        with err ->
+            Log.Error(err, "Failed to toggle launch at startup")
 
     override _.IsLaunchAtStartupEnabled() = File.Exists startupFile
 
