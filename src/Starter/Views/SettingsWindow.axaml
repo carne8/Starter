@@ -26,20 +26,20 @@
             </StackPanel>
         </Border>
 
-        <ui:NavigationView x:Name="NavigationView"
-                           IsSettingsVisible="False"
-                           CompactModeThresholdWidth="0"
-                           ExpandedModeThresholdWidth="900"
-                           SelectedItem="{Binding SelectedPage}"
-                           MenuItemsSource="{Binding Pages}">
-            <ui:NavigationView.MenuItemTemplate>
+        <ui:FANavigationView x:Name="NavigationView"
+                             IsSettingsVisible="False"
+                             CompactModeThresholdWidth="0"
+                             ExpandedModeThresholdWidth="900"
+                             SelectedItem="{Binding SelectedPage}"
+                             MenuItemsSource="{Binding Pages}">
+            <ui:FANavigationView.MenuItemTemplate>
                 <DataTemplate DataType="vm:MenuItemViewModel">
                     <controls:CustomNavigationViewItem Content="{Binding Title}"
                                                        StarterIconSource="{Binding Icon}"
                                                        FontFamily="{StaticResource JetBrainsMono}" />
                 </DataTemplate>
-            </ui:NavigationView.MenuItemTemplate>
+            </ui:FANavigationView.MenuItemTemplate>
             <ContentControl x:Name="ContentControl" />
-        </ui:NavigationView>
+        </ui:FANavigationView>
     </DockPanel>
 </controls:TranslucentWindow>

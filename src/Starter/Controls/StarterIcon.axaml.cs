@@ -54,11 +54,11 @@ public partial class StarterIcon : UserControl
     {
         if (iconSource == null) return;
         Content = iconSource.Geometry is null
-            ? new Image()
+            ? new Image
             {
                 Source = iconSource.GetImage(ActualThemeVariant == ThemeVariant.Light)
             }
-            : new PathIcon()
+            : new PathIcon
             {
                 Data = iconSource.Geometry,
                 Width = FontSize - ExtraPaddingForSymbol,

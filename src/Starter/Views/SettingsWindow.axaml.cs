@@ -14,14 +14,14 @@ namespace Starter.Views;
 
 public static class SettingsDataTemplates
 {
-    public static IconSource BuildIconSource(StarterIconSource icon, bool lightMode) =>
+    public static FAIconSource BuildIconSource(StarterIconSource icon, bool lightMode) =>
         icon.Geometry is null
-            ? new ImageIconSource { Source = icon.GetImage(lightMode) }
-            : new PathIconSource { Data = icon.Geometry };
+            ? new FAImageIconSource { Source = icon.GetImage(lightMode) }
+            : new FAPathIconSource { Data = icon.Geometry };
 
     public static readonly FuncDataTemplate<MenuItemViewModel> MenuItem = new((vm, _) =>
     {
-        var control = new NavigationViewItem { Content = vm.Title };
+        var control = new FANavigationViewItem { Content = vm.Title };
 
         control.ActualThemeVariantChanged += (_, _) =>
             control.IconSource = BuildIconSource(vm.Icon, control.ActualThemeVariant == ThemeVariant.Light);

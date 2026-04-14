@@ -16,8 +16,8 @@ module private Helpers =
         /// Transform StarterIconSource in IconSource
         static member buildIconSource lightMode (iconSource: StarterIconSource) =
             match iconSource.Geometry with
-            | null -> ImageIconSource(Source = iconSource.GetImage lightMode) :> IconSource
-            | geo -> PathIconSource(Data = geo)
+            | null -> FAImageIconSource(Source = iconSource.GetImage lightMode) :> FAIconSource
+            | geo -> FAPathIconSource(Data = geo)
 
 type WorkspaceSourceViewModel(source: WorkspaceSource, settings: Settings) =
     inherit ReactiveObject()

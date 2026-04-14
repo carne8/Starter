@@ -74,7 +74,7 @@ public partial class AccentuatedTextBlock : Control
         var glyphIndices = new ushort[textMemory.Length];
 
         for (var i = 0; i < glyphIndices.Length; i++)
-            glyphIndices[i] = normalTypeface.GlyphTypeface.GetGlyph(text[i]);
+            glyphIndices[i] = normalTypeface.GlyphTypeface.CharacterToGlyphMap.GetGlyph(text[i]);
 
         DrawGlyphRun(context, normalTypeface.GlyphTypeface, textMemory, glyphIndices);
     }
@@ -101,7 +101,7 @@ public partial class AccentuatedTextBlock : Control
                 if (rangeLength != 0)
                 {
                     for (var i = 0; i < rangeLength; i++)
-                        glyphIndices[i] = typeface.GetGlyph(text[rangeStart + i]);
+                        glyphIndices[i] = typeface.CharacterToGlyphMap.GetGlyph(text[rangeStart + i]);
                     // to charIdx - rangeStart
                     // corresponds to the char index
 
@@ -118,7 +118,10 @@ public partial class AccentuatedTextBlock : Control
                     var scale = accentuationMap[rangeStart] ? accentuatedScale : normalScale;
                     advance = 0;
                     for (var i = 0; i < rangeLength; i++)
-                        advance += scale * typeface.GetGlyphAdvance(glyphIndices[i]);
+                    {
+                        if (!typeface.TryGetHorizontalGlyphAdvance(glyphIndices[i], out var glyphAdvance)) continue;
+                        advance += scale * glyphAdvance;
+                    }
 
                     rangeStart = charIdx;
                 }
@@ -131,7 +134,7 @@ public partial class AccentuatedTextBlock : Control
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DrawGlyphRun(
         DrawingContext context,
-        IGlyphTypeface typeface,
+        GlyphTypeface typeface,
         ReadOnlyMemory<char> textMemory,
         IReadOnlyList<ushort> glyphIndices
     )

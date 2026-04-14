@@ -16,17 +16,17 @@
             <TextBlock Margin="0,0,0,16" Classes="title1">Settings</TextBlock>
 
             <!-- Launch at startup -->
-            <ui:SettingsExpander Header="Launch at startup">
-                <ui:SettingsExpander.IconSource>
+            <ui:FASettingsExpander Header="Launch at startup">
+                <ui:FASettingsExpander.IconSource>
                     <ic:SymbolIconSource Symbol="History" />
-                </ui:SettingsExpander.IconSource>
-                <ui:SettingsExpander.Footer>
+                </ui:FASettingsExpander.IconSource>
+                <ui:FASettingsExpander.Footer>
                     <Panel>
-                        <ui:ProgressRing IsVisible="{Binding LaunchAtStartupLoading}" />
+                        <ui:FAProgressRing IsVisible="{Binding LaunchAtStartupLoading}" />
                         <ToggleSwitch IsChecked="{Binding LaunchAtStartup}" IsVisible="{Binding !LaunchAtStartupLoading}" />
                     </Panel>
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </ui:FASettingsExpander.Footer>
+            </ui:FASettingsExpander>
 
             <!-- Keyboard shortcut -->
             <controls:KeyboardShortcutInput DataContext="{Binding KeyboardShortcutViewModel}" ControlToFocus="{Binding #ComboBox}" />
@@ -34,11 +34,11 @@
             <TextBlock Classes="title2">Personalization</TextBlock>
 
             <!-- Background -->
-            <ui:SettingsExpander Description="{x:Static vm:SettingsViewModel.BackgroundDescription}" Header="Background transparency">
-                <ui:SettingsExpander.IconSource>
+            <ui:FASettingsExpander Description="{x:Static vm:SettingsViewModel.BackgroundDescription}" Header="Background transparency">
+                <ui:FASettingsExpander.IconSource>
                     <ic:SymbolIconSource Symbol="Sparkle" />
-                </ui:SettingsExpander.IconSource>
-                <ui:SettingsExpander.Footer>
+                </ui:FASettingsExpander.IconSource>
+                <ui:FASettingsExpander.Footer>
 
                     <ComboBox x:Name="ComboBox"
                               ItemsSource="{x:Static vm:SettingsViewModel.Backgrounds}"
@@ -57,18 +57,18 @@
                         </ComboBox.Styles>
                     </ComboBox>
 
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </ui:FASettingsExpander.Footer>
+            </ui:FASettingsExpander>
 
             <!-- Zoomed mode -->
-            <ui:SettingsExpander Header="Zoomed mode">
-                <ui:SettingsExpander.IconSource>
+            <ui:FASettingsExpander Header="Zoomed mode">
+                <ui:FASettingsExpander.IconSource>
                     <ic:SymbolIconSource Symbol="ZoomIn" />
-                </ui:SettingsExpander.IconSource>
-                <ui:SettingsExpander.Footer>
+                </ui:FASettingsExpander.IconSource>
+                <ui:FASettingsExpander.Footer>
                     <ToggleSwitch IsChecked="{Binding ZoomedMode}" />
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </ui:FASettingsExpander.Footer>
+            </ui:FASettingsExpander>
 
             <TextBlock Classes="title2">Search engine activation prefixes</TextBlock>
 

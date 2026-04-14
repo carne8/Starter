@@ -1,10 +1,10 @@
-﻿<ui:SettingsExpander x:Class="Starter.Controls.CustomSettingsExpander"
-                     xmlns="https://github.com/avaloniaui"
-                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                     xmlns:ui="using:FluentAvalonia.UI.Controls"
-                     xmlns:controls="using:Starter.Controls"
-                     Theme="{StaticResource CustomTheme}">
-    <ui:SettingsExpander.Resources>
+﻿<ui:FASettingsExpander x:Class="Starter.Controls.CustomSettingsExpander"
+                       xmlns="https://github.com/avaloniaui"
+                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                       xmlns:ui="using:FluentAvalonia.UI.Controls"
+                       xmlns:controls="using:Starter.Controls"
+                       Theme="{StaticResource CustomTheme}">
+    <ui:FASettingsExpander.Resources>
         <ControlTheme x:Key="CustomTheme" TargetType="controls:CustomSettingsExpander">
             <Setter Property="Background" Value="{DynamicResource ExpanderBackground}" />
             <Setter Property="BorderBrush" Value="{DynamicResource ExpanderHeaderBorderBrush}" />
@@ -25,8 +25,8 @@
             </Style>
 
             <Style Selector="^ /template/ Expander#Expander">
-                <Setter Property="ui:ExpanderExt.ExpanderAnimationType" Value="FluentV2" />
+                <Setter Property="ui:FAExpanderExt.ExpanderAnimationType" Value="FluentV2" />
             </Style>
         </ControlTheme>
-    </ui:SettingsExpander.Resources>
-</ui:SettingsExpander>
+    </ui:FASettingsExpander.Resources>
+</ui:FASettingsExpander>

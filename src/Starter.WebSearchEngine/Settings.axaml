@@ -9,9 +9,9 @@
             <TextBlock Classes="title1">Web search settings</TextBlock>
 
             <!-- Search engine -->
-            <ui:SettingsExpander x:Name="SearchEngine" Header="Search engine">
+            <ui:FASettingsExpander x:Name="SearchEngine" Header="Search engine">
                 <!-- Icon source bound from code-behind -->
-                <ui:SettingsExpander.Footer>
+                <ui:FASettingsExpander.Footer>
                     <ComboBox SelectedItem="{Binding SelectedSeKind}" ItemsSource="{Binding SearchEngineKinds}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -19,8 +19,8 @@
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </ui:FASettingsExpander.Footer>
+            </ui:FASettingsExpander>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

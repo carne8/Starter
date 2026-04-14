@@ -33,14 +33,14 @@
             <TextBlock Classes="title1">Applications settings</TextBlock>
 
             <TextBlock Classes="title2">Duplicates</TextBlock>
-            <ui:SettingsExpander Header="Allow duplicate applications">
-                <ui:SettingsExpander.IconSource>
+            <ui:FASettingsExpander Header="Allow duplicate applications">
+                <ui:FASettingsExpander.IconSource>
                     <ic:SymbolIconSource Symbol="Multiplier2x" />
-                </ui:SettingsExpander.IconSource>
-                <ui:SettingsExpander.Footer>
-                    <ToggleSwitch IsChecked="{Binding AllowDuplicates}" />
-                </ui:SettingsExpander.Footer>
-            </ui:SettingsExpander>
+                </ui:FASettingsExpander.IconSource>
+                <ui:FASettingsExpander.Footer>
+                    <!-- <ToggleSwitch IsChecked="{Binding AllowDuplicates}" /> -->
+                </ui:FASettingsExpander.Footer>
+            </ui:FASettingsExpander>
 
             <TextBlock Classes="title2">Additional application folders</TextBlock>
             <StackPanel Classes.enableSpacing="{Binding Folders.Count}">

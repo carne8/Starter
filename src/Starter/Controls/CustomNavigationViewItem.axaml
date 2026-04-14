@@ -1,11 +1,11 @@
-﻿<ui:NavigationViewItem x:Class="Starter.Controls.CustomNavigationViewItem"
-                       xmlns="https://github.com/avaloniaui"
-                       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                       xmlns:ui="using:FluentAvalonia.UI.Controls"
-                       xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
-                       xmlns:controls="using:Starter.Controls"
-                       Theme="{StaticResource CustomTheme}">
-    <ui:NavigationViewItem.Resources>
+﻿<ui:FANavigationViewItem x:Class="Starter.Controls.CustomNavigationViewItem"
+                         xmlns="https://github.com/avaloniaui"
+                         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                         xmlns:ui="using:FluentAvalonia.UI.Controls"
+                         xmlns:uip="using:FluentAvalonia.UI.Controls.Primitives"
+                         xmlns:controls="using:Starter.Controls"
+                         Theme="{StaticResource CustomTheme}">
+    <ui:FANavigationViewItem.Resources>
         <ControlTheme x:Key="CustomTheme" TargetType="controls:CustomNavigationViewItem">
             <Setter Property="Foreground" Value="{DynamicResource NavigationViewItemForeground}" />
             <Setter Property="Background" Value="{DynamicResource NavigationViewItemBackground}" />
@@ -27,26 +27,26 @@
                             </Style>
                         </Grid.Styles>
 
-                        <uip:NavigationViewItemPresenter Name="NVIPresenter"
-                                                         Padding="{TemplateBinding Padding}"
-                                                         HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
-                                                         VerticalAlignment="{TemplateBinding VerticalAlignment}"
-                                                         HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
-                                                         VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
-                                                         IconSource="{TemplateBinding IconSource}"
-                                                         InfoBadge="{TemplateBinding InfoBadge}"
-                                                         ContentTemplate="{TemplateBinding ContentTemplate}"
-                                                         Foreground="{TemplateBinding Foreground}"
-                                                         Background="{TemplateBinding Background}"
-                                                         BorderBrush="{TemplateBinding BorderBrush}"
-                                                         BorderThickness="{TemplateBinding BorderThickness}"
-                                                         Content="{TemplateBinding Content}"
-                                                         TemplatedControl.IsTemplateFocusTarget="True" />
+                        <uip:FANavigationViewItemPresenter Name="NVIPresenter"
+                                                           Padding="{TemplateBinding Padding}"
+                                                           HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
+                                                           VerticalAlignment="{TemplateBinding VerticalAlignment}"
+                                                           HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                           VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                                                           IconSource="{TemplateBinding IconSource}"
+                                                           InfoBadge="{TemplateBinding InfoBadge}"
+                                                           ContentTemplate="{TemplateBinding ContentTemplate}"
+                                                           Foreground="{TemplateBinding Foreground}"
+                                                           Background="{TemplateBinding Background}"
+                                                           BorderBrush="{TemplateBinding BorderBrush}"
+                                                           BorderThickness="{TemplateBinding BorderThickness}"
+                                                           Content="{TemplateBinding Content}"
+                                                           TemplatedControl.IsTemplateFocusTarget="True" />
 
-                        <ui:ItemsRepeater Name="NVIMenuItemsHost"
-                                          Grid.Row="1"
-                                          IsVisible="False"
-                                          KeyboardNavigation.TabNavigation="Continue" />
+                        <ui:FAItemsRepeater Name="NVIMenuItemsHost"
+                                            Grid.Row="1"
+                                            IsVisible="False"
+                                            KeyboardNavigation.TabNavigation="Continue" />
 
                         <FlyoutBase.AttachedFlyout>
                             <!-- Placement handled in code, since Flyout's can't be targeted in Styles -->
@@ -60,18 +60,18 @@
                 </ControlTemplate>
             </Setter>
 
-            <Style Selector="^:topprimary /template/ uip|NavigationViewItemPresenter">
+            <Style Selector="^:topprimary /template/ uip|FANavigationViewItemPresenter">
                 <Setter Property="Margin" Value="{DynamicResource TopNavigationViewItemMargin}" />
                 <Setter Property="Foreground" Value="{DynamicResource TopNavigationViewItemForeground}" />
             </Style>
 
-            <Style Selector="^:topnav /template/ uip|NavigationViewItemPresenter">
+            <Style Selector="^:topnav /template/ uip|FANavigationViewItemPresenter">
                 <Setter Property="Theme" Value="{DynamicResource NavigationViewItemPresenterWhenOnTopPane}" />
             </Style>
 
-            <Style Selector="^:topoverflow /template/ uip|NavigationViewItemPresenter">
+            <Style Selector="^:topoverflow /template/ uip|FANavigationViewItemPresenter">
                 <Setter Property="Theme" Value="{DynamicResource NavigationViewItemPresenterWhenOnTopPaneOverflow}" />
             </Style>
         </ControlTheme>
-    </ui:NavigationViewItem.Resources>
-</ui:NavigationViewItem>
+    </ui:FANavigationViewItem.Resources>
+</ui:FANavigationViewItem>

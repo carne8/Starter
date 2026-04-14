@@ -5,7 +5,7 @@ using Starter.SearchEngine;
 
 namespace Starter.Controls;
 
-public partial class CustomNavigationViewItem : NavigationViewItem
+public partial class CustomNavigationViewItem : FANavigationViewItem
 {
     public static readonly StyledProperty<StarterIconSource?> StarterIconSourceProperty =
         CustomSettingsExpander.StarterIconSourceProperty.AddOwner<CustomNavigationViewItem>();
