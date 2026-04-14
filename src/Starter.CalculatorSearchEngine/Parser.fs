@@ -27,7 +27,8 @@ let private pconstant =
     <|> (pstringCI "pi" >>% Constant Pi)
 
 let private pfunction pexpr =
-    [ skipStringCI "abs(" >>% Abs
+    [ skipStringCI "sqrt(" >>% Sqrt
+      skipStringCI "abs(" >>% Abs
       skipStringCI "ln(" >>% Ln
       skipStringCI "lg(" >>% Lg
       skipStringCI "log(" >>% Lg

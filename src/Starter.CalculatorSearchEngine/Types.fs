@@ -8,6 +8,7 @@ open Starter.SearchEngine
 type Constant = E | I | Pi
 
 type Function =
+    | Sqrt
     | Abs
     | Ln
     | Lg

@@ -73,6 +73,7 @@ and apply f a =
         match arg with
         | Number n when not n.IsInteger || n.IsNegative -> Undefined
         | expr -> Function(Factorial, expr)
+    | Sqrt, a -> pow a (frac 1 2)
     | f, a -> Function(f, a)
 
 let divide x y = pow y (int -1) |> multiply x
