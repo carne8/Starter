@@ -17,25 +17,20 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!--<Content Include="icon.svg">-->
-        <!--    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>-->
-        <!--</Content>-->
         <Compile Include="Types.fs" />
         <Compile Include="Expression.fs" />
         <Compile Include="Parser.fs" />
         <Compile Include="Simplifications.fs" />
         <Compile Include="Evaluate.fs" />
         <Compile Include="LaTeX.fs" />
-        <Compile Include="Tests.fs" />
         <Compile Include="ResultControl.fs" />
         <Compile Include="Library.fs" />
     </ItemGroup>
 
     <ItemGroup>
-        <!--<PackageReference Include="AvaloniaMath" Version="2.1.0" />-->
         <PackageReference Include="CSharpMath.Avalonia" Version="1.0.0-pre.1" />
         <PackageReference Include="FParsec" Version="1.1.1" />
-        <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
+        <PackageReference Include="FsToolkit.ErrorHandling" Version="5.2.0" />
         <PackageReference Include="MathNet.Numerics.FSharp" Version="5.0.0" />
     </ItemGroup>
 

@@ -37,8 +37,8 @@ let private findWorkspaceDbPath insiders =
     | true -> Some path
     | false -> None
 
-let private openWorkspace vsCodePath workspacePath =
-    ProcessStartInfo(FileName = vsCodePath, Arguments = workspacePath)
+let private openWorkspace vsCodePath args =
+    ProcessStartInfo(FileName = vsCodePath, Arguments = args)
     |> Process.Start
     |> function null -> () | d -> d.Dispose()
 
@@ -66,8 +66,8 @@ let loadWorkspaces configPath vsCodePath =
 
                 { Id = path
                   Name = path |> Path.GetFileName
-                  Path = path |> formatFilePath // TODO: Doesn't work
-                  Open = fun () -> openWorkspace vsCodePath path }
+                  Path = path |> formatFilePath
+                  Open = fun () -> openWorkspace vsCodePath $"\"{path}\"" }
                 |> workspaces.Add
 
             | ValueSome "vscode-remote" ->
@@ -75,7 +75,7 @@ let loadWorkspaces configPath vsCodePath =
                     file.TryIndexOf('/', protocolSeparatorIdx + 1)
                     |> ValueOption.iter (fun remoteSeparatorIdx ->
                         let remote = file.Substring(protocolSeparatorIdx, remoteSeparatorIdx - protocolSeparatorIdx)
-                        let path = file.Substring(remoteSeparatorIdx + 1)
+                        let path = file.Substring(remoteSeparatorIdx)
                         let name =
                             if remote.StartsWith "wsl" then
                                 $"WSL - {path |> Path.GetFileName}"
@@ -85,7 +85,7 @@ let loadWorkspaces configPath vsCodePath =
                         { Id = path
                           Name = name
                           Path = path
-                          Open = fun () -> openWorkspace vsCodePath $"--remote {remote} {path}" }
+                          Open = fun () -> openWorkspace vsCodePath $"--remote {remote} \"{path}\"" }
                         |> workspaces.Add
                     )
             | _ -> ()

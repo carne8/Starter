@@ -1,3 +1,5 @@
+// These tests are not executed during the test process (because there is no test process)
+// It could be a good idea to add tests to Starter. Maybe.
 module Starter.CalculatorSearchEngine.Tests
 
 open Starter.CalculatorSearchEngine.Types
