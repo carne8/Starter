@@ -11,7 +11,8 @@
                             FontFamily="{StaticResource JetBrainsMono}"
                             AcrylicBackgroundColor="{DynamicResource WindowBackground}"
                             BackgroundColor="{DynamicResource DefaultBackgroundColor}"
-                            BackgroundKind="{Binding ConfigSystemObservable^.Background}">
+                            BackgroundKind="{Binding ConfigSystemObservable^.Background}"
+                            TextOptions.TextRenderingMode="Antialias">
     <ui:FANavigationView x:Name="NavigationView"
                          IsSettingsVisible="False"
                          CompactModeThresholdWidth="0"
