@@ -5,6 +5,7 @@
     <Project Path="src/Starter.SearchEngineBase/Starter.SearchEngineBase.csproj" />
     <Project Path="src/Starter.WebSearchEngine/Starter.WebSearchEngine.fsproj" />
     <Project Path="src/Starter.EverythingSearchEngine/Starter.EverythingSearchEngine.fsproj" />
+    <Project Path="src/Starter.CalculatorSearchEngine/Starter.CalculatorSearchEngine.fsproj" />
   </Folder>
   <Folder Name="/Plugins/Starter.UrlSearchEngine/">
     <Project Path="src/Starter.UrlSearchEngine/Starter.UrlSearchEngine.fsproj" />

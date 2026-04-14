@@ -76,8 +76,16 @@ public partial class SettingsViewModel : ObservableObject
         Task.Run(() =>
         {
             // Checks if launch at startup is enabled
-            LaunchAtStartup = Platform.IsLaunchAtStartupEnabled();
-            LaunchAtStartupLoading = false;
+            try
+            {
+                LaunchAtStartup = Platform.IsLaunchAtStartupEnabled();
+                LaunchAtStartupLoading = false;
+            }
+            catch (Exception)
+            {
+                LaunchAtStartup = false;
+                LaunchAtStartupLoading = false;
+            }
         });
     }
 

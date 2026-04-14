@@ -144,7 +144,7 @@ let private findWorkspaceDbPath ide =
     |> Option.ofResult
 
 let openWorkspace ideExePath workspacePath = // TODO: Use setsid on Linux
-    ProcessStartInfo(FileName = ideExePath, Arguments = workspacePath)
+    ProcessStartInfo(FileName = ideExePath, Arguments = $"\"{workspacePath}\"")
     |> Process.Start
     |> function null -> () | d -> d.Dispose()
 

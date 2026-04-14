@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ParallelCompilation>true</ParallelCompilation>
+        <Deterministic>false</Deterministic>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Starter.SearchEngineBase\Starter.SearchEngineBase.csproj">
+            <Private>false</Private>
+            <ExcludeAssets>runtime</ExcludeAssets>
+        </ProjectReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="Types.fs" />
+        <Compile Include="Expression.fs" />
+        <Compile Include="Parser.fs" />
+        <Compile Include="Simplifications.fs" />
+        <Compile Include="Evaluate.fs" />
+        <Compile Include="LaTeX.fs" />
+        <Compile Include="ResultControl.fs" />
+        <Compile Include="Library.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="CSharpMath.Avalonia" Version="1.0.0-pre.1" />
+        <PackageReference Include="FParsec" Version="1.1.1" />
+        <PackageReference Include="FsToolkit.ErrorHandling" Version="5.2.0" />
+        <PackageReference Include="MathNet.Numerics.FSharp" Version="5.0.0" />
+    </ItemGroup>
+
+</Project>

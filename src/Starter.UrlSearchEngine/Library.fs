@@ -87,4 +87,5 @@ type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)
 
     override this.LoadSearchEngineIds() = [| nameof UrlSearchEngine |]
-    override this.LoadSearchEngine(_, _, _) = UrlSearchEngine(), null
+    override this.LoadSearchEngine(_, _, _, _) = UrlSearchEngine(), null
+    override this.LoadDataTemplates() = null

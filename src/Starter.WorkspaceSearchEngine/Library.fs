@@ -67,7 +67,7 @@ type Factory(pluginPath) =
 
     override this.LoadSearchEngineIds() = [| Constants.searchEngineId |]
 
-    override this.LoadSearchEngine(_, pluginConfigDirectory, logger) =
+    override this.LoadSearchEngine(_, pluginConfigDirectory, logger, _) =
         Logger.logger <- logger
 
         let filePath = pluginConfigDirectory |> Settings.getFilePath
@@ -79,3 +79,5 @@ type Factory(pluginPath) =
 
         WorkspaceSearchEngine(workspaceSources, settingsSaver),
         Views.SettingsView(DataContext = settingsVm)
+
+    override this.LoadDataTemplates() = null

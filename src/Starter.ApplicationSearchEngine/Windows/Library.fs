@@ -70,8 +70,9 @@ type WindowsAppsSearchEngine(config: Observable<FolderConfiguration>) =
 type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)
 
+    override this.LoadDataTemplates() = null
     override this.LoadSearchEngineIds() = [| nameof WindowsAppsSearchEngine |]
-    override this.LoadSearchEngine(_, pluginConfigDirectory, logger) =
+    override this.LoadSearchEngine(_, pluginConfigDirectory, logger, _) =
         Logger.logger <- logger
 
         let settingsViewModel = SettingsViewModel pluginConfigDirectory
