@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:Starter.ViewModels"
              xmlns:viewModels="using:Starter.ViewModels"
@@ -19,7 +18,7 @@
 
     <ui:FASettingsExpander Header="Keyboard shortcut" Classes.showDescription="{x:Static viewModels:KeyboardShortcutInputViewModel.NotEnabled}">
         <ui:FASettingsExpander.IconSource>
-            <ic:SymbolIconSource Symbol="Keyboard" />
+            <ui:FASymbolIconSource Symbol="Keyboard" />
         </ui:FASettingsExpander.IconSource>
         <ui:FASettingsExpander.Footer>
             <TextBox x:Name="TextBox"

@@ -8,7 +8,7 @@
                             Width="450"
                             MinHeight="50"
                             x:DataType="vm:MainWindowViewModel"
-                            SystemDecorations="None"
+                            WindowDecorations="None"
                             SizeToContent="Height"
                             CanResize="False"
                             Topmost="True"
@@ -64,7 +64,7 @@
                 <TextBox x:Name="TextBox"
                          Grid.Column="1"
                          Theme="{StaticResource CustomTextBoxTheme}"
-                         Watermark="Start anything..."
+                         PlaceholderText="Start anything..."
                          Text="{Binding Text}">
                     <TextBox.KeyBindings>
                         <KeyBinding Command="{Binding SelectResultCommand}"
