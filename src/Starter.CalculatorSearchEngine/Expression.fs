@@ -3,77 +3,78 @@
 open Starter.CalculatorSearchEngine.Types
 open MathNet.Numerics
 
-let private (|UnFunc|_|) f1 f2 expr =
+let private (|ReciprocalFunction|_|) f1 f2 expr =
     match expr with
-    | f', Function(f'', e) when f' = f1 && f'' = f2 || f' = f2 && f'' = f1 -> ValueSome e
+    | f1', Function(f2', a) when
+        f1 = f1' && f2 = f2' || f2 = f1' && f1 = f2' ->
+        ValueSome a
     | _ -> ValueNone
 
 let constant = Constant
 let int = BigRational.FromInt >> Number
 let frac x y = BigRational.FromIntFraction(x, y) |> Number
 
-let rec sum x y =
+let rec add x y =
     match x, y with
-    | Number x, Number y -> x + y |> Number
-    | Product(x1, x2), Product(y1, y2) when x1 = y1 -> multiply x1 (sum x2 y2)
-    | Product(x1, x2), Product(y1, y2) when x1 = y2 -> multiply x1 (sum x2 y1)
-    | Product(x1, x2), Product(y1, y2) when x2 = y1 -> multiply x2 (sum x1 y2)
-    | Product(x1, x2), Product(y1, y2) when x2 = y2 -> multiply x2 (sum x1 y1)
-    | _ -> Sum(x, y)
+    | Number x, Number y -> Number (x + y)
+    | Product(x1, x2), Product(y1, y2) when x1 = y1 -> multiply x1 (add x2 y2)
+    | Product(x1, x2), Product(y1, y2) when x1 = y2 -> multiply x1 (add x2 y1)
+    | Product(x1, x2), Product(y1, y2) when x2 = y1 -> multiply x2 (add x1 y2)
+    | Product(x1, x2), Product(y1, y2) when x2 = y2 -> multiply x2 (add x1 y1)
+    | x, y -> Sum(x, y)
+
 and multiply x y =
     match x, y with
-    | Number x, Number y -> x * y |> Number
-    | Number x, Product(Number n, y)
-    | Product(Number n, y), Number x -> Product(Number (x * n), y)
-    | Power(base1, exp1), Power(base2, exp2) when base1 = base2 -> Power(base1, sum exp1 exp2)
-    | _ -> Product(x, y)
+    | Number o, e
+    | e, Number o when o.IsOne -> e
 
-let negate = function
-    | Number n -> Number -n
-    | e -> Product(int -1, e)
+    | Number x, Number y -> Number (x * y)
+    | Number x, Product(Number n, y) -> multiply (Number (x * n)) y
+    | x, Number y -> multiply (Number y) x
+    | Power(base1, exp1), Power(base2, exp2) when base1 = base2 ->
+        add exp1 exp2
+        |> pow base1
+    | x, y -> Product(x, y)
 
-let subtract x y = sum x (negate y)
+and pow b e =
+    match b, e with
+    | _, Number exp when exp = BigRational.Zero -> int 1
+    | b, Number exp when exp = BigRational.One -> b
+    | Number b, _ when b = BigRational.Zero -> int 0
+    | Number b, _ when b = BigRational.One -> int 1
+    | Number b, Number e when e.IsInteger && e.IsNegative ->
+        pow
+            (b |> BigRational.Reciprocal |> Number)
+            (e |> BigRational.Abs |> Number)
+    | Power(b, e1), e2 ->
+        multiply e1 e2
+        |> pow b
+    | Constant E, e -> apply Exp e
+    | Function(Exp, e1), e2 -> multiply e1 e2 |> apply Exp
+    | b, e -> Power(b, e)
 
-let pow x y =
-    match x, y with
-    | Number n, _ when n = BigRational.Zero -> int 0
-    | Number n, _ when n = BigRational.One -> int 1
+and apply f a =
+    match f, a with
+    | ReciprocalFunction Exp Ln a
+    | ReciprocalFunction Cos Acos a
+    | ReciprocalFunction Sin Asin a
+    | ReciprocalFunction Tan Atan a
+    | ReciprocalFunction Sec Asec a
+    | ReciprocalFunction Csc Acsc a
+    | ReciprocalFunction Cot Acot a
+    | ReciprocalFunction Sh Ash a
+    | ReciprocalFunction Ch Ach a
+    | ReciprocalFunction Th Ath a
+    | ReciprocalFunction Sech Asech a
+    | ReciprocalFunction Csch Acsch a
+    | ReciprocalFunction Coth Acoth a -> a
+    | Abs, Number a -> a |> BigRational.Abs |> Number
+    | Factorial, arg ->
+        match arg with
+        | Number n when not n.IsInteger || n.IsNegative -> Undefined
+        | expr -> Function(Factorial, expr)
+    | f, a -> Function(f, a)
 
-    | _, Number n when n = BigRational.Zero -> int 1
-    | x, Number n when n = BigRational.One -> x
-
-    | Number x, Number y when y.IsInteger -> BigRational.Pow(x, BigRational.ToInt32 y) |> Number
-    | Power(base', exp), _ -> Power(base', multiply exp y)
-    | _ -> Power(x, y)
-
-let invert x =
-    match x with
-    | Number x -> x |> BigRational.Reciprocal |> Number
-    | _ -> pow x (int -1)
-
-let divide x y = multiply x (invert y)
-
-let apply func expr =
-    match func, expr with
-    | UnFunc Ln Exp e
-    | UnFunc Sin Asin e
-    | UnFunc Cos Acos e
-    | UnFunc Tan Atan e
-    | UnFunc Sec Asec e
-    | UnFunc Csc Acsc e
-    | UnFunc Cot Acot e
-    | UnFunc Sh Ash e
-    | UnFunc Ch Ach e
-    | UnFunc Th Ath e
-    | UnFunc Sech Asech e
-    | UnFunc Csch Acsch e
-    | UnFunc Coth Acoth e
-    | UnFunc Asech Sech e
-    | UnFunc Acsch Csch e
-    | UnFunc Acoth Coth e -> e
-    | Lg, Function(Exp, e) -> // lg = ln e / ln 10
-        Function(Ln, int 10)
-        |> invert
-        |> multiply e
-    | Abs, Number n -> BigRational.Abs n |> Number
-    | _ -> Function(func, expr)
+let divide x y = pow y (int -1) |> multiply x
+let negate x = multiply (int -1) x
+let subtract x y = add x (negate y)

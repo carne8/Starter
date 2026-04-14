@@ -44,10 +44,22 @@ let rec evaluate expr =
     | Function(Acoth, e) -> e |> evaluate |> Complex.acoth
     | Function(Abs, e) -> e |> evaluate |> Complex.magnitude |> fun e -> complex e 0
     | Function(Exp, e) -> e |> evaluate |> Complex.exp
-    | Function(Factorial, Number n) when n.IsInteger && n.Numerator >= bigint 0 ->
-        n
-        |> BigRational.ToBigInt
-        |> SpecialFunctions.Factorial
-        |> fun n -> complex (BigInteger.op_Explicit n) 0
+    | Function(Factorial, Number n) when n.IsInteger && n.IsPositive ->
+        let n = BigRational.ToBigInt n
+        if n > bigint 170 then
+            Complex.NaN
+        else
+            n
+            |> SpecialFunctions.Factorial
+            |> fun n -> complex (BigInteger.op_Explicit n) 0
 
-    | Function(Factorial, _) -> evaluate Undefined
+    | Function(Factorial, e) ->
+        let arg = evaluate e
+
+        if arg.IsRealNonNegative() && Complex.IsInteger arg && arg.Real < 170 then
+            arg.Real
+            |> int
+            |> SpecialFunctions.Factorial
+            |> fun n -> complex n 0
+        else
+            Complex.NaN

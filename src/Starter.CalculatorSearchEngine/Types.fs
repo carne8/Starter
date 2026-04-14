@@ -27,7 +27,7 @@ type Expression =
     | Number of BigRational
     | Sum of Expression * Expression
     | Product of Expression * Expression
-    | Power of Expression * Expression
+    | Power of base': Expression * exponent: Expression
     | Function of Function * Expression
     | Undefined
 

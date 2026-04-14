@@ -34,20 +34,22 @@ type CalculatorSearchEngine(clipboard: IClipboard) =
 
                 let result = expr |> Evaluate.evaluate
                 let number =
-                    match result.IsReal() with
-                    | true -> result.Real |> string
-                    | false -> $"Re: {result.Real}; Im: {result.Imaginary}"
+                    if result.IsReal() then
+                        result.Real |> string |> ValueSome
+                    elif result.IsNaN() then
+                        ValueNone
+                    else
+                        ValueSome $"Re: {result.Real}; Im: {result.Imaginary}"
 
-                match expr with
-                | Number n when n.IsInteger ->
-                    return { Result = number }
-                           :> ISearchResult
-                           |> Seq.singleton
-                | _ ->
-                    return seq {
-                        { LaTeX = LaTeX.fromExpression expr }
-                        { Result = number }
-                    }
+                return seq {
+                    match number with
+                    | ValueNone -> ()
+                    | ValueSome number -> { Result = number } :> ISearchResult
+
+                    match expr with
+                    | Number n when n.IsInteger -> ()
+                    | _ -> { LaTeX = LaTeX.fromExpression expr }
+                }
             }
             |> ValueOption.map (fun s -> struct (s, Observable.Empty()))
             |> ValueOption.defaultValue struct (Seq.empty, Observable.Empty())

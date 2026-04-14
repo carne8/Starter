@@ -96,7 +96,7 @@ opp.TermParser <-
     ]
     .>> spaces
 
-opp.AddOperator(InfixOperator("+", spaces, 1, Associativity.Left, Expression.sum))
+opp.AddOperator(InfixOperator("+", spaces, 1, Associativity.Left, Expression.add))
 opp.AddOperator(InfixOperator("-", spaces, 1, Associativity.Left, Expression.subtract))
 opp.AddOperator(InfixOperator("*", spaces, 2, Associativity.Left, Expression.multiply))
 opp.AddOperator(InfixOperator("/", spaces, 2, Associativity.Left, Expression.divide))

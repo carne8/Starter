@@ -4,6 +4,13 @@ open Starter.CalculatorSearchEngine.Types
 open System.Numerics
 open MathNet.Numerics
 
+let private (|ReciprocalFunction|_|) f1 f2 expr =
+    match expr with
+    | Function(f1', Function(f2', a)) when
+        f1 = f1' && f2 = f2' || f2 = f1' && f1 = f2' ->
+        ValueSome a
+    | _ -> ValueNone
+
 module Trigo =
     let zero = Expression.int 0
     let one = Expression.int 1
@@ -77,30 +84,22 @@ module Trigo =
             | cos -> Expression.divide (simplifySin arg) cos
         | arg -> Function(Tan, arg)
 
-module Factorial =
-    let simplify = function
-        | Number n when n.IsInteger && n > BigRational.FromInt 170 -> Function(Factorial, Number n)
-        | Number n when n.IsInteger && (n.IsZero || n.IsPositive) ->
-            n
-            |> BigRational.ToBigInt
-            |> SpecialFunctions.Factorial
-            |> BigRational.FromBigInt
-            |> Number
-        | Number _ -> Undefined
-        | expr -> Function(Factorial, expr)
-
 let rec simplify expr =
     match expr with
     | Constant _
     | Number _
     | Undefined -> expr
-    | Sum(e1, e2) -> Expression.sum (simplify e1) (simplify e2)
+    | Sum(e1, e2) -> Expression.add (simplify e1) (simplify e2)
     | Product(e1, e2) -> Expression.multiply (simplify e1) (simplify e2)
     | Power(e1, e2) -> Expression.pow (simplify e1) (simplify e2)
     | Function(Cos, arg) -> arg |> simplify |> Trigo.simplifyCos
     | Function(Sin, arg) -> arg |> simplify |> Trigo.simplifySin
-    | Function(Tan, arg) -> arg |> simplify |> Trigo.simplifyTan
-    | Function(Factorial, arg) -> arg |> simplify |> Factorial.simplify
+    | Function(Tan, arg) ->
+        match arg with
+        | Function(Asin, a) -> Expression.divide a (Expression.apply Cos arg) |> simplify
+        | Function(Acos, a) -> Expression.divide (Expression.apply Sin arg) a |> simplify
+        | arg -> arg |> simplify |> Trigo.simplifyTan
+
     | Function(f, e) ->
         e
         |> simplify

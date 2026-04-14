@@ -1,5 +1,6 @@
 module Starter.CalculatorSearchEngine.LaTeX
 
+open System.Numerics
 open Starter.CalculatorSearchEngine.Types
 open System.Text
 open MathNet.Numerics
@@ -16,12 +17,11 @@ type StringBuilder with
 
 let rec isNextNumber = function
     | Number _ -> true
-    | Undefined
-    | Function _
-    | Constant _ -> false
+    | Function(Factorial, e)
     | Sum(e, _)
     | Product(e, _)
     | Power(e, _) -> isNextNumber e
+    | _ -> false
 
 let rec fromExpression expr =
     let str = StringBuilder()
@@ -99,6 +99,23 @@ let rec fromExpression expr =
             loop 0 str e1
             str.Append "}{" |> ignore
             loop 0 str e2
+            str.Append "}" |> ignore
+
+        | Product(Number n, e)
+        | Product(e, Number n) when n = BigRational.FromInt -1 ->
+            if 1 < precedence then
+                str.Append "\\left(" |> ignore
+            str.Append "-" |> ignore
+            loop 1 str e
+            if 1 < precedence then
+                str.Append "\\right)" |> ignore
+
+        | Product(Number n, e)
+        | Product(e, Number n) when n.Numerator = BigInteger.One ->
+            str.Append "\\frac{" |> ignore
+            loop 2 str e
+            str.Append "}{" |> ignore
+            loop 2 str (n.Denominator |> BigRational.FromBigInt |> Number)
             str.Append "}" |> ignore
 
         | Product(Number n, e)
