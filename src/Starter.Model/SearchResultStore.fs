@@ -1,8 +1,10 @@
-﻿namespace Starter.Features
+namespace Starter.Features
 
 open System
 open System.Collections.Generic
+open System.Reactive.Linq
 open System.Threading
+open Avalonia.Threading
 open Fusil
 open R3
 open Serilog
@@ -66,10 +68,10 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
                     .Subscribe addResults
             | true ->
                 futureResults
-                    .Chunk(TimeSpan.FromMilliseconds 200L)
+                    .AsSystemObservable()
+                    .Buffer(TimeSpan.FromMilliseconds 200L)
                     .Select(Seq.collect (Seq.map (SearchResultData.createDynamic engine)))
-                    .ObserveOnUIThreadDispatcher()
-                    .Subscribe addResults
+                    .Subscribe(fun r -> Dispatcher.UIThread.Post(fun () -> addResults r))
             |> disposeOnCancelled ct
         with e ->
             Log.Error(e, $"Failed to get results from dynamic search engine: {engine.Name}")
