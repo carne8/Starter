@@ -12,7 +12,7 @@
                             AcrylicBackgroundColor="{DynamicResource WindowBackground}"
                             BackgroundColor="{DynamicResource DefaultBackgroundColor}"
                             BackgroundKind="{Binding ConfigSystemObservable^.Background}"
-                            TextOptions.TextRenderingMode="Antialias">
+                            Antialiasing="{Binding ConfigSystemObservable^.Antialiasing}">
     <ui:FANavigationView x:Name="NavigationView"
                          IsSettingsVisible="False"
                          CompactModeThresholdWidth="0"

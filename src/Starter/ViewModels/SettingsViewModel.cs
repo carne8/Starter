@@ -6,6 +6,7 @@ using Starter.SearchEngine;
 namespace Starter.ViewModels;
 
 public record BackgroundKind(string Name, Background Value, bool Available);
+public record AntialiasingKind(string Name, Antialiasing Value);
 
 public partial class SettingsViewModel : ObservableObject
 {
@@ -13,8 +14,8 @@ public partial class SettingsViewModel : ObservableObject
     public readonly BehaviorSubject<Configuration> Config;
 
     // Background launch at startup
-    [ObservableProperty] private bool launchAtStartup;
-    [ObservableProperty] private bool launchAtStartupLoading = true;
+    [ObservableProperty] public partial bool LaunchAtStartup { get; set; }
+    [ObservableProperty] public partial bool LaunchAtStartupLoading { get; set; } = true;
 
     // Background
     public static readonly BackgroundKind[] Backgrounds =
@@ -23,15 +24,26 @@ public partial class SettingsViewModel : ObservableObject
         new("Mica", Background.Mica, !OperatingSystem.IsLinux()),
         new("None", Background.None, true)
     ];
+    [ObservableProperty] public partial BackgroundKind SelectedBackground { get; set; }
+
     public static string? BackgroundDescription =>
         OperatingSystem.IsLinux()
             ? "Acrylic and Mica background are not supported on Linux"
             : null;
 
-    [ObservableProperty] private BackgroundKind selectedBackground;
 
     // Zoomed mode
-    [ObservableProperty] private bool zoomedMode;
+    [ObservableProperty] public partial bool ZoomedMode { get; set; }
+
+    // Antialiasing
+    public static readonly AntialiasingKind[] Antialiasings =
+    [
+        new("Alias", Antialiasing.Alias),
+        new("Grayscale", Antialiasing.Grayscale),
+        new("Subpixel", Antialiasing.Subpixel),
+        new("Platform default", Antialiasing.PlatformDefault)
+    ];
+    [ObservableProperty] public partial AntialiasingKind SelectedAntialiasing { get; set; }
 
     // Keyboard shortcut
     public KeyboardShortcutInputViewModel KeyboardShortcutViewModel { get; }
@@ -42,13 +54,20 @@ public partial class SettingsViewModel : ObservableObject
     public SettingsViewModel(Configuration baseConfig, SearchEngineStore engines)
     {
         Config = new BehaviorSubject<Configuration>(baseConfig);
-        selectedBackground = baseConfig.Background.Tag switch
+        SelectedBackground = baseConfig.Background.Tag switch
         {
             Background.Tags.Acrylic => Backgrounds[0],
             Background.Tags.Mica => Backgrounds[1],
             /* Background.Tags.Mica */ _ => Backgrounds[2]
         };
-        zoomedMode = baseConfig.ZoomedMode;
+        SelectedAntialiasing = baseConfig.Antialiasing.Tag switch
+        {
+            Antialiasing.Tags.Alias => Antialiasings[0],
+            Antialiasing.Tags.Grayscale => Antialiasings[1],
+            Antialiasing.Tags.Subpixel => Antialiasings[2],
+            /* Antialiasing.Tags.PlatformDefault */ _ => Antialiasings[3]
+        };
+        ZoomedMode = baseConfig.ZoomedMode;
 
         KeyboardShortcutViewModel = new KeyboardShortcutInputViewModel(baseConfig.KeyboardShortcut);
         KeyboardShortcutViewModel.KeyboardShortcutChanged +=
@@ -92,4 +111,5 @@ public partial class SettingsViewModel : ObservableObject
     partial void OnLaunchAtStartupChanged(bool value) => Task.Run(() => Platform.ToggleLaunchAtStartup(value));
     partial void OnSelectedBackgroundChanged(BackgroundKind value) => Config.OnNext(Config.Value.WithBackground(value.Value));
     partial void OnZoomedModeChanged(bool value) => Config.OnNext(Config.Value.WithZoomedMode(value));
+    partial void OnSelectedAntialiasingChanged(AntialiasingKind value) => Config.OnNext(Config.Value.WithAntialiasing(value.Value));
 }

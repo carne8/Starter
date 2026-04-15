@@ -18,7 +18,7 @@
                             AcrylicBackgroundColor="{DynamicResource WindowBackground}"
                             BackgroundKind="{Binding ConfigSystemObservable^.Background}"
                             CornerRadius="{DynamicResource CornerRadius}"
-                            TextOptions.TextRenderingMode="Antialias">
+                            Antialiasing="{Binding ConfigSystemObservable^.Antialiasing}">
 
     <Window.Styles>
         <!-- Fix corner window radius -->
