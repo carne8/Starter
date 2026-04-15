@@ -11,8 +11,8 @@ type StarterIconSource with
     /// Transform StarterIconSource in IconSource
     static member buildIconSource lightMode (iconSource: StarterIconSource) =
         match iconSource.Geometry with
-        | null -> ImageIconSource(Source = iconSource.GetImage lightMode) :> IconSource
-        | geo -> PathIconSource(Data = geo)
+        | null -> FAImageIconSource(Source = iconSource.GetImage lightMode) :> FAIconSource
+        | geo -> FAPathIconSource(Data = geo)
 
 let disposeOnCancelled (ct: CancellationToken) (d: IDisposable) =
     fun () -> d.Dispose()

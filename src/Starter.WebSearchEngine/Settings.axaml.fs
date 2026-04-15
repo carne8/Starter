@@ -63,12 +63,12 @@ type Settings(viewModel: SettingsViewModel) as this =
         AvaloniaXamlLoader.Load this
 
         // Bind icon source
-        let expander = this.GetControl<SettingsExpander> "SearchEngine"
+        let expander = this.GetControl<FASettingsExpander> "SearchEngine"
         let setIconSource () =
             expander.IconSource <-
                 match this.ActualThemeVariant = ThemeVariant.Light with
-                | true -> ImageIconSource(Source = viewModel.Icon.Light)
-                | false -> ImageIconSource(Source = viewModel.Icon.Dark)
+                | true -> FAImageIconSource(Source = viewModel.Icon.Light)
+                | false -> FAImageIconSource(Source = viewModel.Icon.Dark)
 
         setIconSource()
         viewModel.PropertyChanged.Add(fun change -> if change.PropertyName = nameof viewModel.Icon then setIconSource())

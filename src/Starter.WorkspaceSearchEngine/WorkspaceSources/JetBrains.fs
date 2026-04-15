@@ -143,8 +143,16 @@ let private findWorkspaceDbPath ide =
     |> Result.teeError (fun e -> logger.Debug $"Failed to find workspaces file for {ideName}: {e}")
     |> Option.ofResult
 
-let openWorkspace ideExePath workspacePath = // TODO: Use setsid on Linux
-    ProcessStartInfo(FileName = ideExePath, Arguments = $"\"{workspacePath}\"")
+let openWorkspace ideExePath workspacePath =
+    if OperatingSystem.IsLinux() then
+        ProcessStartInfo(
+            FileName = "setsid",
+            Arguments = $"{ideExePath} \"{workspacePath}\"",
+            CreateNoWindow = true
+        )
+    else
+        ProcessStartInfo(FileName = ideExePath, Arguments = $"\"{workspacePath}\"")
+
     |> Process.Start
     |> function null -> () | d -> d.Dispose()
 

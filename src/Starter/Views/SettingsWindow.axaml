@@ -3,43 +3,29 @@
                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                             xmlns:ui="using:FluentAvalonia.UI.Controls"
                             xmlns:vm="using:Starter.ViewModels"
-                            xmlns:views="using:Starter.Views"
                             xmlns:controls="using:Starter.Controls"
-                            Title="Settings"
+                            Title="Starter settings"
                             Width="1050"
                             Height="700"
                             x:DataType="vm:SettingsWindowViewModel"
-                            ExtendClientAreaToDecorationsHint="True"
                             FontFamily="{StaticResource JetBrainsMono}"
                             AcrylicBackgroundColor="{DynamicResource WindowBackground}"
                             BackgroundColor="{DynamicResource DefaultBackgroundColor}"
-                            BackgroundKind="{Binding ConfigSystemObservable^.Background}">
-    <DockPanel LastChildFill="True">
-        <Border x:Name="WindowTitle"
-                Height="30"
-                Padding="10,5,5,0"
-                DockPanel.Dock="Top"
-                IsHitTestVisible="False">
-            <StackPanel Spacing="10" Orientation="Horizontal">
-                <PathIcon Data="{StaticResource Flash}" />
-                <TextBlock VerticalAlignment="Center">Starter Settings</TextBlock>
-            </StackPanel>
-        </Border>
-
-        <ui:NavigationView x:Name="NavigationView"
-                           IsSettingsVisible="False"
-                           CompactModeThresholdWidth="0"
-                           ExpandedModeThresholdWidth="900"
-                           SelectedItem="{Binding SelectedPage}"
-                           MenuItemsSource="{Binding Pages}">
-            <ui:NavigationView.MenuItemTemplate>
-                <DataTemplate DataType="vm:MenuItemViewModel">
-                    <controls:CustomNavigationViewItem Content="{Binding Title}"
-                                                       StarterIconSource="{Binding Icon}"
-                                                       FontFamily="{StaticResource JetBrainsMono}" />
-                </DataTemplate>
-            </ui:NavigationView.MenuItemTemplate>
-            <ContentControl x:Name="ContentControl" />
-        </ui:NavigationView>
-    </DockPanel>
+                            BackgroundKind="{Binding ConfigSystemObservable^.Background}"
+                            Antialiasing="{Binding ConfigSystemObservable^.Antialiasing}">
+    <ui:FANavigationView x:Name="NavigationView"
+                         IsSettingsVisible="False"
+                         CompactModeThresholdWidth="0"
+                         ExpandedModeThresholdWidth="900"
+                         SelectedItem="{Binding SelectedPage}"
+                         MenuItemsSource="{Binding Pages}">
+        <ui:FANavigationView.MenuItemTemplate>
+            <DataTemplate DataType="vm:MenuItemViewModel">
+                <controls:CustomNavigationViewItem Content="{Binding Title}"
+                                                   StarterIconSource="{Binding Icon}"
+                                                   FontFamily="{StaticResource JetBrainsMono}" />
+            </DataTemplate>
+        </ui:FANavigationView.MenuItemTemplate>
+        <ContentControl x:Name="ContentControl" />
+    </ui:FANavigationView>
 </controls:TranslucentWindow>

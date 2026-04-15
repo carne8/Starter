@@ -22,12 +22,35 @@ type Background =
         | Mica -> "mica" |> Encode.string
         | None -> "none" |> Encode.string
 
-    static member decoder: Decoder<Background> =
+    static member decoder: Decoder<_> =
         Decode.string |> Decode.andThen (function
             | "acrylic" -> Acrylic |> Decode.succeed
             | "mica" -> Mica |> Decode.succeed
             | "none" -> None |> Decode.succeed
             | other -> Decode.fail $"{other} is not a valid background value."
+        )
+
+[<RequireQualifiedAccess>]
+type Antialiasing =
+    | Alias
+    | Grayscale
+    | Subpixel
+    | PlatformDefault
+
+    static member encoder background =
+        match background with
+        | Alias -> "alias" |> Encode.string
+        | Grayscale -> "grayscale" |> Encode.string
+        | Subpixel -> "subpixel" |> Encode.string
+        | PlatformDefault -> "platform-default" |> Encode.string
+
+    static member decoder: Decoder<_> =
+        Decode.string |> Decode.andThen (function
+            | "alias" -> Alias |> Decode.succeed
+            | "grayscale" -> Grayscale |> Decode.succeed
+            | "subpixel" -> Subpixel |> Decode.succeed
+            | "platform-default" -> PlatformDefault |> Decode.succeed
+            | other -> Decode.fail $"{other} is not a valid antialiasing value."
         )
 
 module Key =
@@ -64,10 +87,12 @@ type Configuration =
     { KeyboardShortcut: KeyboardShortcut
       Background: Background
       ZoomedMode: bool
-      ActivatorPrefixes: Map<string, string> }
+      ActivatorPrefixes: Map<string, string>
+      Antialiasing: Antialiasing }
 
     member this.WithBackground newValue = { this with Background = newValue }
     member this.WithZoomedMode newValue = { this with ZoomedMode = newValue }
+    member this.WithAntialiasing newValue = { this with Antialiasing = newValue }
     member this.WithKeyboardShortcut newValue = { this with KeyboardShortcut = newValue }
     member this.WithActivatorPrefixes newValue = { this with ActivatorPrefixes = newValue }
 
@@ -81,7 +106,8 @@ type Configuration =
         { KeyboardShortcut = { Modifiers = [| Key.LeftAlt |]; Key = Key.Space }
           Background = Background.Mica
           ZoomedMode = false
-          ActivatorPrefixes = Map.empty }
+          ActivatorPrefixes = Map.empty
+          Antialiasing = Antialiasing.Grayscale }
         |> Configuration.ensurePlatformCompatibility
 
     static member encoder config =
@@ -98,6 +124,8 @@ type Configuration =
             |> Encode.dict
 
             "zoomedMode", config.ZoomedMode |> Encode.bool
+
+            "antialiasing", config.Antialiasing |> Antialiasing.encoder
         ]
 
     static member decoder: Decoder<Configuration> =
@@ -114,7 +142,11 @@ type Configuration =
               ActivatorPrefixes =
                 Decode.dict Decode.string
                 |> get.Optional.Field "searchEnginePrefixes"
-                |> Option.defaultValue Configuration.Default.ActivatorPrefixes }
+                |> Option.defaultValue Configuration.Default.ActivatorPrefixes
+              Antialiasing =
+                Antialiasing.decoder
+                |> get.Optional.Field "antialiasing"
+                |> Option.defaultValue Configuration.Default.Antialiasing }
         )
 
     /// Read the config from the config file or return the default config.

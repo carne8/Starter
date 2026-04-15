@@ -3,7 +3,6 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             xmlns:ic="using:FluentIcons.Avalonia.Fluent"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:Starter.ViewModels"
              xmlns:viewModels="using:Starter.ViewModels"
@@ -12,16 +11,16 @@
              d:DesignHeight="450"
              mc:Ignorable="d">
     <UserControl.Styles>
-        <Style Selector="ui|SettingsExpander.hideDescription">
+        <Style Selector="ui|FASettingsExpander.hideDescription">
             <Setter Property="Description">Your desktop environment is not supported. Please use your system settings.</Setter>
         </Style>
     </UserControl.Styles>
 
-    <ui:SettingsExpander Header="Keyboard shortcut" Classes.showDescription="{x:Static viewModels:KeyboardShortcutInputViewModel.NotEnabled}">
-        <ui:SettingsExpander.IconSource>
-            <ic:SymbolIconSource Symbol="Keyboard" />
-        </ui:SettingsExpander.IconSource>
-        <ui:SettingsExpander.Footer>
+    <ui:FASettingsExpander Header="Keyboard shortcut" Classes.showDescription="{x:Static viewModels:KeyboardShortcutInputViewModel.NotEnabled}">
+        <ui:FASettingsExpander.IconSource>
+            <ui:FASymbolIconSource Symbol="Keyboard" />
+        </ui:FASettingsExpander.IconSource>
+        <ui:FASettingsExpander.Footer>
             <TextBox x:Name="TextBox"
                      IsReadOnly="True"
                      Text="{Binding Text}"
@@ -29,6 +28,6 @@
                      KeyDown="TextBoxKeyDown"
                      GotFocus="TextBoxGotFocus"
                      LostFocus="TextBoxLostFocus" />
-        </ui:SettingsExpander.Footer>
-    </ui:SettingsExpander>
+        </ui:FASettingsExpander.Footer>
+    </ui:FASettingsExpander>
 </UserControl>

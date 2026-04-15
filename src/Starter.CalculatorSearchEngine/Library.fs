@@ -46,9 +46,10 @@ type CalculatorSearchEngine(clipboard: IClipboard) =
                     | ValueNone -> ()
                     | ValueSome number -> { Result = number } :> ISearchResult
 
-                    match expr with
-                    | Number n when n.IsInteger -> ()
-                    | _ -> { LaTeX = LaTeX.fromExpression expr }
+                    // TODO: CSharpMath.Avalonia doesn't work with Avalonia 12
+                    // match expr with
+                    // | Number n when n.IsInteger -> ()
+                    // | _ -> { LaTeX = LaTeX.fromExpression expr }
                 }
             }
             |> ValueOption.map (fun s -> struct (s, Observable.Empty()))

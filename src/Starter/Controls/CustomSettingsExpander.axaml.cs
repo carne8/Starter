@@ -5,7 +5,7 @@ using Starter.SearchEngine;
 
 namespace Starter.Controls;
 
-public partial class CustomSettingsExpander : SettingsExpander
+public partial class CustomSettingsExpander : FASettingsExpander
 {
     public static readonly StyledProperty<StarterIconSource?> StarterIconSourceProperty =
         AvaloniaProperty.Register<CustomSettingsExpander, StarterIconSource?>(nameof(StarterIconSource));
@@ -16,10 +16,10 @@ public partial class CustomSettingsExpander : SettingsExpander
         set => SetValue(StarterIconSourceProperty, value);
     }
 
-    public static IconSource BuildIconSource(StarterIconSource icon, bool lightMode) =>
+    public static FAIconSource BuildIconSource(StarterIconSource icon, bool lightMode) =>
         icon.Geometry is null
-            ? new ImageIconSource { Source = icon.GetImage(lightMode) }
-            : new PathIconSource { Data = icon.Geometry };
+            ? new FAImageIconSource { Source = icon.GetImage(lightMode) }
+            : new FAPathIconSource { Data = icon.Geometry };
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {

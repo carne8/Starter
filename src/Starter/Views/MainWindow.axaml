@@ -8,7 +8,7 @@
                             Width="450"
                             MinHeight="50"
                             x:DataType="vm:MainWindowViewModel"
-                            SystemDecorations="None"
+                            WindowDecorations="None"
                             SizeToContent="Height"
                             CanResize="False"
                             Topmost="True"
@@ -17,7 +17,8 @@
                             BackgroundColor="{DynamicResource DefaultBackgroundColor}"
                             AcrylicBackgroundColor="{DynamicResource WindowBackground}"
                             BackgroundKind="{Binding ConfigSystemObservable^.Background}"
-                            CornerRadius="{DynamicResource CornerRadius}">
+                            CornerRadius="{DynamicResource CornerRadius}"
+                            Antialiasing="{Binding ConfigSystemObservable^.Antialiasing}">
 
     <Window.Styles>
         <!-- Fix corner window radius -->
@@ -64,7 +65,7 @@
                 <TextBox x:Name="TextBox"
                          Grid.Column="1"
                          Theme="{StaticResource CustomTextBoxTheme}"
-                         Watermark="Start anything..."
+                         PlaceholderText="Start anything..."
                          Text="{Binding Text}">
                     <TextBox.KeyBindings>
                         <KeyBinding Command="{Binding SelectResultCommand}"

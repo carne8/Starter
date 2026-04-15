@@ -5,6 +5,7 @@ namespace Starter;
 
 public static class Program
 {
+    public static readonly Win32PlatformOptions Win32PlatformOptions = new() { WinUICompositionBackdropCornerRadius = 20 };
     private const string MutexName = "Starter-426a2d89-cfe9-4554-b9a5-8c7d85417f25";
 
     // Initialization code. Don't use any Avalonia, third-party APIs or any
@@ -40,7 +41,7 @@ public static class Program
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .UseR3()
-            .With(new Win32PlatformOptions { WinUICompositionBackdropCornerRadius = 20 })
+            .With(Win32PlatformOptions)
             #if DEBUG
             .WithDeveloperTools()
             #endif

@@ -26,9 +26,8 @@ file class SettingsSearchResult(string name, string description, TargetPage targ
     public ISearchEngineActivator[] ActivatorFilter => [];
 }
 
-internal class SettingsSearchEngine : IStaticSearchEngine
+internal class SettingsSearchEngine(ILogger logger, Configuration config, SearchEngineStore searchEngineStore) : IStaticSearchEngine
 {
-    private readonly ILogger logger;
     public string Id => nameof(SettingsSearchEngine);
     public string Name => "Settings";
     public string ShortName => "Settings";
@@ -53,17 +52,10 @@ internal class SettingsSearchEngine : IStaticSearchEngine
         new SettingsSearchResult("Options", "Open settings", TargetPage.Settings, Icons.Settings)
     ];
 
-    private readonly SettingsWindowViewModel windowVm;
-    private Views.SettingsWindow window;
+    private readonly SettingsWindowViewModel windowVm = new(config, searchEngineStore);
+    private Views.SettingsWindow? window;
 
     public BehaviorSubject<Configuration> Config => windowVm.Config;
-
-    public SettingsSearchEngine(ILogger logger, Configuration config, SearchEngineStore searchEngineStore)
-    {
-        this.logger = logger;
-        windowVm = new SettingsWindowViewModel(config, searchEngineStore);
-        window = new Views.SettingsWindow { DataContext = windowVm };
-    }
 
     public void SearchResultSelected(ISearchResult selectedSearchResult)
     {
@@ -77,6 +69,11 @@ internal class SettingsSearchEngine : IStaticSearchEngine
 
         try
         {
+            // `window` is null at the beginning
+            // That, the first time we open the settings, we set
+            // CompositionBackdropCornerRadius to zero, fixing the window corner radius.
+            if (window is null) throw new NullReferenceException();
+
             window.Show();
             window.Activate();
             window.WindowState = WindowState.Normal; // Unminimize if minimized
@@ -84,6 +81,7 @@ internal class SettingsSearchEngine : IStaticSearchEngine
         catch (Exception)
         {
             logger.Verbose("Failed to show window");
+            Program.Win32PlatformOptions.WinUICompositionBackdropCornerRadius = 0;
             window = new Views.SettingsWindow { DataContext = windowVm };
             window.Show();
         }

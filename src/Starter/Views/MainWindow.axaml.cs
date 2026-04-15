@@ -112,7 +112,7 @@ public partial class MainWindow : TranslucentWindow
             else Dispatcher.UIThread.Post(Hide);
         });
 
-        KeyBindings.Add(new KeyBinding()
+        KeyBindings.Add(new KeyBinding
         {
             Command = onEscape,
             Gesture = new KeyGesture(Key.Escape)

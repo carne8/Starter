@@ -34,7 +34,7 @@ public partial class KeyboardShortcutInput : UserControl
         e.Handled = true;
     }
 
-    private void TextBoxGotFocus(object? sender, GotFocusEventArgs e)
+    private void TextBoxGotFocus(object? sender, FocusChangedEventArgs e)
     {
         if (DataContext is not KeyboardShortcutInputViewModel vm) return;
         vm.StartListening();

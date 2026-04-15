@@ -44,6 +44,7 @@ let rec evaluate expr =
     | Function(Acoth, e) -> e |> evaluate |> Complex.acoth
     | Function(Abs, e) -> e |> evaluate |> Complex.magnitude |> fun e -> complex e 0
     | Function(Exp, e) -> e |> evaluate |> Complex.exp
+    | Function(Sqrt, e) -> e |> evaluate |> Complex.sqrt
     | Function(Factorial, Number n) when n.IsInteger && n.IsPositive ->
         let n = BigRational.ToBigInt n
         if n > bigint 170 then
