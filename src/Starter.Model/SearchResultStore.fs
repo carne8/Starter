@@ -52,9 +52,12 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             let struct (instantResults, futureResults) = engine.Search(query, ct, activator)
 
             let inline addResults r =
+                let c = results.Count
                 results.AddRange r
-                results.Sort comparer
-                results.NotifyChanged()
+
+                if c <> results.Count then // If r was not empty
+                    results.Sort comparer
+                    results.NotifyChanged()
 
             instantResults
             |> Seq.map (SearchResultData.createDynamic engine)

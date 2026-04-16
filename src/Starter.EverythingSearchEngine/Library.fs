@@ -35,7 +35,6 @@ type SearchResult =
 
 type EverythingSearchEngine(icon, api: IEverything) =
     let pathStrBuilder = StringBuilder(300)
-    let resultsObservable = new Subject<_>()
 
     let loadResultIcon (path: string) =
         try
@@ -70,7 +69,9 @@ type EverythingSearchEngine(icon, api: IEverything) =
             :> ISearchResult
             |> ValueSome
 
-    let queryEverything (ct: CancellationToken) maxResultsCount query =
+    let queryEverything (ct: CancellationToken) maxResultsCount query : Observable<_> =
+        let results = new Subject<_>()
+
         Task.Run<unit>(fun () -> earlyReturn {
             // Query Everything
             do! api.SetSearch query = CallResult.OK
@@ -86,9 +87,13 @@ type EverythingSearchEngine(icon, api: IEverything) =
                 i
                 |> readResult
                 |> ValueOption.filter (fun _ -> not ct.IsCancellationRequested) // Recheck because `readResult` takes time
-                |> ValueOption.iter (Seq.singleton >> resultsObservable.OnNext)
+                |> ValueOption.iter (Seq.singleton >> results.OnNext)
                 i <- i + 1u
+
+            results.OnCompleted()
         }) |> ignore
+
+        results
 
     interface IDynamicSearchEngine with
         member this.Id = nameof EverythingSearchEngine
@@ -100,12 +105,15 @@ type EverythingSearchEngine(icon, api: IEverything) =
         member this.BufferResults = true
 
         member this.Search(query, ct, activator) =
-            if activator <> null then
-                queryEverything ct 300u query
-            elif query |> String.IsNullOrWhiteSpace |> not then
-                queryEverything ct 30u query
+            let results =
+                if activator <> null then
+                    queryEverything ct 300u query
+                elif query |> String.IsNullOrWhiteSpace |> not then
+                    queryEverything ct 30u query
+                else
+                    Observable.Empty()
 
-            Seq.empty, resultsObservable
+            Seq.empty, results
 
         member this.SearchResultSelected(selectedSearchResult) =
             match selectedSearchResult with
