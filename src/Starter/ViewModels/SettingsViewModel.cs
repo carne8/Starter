@@ -85,7 +85,10 @@ public partial class SettingsViewModel : ObservableObject
 
     private void ActivatorPrefixChanged(ISearchEngineActivator activator, string newPrefix)
     {
-        var newMap = Config.Value.ActivatorPrefixes.Add(activator.Id, newPrefix);
+        var newMap =
+            string.IsNullOrEmpty(newPrefix)
+                ? Config.Value.ActivatorPrefixes.Remove(activator.Id)
+                : Config.Value.ActivatorPrefixes.Add(activator.Id, newPrefix);
         var newConfig = Config.Value.WithActivatorPrefixes(newMap);
         Config.OnNext(newConfig);
     }
