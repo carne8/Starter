@@ -33,7 +33,7 @@ public static class Program
         }
         finally
         {
-            Log.CloseAndFlushAsync().AsTask().Wait();
+            Log.CloseAndFlush();
         }
     }
 

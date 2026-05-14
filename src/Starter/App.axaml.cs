@@ -31,7 +31,7 @@ public class App : Application
         lifetime.ShutdownRequested += (_, _) =>
         {
             Log.Information("---*--- Exiting ---*---");
-            Log.CloseAndFlushAsync().AsTask().Wait();
+            Log.CloseAndFlush();
         };
 
         try
