@@ -43,7 +43,7 @@ type WindowsAppsSearchEngine(config: Observable<FolderConfiguration>) =
                     .Select(Config.FolderConfiguration.normalize)
                     .DistinctUntilChanged()
                     .Subscribe(fun folderConfig ->
-                        logger.Information "Loading exe apps"
+                        logger.Verbose "Loading exe apps"
                         exeLoader.LoadApps folderConfig
                         exeLoader.ObserveFolders folderConfig
                     )

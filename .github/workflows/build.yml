@@ -44,8 +44,8 @@ jobs:
         working-directory: src/Starter.EverythingSearchEngine
 
       - name: Build Url plugin
-        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/UrlSearchEngine
-        working-directory: src/Starter.UrlSearchEngine
+        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../../build/Plugins/UrlSearchEngine
+        working-directory: src/Starter.UrlSearchEngine/Starter.UrlSearchEngine
 
       - name: Build Web plugin
         run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/WebSearchEngine
@@ -56,8 +56,8 @@ jobs:
         working-directory: src/Starter.WorkspaceSearchEngine
 
       - name: Build Calculator plugin
-        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/CalculatorSearchEngine
-        working-directory: src/Starter.CalculatorSearchEngine
+        run: dotnet publish --configuration Release --runtime ${{ matrix.rid }} -o ../../build/Plugins/Calculator
+        working-directory: src/Starter.Calculator
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
