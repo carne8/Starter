@@ -28,12 +28,6 @@ public partial class SettingsViewModel : ObservableObject
     ];
     [ObservableProperty] public partial BackgroundKind SelectedBackground { get; set; }
 
-    public static string? BackgroundDescription =>
-        OperatingSystem.IsLinux()
-            ? "Acrylic and Mica background are not supported on Linux"
-            : null;
-
-
     // Zoomed mode
     [ObservableProperty] public partial bool ZoomedMode { get; set; }
 
