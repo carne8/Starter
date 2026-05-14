@@ -132,6 +132,8 @@ public class App : Application
             searchEngineStore.LoadSearchEnginesFromDirectory(pluginDir, clipboard);
 #endif
 
+        // Add internal search engines
+        // Settings
         var settingsSearchEngine = new SettingsSearchEngine(
             Log.Logger.ForContext("Context", "Starter/Settings"),
             config,
@@ -140,6 +142,7 @@ public class App : Application
         settingsSearchEngine.Config.Subscribe(UpdateConfiguration);
         searchEngineStore.AddSearchEngine(settingsSearchEngine);
 
+        // Exit
         searchEngineStore.AddSearchEngine(new ExitSearchEngine());
 
         DataTemplates.AddRange(searchEngineStore.DataTemplates);

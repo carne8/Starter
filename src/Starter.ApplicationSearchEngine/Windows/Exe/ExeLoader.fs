@@ -75,43 +75,45 @@ let private getAppFromFile (file: string) =
     }
 
 let loadApplications (ct: CancellationToken) (config: FolderConfiguration) =
-    Task.Run(fun () ->
-        let appFiles =
-            config.Folders
-            |> Seq.collect (fun dir -> Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
-            |> Seq.filter (FolderConfiguration.isFileExcluded config >> not)
+    let appFiles =
+        config.Folders
+        |> Seq.collect (fun dir -> Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
+        |> Seq.filter (FolderConfiguration.isFileExcluded config >> not)
+        |> Seq.toArray
 
-        // Load apps according to the config order to prevent duplicate names
-        let appsDict = Dictionary()
-        let apps = ResizeArray()
+    // Load apps according to the config order to prevent duplicate names
+    let appsDict = Dictionary()
+    let apps = ResizeArray()
 
-        let rec loop (enumerator: IEnumerator<_>) =
-            if enumerator.MoveNext() && not ct.IsCancellationRequested then
-                enumerator.Current
-                |> getAppFromFile
-                |> ValueOption.iter (fun app ->
-                    if config.AllowDuplicates then
-                        match appsDict.TryAdd(app.Name, app) with
-                        | false ->
-                            logger.Verbose $"Duplicate app: {app.Path}"
-                            appsDict[app.Name].AlternativeDescription <- true
-                            app.AlternativeDescription <- true
-                        | true -> ()
+    // Iter through app files / stop when cancellation requested
+    let rec loop i appFiles =
+        if ct.IsCancellationRequested then () else
+        if i >= Array.length appFiles then () else
 
-                        app
-                        :> ISearchResult
-                        |> apps.Add
-                    else
-                        match appsDict.TryAdd(app.Name, app) with
-                        | false -> logger.Verbose $"Duplicate app (file is ignored): {app.Path}"
-                        | true -> app :> ISearchResult |> apps.Add
-                )
+        appFiles[i]
+        |> getAppFromFile
+        |> ValueOption.iter (fun app ->
+            if config.AllowDuplicates then
+                match appsDict.TryAdd(app.Name, app) with
+                | false ->
+                    logger.Verbose $"Duplicate app: {app.Path}"
+                    appsDict[app.Name].AlternativeDescription <- true
+                    app.AlternativeDescription <- true
+                | true -> ()
 
-                loop enumerator
+                app
+                :> ISearchResult
+                |> apps.Add
+            else
+                match appsDict.TryAdd(app.Name, app) with
+                | false -> logger.Verbose $"Duplicate app (file is ignored): {app.Path}"
+                | true -> app :> ISearchResult |> apps.Add
+        )
 
-        appFiles.GetEnumerator() |> loop
-        apps
-    )
+        loop (i+1) appFiles
+
+    loop 0 appFiles
+    apps
 
 let observeFolder added removed (folder: string) =
     let watcher = new FileSystemWatcher(folder)
@@ -153,11 +155,11 @@ type ExeAppsLoader() =
     member this.LoadApps(folderConfig: FolderConfiguration) =
         cts.Cancel()
         cts <- new CancellationTokenSource()
+        let ct = cts.Token
+        apps.Clear()
 
         Task.Run<unit>(fun () -> task {
-            let ct = cts.Token
-            apps.Clear()
-            let! newApps = loadApplications ct folderConfig
+            let newApps = loadApplications ct folderConfig
             if not ct.IsCancellationRequested then
                 apps.AddRange newApps
                 changedEvent.Trigger()

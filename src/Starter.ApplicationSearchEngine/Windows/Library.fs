@@ -14,28 +14,30 @@ type WindowsAppsSearchEngine(config: Observable<FolderConfiguration>) =
     let uwpLoader = UwpLoader.UwpAppsLoader()
     let exeLoader = ExeLoader.ExeAppsLoader()
 
+    do
+        // Subscribe to loaders events
+        exeLoader.Changed.Subscribe(fun () ->
+            logger.Verbose "New Exe apps loaded"
+            resultsChanged.Trigger
+                [| null
+                   Seq.append
+                    exeLoader.Apps
+                    uwpLoader.Apps |]
+        ) |> ignore
+        uwpLoader.Changed.Subscribe(fun () ->
+            logger.Verbose "New UWP apps loaded"
+            resultsChanged.Trigger
+                [| null
+                   Seq.append
+                    exeLoader.Apps
+                    uwpLoader.Apps |]
+        ) |> ignore
+
     interface IStaticSearchEngine with
         member this.LoadResults() =
             if not <| OperatingSystem.IsWindows() then
                 logger.Warning("This search engine is not supported on this platform.")
             else
-                exeLoader.Changed.Subscribe(fun () ->
-                    logger.Verbose "New Exe apps loaded"
-                    resultsChanged.Trigger
-                        [| null
-                           Seq.append
-                            exeLoader.Apps
-                            uwpLoader.Apps |]
-                ) |> ignore
-                uwpLoader.Changed.Subscribe(fun () ->
-                    logger.Verbose "New UWP apps loaded"
-                    resultsChanged.Trigger
-                        [| null
-                           Seq.append
-                            exeLoader.Apps
-                            uwpLoader.Apps |]
-                ) |> ignore
-
                 uwpLoader.LoadApps()
                 config
                     .Select(Config.FolderConfiguration.normalize)

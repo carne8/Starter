@@ -22,7 +22,7 @@
         <Compile Include="Windows\Uwp\UwpLoader.fs" />
 
         <Compile Include="Windows\Exe\IconHelper.fs" />
-        <Compile Include="Windows\Exe\ExecutableFilesLoader.fs" />
+        <Compile Include="Windows\Exe\ExeLoader.fs" />
 
         <Compile Include="Windows\Config.fs" />
         <Compile Include="Windows\Settings.axaml.fs" />
