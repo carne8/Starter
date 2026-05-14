@@ -7,13 +7,11 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <Nullable>enable</Nullable>
+        <IsPlugin>true</IsPlugin>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\Starter.SearchEngineBase\Starter.SearchEngineBase.csproj">
-            <Private>false</Private>
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </ProjectReference>
+        <ProjectReference Include="Libraries\CSharpMath\CSharpMath.Avalonia\CSharpMath.Avalonia.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -28,7 +26,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="CSharpMath.Avalonia" Version="1.0.0-pre.1" />
+        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.0.0">
+            <ExcludeAssets>runtime;native</ExcludeAssets>
+        </PackageReference>
+        <!--<ProjectReference Include="Libraries\CSharpMath\CSharpMath.Avalonia\CSharpMath.Avalonia.csproj" />-->
         <PackageReference Include="FParsec" Version="1.1.1" />
         <PackageReference Include="FsToolkit.ErrorHandling" Version="5.2.0" />
         <PackageReference Include="MathNet.Numerics.FSharp" Version="5.0.0" />

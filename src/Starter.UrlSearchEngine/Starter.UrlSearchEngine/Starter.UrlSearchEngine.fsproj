@@ -6,14 +6,11 @@
         <Deterministic>false</Deterministic>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <EnableDynamicLoading>true</EnableDynamicLoading>
+        <IsPlugin>true</IsPlugin>
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include=".\Starter.UrlSearchEngine.Regex\Starter.UrlSearchEngine.Regex.csproj" />
-        <ProjectReference Include="..\Starter.SearchEngineBase\Starter.SearchEngineBase.csproj">
-            <Private>false</Private>
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </ProjectReference>
+        <ProjectReference Include="..\Starter.UrlSearchEngine.Regex\Starter.UrlSearchEngine.Regex.csproj" />
     </ItemGroup>
 
     <ItemGroup>
@@ -21,6 +18,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
+        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.0.0">
+            <ExcludeAssets>runtime;native</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
     </ItemGroup>
 </Project>

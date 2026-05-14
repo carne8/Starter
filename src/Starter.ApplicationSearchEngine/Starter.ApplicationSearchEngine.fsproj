@@ -8,14 +8,8 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <Nullable>enable</Nullable>
+        <IsPlugin>true</IsPlugin>
     </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Starter.SearchEngineBase\Starter.SearchEngineBase.csproj">
-            <Private>false</Private>
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </ProjectReference>
-    </ItemGroup>
 
     <ItemGroup>
         <Compile Include="Types.fs" />
@@ -35,8 +29,8 @@
         <Compile Include="Windows\Library.fs" />
         <PackageReference Include="Avalonia.Controls.ItemsRepeater" Version="12.0.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-        <PackageReference Include="FluentAvaloniaUI" Version="3.0.0-preview1" />
-        <PackageReference Include="Vanara.Windows.Shell" Version="5.0.3" />
+        <PackageReference Include="FluentAvaloniaUI" Version="3.0.0-preview2" />
+        <PackageReference Include="Vanara.Windows.Shell" Version="5.0.4" />
     </ItemGroup>
 
     <ItemGroup Condition="'$(TargetFramework)' != 'net10.0-windows10.0.19041.0'">
@@ -56,8 +50,10 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.0.0">
+            <ExcludeAssets>runtime;native</ExcludeAssets>
+        </PackageReference>
         <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
-        <PackageReference Update="FSharp.Core" Version="10.0.101" />
     </ItemGroup>
 
 </Project>
