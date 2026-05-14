@@ -29,29 +29,16 @@ public class CustomRun : Run
 
     private void SetForeground()
     {
-        switch (logLevel)
+        Foreground = logLevel switch
         {
-            case LogEventLevel.Verbose:
-                Foreground = ActualThemeVariant == ThemeVariant.Light
-                    ? LightBrushVerbose
-                    : DarkBrushVerbose;
-                break;
-            case LogEventLevel.Debug:
-                Foreground = BrushDebug;
-                break;
-            case LogEventLevel.Information:
-                Foreground = BrushInformation;
-                break;
-            case LogEventLevel.Warning:
-                Foreground = BrushWarning;
-                break;
-            case LogEventLevel.Error:
-                Foreground = BrushError;
-                break;
-            case LogEventLevel.Fatal:
-                Foreground = BrushFatal;
-                break;
-        }
+            LogEventLevel.Verbose => ActualThemeVariant == ThemeVariant.Light ? LightBrushVerbose : DarkBrushVerbose,
+            LogEventLevel.Debug => BrushDebug,
+            LogEventLevel.Information => BrushInformation,
+            LogEventLevel.Warning => BrushWarning,
+            LogEventLevel.Error => BrushError,
+            LogEventLevel.Fatal => BrushFatal,
+            _ => Foreground
+        };
     }
 
     private static readonly SolidColorBrush LightBrushVerbose = new(new Color(255, 0, 0, 0));
@@ -66,7 +53,7 @@ public class CustomRun : Run
 public partial class LogsViewModel : ObservableObject
 {
     private const string Template = "[{Timestamp:HH:mm:ss} {Level:u3}] [{Context}] {Message:lj}";
-    private const string TemplateWithException = "[{Timestamp:HH:mm:ss} {Level:u3}] [{Context}] {Message:lj}{NewLine}{Exception}";
+    private const string TemplateWithException = "[{Timestamp:HH:mm:ss} {Level:u3}] [{Context}] {Message:lj}{NewLine}";
     private static readonly MessageTemplateTextFormatter Formatter = new(Template);
     private static readonly MessageTemplateTextFormatter FormatterWithException = new(TemplateWithException);
 
@@ -114,7 +101,11 @@ public partial class LogsViewModel : ObservableObject
 
         if (Lines.Count != 0) sb.AppendLine();
         if (logEvent.Exception is null) Formatter.Format(logEvent, sw);
-        else FormatterWithException.Format(logEvent, sw);
+        else
+        {
+            FormatterWithException.Format(logEvent, sw);
+            sb.Append(logEvent.Exception.Message);
+        }
 
         Lines.Add(new CustomRun(sb.ToString(), logEvent.Level));
     }
