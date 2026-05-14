@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Input.Platform;
 using Avalonia.Markup.Xaml;
 using R3;
 using Serilog;
@@ -54,7 +53,7 @@ public class App : Application
         Configuration.ensureDirectoriesExists();
 
         var initialConfig = LoadConfiguration();
-        var (searchEngineStore, config) = LoadSearchEngines(initialConfig, window.Clipboard);
+        var (searchEngineStore, config) = LoadSearchEngines(initialConfig, window);
 
         var resultScoreDb = ScoreDbModule.readFromFile(Const.ResultScoresFile);
         var activatorStore = new ActivatorStore(config);
@@ -110,8 +109,12 @@ public class App : Application
         }
     }
 
-    private(SearchEngineStore, BehaviorSubject<Configuration>) LoadSearchEngines(Configuration config, IClipboard clipboard)
+    private(SearchEngineStore, BehaviorSubject<Configuration>) LoadSearchEngines(Configuration config, TopLevel topLevel)
     {
+        var launcher = topLevel.Launcher;
+        var clipboard = topLevel.Clipboard;
+        if (clipboard is null) throw new Exception("No clipboard");
+
         var searchEngineStore = new SearchEngineStore();
 #if DEBUG
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.UrlSearchEngine/Starter.UrlSearchEngine/bin/Debug/net10.0/", clipboard);
@@ -136,6 +139,7 @@ public class App : Application
         // Settings
         var settingsSearchEngine = new SettingsSearchEngine(
             Log.Logger.ForContext("Context", "Starter/Settings"),
+            launcher,
             config,
             searchEngineStore
         );

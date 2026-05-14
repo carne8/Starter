@@ -1,4 +1,5 @@
-﻿using R3;
+﻿using Avalonia.Platform.Storage;
+using R3;
 using Starter.Features.Config;
 using Starter.Features.PlatformInterop;
 using Starter.SearchEngine;
@@ -10,6 +11,7 @@ public record AntialiasingKind(string Name, Antialiasing Value);
 
 public partial class SettingsViewModel : ObservableObject
 {
+    private readonly ILauncher launcher;
     private static readonly PlatformInterop Platform = PlatformInteropFactory.GetPlatformInterop();
     public readonly BehaviorSubject<Configuration> Config;
 
@@ -51,8 +53,9 @@ public partial class SettingsViewModel : ObservableObject
     // Activator prefixes
     public ActivatorInputFieldViewModel[] ActivatorViewModels { get; }
 
-    public SettingsViewModel(Configuration baseConfig, SearchEngineStore engines)
+    public SettingsViewModel(ILauncher launcher, Configuration baseConfig, SearchEngineStore engines)
     {
+        this.launcher = launcher;
         Config = new BehaviorSubject<Configuration>(baseConfig);
         SelectedBackground = baseConfig.Background.Tag switch
         {
@@ -115,4 +118,18 @@ public partial class SettingsViewModel : ObservableObject
     partial void OnSelectedBackgroundChanged(BackgroundKind value) => Config.OnNext(Config.Value.WithBackground(value.Value));
     partial void OnZoomedModeChanged(bool value) => Config.OnNext(Config.Value.WithZoomedMode(value));
     partial void OnSelectedAntialiasingChanged(AntialiasingKind value) => Config.OnNext(Config.Value.WithAntialiasing(value.Value));
+
+    [RelayCommand]
+    public void OpenConfigDirectory()
+    {
+        var dir = new DirectoryInfo(Features.Constants.ConfigDirectory);
+        launcher.LaunchDirectoryInfoAsync(dir);
+    }
+
+    [RelayCommand]
+    public void OpenSearchEnginesDirectory()
+    {
+        var dir = new DirectoryInfo(Features.Constants.PluginsDirectory);
+        launcher.LaunchDirectoryInfoAsync(dir);
+    }
 }

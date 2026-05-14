@@ -1,4 +1,5 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using R3;
 using Starter.Features.Config;
 using Starter.SearchEngine;
@@ -31,9 +32,9 @@ public partial class SettingsWindowViewModel : ObservableObject
     public BehaviorSubject<Configuration> Config => settingsVm.Config;
     public IObservable<Configuration> ConfigSystemObservable { get; private set; }
 
-    public SettingsWindowViewModel(Configuration config, SearchEngineStore searchEngineStore)
+    public SettingsWindowViewModel(ILauncher launcher, Configuration config, SearchEngineStore searchEngineStore)
     {
-        settingsVm = new SettingsViewModel(config, searchEngineStore);
+        settingsVm = new SettingsViewModel(launcher, config, searchEngineStore);
         ConfigSystemObservable = Config.AsSystemObservable();
 
         // Add Starter settings

@@ -1,4 +1,5 @@
 ﻿using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using R3;
 using Serilog;
 using Starter.Features.Config;
@@ -26,7 +27,7 @@ file class SettingsSearchResult(string name, string description, TargetPage targ
     public ISearchEngineActivator[] ActivatorFilter => [];
 }
 
-internal class SettingsSearchEngine(ILogger logger, Configuration config, SearchEngineStore searchEngineStore) : IStaticSearchEngine
+internal class SettingsSearchEngine(ILogger logger, ILauncher launcher, Configuration config, SearchEngineStore searchEngineStore) : IStaticSearchEngine
 {
     public string Id => nameof(SettingsSearchEngine);
     public string Name => "Settings";
@@ -52,7 +53,7 @@ internal class SettingsSearchEngine(ILogger logger, Configuration config, Search
         new SettingsSearchResult("Options", "Open settings", TargetPage.Settings, Icons.Settings)
     ];
 
-    private readonly SettingsWindowViewModel windowVm = new(config, searchEngineStore);
+    private readonly SettingsWindowViewModel windowVm = new(launcher, config, searchEngineStore);
     private Views.SettingsWindow? window;
 
     public BehaviorSubject<Configuration> Config => windowVm.Config;
