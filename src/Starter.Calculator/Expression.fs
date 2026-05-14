@@ -1,6 +1,6 @@
-﻿module Starter.CalculatorSearchEngine.Expression
+﻿module Starter.Calculator.Expression
 
-open Starter.CalculatorSearchEngine.Types
+open Starter.Calculator.Types
 open MathNet.Numerics
 
 let private (|ReciprocalFunction|_|) f1 f2 expr =

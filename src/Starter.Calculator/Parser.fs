@@ -1,9 +1,9 @@
-﻿module Starter.CalculatorSearchEngine.Parser
+﻿module Starter.Calculator.Parser
 
 open FParsec
 open System.Numerics
 open MathNet.Numerics
-open Starter.CalculatorSearchEngine.Types
+open Starter.Calculator.Types
 
 let private pinteger = pint64 |>> (BigRational.FromBigInt >> Number)
 let private pdecimal =

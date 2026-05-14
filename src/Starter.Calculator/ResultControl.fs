@@ -1,4 +1,4 @@
-﻿namespace Starter.CalculatorSearchEngine.Controls
+﻿namespace Starter.Calculator.Controls
 
 open Avalonia.Layout
 open Avalonia.Media

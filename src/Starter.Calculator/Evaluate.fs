@@ -1,7 +1,7 @@
-module Starter.CalculatorSearchEngine.Evaluate
+module Starter.Calculator.Evaluate
 
 open System.Numerics
-open Starter.CalculatorSearchEngine.Types
+open Starter.Calculator.Types
 
 open System
 open MathNet.Numerics

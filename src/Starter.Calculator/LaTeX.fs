@@ -1,7 +1,7 @@
-module Starter.CalculatorSearchEngine.LaTeX
+module Starter.Calculator.LaTeX
 
 open System.Numerics
-open Starter.CalculatorSearchEngine.Types
+open Starter.Calculator.Types
 open System.Text
 open MathNet.Numerics
 

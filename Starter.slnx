@@ -1,16 +1,19 @@
 <Solution>
+  <Folder Name="/Others/">
+    <Project Path="src/Starter.Calculator/Libraries/CSharpMath/CSharpMath.Avalonia/CSharpMath.Avalonia.csproj" />
+    <Project Path="src/Starter.Calculator/Libraries/CSharpMath/CSharpMath.Rendering/CSharpMath.Rendering.csproj" />
+    <Project Path="src/Starter.Calculator/Libraries/CSharpMath/CSharpMath/CSharpMath.csproj" />
+  </Folder>
   <Folder Name="/Plugins/">
-    <Project Path="src/Starter.ApplicationSearchEngine/Starter.ApplicationSearchEngine.fsproj" />
-    <Project Path="src/Starter.WorkspaceSearchEngine/Starter.WorkspaceSearchEngine.fsproj" />
-    <Project Path="src/Starter.SearchEngineBase/Starter.SearchEngineBase.csproj" />
     <Project Path="src/Starter.WebSearchEngine/Starter.WebSearchEngine.fsproj" />
-    <Project Path="src/Starter.EverythingSearchEngine/Starter.EverythingSearchEngine.fsproj" />
-    <Project Path="src/Starter.CalculatorSearchEngine/Starter.CalculatorSearchEngine.fsproj" />
-  </Folder>
-  <Folder Name="/Plugins/Starter.UrlSearchEngine/">
-    <Project Path="src/Starter.UrlSearchEngine/Starter.UrlSearchEngine.fsproj" />
+    <Project Path="src/Starter.WorkspaceSearchEngine/Starter.WorkspaceSearchEngine.fsproj" />
+    <Project Path="src/Starter.UrlSearchEngine/Starter.UrlSearchEngine/Starter.UrlSearchEngine.fsproj" />
     <Project Path="src/Starter.UrlSearchEngine/Starter.UrlSearchEngine.Regex/Starter.UrlSearchEngine.Regex.csproj" />
+    <Project Path="src/Starter.EverythingSearchEngine/Starter.EverythingSearchEngine.fsproj" />
+    <Project Path="src/Starter.ApplicationSearchEngine/Starter.ApplicationSearchEngine.fsproj" />
+    <Project Path="src/Starter.Calculator/Starter.Calculator.fsproj" />
   </Folder>
+  <Project Path="src/Starter.SearchEngineBase/Starter.SearchEngineBase.csproj" />
   <Project Path="src/Starter.Model/Starter.Model.fsproj" />
   <Project Path="src/Starter/Starter.csproj" />
 </Solution>

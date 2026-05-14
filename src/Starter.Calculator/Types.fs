@@ -1,4 +1,4 @@
-namespace Starter.CalculatorSearchEngine.Types
+namespace Starter.Calculator.Types
 
 open Avalonia.Media
 open MathNet.Numerics

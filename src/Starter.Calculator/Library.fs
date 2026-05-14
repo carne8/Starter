@@ -1,4 +1,4 @@
-﻿namespace Starter.CalculatorSearchEngine
+﻿namespace Starter.Calculator
 
 open System
 open Avalonia.Input.Platform
@@ -9,14 +9,14 @@ open FsToolkit.ErrorHandling
 open R3
 
 open Starter.SearchEngine
-open Starter.CalculatorSearchEngine
-open Starter.CalculatorSearchEngine.Types
-open Starter.CalculatorSearchEngine.Controls
-open Starter.CalculatorSearchEngine.Simplifications
+open Starter.Calculator
+open Starter.Calculator.Types
+open Starter.Calculator.Controls
+open Starter.Calculator.Simplifications
 
-type CalculatorSearchEngine(clipboard: IClipboard) =
+type Calculator(clipboard: IClipboard) =
     interface IDynamicSearchEngine with
-        member this.Id = nameof CalculatorSearchEngine
+        member this.Id = nameof Calculator
         member this.Name = "Calculator"
         member this.ShortName = "Calculator"
         member this.Icon = Icon.icon
@@ -46,10 +46,9 @@ type CalculatorSearchEngine(clipboard: IClipboard) =
                     | ValueNone -> ()
                     | ValueSome number -> { Result = number } :> ISearchResult
 
-                    // TODO: CSharpMath.Avalonia doesn't work with Avalonia 12
-                    // match expr with
-                    // | Number n when n.IsInteger -> ()
-                    // | _ -> { LaTeX = LaTeX.fromExpression expr }
+                    match expr with
+                    | Number n when n.IsInteger -> ()
+                    | _ -> { LaTeX = LaTeX.fromExpression expr }
                 }
             }
             |> ValueOption.map (fun s -> struct (s, Observable.Empty()))
@@ -68,9 +67,9 @@ type CalculatorSearchEngine(clipboard: IClipboard) =
 type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)
 
-    override this.LoadSearchEngineIds() = [| nameof CalculatorSearchEngine |]
+    override this.LoadSearchEngineIds() = [| nameof Calculator |]
 
-    override this.LoadSearchEngine(_, _, _, clipboard) = CalculatorSearchEngine(clipboard), null
+    override this.LoadSearchEngine(_, _, _, clipboard) = Calculator(clipboard), null
 
     override this.LoadDataTemplates() =
         let builder = Func<LaTeXSearchResult | null, INameScope, Control | null>(fun dc _ ->

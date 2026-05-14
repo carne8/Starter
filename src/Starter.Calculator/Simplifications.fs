@@ -1,6 +1,6 @@
-module Starter.CalculatorSearchEngine.Simplifications
+module Starter.Calculator.Simplifications
 
-open Starter.CalculatorSearchEngine.Types
+open Starter.Calculator.Types
 open System.Numerics
 open MathNet.Numerics
 

@@ -1,4 +1,4 @@
-﻿namespace Starter.EverythingSearchEngine
+namespace Starter.EverythingSearchEngine
 
 open System
 open System.Diagnostics
