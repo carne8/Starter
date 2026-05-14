@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Avalonia.Threading;
 using R3;
 using Serilog;
 using Starter.Features;
@@ -32,6 +33,9 @@ public class App : Application
             Log.Information("---*--- Exiting ---*---");
             Log.CloseAndFlush();
         };
+
+        // UI thread exceptions
+        Dispatcher.UIThread.UnhandledException += (_, e) => Log.Error(e.Exception, "Unhandled UI exception");
 
         try
         {

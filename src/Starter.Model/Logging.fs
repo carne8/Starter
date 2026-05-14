@@ -2,6 +2,7 @@ module Starter.Features.Logging
 
 open System
 open System.Collections.Generic
+open System.Threading.Tasks
 open Serilog
 open Serilog.Core
 open Serilog.Events
@@ -69,4 +70,15 @@ let logger =
         .CreateLogger()
         .ForContext("Context", "Starter")
 
-let setupLogger () = Log.Logger <- logger
+let setupLogger () =
+    Log.Logger <- logger
+
+    // Background thread exceptions
+    AppDomain.CurrentDomain.UnhandledException.Add(fun e ->
+        Log.Fatal(unbox<Exception> e.ExceptionObject, "Unhandled domain exception")
+    )
+
+    TaskScheduler.UnobservedTaskException.Add(fun e ->
+        Log.Error(e.Exception, "Unobserved task exception")
+        e.SetObserved()
+    )
