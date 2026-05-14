@@ -29,7 +29,7 @@ type private SearchEngineLoadContext(dllPath) =
             | null -> null
             | assemblyPath -> this.LoadFromAssemblyPath assemblyPath
 
-    override this.LoadUnmanagedDll(unmanagedDllName) =
+    override this.LoadUnmanagedDll unmanagedDllName =
         let libraryPath = resolver.ResolveUnmanagedDllToPath unmanagedDllName
         match libraryPath with
         | null -> IntPtr.Zero
@@ -82,14 +82,30 @@ let loadSearchEnginesFromFactory clipboard (factory: SearchEngineFactory) =
 
 /// Load all search engines in a directory (not recursive)
 let loadFactoriesFromDirectory directoryPath =
-    Directory.GetFiles(Path.GetFullPath(directoryPath), "*SearchEngine.dll")
-    |> Seq.collect (fun dir ->
+    let files =
+        try
+            Directory.GetFiles(Path.GetFullPath(directoryPath), "*.deps.json")
+            |> Array.choose (fun dependenciesFile ->
+                let dllFile =
+                    dependenciesFile.Substring(0, dependenciesFile.Length - ".deps.json".Length)
+                    + ".dll"
+
+                if dllFile |> File.Exists then
+                    Some dllFile
+                else
+                    None
+            )
+        with e ->
+            logger.Warning $"Failed to load factories in directory {directoryPath}: {e.Message}"
+            Array.empty
+
+    files |> Seq.collect (fun dir ->
         try
             dir
             |> loadAssembly
             |> loadAssemblyFactories
         with exn ->
-            logger.Error(exn, "Failed to load assembly.")
+            logger.Warning(exn, $"Failed to load assembly at {dir}")
             Array.empty
     )
 

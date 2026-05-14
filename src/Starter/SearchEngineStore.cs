@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls;
+using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Input.Platform;
 using Serilog;
@@ -42,7 +42,17 @@ public class SearchEngineStore
                     return;
             }
 
-            SearchEngines.Add(engine.Id, engine);
+            if (!SearchEngines.TryAdd(engine.Id, engine))
+            {
+                Log.Error(
+                    "Several engines have the same id: ({Engine1}, {Engine1Name}) and ({Engine2}, {Engine2Name})",
+                    engine.Id,
+                    engine.Name,
+                    engine.Id,
+                    SearchEngines[engine.Id].Name
+                );
+                return;
+            }
             if (settingsControl is not null) SettingsControls.Add(engine.Id, settingsControl);
         }
     }
