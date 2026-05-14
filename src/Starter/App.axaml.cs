@@ -51,7 +51,7 @@ public class App : Application
     {
         window = new MainWindow();
         if (window.Clipboard is null) throw new Exception("No clipboard");
-        Configuration.ensurePluginsSymlinkExists();
+        Configuration.ensureDirectoriesExists();
 
         var initialConfig = LoadConfiguration();
         var (searchEngineStore, config) = LoadSearchEngines(initialConfig, window.Clipboard);

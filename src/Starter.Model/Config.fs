@@ -196,7 +196,7 @@ type Configuration =
                 )
         }
 
-    static member ensurePluginsSymlinkExists () =
+    static member ensureDirectoriesExists () =
         // Ensure plugins directory exists
         if Constants.PluginsDirectory |> Directory.Exists |> not then
             logger.Debug "Plugins directory doesn't exist, creating it"
@@ -210,18 +210,3 @@ type Configuration =
             Constants.ConfigDirectory
             |> Directory.CreateDirectory
             |> ignore
-
-        // Ensure symlink exists
-        try
-            if Constants.PluginsSymlinkPath |> File.Exists then
-                File.Delete Constants.PluginsSymlinkPath
-
-            if Constants.PluginsSymlinkPath |> Directory.Exists then
-                Directory.Delete Constants.PluginsSymlinkPath
-
-            Directory.CreateSymbolicLink(
-                Constants.PluginsSymlinkPath,
-                Constants.PluginsDirectory
-            ) |> ignore
-        with e ->
-            logger.Error(e, "Failed to create symlink to plugins in config directory")

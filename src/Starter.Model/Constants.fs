@@ -30,7 +30,6 @@ let ProcessDirectory =
         | p -> p
 
 let PluginsDirectory = Path.Combine(ProcessDirectory, "Plugins")
-let PluginsSymlinkPath = Path.Combine(ConfigDirectory, "Plugins")
 
 // --- Logs ---
 let LogFilePath = Path.Combine(ConfigDirectory, "Logs", "log.txt")
