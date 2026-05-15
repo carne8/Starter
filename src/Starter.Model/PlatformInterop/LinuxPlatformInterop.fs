@@ -26,8 +26,6 @@ type StarterLauncher(onLaunched) =
             Task.FromResult()
 
 type LinuxPlatformInterop() =
-    inherit PlatformInterop()
-
     static let startupFolder =
         match Environment.GetEnvironmentVariable "XDG_CONFIG_HOME" with
         | null
@@ -60,55 +58,56 @@ Comment=Launch Starter at startup
 
     let dbusConnection = new Connection(Address.Session)
 
-    // Launch at startup
-    override this.ToggleLaunchAtStartup(enable) =
-        match enable, this.IsLaunchAtStartupEnabled() with
-        | true, false ->
-            try
-                if not <| Directory.Exists startupFolder then
-                    startupFolder
-                    |> Directory.CreateDirectory
-                    |> ignore
+    interface IPlatformInterop with
+        // Launch at startup
+        override this.ToggleLaunchAtStartup(enable) =
+            match enable, (this :> IPlatformInterop).IsLaunchAtStartupEnabled() with
+            | true, false ->
+                try
+                    if not <| Directory.Exists startupFolder then
+                        startupFolder
+                        |> Directory.CreateDirectory
+                        |> ignore
 
-                use writer = File.CreateText startupFile
-                writer.Write startupFileContent
-                logger.Information $"Created autostart file {startupFile}"
-            with e ->
-                logger.Error(e, $"Failed to create autostart file {startupFile}")
-        | false, true ->
-            try
-                File.Delete startupFile
-                logger.Information $"Deleted autostart file {startupFile}"
-            with e ->
-                logger.Error(e, $"Failed to delete autostart file {startupFile}")
-        | _ -> ()
+                    use writer = File.CreateText startupFile
+                    writer.Write startupFileContent
+                    logger.Information $"Created autostart file {startupFile}"
+                with e ->
+                    logger.Error(e, $"Failed to create autostart file {startupFile}")
+            | false, true ->
+                try
+                    File.Delete startupFile
+                    logger.Information $"Deleted autostart file {startupFile}"
+                with e ->
+                    logger.Error(e, $"Failed to delete autostart file {startupFile}")
+            | _ -> ()
 
-    override _.IsLaunchAtStartupEnabled() = startupFile |> File.Exists
+        override _.IsLaunchAtStartupEnabled() = startupFile |> File.Exists
 
-    // Hotkey
-    override _.HotkeyRegistrable = hotkeyRegistrable
-    override _.RegisterHotkey shortcut _window =
-        task {
-            let! res = Task.Run<Result<_, _>>(fun () -> KeyboardShortcut.setKeyboardShortcut desktopEnvironment shortcut)
+        // Hotkey
+        override _.HotkeyRegistrable = hotkeyRegistrable
+        override _.RegisterHotkey shortcut _window =
+            task {
+                let! res = Task.Run<Result<_, _>>(fun () -> KeyboardShortcut.setKeyboardShortcut desktopEnvironment shortcut)
 
-            match res with
-            | Ok () -> logger.Information "Successfully set keyboard shortcut."
-            | Error err -> logger.Error $"Failed to set keyboard shortcut: {err}"
+                match res with
+                | Ok () -> logger.Information "Successfully set keyboard shortcut."
+                | Error err -> logger.Error $"Failed to set keyboard shortcut: {err}"
 
-            return res.IsOk
-        }
-        |> ValueTask<bool>
+                return res.IsOk
+            }
+            |> ValueTask<bool>
 
-    override _.SetupHotkeyCallback(window: Window) =
-        Task.Run<unit>(fun () -> task {
-            try
-                let! _ = dbusConnection.ConnectAsync()
-                do! dbusConnection.RegisterServiceAsync("com.carne8.Starter")
+        override _.SetupHotkeyCallback(window: Window) =
+            Task.Run<unit>(fun () -> task {
+                try
+                    let! _ = dbusConnection.ConnectAsync()
+                    do! dbusConnection.RegisterServiceAsync("com.carne8.Starter")
 
-                let object = StarterLauncher(fun () ->
-                    Avalonia.Threading.Dispatcher.UIThread.Post(fun () -> window.Show())
-                )
-                do! dbusConnection.RegisterObjectAsync(object)
-            with e -> logger.Error(e, "Failed to setup dbus service");
-        })
-        |> ignore
+                    let object = StarterLauncher(fun () ->
+                        Avalonia.Threading.Dispatcher.UIThread.Post(fun () -> window.Show())
+                    )
+                    do! dbusConnection.RegisterObjectAsync(object)
+                with e -> logger.Error(e, "Failed to setup dbus service");
+            })
+            |> ignore

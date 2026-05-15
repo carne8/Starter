@@ -27,7 +27,7 @@ public class FirstNonNullConverter : IMultiValueConverter
 public partial class MainWindow : TranslucentWindow
 {
     private MainWindowViewModel vm = null!;
-    private readonly PlatformInterop platformInterop = PlatformInteropFactory.GetPlatformInterop();
+    private readonly IPlatformInterop platformInterop = PlatformInterop.GetPlatformInterop();
 
     public MainWindow()
     {

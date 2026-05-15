@@ -69,7 +69,7 @@ public class App : Application
 
         // Register hotkey
         var keyboardShortcut = initialConfig.KeyboardShortcut;
-        var platformInterop = PlatformInteropFactory.GetPlatformInterop();
+        var platformInterop = PlatformInterop.GetPlatformInterop();
         if (!platformInterop.HotkeyRegistrable) return;
 
         platformInterop

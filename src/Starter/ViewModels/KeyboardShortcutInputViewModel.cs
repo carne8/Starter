@@ -7,7 +7,7 @@ namespace Starter.ViewModels;
 
 public partial class KeyboardShortcutInputViewModel : ObservableObject
 {
-    private static readonly PlatformInterop Platform = PlatformInteropFactory.GetPlatformInterop();
+    private static readonly IPlatformInterop Platform = PlatformInterop.GetPlatformInterop();
 
     private bool listenKeys;
     public event Action? StoppedListening;

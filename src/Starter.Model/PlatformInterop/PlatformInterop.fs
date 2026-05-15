@@ -3,8 +3,7 @@ namespace Starter.Features.PlatformInterop
 open Starter.Features
 open System.Threading.Tasks
 
-[<AbstractClass>]
-type PlatformInterop() =
+type IPlatformInterop =
     abstract member ToggleLaunchAtStartup: bool -> unit
     abstract member IsLaunchAtStartupEnabled: unit -> bool
 

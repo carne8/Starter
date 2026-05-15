@@ -12,7 +12,7 @@ public record AntialiasingKind(string Name, Antialiasing Value);
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly ILauncher launcher;
-    private static readonly PlatformInterop Platform = PlatformInteropFactory.GetPlatformInterop();
+    private static readonly IPlatformInterop Platform = PlatformInterop.GetPlatformInterop();
     public readonly BehaviorSubject<Configuration> Config;
 
     // Background launch at startup
