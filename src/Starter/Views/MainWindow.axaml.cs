@@ -126,7 +126,8 @@ public partial class MainWindow : TranslucentWindow
             this.GetVisualsAt(pos)
                 .FirstOrDefault(v => v.DataContext is SearchResultData);
 
-        vm.SelectResultCommand.Execute(clickedControl?.DataContext);
+        if (clickedControl is null) return;
+        vm.SelectResultCommand.Execute(clickedControl.DataContext);
     }
 
     private void TextBox_OnKeyDown(object? sender, KeyEventArgs e)
