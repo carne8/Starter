@@ -76,7 +76,7 @@ public partial class MainWindow : TranslucentWindow
             screen.WorkingArea.TopLeft
             + new PixelPoint(
                 (int)Math.Round((screen.WorkingArea.Width - Width * screen.Scaling) / 2.0),
-                (int)Math.Round(screen.WorkingArea.Height * (5.0 / 16.0))
+                (int)Math.Round((screen.WorkingArea.Height - 470 * screen.Scaling) / 2.0)
             );
 
         // Reset focus
