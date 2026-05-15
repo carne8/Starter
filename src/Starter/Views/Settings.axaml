@@ -134,14 +134,19 @@
 
             <!-- Directory buttons -->
             <TextBlock Classes="title2">Directories</TextBlock>
-            <StackPanel Orientation="Horizontal" Spacing="6">
+            <WrapPanel Orientation="Horizontal"
+                       ItemSpacing="6"
+                       LineSpacing="6">
                 <Button Command="{Binding OpenConfigDirectoryCommand}">
                     <TextBlock>Open config directory</TextBlock>
                 </Button>
                 <Button Command="{Binding OpenSearchEnginesDirectoryCommand}">
                     <TextBlock>Open search engines directory</TextBlock>
                 </Button>
-            </StackPanel>
+                <Button Command="{Binding OpenLogsDirectoryCommand}">
+                    <TextBlock>Open logs directory</TextBlock>
+                </Button>
+            </WrapPanel>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

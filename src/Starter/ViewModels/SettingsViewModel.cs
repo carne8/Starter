@@ -126,4 +126,11 @@ public partial class SettingsViewModel : ObservableObject
         var dir = new DirectoryInfo(Features.Constants.PluginsDirectory);
         launcher.LaunchDirectoryInfoAsync(dir);
     }
+
+    [RelayCommand]
+    public void OpenLogsDirectory()
+    {
+        var dir = new DirectoryInfo(Features.Constants.LogDirectory);
+        launcher.LaunchDirectoryInfoAsync(dir);
+    }
 }
