@@ -94,25 +94,30 @@
         <StackPanel>
             <!-- Main text box -->
             <Border Height="52" Margin="14,0">
-                <StackPanel Orientation="Horizontal">
-                    <ContentControl IsVisible="{Binding Activator, Converter={x:Static ObjectConverters.IsNotNull}}" Content="{Binding Activator}">
+                <Grid ColumnDefinitions="18, *" ColumnSpacing="10">
+                    <ContentControl Grid.Column="0"
+                                    IsVisible="{Binding Activator, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    Content="{Binding Activator}">
                         <ContentControl.ContentTemplate>
                             <DataTemplate DataType="starter:ISearchEngineActivator">
-                                <controls:StarterIcon Width="16"
-                                                      Height="16"
-                                                      FontSize="16"
+                                <controls:StarterIcon Width="18"
+                                                      Height="18"
+                                                      FontSize="18"
                                                       IconSource="{Binding Icon}" />
                             </DataTemplate>
                         </ContentControl.ContentTemplate>
                     </ContentControl>
 
-                    <Image Width="16"
+                    <Image Grid.Column="0"
+                           Width="16"
                            Height="16"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
                            Source="{StaticResource SearchIcon}"
                            IsVisible="{Binding Activator, Converter={x:Static ObjectConverters.IsNull}}" />
 
                     <TextBox x:Name="TextBox"
-                             Margin="10,0,0,0"
+                             Grid.Column="1"
                              PlaceholderText="Start anything..."
                              Text="{Binding Text}">
                         <TextBox.KeyBindings>
@@ -121,7 +126,7 @@
                                         Gesture="Enter" />
                         </TextBox.KeyBindings>
                     </TextBox>
-                </StackPanel>
+                </Grid>
             </Border>
 
             <!-- Separator -->
@@ -203,9 +208,8 @@
                                FontSize="13"
                                FontFamily="{StaticResource GeistMono}"
                                FontWeight="SemiLight"
-                               Foreground="{DynamicResource Text3}">
-                        starter
-                    </TextBlock>
+                               Foreground="{DynamicResource Text3}"
+                               Text="{Binding Activator?.Name, TargetNullValue='starter'}" />
                 </DockPanel>
             </Border>
         </StackPanel>
