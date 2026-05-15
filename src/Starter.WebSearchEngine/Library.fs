@@ -7,6 +7,7 @@ open Starter.WebSearchEngine.Logger
 
 open System
 open System.Threading
+open System.Threading.Tasks
 open System.Diagnostics
 
 open R3
@@ -22,23 +23,24 @@ type WebSearchEngine(searchEngine: BehaviorSubject<SearchEngine>) as this =
         searchEngine.Subscribe(fun _ -> changed.Trigger [| null; EventArgs.Empty |]) |> ignore
 
         suggestionRequests
-            .Debounce(TimeSpan.FromMilliseconds 60L)
+            .Debounce(TimeSpan.FromMilliseconds 150L)
             .Subscribe(fun (query, ct) ->
                 if query |> String.IsNullOrEmpty |> not then
-                    task {
+                    Task.Run<unit>(fun () -> task {
                         let se = searchEngine.Value
-                        let! newSuggestions = se.LoadSuggestions ct query
-
-                        newSuggestions
-                        |> Array.map (fun s ->
-                            { Name = s
-                              Description = "Using " + se.Name
-                              Uri = se.LoadSearchUrl s
-                              Icon = se.StarterIcon }
-                            :> ISearchResult
-                        )
-                        |> suggestions.OnNext
-                    } |> ignore
+                        match! se.LoadSuggestions ct query with
+                        | None -> ()
+                        | Some newSuggestions ->
+                            newSuggestions
+                            |> Array.map (fun s ->
+                                { Name = s
+                                  Description = "Using " + se.Name
+                                  Uri = se.LoadSearchUrl s
+                                  Icon = se.StarterIcon }
+                                :> ISearchResult
+                            )
+                            |> suggestions.OnNext
+                    }) |> ignore
             )
         |> ignore
 

@@ -97,13 +97,17 @@ type SearchEngineKind =
                 res.EnsureSuccessStatusCode() |> ignore
                 let! jsonStream = res.Content.ReadAsStreamAsync()
 
-                return! jsonStream |> SearchEngineKind.deserializeSuggestionsRequest se query
+                let! suggestions =
+                    jsonStream
+                    |> SearchEngineKind.deserializeSuggestionsRequest se query
+
+                return Some suggestions
             with
             | :? OperationCanceledException
-            | :? TaskCanceledException -> return failwith "Task cancelled"
+            | :? TaskCanceledException -> return None
             | e ->
                 logger.Warning(e, "Failed to load suggestions\n{Req}", req)
-                return failwith "Failed to load suggestions"
+                return None
         }
 
 type SearchEngine =
@@ -114,7 +118,7 @@ type SearchEngine =
         {| Light: Avalonia.Media.IImage
            Dark: Avalonia.Media.IImage |}
       StarterIcon: StarterIconSource
-      LoadSuggestions: CancellationToken -> string -> Task<string array>
+      LoadSuggestions: CancellationToken -> string -> Task<string array option>
       LoadSearchUrl: string -> string }
 
     static member create pluginPath httpClient (seKind: SearchEngineKind) =
