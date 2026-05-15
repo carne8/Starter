@@ -20,14 +20,14 @@
             <Setter Property="KeyboardNavigation.TabNavigation" Value="Once" />
             <Setter Property="Template">
                 <ControlTemplate>
-                    <Grid Name="NVIRootGrid" RowDefinitions="*,Auto">
+                    <Grid x:Name="NVIRootGrid" RowDefinitions="*,Auto">
                         <Grid.Styles>
                             <Style Selector="FlyoutPresenter">
                                 <Setter Property="Theme" Value="{StaticResource NavViewFlyoutStyle}" />
                             </Style>
                         </Grid.Styles>
 
-                        <uip:FANavigationViewItemPresenter Name="NVIPresenter"
+                        <uip:FANavigationViewItemPresenter x:Name="NVIPresenter"
                                                            Padding="{TemplateBinding Padding}"
                                                            HorizontalAlignment="{TemplateBinding HorizontalAlignment}"
                                                            VerticalAlignment="{TemplateBinding VerticalAlignment}"
@@ -43,7 +43,7 @@
                                                            Content="{TemplateBinding Content}"
                                                            TemplatedControl.IsTemplateFocusTarget="True" />
 
-                        <ui:FAItemsRepeater Name="NVIMenuItemsHost"
+                        <ui:FAItemsRepeater x:Name="NVIMenuItemsHost"
                                             Grid.Row="1"
                                             IsVisible="False"
                                             KeyboardNavigation.TabNavigation="Continue" />
@@ -51,8 +51,8 @@
                         <FlyoutBase.AttachedFlyout>
                             <!-- Placement handled in code, since Flyout's can't be targeted in Styles -->
                             <Flyout FlyoutPresenterClasses="NavViewFlyoutStyle">
-                                <Panel Name="FlyoutRootGrid">
-                                    <Panel Name="FlyoutContentGrid" />
+                                <Panel x:Name="FlyoutRootGrid">
+                                    <Panel x:Name="FlyoutContentGrid" />
                                 </Panel>
                             </Flyout>
                         </FlyoutBase.AttachedFlyout>

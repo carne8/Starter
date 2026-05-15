@@ -7,6 +7,8 @@
     <Application.Resources>
         <ResourceDictionary>
             <FontFamily x:Key="JetBrainsMono">avares://Starter/Assets/Fonts#JetBrains Mono</FontFamily>
+            <FontFamily x:Key="Geist">avares://Starter/Assets/Fonts#Geist</FontFamily>
+            <FontFamily x:Key="GeistMono">avares://Starter/Assets/Fonts#Geist Mono</FontFamily>
             <ResourceDictionary.MergedDictionaries>
                 <MergeResourceInclude Source="/Styles/Resources.axaml" />
                 <MergeResourceInclude Source="/Styles/ZoomModes.axaml" />

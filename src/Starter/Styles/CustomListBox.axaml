@@ -1,34 +1,9 @@
 <ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Design.PreviewWith>
-        <Border Padding="20">
-            <ListBox Width="200"
-                     Height="200"
-                     ItemContainerTheme="{StaticResource CustomListBoxItem}"
-                     SelectedIndex="0">
-                <ListBoxItem>Test1</ListBoxItem>
-                <ListBoxItem>Test2</ListBoxItem>
-                <ListBoxItem>Test3</ListBoxItem>
-            </ListBox>
-        </Border>
-    </Design.PreviewWith>
-
-    <ResourceDictionary.ThemeDictionaries>
-        <ResourceDictionary x:Key="Light">
-            <SolidColorBrush x:Key="CustomListBoxItemBackground">Transparent</SolidColorBrush>
-            <SolidColorBrush x:Key="CustomListBoxItemBackgroundSelected">rgba(180, 180, 180, 0.2)</SolidColorBrush>
-        </ResourceDictionary>
-        <ResourceDictionary x:Key="Dark">
-            <SolidColorBrush x:Key="CustomListBoxItemBackground">Transparent</SolidColorBrush>
-            <SolidColorBrush x:Key="CustomListBoxItemBackgroundSelected">rgba(200, 200, 200, 0.2)</SolidColorBrush>
-        </ResourceDictionary>
-    </ResourceDictionary.ThemeDictionaries>
-
     <!-- Derived of ListBoxStyles.axaml from https://github.com/amwx/FluentAvalonia -->
     <!-- https://github.com/amwx/FluentAvalonia/tree/master/src/FluentAvalonia/Styling/ControlThemes/BasicControls/ListBoxStyles.axaml -->
     <ControlTheme x:Key="CustomListBoxItem" TargetType="ListBoxItem">
         <Setter Property="FontFamily" Value="{DynamicResource ContentControlThemeFontFamily}" />
         <Setter Property="FontSize" Value="{DynamicResource ControlContentThemeFontSize}" />
-        <Setter Property="Background" Value="{DynamicResource CustomListBoxItemBackground}" />
         <Setter Property="Foreground" Value="{DynamicResource ListViewItemForeground}" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
@@ -66,18 +41,12 @@
         <!-- </Style> -->
 
         <Style Selector="^:pressed">
-            <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
-                <Setter Property="Background" Value="{DynamicResource CustomListBoxItemBackgroundSelected}" />
-            </Style>
             <Style Selector="^ /template/ ContentPresenter">
                 <Setter Property="Foreground" Value="{DynamicResource ListViewItemForegroundPressed}" />
             </Style>
         </Style>
 
         <Style Selector="^:selected">
-            <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
-                <Setter Property="Background" Value="{DynamicResource CustomListBoxItemBackgroundSelected}" />
-            </Style>
             <Style Selector="^ /template/ ContentPresenter">
                 <Setter Property="Foreground" Value="{DynamicResource ListViewItemForegroundSelected}" />
             </Style>
@@ -86,17 +55,11 @@
                 <Setter Property="RenderTransform" Value="scaleY(1)" />
             </Style>
             <Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
-                <Setter Property="Background" Value="{DynamicResource CustomListBoxItemBackgroundSelected}" />
-            </Style>
-            <Style Selector="^:not(:focus) /template/ ContentPresenter#PART_ContentPresenter">
                 <Setter Property="Foreground" Value="{DynamicResource ListViewItemForegroundSelected}" />
             </Style>
 
 
             <Style Selector="^:pointerover">
-                <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
-                    <Setter Property="Background" Value="{DynamicResource CustomListBoxItemBackgroundSelected}" />
-                </Style>
                 <Style Selector="^ /template/ ContentPresenter">
                     <Setter Property="Foreground" Value="{DynamicResource ListViewItemForegroundSelectedPointerOver}" />
                 </Style>
@@ -106,9 +69,6 @@
             </Style>
 
             <Style Selector="^:pressed">
-                <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
-                    <Setter Property="Background" Value="{DynamicResource CustomListBoxItemBackgroundSelected}" />
-                </Style>
                 <Style Selector="^ /template/ ContentPresenter#PART_ContentPresenter">
                     <Setter Property="Foreground" Value="{DynamicResource ListViewItemForegroundSelectedPressed}" />
                 </Style>

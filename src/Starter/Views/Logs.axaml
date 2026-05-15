@@ -77,7 +77,9 @@
                 BorderThickness="{DynamicResource ExpanderHeaderBorderThickness}"
                 CornerRadius="8">
             <ScrollViewer VerticalScrollBarVisibility="Auto" Classes.wrapText="{Binding WrapText}">
-                <controls:CustomSelectableTextBlock InlinesSource="{Binding Lines}" SelectionBrush="{DynamicResource TextControlSelectionHighlightColor}" />
+                <controls:CustomSelectableTextBlock InlinesSource="{Binding Lines}"
+                                                    SelectionBrush="{DynamicResource TextControlSelectionHighlightColor}"
+                                                    FontFamily="{StaticResource JetBrainsMono}" />
             </ScrollViewer>
         </Border>
     </DockPanel>
