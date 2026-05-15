@@ -18,11 +18,17 @@ public partial class MainWindowViewModel : ObservableObject
     public event EventHandler? HideWindow;
     public event EventHandler<int>? ClearTextBox;
 
+    public GreetingVm GreetingVm { get; } = new();
+
     public BehaviorSubject<Configuration> Config { get; private set; }
     public IObservable<Configuration> ConfigSystemObservable { get; private set; }
-    [ObservableProperty] private string text = string.Empty;
-    [ObservableProperty] private ISearchEngineActivator? activator;
     public ObservableList<SearchResultData> SearchResults => searchResultStore.Results;
+
+    [ObservableProperty]
+    public partial string Text { get; set; } = string.Empty;
+    [ObservableProperty]
+    public partial ISearchEngineActivator? Activator { get; set; }
+
 
     public MainWindowViewModel(
         BehaviorSubject<Configuration> config,
@@ -74,7 +80,6 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void SelectResult(SearchResultData searchResult)
     {
-        Log.Debug("Selected {Result}", searchResult.SearchResult.Name);
         HideWindow?.Invoke(this, EventArgs.Empty);
 
         if (!searchEngineStore.SearchEngines.TryGetValue(searchResult.SearchEngineId, out var searchEngine))

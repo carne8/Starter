@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
@@ -12,6 +13,16 @@ using Starter.Controls;
 using Starter.ViewModels;
 
 namespace Starter.Views;
+
+public class FirstNonNullConverter : IMultiValueConverter
+{
+    public object? Convert(
+        IList<object?> values,
+        Type targetType,
+        object? parameter,
+        System.Globalization.CultureInfo culture
+    ) => values.OfType<object>().FirstOrDefault();
+}
 
 public partial class MainWindow : TranslucentWindow
 {
@@ -28,6 +39,14 @@ public partial class MainWindow : TranslucentWindow
 #if !DEBUG
         Deactivated += (_, _) => Hide();
 #endif
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property != IsVisibleProperty) return;
+        if (!change.GetNewValue<bool>()) return;
+        vm.GreetingVm.RefreshGreetingCommand.Execute(null);
     }
 
     protected override void OnLoaded(RoutedEventArgs e)

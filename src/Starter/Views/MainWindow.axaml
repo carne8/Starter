@@ -4,6 +4,7 @@
                             xmlns:vm="using:Starter.ViewModels"
                             xmlns:controls="using:Starter.Controls"
                             xmlns:starter="using:Starter.SearchEngine"
+                            xmlns:local="using:Starter.Views"
                             Title="Starter"
                             Width="560"
                             MinHeight="52"
@@ -38,6 +39,8 @@
             </GeometryDrawing>
         </DrawingGroup>
         <DrawingImage x:Key="SearchIcon" Drawing="{StaticResource SearchIconDg}" />
+
+        <local:FirstNonNullConverter x:Key="FirstNonNull" />
     </Window.Resources>
 
     <Window.Styles>
@@ -208,8 +211,14 @@
                                FontSize="13"
                                FontFamily="{StaticResource GeistMono}"
                                FontWeight="SemiLight"
-                               Foreground="{DynamicResource Text3}"
-                               Text="{Binding Activator?.Name, TargetNullValue='starter'}" />
+                               Foreground="{DynamicResource Text3}">
+                        <TextBlock.Text>
+                            <MultiBinding Converter="{StaticResource FirstNonNull}">
+                                <Binding Path="Activator?.Name" />
+                                <Binding Path="GreetingVm.Greeting" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
                 </DockPanel>
             </Border>
         </StackPanel>
