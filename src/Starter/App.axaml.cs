@@ -16,7 +16,7 @@ namespace Starter;
 
 public class App : Application
 {
-    private Window? window;
+    private MainWindow? window;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
@@ -28,6 +28,7 @@ public class App : Application
             throw new Exception("Unexpected ApplicationLifetime is not initialized.");
         }
 
+        lifetime.ShutdownMode = ShutdownMode.OnExplicitShutdown;
         lifetime.ShutdownRequested += (_, _) =>
         {
             Log.Information("---*--- Exiting ---*---");
@@ -162,5 +163,17 @@ public class App : Application
 
         Log.Debug("Plugins loaded");
         return (searchEngineStore, settingsSearchEngine.Config);
+    }
+
+    private void TrayIcon_OnClicked(object? sender, EventArgs e)
+    {
+        window?.Show();
+        window?.Activate();
+    }
+
+    private void NativeMenuItem_OnClickQuit(object? sender, EventArgs e)
+    {
+        if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
+        desktop.TryShutdown();
     }
 }
