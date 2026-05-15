@@ -1,4 +1,4 @@
-﻿using R3;
+using R3;
 using Serilog;
 using Starter.Features;
 using Starter.Features.Config;
@@ -65,7 +65,11 @@ public partial class MainWindowViewModel : ObservableObject
         else searchResultStore.Query(value, Activator);
     }
 
-    partial void OnActivatorChanged(ISearchEngineActivator? value) => searchResultStore.Query(Text, value);
+    partial void OnActivatorChanged(ISearchEngineActivator? value)
+    {
+        if (value is not null) return;
+        searchResultStore.Query(Text, value);
+    }
 
     [RelayCommand]
     private void SelectResult(SearchResultData searchResult)
