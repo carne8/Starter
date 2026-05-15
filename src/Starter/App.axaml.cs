@@ -16,6 +16,7 @@ namespace Starter;
 
 public class App : Application
 {
+    public bool IsTestMode = false;
     private MainWindow? window;
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
@@ -25,6 +26,8 @@ public class App : Application
         if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime lifetime)
         {
             Log.Fatal("Unexpected ApplicationLifetime is not initialized.");
+            base.OnFrameworkInitializationCompleted();
+            if (IsTestMode) return;
             throw new Exception("Unexpected ApplicationLifetime is not initialized.");
         }
 
@@ -45,7 +48,7 @@ public class App : Application
         catch (Exception e)
         {
             Log.Fatal(e, "Fatal error during initialization.");
-            lifetime.Shutdown();
+            lifetime.TryShutdown();
         }
 
         base.OnFrameworkInitializationCompleted();
@@ -80,7 +83,7 @@ public class App : Application
                 if (task.IsFaulted)
                 {
                     Log.Error(task.Exception, "Failed to setup keyboard shortcut");
-                    lifetime.Shutdown();
+                    lifetime.TryShutdown();
                     return;
                 }
                 Log.Debug("Launched");
