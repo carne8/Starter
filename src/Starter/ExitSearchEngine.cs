@@ -1,4 +1,5 @@
-﻿using Avalonia.Threading;
+﻿using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Threading;
 using Starter.SearchEngine;
 
 namespace Starter;
@@ -14,7 +15,7 @@ internal class ExitSearchResult : ISearchResult
     public ISearchEngineActivator[] ActivatorFilter => [];
 }
 
-internal class ExitSearchEngine : IStaticSearchEngine
+internal class ExitSearchEngine(IClassicDesktopStyleApplicationLifetime lifetime) : IStaticSearchEngine
 {
     public string Id => nameof(ExitSearchEngine);
     public string Name => "Exit";
@@ -35,6 +36,6 @@ internal class ExitSearchEngine : IStaticSearchEngine
 
     private static readonly IEnumerable<ISearchResult> SearchResults = [new ExitSearchResult()];
 
-    public void SearchResultSelected(ISearchResult selectedSearchResult) => Dispatcher.UIThread.InvokeShutdown();
+    public void SearchResultSelected(ISearchResult selectedSearchResult) => lifetime.TryShutdown();
     public ValueTask<IEnumerable<ISearchResult>> LoadResults() => ValueTask.FromResult(SearchResults);
 }

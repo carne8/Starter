@@ -57,7 +57,7 @@ public class App : Application
         Configuration.ensureDirectoriesExists();
 
         var initialConfig = LoadConfiguration();
-        var (searchEngineStore, config) = LoadSearchEngines(initialConfig, window);
+        var (searchEngineStore, config) = LoadSearchEngines(initialConfig, window, lifetime);
 
         var resultScoreDb = ScoreDbModule.readFromFile(Const.ResultScoresFile);
         var activatorStore = new ActivatorStore(config);
@@ -113,7 +113,11 @@ public class App : Application
         }
     }
 
-    private(SearchEngineStore, BehaviorSubject<Configuration>) LoadSearchEngines(Configuration config, TopLevel topLevel)
+    private(SearchEngineStore, BehaviorSubject<Configuration>) LoadSearchEngines(
+        Configuration config,
+        TopLevel topLevel,
+        IClassicDesktopStyleApplicationLifetime lifetime
+    )
     {
         var launcher = topLevel.Launcher;
         var clipboard = topLevel.Clipboard;
@@ -151,7 +155,7 @@ public class App : Application
         searchEngineStore.AddSearchEngine(settingsSearchEngine);
 
         // Exit
-        searchEngineStore.AddSearchEngine(new ExitSearchEngine());
+        searchEngineStore.AddSearchEngine(new ExitSearchEngine(lifetime));
 
         DataTemplates.AddRange(searchEngineStore.DataTemplates);
         searchEngineStore.DataTemplates.Clear();

@@ -35,6 +35,13 @@ public partial class MainWindow : TranslucentWindow
         platformInterop.SetupHotkeyCallback(this);
         TextBox.AddHandler(KeyDownEvent, TextBox_OnKeyDown, RoutingStrategies.Tunnel);
 
+        Closing += (_, args) =>
+        {
+            if (args.IsProgrammatic) return;
+            args.Cancel = true;
+            Hide();
+        };
+
         Activated += (_, _) => OnActivated();
 #if !DEBUG
         Deactivated += (_, _) => Hide();
