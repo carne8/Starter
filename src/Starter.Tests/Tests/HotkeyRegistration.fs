@@ -1,0 +1,73 @@
+﻿module Starter.Tests.HotkeyRegistration
+
+open R3
+open System.Threading.Tasks
+open Avalonia.Threading
+open Avalonia.Headless.XUnit
+
+open Starter
+open Starter.Features
+open Starter.Features.Config
+open Starter.Features.PlatformInterop
+open Starter.Tests.Common
+
+[<AvaloniaFact>]
+let ensureHotkeyRegistration () =
+    let mutable hotkeyRegistered = false
+    let mutable callbackRegistered = None
+
+    let platform =
+        { new IPlatformInterop with
+            member this.IsLaunchAtStartupEnabled() = false
+            member this.RegisterHotkey shortcut window =
+                hotkeyRegistered <- true
+                ValueTask.FromResult true
+            member this.SetupHotkeyCallback(window) = callbackRegistered <- Some window
+            member this.ToggleLaunchAtStartup(var0) = ()
+            member this.HotkeyRegistrable = true }
+
+    use config = new BehaviorSubject<_>(Configuration.Default)
+    use activatorStore = new ActivatorStore(config)
+    let vm = ViewModels.MainWindowViewModel(
+        config,
+        dict [],
+        SearchEngineStore(),
+        activatorStore
+    )
+    let window = Views.MainWindow(platform, DataContext = vm)
+
+    Dispatcher.UIThread.RunJobs();
+
+    Assert.True(hotkeyRegistered, "Hotkey should be registered")
+    Assert.True(callbackRegistered.IsSome, "Hotkey callback should be registered")
+    Assert.True(callbackRegistered.Value = window, "Window of the callback should be the calling window")
+
+[<AvaloniaFact>]
+let ensureHotkeyNotRegisteredWhenNotRegistrable () =
+    let mutable hotkeyRegistered = false
+    let mutable callbackRegistered = None
+
+    let platform =
+        { new IPlatformInterop with
+            member this.IsLaunchAtStartupEnabled() = false
+            member this.RegisterHotkey shortcut window =
+                hotkeyRegistered <- true
+                ValueTask.FromResult true
+            member this.SetupHotkeyCallback(window) = callbackRegistered <- Some window
+            member this.ToggleLaunchAtStartup(var0) = ()
+            member this.HotkeyRegistrable = false }
+
+    use config = new BehaviorSubject<_>(Configuration.Default)
+    use activatorStore = new ActivatorStore(config)
+    let vm = ViewModels.MainWindowViewModel(
+        config,
+        dict [],
+        Mock.searchEngineStore [],
+        activatorStore
+    )
+    Views.MainWindow(platform, DataContext = vm) |> ignore
+
+    Dispatcher.UIThread.RunJobs();
+
+    Assert.False(hotkeyRegistered, "Hotkey should not be registered")
+    Assert.True(callbackRegistered.IsSome, "Hotkey callback should be registered")
