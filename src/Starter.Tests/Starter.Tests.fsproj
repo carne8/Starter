@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>Exe</OutputType>
     <RootNamespace>Starter.Tests</RootNamespace>
@@ -14,7 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Using Include="Xunit" />
+    <Compile Include="TestAppBuilder.fs" />
+    <Compile Include="Tests.fs" />
   </ItemGroup>
 
   <ItemGroup>

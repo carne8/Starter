@@ -15,5 +15,5 @@
   </Folder>
   <Project Path="src/Starter.Model/Starter.Model.fsproj" />
   <Project Path="src/Starter/Starter.csproj" />
-  <Project Path="src/Starter.Tests/Starter.Tests.csproj" />
+  <Project Path="src/Starter.Tests/Starter.Tests.fsproj" />
 </Solution>
