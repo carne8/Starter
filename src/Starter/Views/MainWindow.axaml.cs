@@ -79,14 +79,14 @@ public partial class MainWindow : TranslucentWindow
             .Select(config => config.ZoomedMode)
             .DistinctUntilChanged()
             .Subscribe(SetResourceDictionary);
+        SetResourceDictionary(vm.Config.Value.ZoomedMode);
 
         // Refresh keyboard shortcut when needed
+        if (!platformInterop.HotkeyRegistrable) return;
         vm.Config
             .Select(config => config.KeyboardShortcut)
             .DistinctUntilChanged()
             .Subscribe(shortcut => platformInterop.RegisterHotkey(shortcut, this));
-
-        SetResourceDictionary(vm.Config.Value.ZoomedMode);
         platformInterop.RegisterHotkey(vm.Config.Value.KeyboardShortcut, this);
     }
 

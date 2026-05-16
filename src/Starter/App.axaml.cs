@@ -99,7 +99,7 @@ public class App : Application
         });
 
         // Settings
-        serviceCollection.AddSingleton<SettingsSearchEngine>(provider =>
+        serviceCollection.AddSingleton<BehaviorSubject<Configuration>>(provider =>
         {
             var engineStore = provider.GetRequiredService<SearchEngineStore>();
             var settingsWindowViewModel = provider.GetRequiredService<SettingsWindowViewModel>();
@@ -110,14 +110,12 @@ public class App : Application
             );
 
             engineStore.AddSearchEngine(settings);
+
+            settings.Config.Subscribe(UpdateConfiguration);
+
             DataTemplates.AddRange(engineStore.DataTemplates);
             engineStore.DataTemplates.Clear();
-            return settings;
-        });
-        serviceCollection.AddSingleton<BehaviorSubject<Configuration>>(provider =>
-        {
-            var settings = provider.GetRequiredService<SettingsSearchEngine>();
-            settings.Config.Subscribe(UpdateConfiguration);
+
             return settings.Config;
         });
 

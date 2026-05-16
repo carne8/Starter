@@ -10,5 +10,4 @@ type TestAppBuilder() =
             .UseHeadless(AvaloniaHeadlessPlatformOptions())
 
 [<assembly: AvaloniaTestApplication(typeof<TestAppBuilder>)>]
-[<assembly: AvaloniaTestIsolation(AvaloniaTestIsolationLevel.PerAssembly)>]
 do ()
