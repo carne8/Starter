@@ -3,6 +3,7 @@
 open Avalonia.Controls
 open Avalonia.Headless
 open Avalonia.Headless.XUnit
+open Avalonia.Input
 open Avalonia.Threading
 open Starter.Features
 open Starter.Features.Config
@@ -28,7 +29,7 @@ let testDisplayedResults (shouldBeDisplayed: _ array) (shouldNotBeDisplayed: _ a
         Assert.Equal(
             shouldBeDisplayed.Length,
             displayedResults.Length,
-            "Only results with ShowIfNoActivator set to true should be displayed"
+            "A unexpected count of results is shown"
         )
 
         shouldBeDisplayed |> Array.iter (fun r ->
@@ -52,9 +53,9 @@ let ensureSearchResultsAppear () =
            Array.init 5 (fun i -> Mock.searchResult $"Dynamic buffered Result: {i}") |]
 
     let engines = [
-        Mock.staticSearchEngine "static" (fun () -> results[0]) :> ISearchEngine
-        Mock.dynamicSearchEngine "dynamic" false (fun _ _ _ -> results[1])
-        Mock.dynamicSearchEngine "buffered" true (fun _ _ _ -> results[2])
+        Mock.staticSearchEngine "static" [] (fun () -> results[0]) :> ISearchEngine
+        Mock.dynamicSearchEngine "dynamic" [] false (fun _ _ _ -> results[1])
+        Mock.dynamicSearchEngine "buffered" [] true (fun _ _ _ -> results[2])
     ]
 
     testDisplayedResults (Array.concat results) [||] engines Configuration.Default "result"
@@ -177,3 +178,66 @@ let testActivatorFiltering_ActivatorEnabled_EmptyQueryShowAllResults () =
         [ searchEngine ]
         config
         "prefix-"
+
+[<AvaloniaFact>]
+let ensureSearchResultsAreCleared () =
+    let results =
+        [| Array.init 5 (fun i -> Mock.searchResult $"Result: {i}")
+           Array.init 5 (fun i -> Mock.searchResult $"Dynamic Result: {i}")
+           Array.init 5 (fun i -> Mock.searchResult $"Dynamic buffered Result: {i}") |]
+
+    let engines = [
+        Mock.staticSearchEngine "static" [] (fun () -> results[0]) :> ISearchEngine
+        Mock.dynamicSearchEngine "dynamic" [] false (fun _ _ _ -> results[1])
+        Mock.dynamicSearchEngine "buffered" [] true (fun _ _ _ -> results[2])
+    ]
+
+    Mock.withWindowConfig Configuration.Default engines (fun window ->
+        // Type text
+        Dispatcher.UIThread.RunJobs() // Let window acknowledge about vm
+        window.Show()
+        Dispatcher.UIThread.RunJobs() // Let textbox grab focus
+        window.KeyTextInput "result"
+        window.KeyPress(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
+        window.KeyRelease(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
+
+        let displayedResults = window |> Helpers.getControl<ListBox> "ResultList"
+        Assert.Equal(0, displayedResults.ItemCount, "No results should displayed")
+    )
+
+
+[<AvaloniaFact>]
+let ensureSearchResultsAreCleared_WithActivator () =
+    let activator = Mock.activator "activator-id" "static"
+    let results =
+        [| Array.init 5 (fun i -> Mock.searchResult $"Result: {i}")
+           Array.init 5 (fun i -> Mock.searchResult $"Dynamic Result: {i}")
+           Array.init 5 (fun i -> Mock.searchResult $"Dynamic buffered Result: {i}") |]
+
+    let engines = [
+        Mock.staticSearchEngine "static" [ activator ] (fun () -> results[0]) :> ISearchEngine
+        Mock.dynamicSearchEngine "dynamic" [] false (fun _ _ _ -> results[1])
+        Mock.dynamicSearchEngine "buffered" [] true (fun _ _ _ -> results[2])
+    ]
+
+    let config =
+        { Configuration.Default with
+            ActivatorPrefixes = Map.ofList [ activator.Id, "prefix-" ] }
+
+    Mock.withWindowConfig config engines (fun window ->
+        // Type text
+        Dispatcher.UIThread.RunJobs() // Let window acknowledge about vm
+        window.Show()
+        Dispatcher.UIThread.RunJobs() // Let textbox grab focus
+        window.KeyTextInput "prefix-result"
+        window.KeyPress(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
+        window.KeyRelease(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
+        window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
+        window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
+
+        let tb = window |> Helpers.getControl<TextBox> "TextBox"
+        tb.Clear() // Needed for the Text property of the TextBox to change
+
+        let displayedResults = window |> Helpers.getControl<ListBox> "ResultList"
+        Assert.Equal(0, displayedResults.ItemCount, "No results should displayed")
+    )

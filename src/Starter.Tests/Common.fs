@@ -75,7 +75,7 @@ module Mock =
             member this.ShortName = $"Activator short name: {name}"
             member this.Icon = StarterIconSource.Empty }
 
-    let staticSearchEngine id onLoadResults =
+    let staticSearchEngine id activators onLoadResults =
         { new IStaticSearchEngine with
             member this.LoadResults() = onLoadResults () |> ValueTask.FromResult
             member this.SearchResultSelected result = ()
@@ -83,13 +83,13 @@ module Mock =
             member this.Name = $"Engine name: {id}"
             member this.ShortName = $"Engine short name: {id}"
             member this.Icon = StarterIconSource.Empty
-            member this.Activators = Array.empty
+            member this.Activators = activators |> Seq.toArray
             member this.add_Changed _ = ()
             member this.remove_Changed _ = ()
             member this.add_ResultsChanged _ = ()
             member this.remove_ResultsChanged _ = () }
 
-    let dynamicSearchEngine id buffer onQueryResults =
+    let dynamicSearchEngine id activators buffer onQueryResults =
         { new IDynamicSearchEngine with
             member this.SearchResultSelected result = ()
             member this.Search(query, ct, activator) = onQueryResults query ct activator, Observable.Empty()
@@ -97,7 +97,7 @@ module Mock =
             member this.Name = $"Engine name: {id}"
             member this.ShortName = $"Engine short name: {id}"
             member this.Icon = StarterIconSource.Empty
-            member this.Activators = Array.empty
+            member this.Activators = activators |> Seq.toArray
             member this.ResultsPriority = ResultPriority.Search
             member this.BufferResults = buffer
             member this.add_Changed _ = ()
@@ -126,5 +126,3 @@ module Mock =
         let window = Views.MainWindow(platform (), DataContext = vm)
 
         test window
-
-    let withWindow searchEngines test = withWindowConfig Configuration.Default searchEngines test

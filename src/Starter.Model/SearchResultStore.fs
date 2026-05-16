@@ -195,6 +195,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
         let ct = queryCancellationTokenSource.Token
 
         match activator with
+        | null when text = String.Empty -> this.ClearResults()
         | null -> queryAllSearchEngines ct text
         | activator ->
             match searchEngines.TryGetValue activator.SearchEngineId with
