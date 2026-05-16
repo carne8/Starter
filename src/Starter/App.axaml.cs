@@ -1,8 +1,11 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input.Platform;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using R3;
 using Serilog;
 using Starter.Features;
@@ -25,9 +28,9 @@ public class App : Application
     {
         if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime lifetime)
         {
-            Log.Fatal("Unexpected ApplicationLifetime is not initialized.");
             base.OnFrameworkInitializationCompleted();
             if (IsTestMode) return;
+            Log.Fatal("Unexpected ApplicationLifetime is not initialized.");
             throw new Exception("Unexpected ApplicationLifetime is not initialized.");
         }
 
@@ -56,27 +59,116 @@ public class App : Application
 
     private void Launch(IClassicDesktopStyleApplicationLifetime lifetime)
     {
-        window = new MainWindow();
-        if (window.Clipboard is null) throw new Exception("No clipboard");
-        Configuration.ensureDirectoriesExists();
+        var serviceCollection = new ServiceCollection();
+        if (OperatingSystem.IsWindows())
+            serviceCollection.AddSingleton<IPlatformInterop, WindowsPlatformInterop>();
+        else if (OperatingSystem.IsLinux())
+            serviceCollection.AddSingleton<IPlatformInterop, LinuxPlatformInterop>();
+        else
+            throw new PlatformNotSupportedException();
 
-        var initialConfig = LoadConfiguration();
-        var (searchEngineStore, config) = LoadSearchEngines(initialConfig, window, lifetime);
+        serviceCollection.AddKeyedSingleton("initial-config", LoadConfiguration());
 
-        var resultScoreDb = ScoreDbModule.readFromFile(Const.ResultScoresFile);
-        var activatorStore = new ActivatorStore(config);
-        foreach (var kv in searchEngineStore.SearchEngines) activatorStore.AddSearchEngineActivators(kv.Value);
+        // Main window
+        serviceCollection.AddSingleton<MainWindow>(provider =>
+        {
+            var platformInterop = provider.GetRequiredService<IPlatformInterop>();
+            return new MainWindow(platformInterop);
+        });
 
-        // Create the window
-        window.DataContext = new MainWindowViewModel(config, resultScoreDb, searchEngineStore, activatorStore);
+        serviceCollection.AddSingleton<IClassicDesktopStyleApplicationLifetime>(lifetime);
+        serviceCollection.AddSingleton<ILauncher>(provider => provider.GetRequiredService<MainWindow>().Launcher);
+        serviceCollection.AddSingleton<IClipboard>(provider =>
+        {
+            var window = provider.GetRequiredService<MainWindow>();
+            if (window.Clipboard is null) throw new Exception("No clipboard");
+            return window.Clipboard;
+        });
+
+        // Engine store
+        serviceCollection.AddSingleton<SearchEngineStore>(provider =>
+        {
+            var clipboard = provider.GetRequiredService<IClipboard>();
+            var engineStore = new SearchEngineStore();
+
+            LoadSearchEngines(engineStore, clipboard);
+            DataTemplates.AddRange(engineStore.DataTemplates);
+            engineStore.DataTemplates.Clear();
+
+            return engineStore;
+        });
+
+        // Settings
+        serviceCollection.AddSingleton<SettingsSearchEngine>(provider =>
+        {
+            var engineStore = provider.GetRequiredService<SearchEngineStore>();
+            var settingsWindowViewModel = provider.GetRequiredService<SettingsWindowViewModel>();
+
+            var settings = new SettingsSearchEngine(
+                Log.Logger.ForContext("Context", "Starter/Settings"),
+                settingsWindowViewModel
+            );
+
+            engineStore.AddSearchEngine(settings);
+            DataTemplates.AddRange(engineStore.DataTemplates);
+            engineStore.DataTemplates.Clear();
+            return settings;
+        });
+        serviceCollection.AddSingleton<BehaviorSubject<Configuration>>(provider =>
+        {
+            var settings = provider.GetRequiredService<SettingsSearchEngine>();
+            settings.Config.Subscribe(UpdateConfiguration);
+            return settings.Config;
+        });
+
+        // Exit
+        serviceCollection.AddSingleton<ExitSearchEngine>(provider =>
+        {
+            var appLifetime = provider.GetRequiredService<IClassicDesktopStyleApplicationLifetime>();
+            var engineStore = provider.GetRequiredService<SearchEngineStore>();
+            var exit = new ExitSearchEngine(appLifetime);
+
+            engineStore.AddSearchEngine(exit);
+            DataTemplates.AddRange(engineStore.DataTemplates);
+            engineStore.DataTemplates.Clear();
+
+            return exit;
+        });
+
+        // Load other things
+        serviceCollection.AddSingleton<IDictionary<string, ScoreDbEntry>>(
+            ScoreDbModule.readFromFile(Const.ResultScoresFile)
+        );
+        serviceCollection.AddSingleton<ActivatorStore>(provider =>
+        {
+            var config = provider.GetRequiredService<BehaviorSubject<Configuration>>();
+            var engineStore = provider.GetRequiredService<SearchEngineStore>();
+
+            var activatorStore = new ActivatorStore(config);
+            foreach (var kv in engineStore.SearchEngines)
+                activatorStore.AddSearchEngineActivators(kv.Value);
+
+            return activatorStore;
+        });
+
+        // View models
+        serviceCollection.AddTransient<KeyboardShortcutInputViewModel>();
+        serviceCollection.AddTransient<SettingsViewModel>();
+        serviceCollection.AddTransient<SettingsWindowViewModel>();
+        serviceCollection.AddTransient<MainWindowViewModel>();
+
+        // Start things
+        var serviceProvider = serviceCollection.BuildServiceProvider();
+        window = serviceProvider.GetRequiredService<MainWindow>();
+        window.DataContext = serviceProvider.GetRequiredService<MainWindowViewModel>();
 
         // Register hotkey
-        var keyboardShortcut = initialConfig.KeyboardShortcut;
-        var platformInterop = PlatformInterop.GetPlatformInterop();
+        var initialConfig = serviceProvider.GetRequiredKeyedService<Configuration>("initial-config");
+        var platformInterop = serviceProvider.GetRequiredService<IPlatformInterop>();
         if (!platformInterop.HotkeyRegistrable) return;
 
         platformInterop
-            .RegisterHotkey(keyboardShortcut, window)
+            .RegisterHotkey(initialConfig.KeyboardShortcut, window)
             .AsTask()
             .ContinueWith(task =>
             {
@@ -92,6 +184,7 @@ public class App : Application
 
     private static Configuration LoadConfiguration()
     {
+        Configuration.ensureDirectoriesExists();
         var configRes = Configuration.loadFromFile(Const.ConfigFile);
         if (configRes.IsError)
         {
@@ -103,31 +196,8 @@ public class App : Application
         return configRes.ResultValue;
     }
 
-    private static async void UpdateConfiguration(Configuration config)
+    private SearchEngineStore LoadSearchEngines(SearchEngineStore searchEngineStore, IClipboard clipboard)
     {
-        try
-        {
-            var res = await Configuration.save(Const.ConfigFile, config);
-            if (!res.IsError) return;
-            Log.Error("Failed to save configuration: {ConfigError}", res.ErrorValue);
-        }
-        catch (Exception e)
-        {
-            Log.Error(e, "Failed to save configuration");
-        }
-    }
-
-    private(SearchEngineStore, BehaviorSubject<Configuration>) LoadSearchEngines(
-        Configuration config,
-        TopLevel topLevel,
-        IClassicDesktopStyleApplicationLifetime lifetime
-    )
-    {
-        var launcher = topLevel.Launcher;
-        var clipboard = topLevel.Clipboard;
-        if (clipboard is null) throw new Exception("No clipboard");
-
-        var searchEngineStore = new SearchEngineStore();
 #if DEBUG
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.UrlSearchEngine/Starter.UrlSearchEngine/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.WebSearchEngine/bin/Debug/net10.0/", clipboard);
@@ -147,25 +217,22 @@ public class App : Application
             searchEngineStore.LoadSearchEnginesFromDirectory(pluginDir, clipboard);
 #endif
 
-        // Add internal search engines
-        // Settings
-        var settingsSearchEngine = new SettingsSearchEngine(
-            Log.Logger.ForContext("Context", "Starter/Settings"),
-            launcher,
-            config,
-            searchEngineStore
-        );
-        settingsSearchEngine.Config.Subscribe(UpdateConfiguration);
-        searchEngineStore.AddSearchEngine(settingsSearchEngine);
-
-        // Exit
-        searchEngineStore.AddSearchEngine(new ExitSearchEngine(lifetime));
-
-        DataTemplates.AddRange(searchEngineStore.DataTemplates);
-        searchEngineStore.DataTemplates.Clear();
-
         Log.Debug("Plugins loaded");
-        return (searchEngineStore, settingsSearchEngine.Config);
+        return searchEngineStore;
+    }
+
+    private static async void UpdateConfiguration(Configuration config)
+    {
+        try
+        {
+            var res = await Configuration.save(Const.ConfigFile, config);
+            if (!res.IsError) return;
+            Log.Error("Failed to save configuration: {ConfigError}", res.ErrorValue);
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Failed to save configuration");
+        }
     }
 
     private void TrayIcon_OnClicked(object? sender, EventArgs e)

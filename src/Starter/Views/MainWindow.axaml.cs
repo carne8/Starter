@@ -27,10 +27,12 @@ public class FirstNonNullConverter : IMultiValueConverter
 public partial class MainWindow : TranslucentWindow
 {
     private MainWindowViewModel vm = null!;
-    private readonly IPlatformInterop platformInterop = PlatformInterop.GetPlatformInterop();
+    private readonly IPlatformInterop platformInterop;
 
-    public MainWindow()
+    public MainWindow(IPlatformInterop platformInterop)
     {
+        this.platformInterop = platformInterop;
+
         InitializeComponent();
         platformInterop.SetupHotkeyCallback(this);
         TextBox.AddHandler(KeyDownEvent, TextBox_OnKeyDown, RoutingStrategies.Tunnel);

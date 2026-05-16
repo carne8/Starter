@@ -27,7 +27,7 @@ file class SettingsSearchResult(string name, string description, TargetPage targ
     public ISearchEngineActivator[] ActivatorFilter => [];
 }
 
-internal class SettingsSearchEngine(ILogger logger, ILauncher launcher, Configuration config, SearchEngineStore searchEngineStore) : IStaticSearchEngine
+internal class SettingsSearchEngine(ILogger logger, SettingsWindowViewModel windowVm) : IStaticSearchEngine
 {
     public string Id => nameof(SettingsSearchEngine);
     public string Name => "Settings";
@@ -52,8 +52,6 @@ internal class SettingsSearchEngine(ILogger logger, ILauncher launcher, Configur
         new SettingsSearchResult("Settings", "Open settings", TargetPage.Settings, Icons.Settings),
         new SettingsSearchResult("Options", "Open settings", TargetPage.Settings, Icons.Settings)
     ];
-
-    private readonly SettingsWindowViewModel windowVm = new(launcher, config, searchEngineStore);
     private Views.SettingsWindow? window;
 
     public BehaviorSubject<Configuration> Config => windowVm.Config;

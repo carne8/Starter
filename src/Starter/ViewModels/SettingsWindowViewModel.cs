@@ -32,9 +32,9 @@ public partial class SettingsWindowViewModel : ObservableObject
     public BehaviorSubject<Configuration> Config => settingsVm.Config;
     public IObservable<Configuration> ConfigSystemObservable { get; private set; }
 
-    public SettingsWindowViewModel(ILauncher launcher, Configuration config, SearchEngineStore searchEngineStore)
+    public SettingsWindowViewModel(SearchEngineStore searchEngineStore, SettingsViewModel settingsVm)
     {
-        settingsVm = new SettingsViewModel(launcher, config, searchEngineStore);
+        this.settingsVm = settingsVm;
         ConfigSystemObservable = Config.AsSystemObservable();
 
         // Add Starter settings

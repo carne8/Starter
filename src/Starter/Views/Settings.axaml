@@ -39,7 +39,7 @@
             </ui:FASettingsExpander>
 
             <!-- Keyboard shortcut -->
-            <controls:KeyboardShortcutInput DataContext="{Binding KeyboardShortcutViewModel}" ControlToFocus="{Binding #BackgroundComboBox}" />
+            <controls:KeyboardShortcutInput DataContext="{Binding KeyboardShortcutVm}" ControlToFocus="{Binding #BackgroundComboBox}" />
 
             <TextBlock Classes="title2">Personalization</TextBlock>
 

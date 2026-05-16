@@ -1,4 +1,5 @@
 ﻿using Avalonia.Platform.Storage;
+using Microsoft.Extensions.DependencyInjection;
 using R3;
 using Starter.Features.Config;
 using Starter.Features.PlatformInterop;
@@ -12,7 +13,7 @@ public record AntialiasingKind(string Name, Antialiasing Value);
 public partial class SettingsViewModel : ObservableObject
 {
     private readonly ILauncher launcher;
-    private static readonly IPlatformInterop Platform = PlatformInterop.GetPlatformInterop();
+    private readonly IPlatformInterop platform;
     public readonly BehaviorSubject<Configuration> Config;
 
     // Background launch at startup
@@ -42,13 +43,20 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] public partial AntialiasingKind SelectedAntialiasing { get; set; }
 
     // Keyboard shortcut
-    public KeyboardShortcutInputViewModel KeyboardShortcutViewModel { get; }
+    public KeyboardShortcutInputViewModel KeyboardShortcutVm { get; }
 
     // Activator prefixes
     public ActivatorInputFieldViewModel[] ActivatorViewModels { get; }
 
-    public SettingsViewModel(ILauncher launcher, Configuration baseConfig, SearchEngineStore engines)
+    public SettingsViewModel(
+        ILauncher launcher,
+        [FromKeyedServices("initial-config")] Configuration baseConfig,
+        SearchEngineStore engines,
+        IPlatformInterop platform,
+        KeyboardShortcutInputViewModel keyboardShortcutVm
+    )
     {
+        this.platform = platform;
         this.launcher = launcher;
         Config = new BehaviorSubject<Configuration>(baseConfig);
         SelectedBackground = baseConfig.Background.Tag switch
@@ -66,8 +74,8 @@ public partial class SettingsViewModel : ObservableObject
         };
         ZoomedMode = baseConfig.ZoomedMode;
 
-        KeyboardShortcutViewModel = new KeyboardShortcutInputViewModel(baseConfig.KeyboardShortcut);
-        KeyboardShortcutViewModel.KeyboardShortcutChanged +=
+        KeyboardShortcutVm = keyboardShortcutVm;
+        KeyboardShortcutVm.KeyboardShortcutChanged +=
             shortcut => Config.OnNext(Config.Value.WithKeyboardShortcut(shortcut));
 
         ActivatorViewModels = engines.SearchEngines.Values
@@ -97,7 +105,7 @@ public partial class SettingsViewModel : ObservableObject
             // Checks if launch at startup is enabled
             try
             {
-                LaunchAtStartup = Platform.IsLaunchAtStartupEnabled();
+                LaunchAtStartup = platform.IsLaunchAtStartupEnabled();
                 LaunchAtStartupLoading = false;
             }
             catch (Exception)
@@ -108,7 +116,7 @@ public partial class SettingsViewModel : ObservableObject
         });
     }
 
-    partial void OnLaunchAtStartupChanged(bool value) => Task.Run(() => Platform.ToggleLaunchAtStartup(value));
+    partial void OnLaunchAtStartupChanged(bool value) => Task.Run(() => platform.ToggleLaunchAtStartup(value));
     partial void OnSelectedBackgroundChanged(BackgroundKind value) => Config.OnNext(Config.Value.WithBackground(value.Value));
     partial void OnZoomedModeChanged(bool value) => Config.OnNext(Config.Value.WithZoomedMode(value));
     partial void OnSelectedAntialiasingChanged(AntialiasingKind value) => Config.OnNext(Config.Value.WithAntialiasing(value.Value));

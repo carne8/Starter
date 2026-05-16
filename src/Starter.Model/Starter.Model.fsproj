@@ -21,7 +21,6 @@
         <Compile Include="PlatformInterop\Linux\KeyboardShortcut.fs" />
         <Compile Include="PlatformInterop\LinuxPlatformInterop.fs" />
         <Compile Include="PlatformInterop\WindowsPlatformInterop.fs" />
-        <Compile Include="PlatformInterop\PlatformInteropFactory.fs" />
 
         <Compile Include="SearchEngineLoading.fs" />
         <Compile Include="ResultScores.fs" />
