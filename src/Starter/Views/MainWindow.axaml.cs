@@ -29,6 +29,12 @@ public partial class MainWindow : TranslucentWindow
     private MainWindowViewModel vm = null!;
     private readonly IPlatformInterop platformInterop;
 
+    public MainWindow()
+    {
+        // Dummy constructor to prevent XAML warnings
+        throw new Exception("This constructor should never be called");
+    }
+
     public MainWindow(IPlatformInterop platformInterop)
     {
         this.platformInterop = platformInterop;
