@@ -2,7 +2,7 @@
 
 open Avalonia.Controls
 open Avalonia.Headless
-open Avalonia.Headless.XUnit
+open Avalonia.Headless.NUnit
 open Avalonia.Input
 open Avalonia.Threading
 open Starter.Features
@@ -26,7 +26,7 @@ let testDisplayedResults (shouldBeDisplayed: _ array) (shouldNotBeDisplayed: _ a
             |> Seq.map (unbox<SearchResultData> >> _.SearchResult)
             |> Seq.toArray
 
-        Assert.Equal(
+        Assert.AreEqual(
             shouldBeDisplayed.Length,
             displayedResults.Length,
             "A unexpected count of results is shown"
@@ -35,17 +35,17 @@ let testDisplayedResults (shouldBeDisplayed: _ array) (shouldNotBeDisplayed: _ a
         shouldBeDisplayed |> Array.iter (fun r ->
             displayedResults
             |> Array.contains r
-            |> fun b -> Assert.True(b, $"'{r.Name}' should be displayed")
+            |> fun b -> Assert.IsTrue(b, $"'{r.Name}' should be displayed")
         )
 
         shouldNotBeDisplayed |> Array.iter (fun r ->
             displayedResults
             |> Array.contains r
-            |> fun b -> Assert.False(b, $"'{r.Name}' should not be displayed")
+            |> fun b -> Assert.IsFalse(b, $"'{r.Name}' should not be displayed")
         )
     )
 
-[<AvaloniaFact>]
+[<AvaloniaTest>]
 let ensureSearchResultsAppear () =
     let results =
         [| Array.init 5 (fun i -> Mock.searchResult $"Result: {i}")
@@ -60,7 +60,7 @@ let ensureSearchResultsAppear () =
 
     testDisplayedResults (Array.concat results) [||] engines Configuration.Default "result"
 
-[<AvaloniaFact>]
+[<AvaloniaTest>]
 let testActivatorFiltering_ActivatorDisabled () =
     let activator = Mock.activator "activator-id" "search-engine-id"
 
@@ -95,7 +95,7 @@ let testActivatorFiltering_ActivatorDisabled () =
         Configuration.Default
         "result"
 
-[<AvaloniaFact>]
+[<AvaloniaTest>]
 let testActivatorFiltering_StaticEngine_ActivatorEnabled () =
     let activator = Mock.activator "activator-id" "search-engine-id"
     let otherActivator = Mock.activator "activator-id-2" "search-engine-id"
@@ -137,7 +137,7 @@ let testActivatorFiltering_StaticEngine_ActivatorEnabled () =
         config
         "prefix-result"
 
-[<AvaloniaFact>]
+[<AvaloniaTest>]
 let testActivatorFiltering_StaticEngine_ActivatorEnabled_EmptyQueryShowAllResults () =
     let activator = Mock.activator "activator-id" "search-engine-id"
     let otherActivator = Mock.activator "activator-id-2" "search-engine-id"
@@ -179,7 +179,7 @@ let testActivatorFiltering_StaticEngine_ActivatorEnabled_EmptyQueryShowAllResult
         config
         "prefix-"
 
-[<AvaloniaFact>]
+[<AvaloniaTest>]
 let ensureSearchResultsAreCleared () =
     let results =
         [| Array.init 5 (fun i -> Mock.searchResult $"Result: {i}")
@@ -202,11 +202,11 @@ let ensureSearchResultsAreCleared () =
         window.KeyRelease(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
 
         let displayedResults = window |> Helpers.getControl<ListBox> "ResultList"
-        Assert.Equal(0, displayedResults.ItemCount, "No results should displayed")
+        Assert.AreEqual(0, displayedResults.ItemCount, "No results should displayed")
     )
 
 
-[<AvaloniaFact>]
+[<AvaloniaTest>]
 let ensureSearchResultsAreCleared_WithActivator () =
     let activator = Mock.activator "activator-id" "static"
     let results =
@@ -240,5 +240,5 @@ let ensureSearchResultsAreCleared_WithActivator () =
         window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
 
         let displayedResults = window |> Helpers.getControl<ListBox> "ResultList"
-        Assert.Equal(0, displayedResults.ItemCount, "No results should displayed")
+        Assert.AreEqual(0, displayedResults.ItemCount, "No results should displayed")
     )

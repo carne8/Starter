@@ -2,14 +2,14 @@
 
 open System.Threading.Tasks
 open Avalonia.Controls
+open NUnit.Framework
 open R3
 open Starter
 open Starter.Features
-open Starter.Features.Config
 open Starter.Features.PlatformInterop
 open Starter.SearchEngine
 
-type Assert = XunitAssertMessages.AssertM
+type Assert = Legacy.ClassicAssert
 
 type TestStaticSearchEngine =
     { Id: string
@@ -31,11 +31,9 @@ type TestStaticSearchEngine =
         member this.remove_ResultsChanged _ = ()
 
 module Helpers =
-    type Assert = XunitAssertMessages.AssertM
-
     let getControl<'a when 'a :> Control and 'a: not struct and 'a: not null> name (parent: Control) =
         let control: 'a | null = parent.FindControl<'a> name
-        Assert.NotNull(control, $"Failed to get control named '{name}'")
+        Assert.IsNotNull(control, $"Failed to get control named '{name}'")
         unbox<'a> control
 
 module Mock =

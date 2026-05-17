@@ -1,15 +1,15 @@
-﻿module Starter.Tests.Tests.SearchEngineActivator
+﻿module Starter.Tests.SearchEngineActivator
 
 open Avalonia.Controls
 open Avalonia.Headless
-open Avalonia.Headless.XUnit
+open Avalonia.Headless.NUnit
 open Avalonia.Input
 open Avalonia.Threading
 open Starter.Features.Config
 open Starter.SearchEngine
 open Starter.Tests.Common
 
-[<AvaloniaFact>]
+[<AvaloniaTest>]
 let testActivatorPrefix () =
     let activators =
         [ Mock.activator "activator-id-1" "static"
@@ -34,15 +34,15 @@ let testActivatorPrefix () =
         window.KeyTextInput "static-result"
 
         // Assert activator enabled
-        Assert.NotNull(vm.Activator, "MainWindowViewModel should have an activator set")
+        Assert.IsNotNull(vm.Activator, "MainWindowViewModel should have an activator set")
 
         // Assert textbox erased the prefix
         let tb = window |> Helpers.getControl<TextBox> "TextBox"
-        Assert.Equal("-result", tb.Text, "Textbox should have erased the prefix")
+        Assert.AreEqual("-result", tb.Text, "Textbox should have erased the prefix")
 
         // Assert activator name is displayed
         let label = window |> Helpers.getControl<TextBlock> "GreetingOrActivatorLabel"
-        Assert.Equal(activators[0].Name, label.Text, "Displayed text should be the activator name")
+        Assert.AreEqual(activators[0].Name, label.Text, "Displayed text should be the activator name")
 
         // Remove activator
         window.KeyPress(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
@@ -55,5 +55,7 @@ let testActivatorPrefix () =
 
         // Assert activator name is not displayed anymore
         let label = window |> Helpers.getControl<TextBlock> "GreetingOrActivatorLabel"
-        Assert.NotEqual(activators[0].Name, label.Text, "Displayed text should be the activator name")
+        Assert.AreNotEqual(activators[0].Name, label.Text, "Displayed text should be the activator name")
     )
+
+// TODO: Check that activator is passed to dynamic search engine

@@ -3,7 +3,7 @@
 open R3
 open System.Threading.Tasks
 open Avalonia.Threading
-open Avalonia.Headless.XUnit
+open Avalonia.Headless.NUnit
 
 open Starter
 open Starter.Features
@@ -11,7 +11,7 @@ open Starter.Features.Config
 open Starter.Features.PlatformInterop
 open Starter.Tests.Common
 
-[<AvaloniaFact>]
+[<AvaloniaTest>]
 let ensureHotkeyRegistration () =
     let mutable hotkeyRegistered = false
     let mutable callbackRegistered = None
@@ -38,11 +38,11 @@ let ensureHotkeyRegistration () =
 
     Dispatcher.UIThread.RunJobs();
 
-    Assert.True(hotkeyRegistered, "Hotkey should be registered")
-    Assert.True(callbackRegistered.IsSome, "Hotkey callback should be registered")
-    Assert.True(callbackRegistered.Value = window, "Window of the callback should be the calling window")
+    Assert.IsTrue(hotkeyRegistered, "Hotkey should be registered")
+    Assert.IsTrue(callbackRegistered.IsSome, "Hotkey callback should be registered")
+    Assert.IsTrue(callbackRegistered.Value = window, "Window of the callback should be the calling window")
 
-[<AvaloniaFact>]
+[<AvaloniaTest>]
 let ensureHotkeyNotRegisteredWhenNotRegistrable () =
     let mutable hotkeyRegistered = false
     let mutable callbackRegistered = None
@@ -69,5 +69,5 @@ let ensureHotkeyNotRegisteredWhenNotRegistrable () =
 
     Dispatcher.UIThread.RunJobs();
 
-    Assert.False(hotkeyRegistered, "Hotkey should not be registered")
-    Assert.True(callbackRegistered.IsSome, "Hotkey callback should be registered")
+    Assert.IsFalse(hotkeyRegistered, "Hotkey should not be registered")
+    Assert.IsTrue(callbackRegistered.IsSome, "Hotkey callback should be registered")
