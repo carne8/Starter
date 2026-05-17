@@ -204,7 +204,8 @@
                                FontWeight="SemiLight"
                                Foreground="{DynamicResource Text3}"> close</TextBlock>
 
-                    <TextBlock HorizontalAlignment="Right"
+                    <TextBlock x:Name="GreetingOrActivatorLabel"
+                               HorizontalAlignment="Right"
                                VerticalAlignment="Center"
                                DockPanel.Dock="Right"
                                TextAlignment="Right"

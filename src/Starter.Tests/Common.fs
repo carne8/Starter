@@ -125,4 +125,4 @@ module Mock =
         )
         let window = Views.MainWindow(platform (), DataContext = vm)
 
-        test window
+        test window vm

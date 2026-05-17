@@ -14,8 +14,9 @@
 
   <ItemGroup>
     <Compile Include="Common.fs" />
-    <Compile Include="Tests\SearchResultFiltering.fs" />
     <Compile Include="Tests\HotkeyRegistration.fs" />
+    <Compile Include="Tests\SearchResultFiltering.fs" />
+    <Compile Include="Tests\SearchEngineActivator.fs" />
     <Compile Include="TestAppBuilder.fs" />
   </ItemGroup>
 

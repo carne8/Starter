@@ -11,7 +11,7 @@ open Starter.SearchEngine
 open Starter.Tests.Common
 
 let testDisplayedResults (shouldBeDisplayed: _ array) (shouldNotBeDisplayed: _ array) engines config input =
-    Mock.withWindowConfig config engines (fun window ->
+    Mock.withWindowConfig config engines (fun window _ ->
         // Type text
         Dispatcher.UIThread.RunJobs() // Let window acknowledge about vm
         window.Show()
@@ -96,7 +96,7 @@ let testActivatorFiltering_ActivatorDisabled () =
         "result"
 
 [<AvaloniaFact>]
-let testActivatorFiltering_ActivatorEnabled () =
+let testActivatorFiltering_StaticEngine_ActivatorEnabled () =
     let activator = Mock.activator "activator-id" "search-engine-id"
     let otherActivator = Mock.activator "activator-id-2" "search-engine-id"
 
@@ -138,7 +138,7 @@ let testActivatorFiltering_ActivatorEnabled () =
         "prefix-result"
 
 [<AvaloniaFact>]
-let testActivatorFiltering_ActivatorEnabled_EmptyQueryShowAllResults () =
+let testActivatorFiltering_StaticEngine_ActivatorEnabled_EmptyQueryShowAllResults () =
     let activator = Mock.activator "activator-id" "search-engine-id"
     let otherActivator = Mock.activator "activator-id-2" "search-engine-id"
 
@@ -192,7 +192,7 @@ let ensureSearchResultsAreCleared () =
         Mock.dynamicSearchEngine "buffered" [] true (fun _ _ _ -> results[2])
     ]
 
-    Mock.withWindowConfig Configuration.Default engines (fun window ->
+    Mock.withWindowConfig Configuration.Default engines (fun window _ ->
         // Type text
         Dispatcher.UIThread.RunJobs() // Let window acknowledge about vm
         window.Show()
@@ -224,19 +224,20 @@ let ensureSearchResultsAreCleared_WithActivator () =
         { Configuration.Default with
             ActivatorPrefixes = Map.ofList [ activator.Id, "prefix-" ] }
 
-    Mock.withWindowConfig config engines (fun window ->
+    Mock.withWindowConfig config engines (fun window _ ->
         // Type text
         Dispatcher.UIThread.RunJobs() // Let window acknowledge about vm
         window.Show()
         Dispatcher.UIThread.RunJobs() // Let textbox grab focus
         window.KeyTextInput "prefix-result"
+
+        // Erase
+        let tb = window |> Helpers.getControl<TextBox> "TextBox"
+        tb.CaretIndex <- tb.Text |> function null -> 0 | t -> t.Length
         window.KeyPress(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
         window.KeyRelease(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
         window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
         window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
-
-        let tb = window |> Helpers.getControl<TextBox> "TextBox"
-        tb.Clear() // Needed for the Text property of the TextBox to change
 
         let displayedResults = window |> Helpers.getControl<ListBox> "ResultList"
         Assert.Equal(0, displayedResults.ItemCount, "No results should displayed")
