@@ -14,10 +14,6 @@
         <Compile Include="Tests\SearchEngineActivator.fs" />
         <Compile Include="TestAppBuilder.fs" />
     </ItemGroup>
-    
-    <ItemGroup>
-        <InternalsVisibleTo Include="Starter.Tests" />
-    </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Avalonia.Headless.NUnit" Version="12.0.3" />
