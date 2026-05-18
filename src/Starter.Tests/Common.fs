@@ -1,5 +1,6 @@
 ﻿module Starter.Tests.Common
 
+open System.Collections.Generic
 open System.Threading.Tasks
 open Avalonia.Controls
 open NUnit.Framework
@@ -117,7 +118,7 @@ module Mock =
 
         let vm = ViewModels.MainWindowViewModel(
             config,
-            dict [],
+            Dictionary<_, _>(),
             searchEngineStore searchEngines,
             activatorStore
         )

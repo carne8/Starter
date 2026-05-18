@@ -1,4 +1,4 @@
-﻿module Starter.Tests.SearchEngineActivator
+module Starter.Tests.SearchEngineActivator
 
 open Avalonia.Controls
 open Avalonia.Headless
