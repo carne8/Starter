@@ -12,7 +12,7 @@ type TestAppBuilder() =
 
 [<assembly: AvaloniaTestApplication(typeof<TestAppBuilder>)>] ()
 
-[<SetUp>]
+[<OneTimeSetUp>]
 let setup () = ()
 
 [<EntryPoint>]

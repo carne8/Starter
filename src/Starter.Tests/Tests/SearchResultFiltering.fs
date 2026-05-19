@@ -13,9 +13,6 @@ open Starter.Tests.Common
 let testDisplayedResults (shouldBeDisplayed: _ array) (shouldNotBeDisplayed: _ array) engines config input =
     Mock.withWindowConfig config engines (fun window _ ->
         // Type text
-        Dispatcher.UIThread.RunJobs() // Let window acknowledge about vm
-        window.Show()
-        Dispatcher.UIThread.RunJobs() // Let textbox grab focus
         window.KeyTextInput input
 
         // Assert all results are shown
@@ -194,9 +191,6 @@ let ensureSearchResultsAreCleared () =
 
     Mock.withWindowConfig Configuration.Default engines (fun window _ ->
         // Type text
-        Dispatcher.UIThread.RunJobs() // Let window acknowledge about vm
-        window.Show()
-        Dispatcher.UIThread.RunJobs() // Let textbox grab focus
         window.KeyTextInput "result"
         window.KeyPress(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
         window.KeyRelease(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
@@ -226,9 +220,6 @@ let ensureSearchResultsAreCleared_WithActivator () =
 
     Mock.withWindowConfig config engines (fun window _ ->
         // Type text
-        Dispatcher.UIThread.RunJobs() // Let window acknowledge about vm
-        window.Show()
-        Dispatcher.UIThread.RunJobs() // Let textbox grab focus
         window.KeyTextInput "prefix-result"
 
         // Erase

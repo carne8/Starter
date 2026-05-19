@@ -28,9 +28,6 @@ let testActivatorPrefix () =
 
     Mock.withWindowConfig config engines (fun window vm ->
         // Type text
-        Dispatcher.UIThread.RunJobs() // Let window acknowledge about vm
-        window.Show()
-        Dispatcher.UIThread.RunJobs() // Let textbox grab focus
         window.KeyTextInput "static-result"
 
         // Assert activator enabled
@@ -79,9 +76,6 @@ let ensureActivatorIsPassedToDynamicSearchEngine () =
 
     Mock.withWindowConfig config engines (fun window _ ->
         // Type text
-        Dispatcher.UIThread.RunJobs() // Let window acknowledge about vm
-        window.Show()
-        Dispatcher.UIThread.RunJobs() // Let textbox grab focus
         window.KeyTextInput activators[0].SearchEngineId
 
         Assert.AreEqual(

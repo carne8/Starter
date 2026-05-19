@@ -29,25 +29,10 @@ let ensureMostUsedResultsAreTheFirstShowed () =
         Dispatcher.UIThread.RunJobs() // Let textbox grab focus
 
         // Select last result
-        window.KeyTextInput results[2].Name
-        window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
-        window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
-        window.Show()
-        for _ = 0 to results[2].Name.Length-1 do
-            window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
-            window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
-
+        results[2] |> Mock.selectResult window
         // Select 2 times the second result
-        window.KeyTextInput results[1].Name
-        window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
-        window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
-        window.Show()
-        window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
-        window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
-        window.Show()
-        for _ = 0 to results[1].Name.Length-1 do
-            window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
-            window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
+        results[1] |> Mock.selectResult window
+        results[1] |> Mock.selectResult window
 
         // Show all results
         window.KeyTextInput "Result"

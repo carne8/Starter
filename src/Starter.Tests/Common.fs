@@ -3,6 +3,9 @@
 open System.Collections.Generic
 open System.Threading.Tasks
 open Avalonia.Controls
+open Avalonia.Headless
+open Avalonia.Input
+open Avalonia.Threading
 open NUnit.Framework
 open R3
 open Starter
@@ -124,4 +127,18 @@ module Mock =
         )
         let window = Views.MainWindow(platform (), DataContext = vm)
 
+        // Show window
+        Dispatcher.UIThread.RunJobs() // Let window acknowledge about vm
+        window.Show()
+        Dispatcher.UIThread.RunJobs() // Let textbox grab focus
+
         test window vm
+
+    let selectResult (window: Window) (result: ISearchResult) =
+        window.KeyTextInput (result.Name.ToLowerInvariant())
+        window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
+        window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
+        window.Show()
+        for _ = 0 to result.Name.Length-1 do
+            window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
+            window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
