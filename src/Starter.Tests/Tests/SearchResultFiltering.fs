@@ -4,7 +4,6 @@ open Avalonia.Controls
 open Avalonia.Headless
 open Avalonia.Headless.NUnit
 open Avalonia.Input
-open Avalonia.Threading
 open Starter.Features
 open Starter.Features.Config
 open Starter.SearchEngine

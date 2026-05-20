@@ -134,8 +134,8 @@ public class App : Application
         });
 
         // Load other things
-        serviceCollection.AddSingleton<IDictionary<string, ScoreDbEntry>>(
-            ScoreDbModule.readFromFile(Const.ResultScoresFile)
+        serviceCollection.AddSingleton<IScoreDb>(
+            ScoreDb.ReadFromFile(Const.ResultScoresFile, Const.ScoresMaxAging)
         );
         serviceCollection.AddSingleton<ActivatorStore>(provider =>
         {

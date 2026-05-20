@@ -27,11 +27,11 @@ type SearchResultData =
           AccentuationMap = null }
 
     // Returns a low number for a result that should be on top of the list
-    static member getWeight resultScoreDb (sr: SearchResultData) =
+    static member getWeight (resultScoreDb: IScoreDb) (sr: SearchResultData) =
         let struct (usageScore, d) =
             sr.SearchResult.Id
             |> ValueOption.ofObj
-            |> ValueOption.map (ScoreDb.getResultScore resultScoreDb)
+            |> ValueOption.map resultScoreDb.GetResultScore
             |> ValueOption.defaultValue (struct (Int32.MaxValue, TimeSpan.MaxValue))
 
         let fuzzyMatchScore =

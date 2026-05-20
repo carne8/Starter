@@ -30,7 +30,7 @@ let ensureHotkeyRegistration () =
     use activatorStore = new ActivatorStore(config)
     let vm = ViewModels.MainWindowViewModel(
         config,
-        dict [],
+        Mock.scoreDb (),
         SearchEngineStore(),
         activatorStore
     )
@@ -61,7 +61,7 @@ let ensureHotkeyNotRegisteredWhenNotRegistrable () =
     use activatorStore = new ActivatorStore(config)
     let vm = ViewModels.MainWindowViewModel(
         config,
-        dict [],
+        Mock.scoreDb (),
         Mock.searchEngineStore [],
         activatorStore
     )

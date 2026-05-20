@@ -49,6 +49,16 @@ module Mock =
             member this.ToggleLaunchAtStartup(var0) = ()
             member this.HotkeyRegistrable = true }
 
+    let scoreDb () =
+        let scoreDb : IScoreDb =
+            ScoreDb(Dictionary<_, _>(), Starter.Features.Constants.ScoresMaxAging)
+
+        { new IScoreDb with
+            member this.GetResultScore(resultId) = scoreDb.GetResultScore(resultId)
+            member this.IncreaseResultScore(resultId) = scoreDb.IncreaseResultScore(resultId)
+            member this.RunMaxAgingPolicy() = scoreDb.RunMaxAgingPolicy()
+            member this.SaveToFile(filePath) = Task.FromResult() }
+
     let searchResult name =
         { new ISearchResult with
            member this.Id = name
@@ -121,7 +131,7 @@ module Mock =
 
         let vm = ViewModels.MainWindowViewModel(
             config,
-            Dictionary<_, _>(),
+            scoreDb (),
             searchEngineStore searchEngines,
             activatorStore
         )

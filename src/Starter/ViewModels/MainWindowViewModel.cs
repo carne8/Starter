@@ -13,7 +13,7 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly SearchResultStore searchResultStore;
     private readonly SearchEngineStore searchEngineStore;
     private readonly ActivatorStore activatorStore;
-    private readonly IDictionary<string, ScoreDbEntry> resultScoreDb;
+    private readonly IScoreDb resultScoreDb;
 
     public event EventHandler? HideWindow;
     public event EventHandler<int>? ClearTextBox;
@@ -32,7 +32,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     public MainWindowViewModel(
         BehaviorSubject<Configuration> config,
-        IDictionary<string, ScoreDbEntry> resultScoreDb,
+        IScoreDb resultScoreDb,
         SearchEngineStore searchEngineStore,
         ActivatorStore activatorStore
     )
@@ -52,9 +52,9 @@ public partial class MainWindowViewModel : ObservableObject
     private void IncreaseResultScore(ISearchResult searchResult)
     {
         if (searchResult.Id is null) return;
-        ScoreDbModule.increaseResultScore(searchResult.Id, resultScoreDb);
-        ScoreDbModule.runMaxAgingPolicy(Const.ScoresMaxAging, resultScoreDb);
-        ScoreDbModule.writeToFile(Const.ResultScoresFile, resultScoreDb);
+        resultScoreDb.IncreaseResultScore(searchResult.Id);
+        resultScoreDb.RunMaxAgingPolicy();
+        resultScoreDb.SaveToFile(Const.ResultScoresFile);
         searchResultStore.SortResults(); // Sort results for next opening
     }
 
