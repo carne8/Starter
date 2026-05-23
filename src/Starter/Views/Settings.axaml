@@ -48,10 +48,7 @@
             <TextBlock Classes="title2">Personalization</TextBlock>
 
             <!-- Background -->
-            <ui:FASettingsExpander x:Name="BackgroundSetting"
-                                   Description="{OnPlatform Windows={x:Null},
-                                                            Default='Acrylic and Mica background are not supported on Linux'}"
-                                   Header="Background transparency">
+            <ui:FASettingsExpander Description="{OnPlatform Windows={x:Null}, Default='Acrylic and Mica background are not supported on Linux'}" Header="Background transparency">
                 <ui:FASettingsExpander.Styles>
                     <Style Selector="ContentPresenter#IconPresenter">
                         <Setter Property="Padding" Value="3" />
