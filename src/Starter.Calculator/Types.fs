@@ -1,5 +1,6 @@
 namespace Starter.Calculator.Types
 
+open Avalonia.Controls.Templates
 open Avalonia.Media
 open MathNet.Numerics
 open Starter.SearchEngine
@@ -39,7 +40,8 @@ module Icon =
         |> StarterIconSource
 
 type LaTeXSearchResult =
-    { LaTeX: string }
+    { LaTeX: string
+      DataTemplate: IDataTemplate }
 
     interface IControlSearchResult with
         member this.Id = null
@@ -51,6 +53,7 @@ type LaTeXSearchResult =
         member this.ActivatorFilter = Array.empty
         member this.ShowIcon = true
         member this.ControlDataContext = this
+        member this.ControlDataTemplate = this.DataTemplate
 
 type NumberSearchResult =
     { Result: string }

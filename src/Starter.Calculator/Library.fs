@@ -15,6 +15,17 @@ open Starter.Calculator.Controls
 open Starter.Calculator.Simplifications
 
 type Calculator(clipboard: IClipboard) =
+    let builder = Func<LaTeXSearchResult | null, INameScope, Control | null>(fun dc _ ->
+        let latex =
+            match dc with
+            | null -> null
+            | dc -> dc.LaTeX
+
+        ResultControl(LaTeX = latex)
+    )
+
+    let controlDataTemplate = FuncDataTemplate<LaTeXSearchResult>(builder, true)
+
     interface IDynamicSearchEngine with
         member this.Id = nameof Calculator
         member this.Name = "Calculator"
@@ -48,7 +59,8 @@ type Calculator(clipboard: IClipboard) =
 
                     match expr with
                     | Number n when n.IsInteger -> ()
-                    | _ -> { LaTeX = LaTeX.fromExpression expr }
+                    | _ -> { LaTeX = LaTeX.fromExpression expr
+                             DataTemplate = controlDataTemplate }
                 }
             }
             |> ValueOption.map (fun s -> struct (s, Observable.Empty()))
@@ -68,19 +80,4 @@ type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)
 
     override this.LoadSearchEngineIds() = [| nameof Calculator |]
-
     override this.LoadSearchEngine(_, _, _, clipboard) = Calculator(clipboard), null
-
-    override this.LoadDataTemplates() =
-        let builder = Func<LaTeXSearchResult | null, INameScope, Control | null>(fun dc _ ->
-            let latex =
-                match dc with
-                | null -> null
-                | dc -> dc.LaTeX
-
-            ResultControl(LaTeX = latex)
-        )
-
-        FuncDataTemplate<LaTeXSearchResult>(builder, true)
-        :> IDataTemplate
-        |> Seq.singleton

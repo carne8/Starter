@@ -1,6 +1,7 @@
 namespace Starter.WebSearchEngine
 
 open System.Net.Http
+open Avalonia.Controls.Templates
 open Starter.SearchEngine
 open Starter.WebSearchEngine
 open Starter.WebSearchEngine.Logger
@@ -127,6 +128,10 @@ type Factory(pluginPath) =
         let settings = Views.SettingsViewModel(pluginPath, pluginConfigDirectory, httpClient)
         let searchEngine = settings.SearchEngine
 
-        WebSearchEngine searchEngine, Views.Settings(settings)
-
-    override this.LoadDataTemplates() = null
+        WebSearchEngine searchEngine,
+        SearchEngineFactory.SearchEngineSettings(
+            settings,
+            FuncDataTemplate<Views.SettingsViewModel>(fun vm _ ->
+                Views.Settings(DataContext = vm)
+            )
+        )

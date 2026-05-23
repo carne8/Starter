@@ -1,6 +1,4 @@
-﻿using Avalonia.Controls;
-using Avalonia.Controls.Templates;
-using Avalonia.Input.Platform;
+﻿using Avalonia.Input.Platform;
 using Serilog;
 using Starter.Features;
 using Starter.SearchEngine;
@@ -12,26 +10,17 @@ public class SearchEngineStore
     public readonly List<IStaticSearchEngine> StaticSearchEngines = [];
     public readonly List<IDynamicSearchEngine> DynamicSearchEngines = [];
     public readonly Dictionary<string, ISearchEngine> SearchEngines = new();
-    public readonly Dictionary<string, Control> SettingsControls = new();
-    public readonly List<IDataTemplate> DataTemplates = new();
-
-    // public event EventHandler? SearchEnginesChanged;
+    public readonly Dictionary<string, SearchEngineFactory.SearchEngineSettings> Settings = new();
 
     public void LoadSearchEnginesFromDirectory(string directory, IClipboard clipboard)
     {
         foreach (var factory in SearchEngineLoading.loadFactoriesFromDirectory(directory))
-        {
             LoadSearchEnginesFromFactory(factory, clipboard);
-            if (factory.LoadDataTemplates() is { } dataTemplates)
-                DataTemplates.AddRange(dataTemplates);
-        }
-
-        // SearchEnginesChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void LoadSearchEnginesFromFactory(SearchEngineFactory factory, IClipboard clipboard)
     {
-        foreach (var (engine, settingsControl) in SearchEngineLoading.loadSearchEnginesFromFactory(clipboard, factory))
+        foreach (var (engine, settings) in SearchEngineLoading.loadSearchEnginesFromFactory(clipboard, factory))
         {
             switch (engine)
             {
@@ -53,7 +42,7 @@ public class SearchEngineStore
                 );
                 return;
             }
-            if (settingsControl is not null) SettingsControls.Add(engine.Id, settingsControl);
+            if (settings is not null) Settings.Add(engine.Id, settings);
         }
     }
 
@@ -61,13 +50,11 @@ public class SearchEngineStore
     {
         StaticSearchEngines.Add(se);
         SearchEngines.Add(se.Id, se);
-        // SearchEnginesChanged?.Invoke(this, EventArgs.Empty);
     }
 
     public void AddSearchEngine(IDynamicSearchEngine se)
     {
         DynamicSearchEngines.Add(se);
         SearchEngines.Add(se.Id, se);
-        // SearchEnginesChanged?.Invoke(this, EventArgs.Empty);
     }
 }

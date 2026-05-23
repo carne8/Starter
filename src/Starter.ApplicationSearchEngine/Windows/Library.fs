@@ -2,6 +2,7 @@ namespace Starter.ApplicationSearchEngine.Windows
 
 open System
 open System.Threading.Tasks
+open Avalonia.Controls.Templates
 open R3
 open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Logger
@@ -72,13 +73,17 @@ type WindowsAppsSearchEngine(config: Observable<FolderConfiguration>) =
 type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)
 
-    override this.LoadDataTemplates() = null
     override this.LoadSearchEngineIds() = [| nameof WindowsAppsSearchEngine |]
     override this.LoadSearchEngine(_, pluginConfigDirectory, logger, _) =
         Logger.logger <- logger
 
         let settingsViewModel = SettingsViewModel pluginConfigDirectory
-        let settingsControl = Settings(DataContext = settingsViewModel)
         let config = settingsViewModel.Config
 
-        WindowsAppsSearchEngine config, settingsControl
+        WindowsAppsSearchEngine config,
+        SearchEngineFactory.SearchEngineSettings(
+            settingsViewModel,
+            FuncDataTemplate<SettingsViewModel>(fun vm _ ->
+                Settings(DataContext = vm)
+            )
+        )

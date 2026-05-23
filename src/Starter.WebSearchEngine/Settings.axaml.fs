@@ -51,25 +51,25 @@ type SettingsViewModel(pluginPath, configDir, httpClient) =
     member this.Icon = searchEngine.Value.Icon
 
 
-type Settings(viewModel: SettingsViewModel) as this =
-    inherit UserControl(DataContext = viewModel)
+type Settings() as this =
+    inherit UserControl()
 
     do this.InitializeComponent()
-
-    // Prevent Avalonia compiler to warn
-    new() = Settings(failwith "Settings control should not be initialized without parameters")
 
     member this.InitializeComponent() =
         AvaloniaXamlLoader.Load this
 
-        // Bind icon source
-        let expander = this.GetControl<FASettingsExpander> "SearchEngine"
-        let setIconSource () =
-            expander.IconSource <-
-                match this.ActualThemeVariant = ThemeVariant.Light with
-                | true -> FAImageIconSource(Source = viewModel.Icon.Light)
-                | false -> FAImageIconSource(Source = viewModel.Icon.Dark)
+        match this.DataContext with
+        | :? SettingsViewModel as viewModel ->
+            // Bind icon source
+            let expander = this.GetControl<FASettingsExpander> "SearchEngine"
+            let setIconSource () =
+                expander.IconSource <-
+                    match this.ActualThemeVariant = ThemeVariant.Light with
+                    | true -> FAImageIconSource(Source = viewModel.Icon.Light)
+                    | false -> FAImageIconSource(Source = viewModel.Icon.Dark)
 
-        setIconSource()
-        viewModel.PropertyChanged.Add(fun change -> if change.PropertyName = nameof viewModel.Icon then setIconSource())
-        this.PropertyChanged.Add(fun change -> if change.NewValue :? ThemeVariant then setIconSource())
+            setIconSource()
+            viewModel.PropertyChanged.Add(fun change -> if change.PropertyName = nameof viewModel.Icon then setIconSource())
+            this.PropertyChanged.Add(fun change -> if change.NewValue :? ThemeVariant then setIconSource())
+        | _ -> ()

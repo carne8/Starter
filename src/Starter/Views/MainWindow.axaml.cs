@@ -5,11 +5,11 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using R3;
 using Serilog;
+using Starter.Controls;
 using Starter.Features;
 using Starter.Features.PlatformInterop;
-using R3;
-using Starter.Controls;
 using Starter.ViewModels;
 
 namespace Starter.Views;

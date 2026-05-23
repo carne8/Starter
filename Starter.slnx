@@ -13,6 +13,7 @@
     <Project Path="src/Starter.ApplicationSearchEngine/Starter.ApplicationSearchEngine.fsproj" />
     <Project Path="src/Starter.Calculator/Starter.Calculator.fsproj" />
   </Folder>
+  <Project Path="src/Starter.SearchEngineBase/Starter.SearchEngineBase.csproj" />
   <Project Path="src/Starter.Model/Starter.Model.fsproj" />
   <Project Path="src/Starter/Starter.csproj" />
   <Project Path="src/Starter.Tests/Starter.Tests.fsproj" />

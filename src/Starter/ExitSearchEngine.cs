@@ -1,5 +1,4 @@
 ﻿using Avalonia.Controls.ApplicationLifetimes;
-using Avalonia.Threading;
 using Starter.SearchEngine;
 
 namespace Starter;

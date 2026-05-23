@@ -2,6 +2,7 @@ module Starter.WorkspaceSearchEngine.Engine
 
 open System
 open System.Threading.Tasks
+open Avalonia.Controls.Templates
 open Starter.SearchEngine
 open Starter.WorkspaceSearchEngine
 
@@ -78,6 +79,9 @@ type Factory(pluginPath) =
         let settingsVm = Views.SettingsViewModel(workspaceSources, settings)
 
         WorkspaceSearchEngine(workspaceSources, settingsSaver),
-        Views.SettingsView(DataContext = settingsVm)
-
-    override this.LoadDataTemplates() = null
+        SearchEngineFactory.SearchEngineSettings(
+            settingsVm,
+            FuncDataTemplate<Views.SettingsViewModel>(fun vm _ ->
+                Views.SettingsView(DataContext = vm)
+            )
+        )

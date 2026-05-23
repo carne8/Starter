@@ -62,7 +62,7 @@ public interface ISearchResult
 {
     string? Id { get; }
     string Name { get; }
-    string Description { get; }
+    string? Description { get; }
     /// <summary>
     /// Additional strings that are compared to the user query
     /// </summary>
@@ -79,6 +79,7 @@ public interface IControlSearchResult : ISearchResult
 {
     bool ShowIcon { get; }
     object ControlDataContext { get; }
+    IDataTemplate ControlDataTemplate { get; }
 }
 
 public interface ISearchEngine
@@ -147,6 +148,7 @@ public interface IDynamicSearchEngine : ISearchEngine
     public (IEnumerable<ISearchResult>, Observable<IEnumerable<ISearchResult>>) Search(string query, CancellationToken cancellationToken, ISearchEngineActivator? activator);
 }
 
+
 public abstract class SearchEngineFactory(string pluginDirectory)
 {
     /// <remarks>
@@ -154,14 +156,21 @@ public abstract class SearchEngineFactory(string pluginDirectory)
     /// </remarks>
     public abstract string[] LoadSearchEngineIds();
 
-    public abstract (ISearchEngine, Control?) LoadSearchEngine(
+    public class SearchEngineSettings(object dataContext, IDataTemplate dataTemplate)
+    {
+        public readonly object DataContext = dataContext;
+        public readonly IDataTemplate DataTemplate = dataTemplate;
+    }
+
+    public abstract (
+        ISearchEngine searchEngine,
+        SearchEngineSettings? settings
+    ) LoadSearchEngine(
         string searchEngineId,
         string pluginConfigDirectory,
         ILogger logger,
         IClipboard clipboard
     );
-
-    public abstract IEnumerable<IDataTemplate>? LoadDataTemplates();
 }
 
 public static class Constants

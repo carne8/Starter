@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -34,11 +34,11 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.0.0">
+        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.2.0">
             <ExcludeAssets>runtime;native</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
-        <PackageReference Include="Vanara.Windows.Shell" Version="5.0.4" />
+        <PackageReference Include="Vanara.Windows.Shell" Version="5.0.5" />
     </ItemGroup>
 
 </Project>

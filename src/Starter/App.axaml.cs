@@ -89,11 +89,10 @@ public class App : Application
         serviceCollection.AddSingleton<SearchEngineStore>(provider =>
         {
             var clipboard = provider.GetRequiredService<IClipboard>();
+            var appLifetime = provider.GetRequiredService<IClassicDesktopStyleApplicationLifetime>();
             var engineStore = new SearchEngineStore();
 
-            LoadSearchEngines(engineStore, clipboard);
-            DataTemplates.AddRange(engineStore.DataTemplates);
-            engineStore.DataTemplates.Clear();
+            LoadSearchEngines(engineStore, clipboard, appLifetime);
 
             return engineStore;
         });
@@ -112,25 +111,7 @@ public class App : Application
             engineStore.AddSearchEngine(settings);
 
             settings.Config.Subscribe(UpdateConfiguration);
-
-            DataTemplates.AddRange(engineStore.DataTemplates);
-            engineStore.DataTemplates.Clear();
-
             return settings.Config;
-        });
-
-        // Exit
-        serviceCollection.AddSingleton<ExitSearchEngine>(provider =>
-        {
-            var appLifetime = provider.GetRequiredService<IClassicDesktopStyleApplicationLifetime>();
-            var engineStore = provider.GetRequiredService<SearchEngineStore>();
-            var exit = new ExitSearchEngine(appLifetime);
-
-            engineStore.AddSearchEngine(exit);
-            DataTemplates.AddRange(engineStore.DataTemplates);
-            engineStore.DataTemplates.Clear();
-
-            return exit;
         });
 
         // Load other things
@@ -194,7 +175,7 @@ public class App : Application
         return configRes.ResultValue;
     }
 
-    private SearchEngineStore LoadSearchEngines(SearchEngineStore searchEngineStore, IClipboard clipboard)
+    private void LoadSearchEngines(SearchEngineStore searchEngineStore, IClipboard clipboard, IClassicDesktopStyleApplicationLifetime appLifetime)
     {
 #if DEBUG
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.UrlSearchEngine/Starter.UrlSearchEngine/bin/Debug/net10.0/", clipboard);
@@ -215,8 +196,12 @@ public class App : Application
             searchEngineStore.LoadSearchEnginesFromDirectory(pluginDir, clipboard);
 #endif
 
+        // Exit search engine
+        searchEngineStore.AddSearchEngine(
+            new ExitSearchEngine(appLifetime)
+        );
+
         Log.Debug("Plugins loaded");
-        return searchEngineStore;
     }
 
     private static async void UpdateConfiguration(Configuration config)

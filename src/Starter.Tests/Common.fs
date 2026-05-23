@@ -34,13 +34,9 @@ type TestStaticSearchEngine =
         member this.add_ResultsChanged _ = ()
         member this.remove_ResultsChanged _ = ()
 
-module Helpers =
-    let getControl<'a when 'a :> Control and 'a: not struct and 'a: not null> name (parent: Control) =
-        let control: 'a | null = parent.FindControl<'a> name
-        Assert.IsNotNull(control, $"Failed to get control named '{name}'")
-        unbox<'a> control
-
 module Mock =
+
+    // Create instances
     let platform () =
         { new IPlatformInterop with
             member this.IsLaunchAtStartupEnabled() = false
@@ -124,6 +120,16 @@ module Mock =
         )
         store
 
+    let private logger () =
+        { new Serilog.ILogger with
+            member this.Write(logEvent) = () }
+
+    let launcher onUri onFile =
+        { new Avalonia.Platform.Storage.ILauncher with
+            member this.LaunchUriAsync(uri) = onUri uri; Task.FromResult true
+            member this.LaunchFileAsync(storageItem) = onFile storageItem; Task.FromResult true }
+
+    // Helpers
     let withWindowConfig config searchEngines test =
         use config = new BehaviorSubject<_>(config)
         use activatorStore = new ActivatorStore(config)
