@@ -96,19 +96,12 @@ type Configuration =
     member this.WithKeyboardShortcut newValue = { this with KeyboardShortcut = newValue }
     member this.WithActivatorPrefixes newValue = { this with ActivatorPrefixes = newValue }
 
-    static member ensurePlatformCompatibility config =
-        if OperatingSystem.IsLinux() then
-            { config with Background = Background.None }
-        else
-            config
-
     static member Default =
         { KeyboardShortcut = { Modifiers = [| Key.LeftAlt |]; Key = Key.Space }
           Background = Background.Mica
           ZoomedMode = false
           ActivatorPrefixes = Map.empty
           Antialiasing = Antialiasing.Grayscale }
-        |> Configuration.ensurePlatformCompatibility
 
     static member encoder config =
         Encode.object [
@@ -161,7 +154,6 @@ type Configuration =
             | json ->
                 json
                 |> Decode.fromString Configuration.decoder
-                |> Result.map Configuration.ensurePlatformCompatibility
 
     static member save (filePath: string) (config: Configuration) =
         taskResult {

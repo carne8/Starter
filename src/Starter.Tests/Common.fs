@@ -40,9 +40,11 @@ module Mock =
     let platform () =
         { new IPlatformInterop with
             member this.IsLaunchAtStartupEnabled() = false
+            member this.EnsureConfigCompatibility(config) = config
+            member this.SupportBackground(background) = true
             member this.RegisterHotkey shortcut window = ValueTask.FromResult true
             member this.SetupHotkeyCallback(window) = ()
-            member this.ToggleLaunchAtStartup(var0) = ()
+            member this.ToggleLaunchAtStartup(enable) = ()
             member this.HotkeyRegistrable = true }
 
     let scoreDb () =

@@ -21,12 +21,7 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] public partial bool LaunchAtStartupLoading { get; set; } = true;
 
     // Background
-    public static readonly BackgroundKind[] Backgrounds =
-    [
-        new("Acrylic", Background.Acrylic, !OperatingSystem.IsLinux()),
-        new("Mica", Background.Mica, !OperatingSystem.IsLinux()),
-        new("None", Background.None, true)
-    ];
+    public BackgroundKind[] Backgrounds { get; }
     [ObservableProperty] public partial BackgroundKind SelectedBackground { get; set; }
 
     // Zoomed mode
@@ -58,13 +53,23 @@ public partial class SettingsViewModel : ObservableObject
     {
         this.platform = platform;
         this.launcher = launcher;
+
         Config = new BehaviorSubject<Configuration>(baseConfig);
+
+        Backgrounds =
+        [
+            new BackgroundKind("Acrylic", Background.Acrylic, platform.SupportBackground(Background.Acrylic)),
+            new BackgroundKind("Mica", Background.Mica, platform.SupportBackground(Background.Mica)),
+            new BackgroundKind("None", Background.None, platform.SupportBackground(Background.None))
+        ];
+
         SelectedBackground = baseConfig.Background.Tag switch
         {
             Background.Tags.Acrylic => Backgrounds[0],
             Background.Tags.Mica => Backgrounds[1],
             /* Background.Tags.Mica */ _ => Backgrounds[2]
         };
+
         SelectedAntialiasing = baseConfig.Antialiasing.Tag switch
         {
             Antialiasing.Tags.Alias => Antialiasings[0],
@@ -72,6 +77,7 @@ public partial class SettingsViewModel : ObservableObject
             Antialiasing.Tags.Subpixel => Antialiasings[2],
             /* Antialiasing.Tags.PlatformDefault */ _ => Antialiasings[3]
         };
+
         ZoomedMode = baseConfig.ZoomedMode;
 
         KeyboardShortcutVm = keyboardShortcutVm;

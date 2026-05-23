@@ -8,6 +8,7 @@ open Avalonia.Input
 open Avalonia.Win32.Input
 open Serilog
 open Starter.Features
+open Starter.Features.Config
 open Starter.Features.Logging
 open Vanara.PInvoke
 open Vanara.Windows.Shell
@@ -62,6 +63,14 @@ type WindowsPlatformInterop() =
     static let hotkeyId = 0
 
     interface IPlatformInterop with
+        override this.SupportBackground background =
+            match background with
+            | Background.None -> true
+            | Background.Mica
+            | Background.Acrylic -> false
+
+        override this.EnsureConfigCompatibility config = config
+
         override _.ToggleLaunchAtStartup(enable) =
             try
                 match enable, File.Exists startupFile with

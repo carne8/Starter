@@ -4,7 +4,7 @@ open Starter.Features
 open System.Threading.Tasks
 
 type IPlatformInterop =
-    abstract member ToggleLaunchAtStartup: bool -> unit
+    abstract member ToggleLaunchAtStartup: enable: bool -> unit
     abstract member IsLaunchAtStartupEnabled: unit -> bool
 
     abstract member HotkeyRegistrable: bool
@@ -14,3 +14,5 @@ type IPlatformInterop =
         -> ValueTask<bool>
 
     abstract member SetupHotkeyCallback: window: Avalonia.Controls.Window -> unit
+    abstract member SupportBackground: background: Config.Background -> bool
+    abstract member EnsureConfigCompatibility: config: Config.Configuration -> Config.Configuration

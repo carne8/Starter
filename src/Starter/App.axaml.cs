@@ -67,7 +67,11 @@ public class App : Application
         else
             throw new PlatformNotSupportedException();
 
-        serviceCollection.AddKeyedSingleton("initial-config", LoadConfiguration());
+        serviceCollection.AddKeyedSingleton("initial-config", (provider, _) =>
+        {
+            var config = provider.GetRequiredService<IPlatformInterop>();
+            return LoadConfiguration(config);
+        });
 
         // Main window
         serviceCollection.AddSingleton<MainWindow>(provider =>
@@ -76,13 +80,12 @@ public class App : Application
             return new MainWindow(platformInterop);
         });
 
-        serviceCollection.AddSingleton<IClassicDesktopStyleApplicationLifetime>(lifetime);
+        serviceCollection.AddSingleton(lifetime);
         serviceCollection.AddSingleton<ILauncher>(provider => provider.GetRequiredService<MainWindow>().Launcher);
         serviceCollection.AddSingleton<IClipboard>(provider =>
         {
             var window = provider.GetRequiredService<MainWindow>();
-            if (window.Clipboard is null) throw new Exception("No clipboard");
-            return window.Clipboard;
+            return window.Clipboard ?? throw new Exception("No clipboard");
         });
 
         // Engine store
@@ -161,7 +164,7 @@ public class App : Application
             });
     }
 
-    private static Configuration LoadConfiguration()
+    private static Configuration LoadConfiguration(IPlatformInterop platform)
     {
         Configuration.ensureDirectoriesExists();
         var configRes = Configuration.loadFromFile(Const.ConfigFile);
@@ -172,7 +175,7 @@ public class App : Application
         }
 
         Log.Debug("Config loaded");
-        return configRes.ResultValue;
+        return platform.EnsureConfigCompatibility(configRes.ResultValue);
     }
 
     private void LoadSearchEngines(SearchEngineStore searchEngineStore, IClipboard clipboard, IClassicDesktopStyleApplicationLifetime appLifetime)

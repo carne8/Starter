@@ -10,19 +10,20 @@ open Starter.Features.Config
 open Starter.Features.PlatformInterop
 open Starter.Tests.Common
 
-let withSettingsWindow launcher platform callback =
+let withSettingsWindow launcher (platform: IPlatformInterop) callback =
     let engineStore = Mock.searchEngineStore []
+    let config = Configuration.Default |> platform.EnsureConfigCompatibility
 
     let keyboardShortcutVm =
         ViewModels.KeyboardShortcutInputViewModel(
-            Configuration.Default,
+            config,
             platform
         )
 
     let settingsVm =
         ViewModels.SettingsViewModel(
             launcher,
-            Configuration.Default,
+            config,
             engineStore,
             platform,
             keyboardShortcutVm
@@ -50,9 +51,11 @@ let testLaunchAtStartup () =
         { new IPlatformInterop with
             member this.IsLaunchAtStartupEnabled() =
                 isLaunchAtStartupEnabled
+            member this.EnsureConfigCompatibility(config) = config
+            member this.SupportBackground(background) = true
             member this.RegisterHotkey shortcut window = ValueTask.FromResult true
             member this.SetupHotkeyCallback(window) = ()
-            member this.ToggleLaunchAtStartup(var0) =
+            member this.ToggleLaunchAtStartup(enable) =
                 isLaunchAtStartupEnabled <- not isLaunchAtStartupEnabled
             member this.HotkeyRegistrable = true }
 
@@ -93,33 +96,75 @@ let testZoomMode () =
     )
 
 [<AvaloniaTest>]
-let testBackground () =
+let testBackground_Windows () =
     let platform = Mock.platform ()
     let launcher = Mock.launcher ignore ignore
 
     withSettingsWindow launcher platform (fun _ settings vm ->
         // Toggle background mode
-        Assert.AreEqual(vm.Config.Value.Background, Background.Mica, "Background does not match config")
+        Assert.AreEqual(Background.Mica, vm.Config.Value.Background, "Background does not match config")
 
         let none, mica, acrylic =
-            ViewModels.SettingsViewModel.Backgrounds
-            |> Array.find (fun b -> b.Value = Background.None),
-            ViewModels.SettingsViewModel.Backgrounds
-            |> Array.find (fun b -> b.Value = Background.Mica),
-            ViewModels.SettingsViewModel.Backgrounds
-            |> Array.find (fun b -> b.Value = Background.Acrylic)
+            vm.Backgrounds |> Array.find (fun b -> b.Value = Background.None),
+            vm.Backgrounds |> Array.find (fun b -> b.Value = Background.Mica),
+            vm.Backgrounds |> Array.find (fun b -> b.Value = Background.Acrylic)
 
         let comboBox = settings.BackgroundComboBox
         Assert.IsTrue(comboBox.Focus(), "Failed to focus background combo box")
 
         comboBox.SelectedValue <- none
-        Assert.AreEqual(vm.Config.Value.Background, Background.None, "Background has not been set to the correct value.")
+        Assert.AreEqual(Background.None, vm.Config.Value.Background, "Background has not been set to the correct value.")
 
         comboBox.SelectedValue <- acrylic
-        Assert.AreEqual(vm.Config.Value.Background, Background.Acrylic, "Background has not been set to the correct value.")
+        Assert.AreEqual(Background.Acrylic, vm.Config.Value.Background, "Background has not been set to the correct value.")
 
         comboBox.SelectedValue <- mica
-        Assert.AreEqual(vm.Config.Value.Background, Background.Mica, "Background has not been set to the correct value.")
+        Assert.AreEqual(Background.Mica, vm.Config.Value.Background, "Background has not been set to the correct value.")
+    )
+
+[<AvaloniaTest>]
+let testBackground_Linux () =
+    let platform =
+        { new IPlatformInterop with
+            member this.IsLaunchAtStartupEnabled() = false
+            member this.EnsureConfigCompatibility(config) =
+                { config with Background = Background.None }
+            member this.SupportBackground(background) =
+                match background with
+                | Background.None -> true
+                | Background.Mica
+                | Background.Acrylic -> false
+            member this.RegisterHotkey shortcut window = ValueTask.FromResult true
+            member this.SetupHotkeyCallback(window) = ()
+            member this.ToggleLaunchAtStartup(enable) = ()
+            member this.HotkeyRegistrable = true }
+
+    let launcher = Mock.launcher ignore ignore
+
+    withSettingsWindow launcher platform (fun _ settings vm ->
+        // Toggle background mode
+        Assert.AreEqual(Background.None, vm.Config.Value.Background, "Background does not match config")
+
+        let none, mica, acrylic =
+            vm.Backgrounds |> Array.find (fun b -> b.Value = Background.None),
+            vm.Backgrounds |> Array.find (fun b -> b.Value = Background.Mica),
+            vm.Backgrounds |> Array.find (fun b -> b.Value = Background.Acrylic)
+
+        let comboBox = settings.BackgroundComboBox
+        comboBox.IsDropDownOpen <- true
+
+        Assert.IsTrue(
+            comboBox.ContainerFromItem(none).IsEnabled,
+            "None background should not be disabled on Linux"
+        )
+        Assert.IsFalse(
+            comboBox.ContainerFromItem(mica).IsEnabled,
+            "Mica background should be disabled on Linux"
+        )
+        Assert.IsFalse(
+            comboBox.ContainerFromItem(acrylic).IsEnabled,
+            "Acrylic background should be disabled on Linux"
+        )
     )
 
 [<AvaloniaTest>]
@@ -129,7 +174,7 @@ let testAntialiasing () =
 
     withSettingsWindow launcher platform (fun _ settings vm ->
         // Toggle antialiasing mode
-        Assert.AreEqual(vm.Config.Value.Antialiasing, Antialiasing.Grayscale, "Antialiasing mode does not match config")
+        Assert.AreEqual(Antialiasing.Grayscale, vm.Config.Value.Antialiasing, "Antialiasing mode does not match config")
 
         let alias, grayscale, platformDefault, subpixel =
             ViewModels.SettingsViewModel.Antialiasings
@@ -145,16 +190,16 @@ let testAntialiasing () =
         Assert.IsTrue(comboBox.Focus(), "Failed to focus antialiasing combo box")
 
         comboBox.SelectedValue <- alias
-        Assert.AreEqual(vm.Config.Value.Antialiasing, Antialiasing.Alias, "Antialiasing mode has not been set to the correct value.")
+        Assert.AreEqual(Antialiasing.Alias, vm.Config.Value.Antialiasing, "Antialiasing mode has not been set to the correct value.")
 
         comboBox.SelectedValue <- grayscale
-        Assert.AreEqual(vm.Config.Value.Antialiasing, Antialiasing.Grayscale, "Antialiasing mode has not been set to the correct value.")
+        Assert.AreEqual(Antialiasing.Grayscale, vm.Config.Value.Antialiasing, "Antialiasing mode has not been set to the correct value.")
 
         comboBox.SelectedValue <- platformDefault
-        Assert.AreEqual(vm.Config.Value.Antialiasing, Antialiasing.PlatformDefault, "Antialiasing mode has not been set to the correct value.")
+        Assert.AreEqual(Antialiasing.PlatformDefault, vm.Config.Value.Antialiasing, "Antialiasing mode has not been set to the correct value.")
 
         comboBox.SelectedValue <- subpixel
-        Assert.AreEqual(vm.Config.Value.Antialiasing, Antialiasing.Subpixel, "Antialiasing mode has not been set to the correct value.")
+        Assert.AreEqual(Antialiasing.Subpixel, vm.Config.Value.Antialiasing, "Antialiasing mode has not been set to the correct value.")
     )
 
 
@@ -176,7 +221,7 @@ let testAntialiasing () =
 //
 //     createSettingsWindow launcher platform (fun window settings vm ->
 //         // Open directories
-//         Assert.AreEqual(lastLaunchedFile, None, "No folder should have been opened as none of the buttons have been pressed")
+//         Assert.AreEqual(None, lastLaunchedFile, "No folder should have been opened as none of the buttons have been pressed")
 //         let configButton = settings.ConfigFolderButton
 //         let searchEnginesButton = settings.SearchEnginesFolderButton
 //         let logsButton = settings.LogsFolderButton

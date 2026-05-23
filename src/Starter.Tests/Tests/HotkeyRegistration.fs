@@ -19,11 +19,13 @@ let ensureHotkeyRegistration () =
     let platform =
         { new IPlatformInterop with
             member this.IsLaunchAtStartupEnabled() = false
+            member this.EnsureConfigCompatibility(config) = config
+            member this.SupportBackground(background) = true
             member this.RegisterHotkey shortcut window =
                 hotkeyRegistered <- true
                 ValueTask.FromResult true
             member this.SetupHotkeyCallback(window) = callbackRegistered <- Some window
-            member this.ToggleLaunchAtStartup(var0) = ()
+            member this.ToggleLaunchAtStartup(enable) = ()
             member this.HotkeyRegistrable = true }
 
     use config = new BehaviorSubject<_>(Configuration.Default)
@@ -50,11 +52,13 @@ let ensureHotkeyNotRegisteredWhenNotRegistrable () =
     let platform =
         { new IPlatformInterop with
             member this.IsLaunchAtStartupEnabled() = false
+            member this.EnsureConfigCompatibility(config) = config
+            member this.SupportBackground(background) = true
             member this.RegisterHotkey shortcut window =
                 hotkeyRegistered <- true
                 ValueTask.FromResult true
             member this.SetupHotkeyCallback(window) = callbackRegistered <- Some window
-            member this.ToggleLaunchAtStartup(var0) = ()
+            member this.ToggleLaunchAtStartup(enable) = ()
             member this.HotkeyRegistrable = false }
 
     use config = new BehaviorSubject<_>(Configuration.Default)

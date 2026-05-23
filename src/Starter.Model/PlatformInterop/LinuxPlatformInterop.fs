@@ -8,6 +8,7 @@ open Tmds.DBus
 open Avalonia.Controls
 
 open Starter.Features
+open Starter.Features.Config
 open Starter.Features.Logging
 open Starter.Features.PlatformInterop.Linux
 
@@ -59,6 +60,15 @@ Comment=Launch Starter at startup
     let dbusConnection = new Connection(Address.Session)
 
     interface IPlatformInterop with
+        override this.SupportBackground background =
+            match background with
+            | Background.None -> true
+            | Background.Mica
+            | Background.Acrylic -> false
+
+        override this.EnsureConfigCompatibility config =
+            { config with Background = Background.None }
+
         // Launch at startup
         override this.ToggleLaunchAtStartup(enable) =
             match enable, (this :> IPlatformInterop).IsLaunchAtStartupEnabled() with
