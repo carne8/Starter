@@ -1,6 +1,5 @@
 ﻿module Starter.Tests.KeyboardNavigation
 
-open Avalonia.Controls
 open Avalonia.Headless
 open Avalonia.Headless.NUnit
 open Avalonia.Input
@@ -26,7 +25,7 @@ let ensureKeyboardResultSelectionWorks () =
         // Type text
         window.KeyTextInput "result"
 
-        let resultList = window |> Helpers.getControl<ListBox> "ResultList"
+        let resultList = window.ResultList
         let assertSelectedItem expectedResultIdx =
             Assert.AreEqual(expectedResultIdx, resultList.SelectedIndex, "Incorrect selected result index")
             Assert.AreEqual(

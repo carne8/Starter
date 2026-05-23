@@ -33,13 +33,17 @@
                 <ui:FASettingsExpander.Footer>
                     <Panel>
                         <ui:FAProgressRing IsVisible="{Binding LaunchAtStartupLoading}" />
-                        <ToggleSwitch IsChecked="{Binding LaunchAtStartup}" IsVisible="{Binding !LaunchAtStartupLoading}" />
+                        <ToggleSwitch x:Name="LaunchAtStartupSwitch"
+                                      IsChecked="{Binding LaunchAtStartup}"
+                                      IsVisible="{Binding !LaunchAtStartupLoading}" />
                     </Panel>
                 </ui:FASettingsExpander.Footer>
             </ui:FASettingsExpander>
 
             <!-- Keyboard shortcut -->
-            <controls:KeyboardShortcutInput DataContext="{Binding KeyboardShortcutVm}" ControlToFocus="{Binding #BackgroundComboBox}" />
+            <controls:KeyboardShortcutInput x:Name="KeyboardShortcutInput"
+                                            DataContext="{Binding KeyboardShortcutVm}"
+                                            ControlToFocus="{Binding #BackgroundComboBox}" />
 
             <TextBlock Classes="title2">Personalization</TextBlock>
 
@@ -81,7 +85,7 @@
                     <ui:FASymbolIconSource Symbol="ZoomIn" />
                 </ui:FASettingsExpander.IconSource>
                 <ui:FASettingsExpander.Footer>
-                    <ToggleSwitch IsChecked="{Binding ZoomedMode}" />
+                    <ToggleSwitch x:Name="ZoomedModeSwitch" IsChecked="{Binding ZoomedMode}" />
                 </ui:FASettingsExpander.Footer>
             </ui:FASettingsExpander>
 
@@ -97,7 +101,9 @@
                 </ui:FASettingsExpander.IconSource>
                 <ui:FASettingsExpander.Footer>
 
-                    <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.Antialiasings}" SelectedItem="{Binding SelectedAntialiasing}">
+                    <ComboBox x:Name="AntialiasingComboBox"
+                              ItemsSource="{x:Static vm:SettingsViewModel.Antialiasings}"
+                              SelectedItem="{Binding SelectedAntialiasing}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate DataType="vm:AntialiasingKind">
                                 <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
@@ -111,7 +117,7 @@
             <TextBlock Classes="title2">Search engine activation prefixes</TextBlock>
 
             <!-- Activator prefixes -->
-            <ItemsControl ItemsSource="{Binding ActivatorViewModels}">
+            <ItemsControl x:Name="ActivatorPrefixes" ItemsSource="{Binding ActivatorViewModels}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate DataType="vm:ActivatorInputFieldViewModel">
 
@@ -137,13 +143,13 @@
             <WrapPanel Orientation="Horizontal"
                        ItemSpacing="6"
                        LineSpacing="6">
-                <Button Command="{Binding OpenConfigDirectoryCommand}">
+                <Button x:Name="ConfigFolderButton" Command="{Binding OpenConfigDirectoryCommand}">
                     <TextBlock>Open config directory</TextBlock>
                 </Button>
-                <Button Command="{Binding OpenSearchEnginesDirectoryCommand}">
+                <Button x:Name="SearchEnginesFolderButton" Command="{Binding OpenSearchEnginesDirectoryCommand}">
                     <TextBlock>Open search engines directory</TextBlock>
                 </Button>
-                <Button Command="{Binding OpenLogsDirectoryCommand}">
+                <Button x:Name="LogsFolderButton" Command="{Binding OpenLogsDirectoryCommand}">
                     <TextBlock>Open logs directory</TextBlock>
                 </Button>
             </WrapPanel>

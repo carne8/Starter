@@ -1,9 +1,7 @@
 ﻿module Starter.Tests.ResultsOrdering
 
-open Avalonia.Controls
 open Avalonia.Headless
 open Avalonia.Headless.NUnit
-open Avalonia.Input
 open Avalonia.Threading
 open Starter.Features
 open Starter.Features.Config
@@ -39,8 +37,7 @@ let ensureMostUsedResultsAreTheFirstShowed () =
 
         // Assert results ordering
         let displayedResults =
-            window
-            |> Helpers.getControl<ListBox> "ResultList"
+            window.ResultList
             |> _.Items
             |> Seq.map (unbox<SearchResultData> >> _.SearchResult)
             |> Seq.toArray

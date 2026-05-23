@@ -1,6 +1,5 @@
 module Starter.Tests.SearchEngineActivator
 
-open Avalonia.Controls
 open Avalonia.Headless
 open Avalonia.Headless.NUnit
 open Avalonia.Input
@@ -33,11 +32,11 @@ let testActivatorPrefix () =
         Assert.IsNotNull(vm.Activator, "MainWindowViewModel should have an activator set")
 
         // Assert textbox erased the prefix
-        let tb = window |> Helpers.getControl<TextBox> "TextBox"
+        let tb = window.TextBox
         Assert.AreEqual("-result", tb.Text, "Textbox should have erased the prefix")
 
         // Assert activator name is displayed
-        let label = window |> Helpers.getControl<TextBlock> "GreetingOrActivatorLabel"
+        let label = window.GreetingOrActivatorLabel
         Assert.AreEqual(activators[0].Name, label.Text, "Displayed text should be the activator name")
 
         // Remove activator
@@ -50,7 +49,7 @@ let testActivatorPrefix () =
         Assert.Null(vm.Activator, "MainWindowViewModel should not have an activator set")
 
         // Assert activator name is not displayed anymore
-        let label = window |> Helpers.getControl<TextBlock> "GreetingOrActivatorLabel"
+        let label = window.GreetingOrActivatorLabel
         Assert.AreNotEqual(activators[0].Name, label.Text, "Displayed text should be the activator name")
     )
 

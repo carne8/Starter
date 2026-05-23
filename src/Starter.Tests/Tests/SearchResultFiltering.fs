@@ -1,6 +1,5 @@
 ﻿module Starter.Tests.SearchResultFiltering
 
-open Avalonia.Controls
 open Avalonia.Headless
 open Avalonia.Headless.NUnit
 open Avalonia.Input
@@ -16,8 +15,7 @@ let testDisplayedResults (shouldBeDisplayed: _ array) (shouldNotBeDisplayed: _ a
 
         // Assert all results are shown
         let displayedResults =
-            window
-            |> Helpers.getControl<ListBox> "ResultList"
+            window.ResultList
             |> _.Items
             |> Seq.map (unbox<SearchResultData> >> _.SearchResult)
             |> Seq.toArray
@@ -194,7 +192,7 @@ let ensureSearchResultsAreCleared () =
         window.KeyPress(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
         window.KeyRelease(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
 
-        let displayedResults = window |> Helpers.getControl<ListBox> "ResultList"
+        let displayedResults = window.ResultList
         Assert.AreEqual(0, displayedResults.ItemCount, "No results should displayed")
     )
 
@@ -222,13 +220,13 @@ let ensureSearchResultsAreCleared_WithActivator () =
         window.KeyTextInput "prefix-result"
 
         // Erase
-        let tb = window |> Helpers.getControl<TextBox> "TextBox"
+        let tb = window.TextBox
         tb.CaretIndex <- tb.Text |> function null -> 0 | t -> t.Length
         window.KeyPress(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
         window.KeyRelease(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
         window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
         window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
 
-        let displayedResults = window |> Helpers.getControl<ListBox> "ResultList"
+        let displayedResults = window.ResultList
         Assert.AreEqual(0, displayedResults.ItemCount, "No results should displayed")
     )
