@@ -109,6 +109,11 @@ let testBackground_Windows () =
             vm.Backgrounds |> Array.find (fun b -> b.Value = Background.Mica),
             vm.Backgrounds |> Array.find (fun b -> b.Value = Background.Acrylic)
 
+        Assert.IsTrue(
+            settings.BackgroundSetting.Description |> String.IsNullOrEmpty,
+            "No description should be present on Windows"
+        )
+
         let comboBox = settings.BackgroundComboBox
         Assert.IsTrue(comboBox.Focus(), "Failed to focus background combo box")
 
@@ -152,6 +157,11 @@ let testBackground_Linux () =
 
         let comboBox = settings.BackgroundComboBox
         comboBox.IsDropDownOpen <- true
+
+        Assert.IsNotEmpty(
+            settings.BackgroundSetting.Description,
+            "A description should be present on Linux"
+        )
 
         Assert.IsTrue(
             comboBox.ContainerFromItem(none).IsEnabled,
