@@ -61,7 +61,10 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
 
             instantResults
             |> Seq.map (SearchResultData.createDynamic engine)
-            |> addResults
+            |> fun r ->
+                results.AddRange r
+                results.Sort comparer
+                results.NotifyChanged()
 
             match engine.BufferResults with
             | false ->
