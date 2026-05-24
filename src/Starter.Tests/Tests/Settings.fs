@@ -339,3 +339,74 @@ let testActivatorPrefixes () =
             "Activator 1 prefix should not have been changed"
         )
     )
+
+
+[<AvaloniaTest>]
+let testHotkey () =
+    let platform = Mock.platform ()
+    let launcher = Mock.launcher ignore ignore
+
+    withSettingsWindow launcher platform [] (fun window settings vm ->
+        let textBox = settings.KeyboardShortcutInput.TextBox
+
+        Assert.AreEqual(
+            { Key = Key.Space; Modifiers = [| Key.LeftAlt |] },
+            vm.Config.Value.KeyboardShortcut,
+            "Default keyboard shortcut does not match"
+        )
+
+        let typeKeyCombination keys =
+            Assert.IsTrue(textBox.Focus(), "Should be able to focus the text box")
+            keys |> List.iter (fun key ->
+                window.KeyPressQwerty(key, RawInputModifiers.None)
+                window.KeyReleaseQwerty(key, RawInputModifiers.None)
+            )
+
+        // Test different key combinations
+        typeKeyCombination [ PhysicalKey.ArrowDown; PhysicalKey.MetaLeft; PhysicalKey.Enter]
+        Assert.AreEqual(
+            { Key = Key.Down; Modifiers = [| Key.LWin |] },
+            vm.Config.Value.KeyboardShortcut,
+            "New keyboard shortcut does not match"
+        )
+
+        typeKeyCombination [ PhysicalKey.A; PhysicalKey.AltRight; PhysicalKey.Enter]
+        Assert.AreEqual(
+            { Key = Key.A; Modifiers = [| Key.RightAlt |] },
+            vm.Config.Value.KeyboardShortcut,
+            "New keyboard shortcut does not match"
+        )
+
+        // Test exit
+        typeKeyCombination [ PhysicalKey.U; PhysicalKey.ControlLeft; PhysicalKey.Escape]
+        Assert.AreEqual(
+            { Key = Key.A; Modifiers = [| Key.RightAlt |] },
+            vm.Config.Value.KeyboardShortcut,
+            "Keyboard shortcut should not have been changed"
+        )
+
+        typeKeyCombination [ PhysicalKey.U; PhysicalKey.ControlLeft ]
+        Assert.IsTrue(
+            settings.KeyboardShortcutInput.ControlToFocus.Focus(),
+            "Should be able to unfocus keyboard shortcut input"
+        )
+        Assert.AreEqual(
+            { Key = Key.A; Modifiers = [| Key.RightAlt |] },
+            vm.Config.Value.KeyboardShortcut,
+            "Keyboard shortcut should not have been changed"
+        )
+
+        // Test several modifiers
+        typeKeyCombination [ PhysicalKey.O; PhysicalKey.ControlRight; PhysicalKey.ControlLeft; PhysicalKey.Enter]
+        Assert.AreEqual(
+            { Key = Key.O; Modifiers = [| Key.RightCtrl; Key.LeftCtrl |] },
+            vm.Config.Value.KeyboardShortcut,
+            "New keyboard shortcut does not match"
+        )
+        typeKeyCombination [ PhysicalKey.S; PhysicalKey.MetaLeft; PhysicalKey.ShiftLeft; PhysicalKey.Enter]
+        Assert.AreEqual(
+            { Key = Key.S; Modifiers = [| Key.LWin; Key.LeftShift |] },
+            vm.Config.Value.KeyboardShortcut,
+            "New keyboard shortcut does not match"
+        )
+    )

@@ -17,7 +17,7 @@ public partial class KeyboardShortcutInputViewModel : ObservableObject
     private KeyboardShortcut keyboardShortcut;
     private readonly HashSet<Key> pressedModifiers = [];
     private Key pressedKey = Key.None;
-    [ObservableProperty] private string text = "";
+    [ObservableProperty] public partial string Text { get; set; } = "";
 
     public bool Enabled => platform.HotkeyRegistrable;
 
