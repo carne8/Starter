@@ -10,8 +10,7 @@ open Starter.Tests.Common
 
 let testDisplayedResults (shouldBeDisplayed: _ array) (shouldNotBeDisplayed: _ array) engines config input =
     Mock.withWindowConfig config engines (fun window _ ->
-        // Type text
-        window.KeyTextInput input
+        input window
 
         // Assert all results are shown
         let displayedResults =
@@ -52,7 +51,12 @@ let ensureSearchResultsAppear () =
         Mock.dynamicSearchEngine "buffered" [] true (fun _ _ _ -> results[2])
     ]
 
-    testDisplayedResults (Array.concat results) [||] engines Configuration.Default "result"
+    testDisplayedResults
+        (Array.concat results)
+        [||]
+        engines
+        Configuration.Default
+        (fun window -> window.KeyTextInput "result")
 
 [<AvaloniaTest>]
 let testActivatorFiltering_ActivatorDisabled () =
@@ -87,7 +91,7 @@ let testActivatorFiltering_ActivatorDisabled () =
         shouldNotBeDisplayedResults
         [ searchEngine ]
         Configuration.Default
-        "result"
+        (fun window -> window.KeyTextInput "result")
 
 [<AvaloniaTest>]
 let testActivatorFiltering_StaticEngine_ActivatorEnabled () =
@@ -129,7 +133,7 @@ let testActivatorFiltering_StaticEngine_ActivatorEnabled () =
         shouldNotBeDisplayedResults
         [ searchEngine ]
         config
-        "prefix-result"
+        (fun window -> window.KeyTextInput "prefix-result")
 
 [<AvaloniaTest>]
 let testActivatorFiltering_StaticEngine_ActivatorEnabled_EmptyQueryShowAllResults () =
@@ -171,7 +175,55 @@ let testActivatorFiltering_StaticEngine_ActivatorEnabled_EmptyQueryShowAllResult
         shouldNotBeDisplayedResults
         [ searchEngine ]
         config
-        "prefix-"
+        (fun window -> window.KeyTextInput "prefix-")
+
+[<AvaloniaTest>]
+let testActivatorFiltering_DynamicEngine_ActivatorEnabled_EmptyQuery () =
+    let activator = Mock.activator "activator-id" "search-engine-id"
+    let otherActivator = Mock.activator "activator-id-2" "search-engine-id"
+
+    let results =
+        [| Mock.searchResultWithActivator "Result 0" true [| activator |]
+           Mock.searchResultWithActivator "Result 1" true [| activator |]
+           Mock.searchResultWithActivator "Result 2" false [| activator |]
+           Mock.searchResultWithActivator "Result 3" false [| activator |]
+           Mock.searchResultWithActivator "Result 4" false Array.empty
+           Mock.searchResultWithActivator "Result 5" true Array.empty
+           Mock.searchResultWithActivator "Not matching text 0" true Array.empty
+           Mock.searchResultWithActivator "Not matching text 1" true [| activator |]
+           Mock.searchResultWithActivator "Not matching text 2" false [| activator |]
+           Mock.searchResultWithActivator "Result 6" false [| otherActivator |]
+           Mock.searchResultWithActivator "Result 7" true [| otherActivator |]
+           Mock.searchResultWithActivator "Result 8" false [| otherActivator |]
+           Mock.searchResultWithActivator "Not matching text 3" true [| otherActivator |]
+           Mock.searchResultWithActivator "Not matching text 4" false [| otherActivator |] |]
+
+    let searchEngine =
+        Mock.dynamicSearchEngine
+            activator.SearchEngineId
+            [ activator ]
+            false
+            (fun q _ _ ->
+                match q with
+                | "" -> Seq.empty
+                | _ -> results
+            )
+
+    let config =
+        { Configuration.Default with
+            ActivatorPrefixes = Map.ofList [ activator.Id, "prefix-" ] }
+
+    testDisplayedResults
+        Array.empty
+        results
+        [ searchEngine ]
+        config
+        (fun window ->
+            window.KeyTextInput "prefix-"
+            window.KeyTextInput "result"
+            window.KeyPressQwerty(PhysicalKey.Backspace, RawInputModifiers.Control)
+            window.KeyReleaseQwerty(PhysicalKey.Backspace, RawInputModifiers.Control)
+        )
 
 [<AvaloniaTest>]
 let ensureSearchResultsAreCleared () =
