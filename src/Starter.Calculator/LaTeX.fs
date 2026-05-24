@@ -65,6 +65,7 @@ let rec fromExpression expr =
         | Function(Acsch, e) -> str.AppendFunction "\\operatorname{arcsch}" (fun () -> loop 0 str e)
         | Function(Acoth, e) -> str.AppendFunction "\\operatorname{arcoth}" (fun () -> loop 0 str e)
         | Function(Exp, e) -> loop precedence str (Power(Constant E, e))
+        | Function(Sqrt, e) -> loop precedence str (Power(Expression.frac 1 2, e))
         | Function(Abs, e) ->
             str.Append "\\left\\vert{" |> ignore
             loop 0 str e
