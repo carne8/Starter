@@ -125,8 +125,6 @@
                                                          Footer="{Binding}"
                                                          StarterIconSource="{Binding Icon}"
                                                          Theme="{DynamicResource SettingsExpanderExpanderStyle}">
-                            <controls:CustomSettingsExpander.Template />
-
                             <controls:CustomSettingsExpander.FooterTemplate>
                                 <DataTemplate DataType="vm:ActivatorInputFieldViewModel">
                                     <TextBox Text="{Binding ActivationString}" />

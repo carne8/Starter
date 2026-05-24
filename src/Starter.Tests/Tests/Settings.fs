@@ -2,17 +2,27 @@
 
 open System
 open System.Threading.Tasks
+open Avalonia.Controls
+open Avalonia.Controls.Presenters
 open Avalonia.Headless
 open Avalonia.Headless.NUnit
 open Avalonia.Input
+open Avalonia.VisualTree
 open Starter
 open Starter.Features.Config
 open Starter.Features.PlatformInterop
+open Starter.SearchEngine
 open Starter.Tests.Common
 
-let withSettingsWindow launcher (platform: IPlatformInterop) callback =
-    let engineStore = Mock.searchEngineStore []
-    let config = Configuration.Default |> platform.EnsureConfigCompatibility
+let withSettingsWindow launcher (platform: IPlatformInterop) engines callback =
+    let engineStore = Mock.searchEngineStore engines
+    let config =
+        { Configuration.Default with
+            ActivatorPrefixes =
+                engines
+                |> List.map (fun e -> e.Activators[0].Id, e.Activators[0].Id)
+                |> Map.ofList }
+        |> platform.EnsureConfigCompatibility
 
     let keyboardShortcutVm =
         ViewModels.KeyboardShortcutInputViewModel(
@@ -61,7 +71,7 @@ let testLaunchAtStartup () =
 
     let launcher = Mock.launcher ignore ignore
 
-    withSettingsWindow launcher platform (fun window settings _ ->
+    withSettingsWindow launcher platform [] (fun window settings _ ->
         // Toggle launch at startup
         Assert.IsFalse(isLaunchAtStartupEnabled, "Launch at startup does not match config")
 
@@ -81,7 +91,7 @@ let testZoomMode () =
     let platform = Mock.platform ()
     let launcher = Mock.launcher ignore ignore
 
-    withSettingsWindow launcher platform (fun window settings vm ->
+    withSettingsWindow launcher platform [] (fun window settings vm ->
         // Toggle zoomed mode
         Assert.IsFalse(vm.Config.Value.ZoomedMode, "Zoom mode does not match config")
 
@@ -100,7 +110,7 @@ let testBackground_Windows () =
     let platform = Mock.platform ()
     let launcher = Mock.launcher ignore ignore
 
-    withSettingsWindow launcher platform (fun _ settings vm ->
+    withSettingsWindow launcher platform [] (fun _ settings vm ->
         // Toggle background mode
         Assert.AreEqual(Background.Mica, vm.Config.Value.Background, "Background does not match config")
 
@@ -141,7 +151,7 @@ let testBackground_Linux () =
 
     let launcher = Mock.launcher ignore ignore
 
-    withSettingsWindow launcher platform (fun _ settings vm ->
+    withSettingsWindow launcher platform [] (fun _ settings vm ->
         // Toggle background mode
         Assert.AreEqual(Background.None, vm.Config.Value.Background, "Background does not match config")
 
@@ -172,7 +182,7 @@ let testAntialiasing () =
     let platform = Mock.platform ()
     let launcher = Mock.launcher ignore ignore
 
-    withSettingsWindow launcher platform (fun _ settings vm ->
+    withSettingsWindow launcher platform [] (fun _ settings vm ->
         // Toggle antialiasing mode
         Assert.AreEqual(Antialiasing.Grayscale, vm.Config.Value.Antialiasing, "Antialiasing mode does not match config")
 
@@ -246,4 +256,86 @@ let testAntialiasing () =
 //         lastLaunchedFile <- None
 //     )
 
-// TODO: Activator prefixes
+[<AvaloniaTest>]
+let testActivatorPrefixes () =
+    let platform = Mock.platform ()
+    let launcher = Mock.launcher ignore ignore
+
+    let activator1 = Mock.activator "activator-1" "engine-1"
+    let activator2 = Mock.activator "activator-2" "engine-1"
+
+    let engines : ISearchEngine list =
+        [ Mock.staticSearchEngine "engine-1" [ activator1 ] (fun _ -> Seq.empty)
+          Mock.dynamicSearchEngine "engine-2" [ activator2 ] false (fun _ _ _ -> Seq.empty) ]
+
+    withSettingsWindow launcher platform engines (fun window settings vm ->
+        let activatorStore = new Features.ActivatorStore(vm.Config)
+        engines |> List.iter activatorStore.AddSearchEngineActivators
+
+        Assert.AreEqual(
+            ValueSome struct (activator1, activator1.Id),
+            activatorStore.GetActivatorFromText(activator1.Id),
+            "Activator prefix should be working"
+        )
+
+        Assert.AreEqual(
+            ValueSome struct (activator2, activator2.Id),
+            activatorStore.GetActivatorFromText(activator2.Id),
+            "Activator prefix should be working"
+        )
+
+        window.Dispatcher.RunJobs()
+
+        let textBoxes =
+            settings.ActivatorPrefixes.ItemsPanelRoot.Children
+            |> Seq.map (fun control ->
+                let expander =
+                    control
+                    :?> ContentPresenter
+                    |> _.Child
+                    :?> Controls.CustomSettingsExpander
+
+                let vm = expander.Footer :?> ViewModels.ActivatorInputFieldViewModel
+                let tb = expander.FindDescendantOfType<TextBox>()
+
+                vm.Name, tb
+            )
+            |> Seq.toArray
+
+        let _, textBox1 = textBoxes |> Seq.find (fun (name, _) -> name = activator1.Name)
+        let _, textBox2 = textBoxes |> Seq.find (fun (name, _) -> name = activator2.Name)
+
+        // Change first activator
+        let newPrefix1 = "activator-1-new-prefix"
+        Assert.IsTrue(textBox1.Focus(), "Should be able to focus the text box")
+        textBox1.SelectAll()
+        window.KeyTextInput newPrefix1
+
+        Assert.AreEqual(
+            ValueSome struct (activator1, newPrefix1),
+            activatorStore.GetActivatorFromText(newPrefix1),
+            "Activator 1 prefix should have been changed"
+        )
+        Assert.AreEqual(
+            ValueSome struct (activator2, activator2.Id),
+            activatorStore.GetActivatorFromText(activator2.Id),
+            "Activator 2 prefix should not have been changed"
+        )
+
+        // Change second activator
+        let newPrefix2 = "activator-2-new-prefix"
+        Assert.IsTrue(textBox2.Focus(), "Should be able to focus the text box")
+        textBox2.SelectAll()
+        window.KeyTextInput newPrefix2
+
+        Assert.AreEqual(
+            ValueSome struct (activator2, newPrefix2),
+            activatorStore.GetActivatorFromText(newPrefix2),
+            "Activator 2 prefix should have been changed"
+        )
+        Assert.AreEqual(
+            ValueSome struct (activator1, newPrefix1),
+            activatorStore.GetActivatorFromText(newPrefix1),
+            "Activator 1 prefix should not have been changed"
+        )
+    )
