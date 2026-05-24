@@ -24,8 +24,8 @@ public partial class SearchResult : UserControl
     {
         base.OnPropertyChanged(change);
 
-        // if (change.Property == AccentuationMapProperty)
-        //     NameTextBlock.AccentuationMap = AccentuationMap;
+        if (change.Property == AccentuationMapProperty)
+            NameTextBlock.AccentuationMap = AccentuationMap;
     }
 }
 

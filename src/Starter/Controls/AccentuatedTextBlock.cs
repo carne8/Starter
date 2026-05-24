@@ -10,37 +10,31 @@ namespace Starter.Controls;
 
 public partial class AccentuatedTextBlock : Control
 {
-    private Typeface normalTypeface;
-    private double normalScale;
-    private Typeface accentuatedTypeface;
-    private double accentuatedScale;
+    private Typeface typeface = new(FontFamily.Default, weight: FontWeight.Regular);
+    private double scale;
 
-    static AccentuatedTextBlock() => AffectsRender<AccentuatedTextBlock>(ForegroundProperty);
+    static AccentuatedTextBlock() =>
+        AffectsRender<AccentuatedTextBlock>(
+            ForegroundProperty,
+            AccentuatedForegroundProperty,
+            FontWeightProperty
+        );
 
-    public AccentuatedTextBlock()
+    public AccentuatedTextBlock() => UpdateScales();
+
+    private void LoadFont()
     {
-        normalTypeface = new Typeface(FontFamily.Default, weight: FontWeight.Regular);
-        accentuatedTypeface = new Typeface(FontFamily.Default, weight: FontWeight.ExtraBold);
+        typeface = new Typeface(FontFamily, weight: FontWeight);
         UpdateScales();
     }
 
-    private void LoadFont(FontFamily font)
-    {
-        normalTypeface = new Typeface(font, weight: FontWeight.Regular);
-        accentuatedTypeface = new Typeface(font, weight: FontWeight.ExtraBold);
-        UpdateScales();
-    }
-
-    private void UpdateScales()
-    {
-        normalScale = FontSize / normalTypeface.GlyphTypeface.Metrics.DesignEmHeight;
-        accentuatedScale = FontSize / accentuatedTypeface.GlyphTypeface.Metrics.DesignEmHeight;
-    }
+    private void UpdateScales() => scale = FontSize / typeface.GlyphTypeface.Metrics.DesignEmHeight;
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
-        if (change.Property == FontFamilyProperty) LoadFont(FontFamily);
+        if (change.Property == FontFamilyProperty ||
+            change.Property == FontWeightProperty) LoadFont();
         else if (change.Property == FontSizeProperty) UpdateScales();
     }
 
@@ -48,9 +42,9 @@ public partial class AccentuatedTextBlock : Control
     {
         var text = Text ?? string.Empty;
         var shapedBuffer =
-            TextShaper.Current.ShapeText(text, new TextShaperOptions(accentuatedTypeface.GlyphTypeface, FontSize));
+            TextShaper.Current.ShapeText(text, new TextShaperOptions(typeface.GlyphTypeface, FontSize));
         using var shapedTextRun =
-            new ShapedTextRun(shapedBuffer, new GenericTextRunProperties(accentuatedTypeface, FontSize));
+            new ShapedTextRun(shapedBuffer, new GenericTextRunProperties(typeface, FontSize));
 
         return shapedTextRun.Size;
     }
@@ -74,9 +68,9 @@ public partial class AccentuatedTextBlock : Control
         var glyphIndices = new ushort[textMemory.Length];
 
         for (var i = 0; i < glyphIndices.Length; i++)
-            glyphIndices[i] = normalTypeface.GlyphTypeface.CharacterToGlyphMap.GetGlyph(text[i]);
+            glyphIndices[i] = typeface.GlyphTypeface.CharacterToGlyphMap.GetGlyph(text[i]);
 
-        DrawGlyphRun(context, normalTypeface.GlyphTypeface, textMemory, glyphIndices);
+        DrawGlyphRun(context, textMemory, glyphIndices, false);
     }
 
     public void RenderAccentuated(DrawingContext context, string text, ReadOnlyMemory<char> textMemory, bool[] accentuationMap)
@@ -93,15 +87,11 @@ public partial class AccentuatedTextBlock : Control
             {
                 var rangeEnd = charIdx - 1;
                 var rangeLength = rangeEnd - rangeStart + 1;
-                var typeface =
-                    accentuationMap[rangeStart]
-                        ? accentuatedTypeface.GlyphTypeface
-                        : normalTypeface.GlyphTypeface;
 
                 if (rangeLength != 0)
                 {
                     for (var i = 0; i < rangeLength; i++)
-                        glyphIndices[i] = typeface.CharacterToGlyphMap.GetGlyph(text[rangeStart + i]);
+                        glyphIndices[i] = typeface.GlyphTypeface.CharacterToGlyphMap.GetGlyph(text[rangeStart + i]);
                     // to charIdx - rangeStart
                     // corresponds to the char index
 
@@ -109,17 +99,16 @@ public partial class AccentuatedTextBlock : Control
 
                     DrawGlyphRun(
                         context,
-                        typeface,
                         textMemory.Slice(rangeStart, rangeLength),
-                        new ArraySegment<ushort>(glyphIndices, 0, rangeLength)
+                        new ArraySegment<ushort>(glyphIndices, 0, rangeLength),
+                        accentuationMap[rangeStart]
                     );
 
                     // Update advance for next range
-                    var scale = accentuationMap[rangeStart] ? accentuatedScale : normalScale;
                     advance = 0;
                     for (var i = 0; i < rangeLength; i++)
                     {
-                        if (!typeface.TryGetHorizontalGlyphAdvance(glyphIndices[i], out var glyphAdvance)) continue;
+                        if (!typeface.GlyphTypeface.TryGetHorizontalGlyphAdvance(glyphIndices[i], out var glyphAdvance)) continue;
                         advance += scale * glyphAdvance;
                     }
 
@@ -134,19 +123,19 @@ public partial class AccentuatedTextBlock : Control
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void DrawGlyphRun(
         DrawingContext context,
-        GlyphTypeface typeface,
         ReadOnlyMemory<char> textMemory,
-        IReadOnlyList<ushort> glyphIndices
+        IReadOnlyList<ushort> glyphIndices,
+        bool accentuated
     )
     {
         using var glyphRun =
             new GlyphRun(
-                typeface,
+                typeface.GlyphTypeface,
                 FontSize,
                 textMemory,
                 glyphIndices
             );
 
-        context.DrawGlyphRun(Foreground, glyphRun);
+        context.DrawGlyphRun(accentuated ? AccentuatedForeground : Foreground, glyphRun);
     }
 }

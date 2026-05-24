@@ -17,17 +17,13 @@
             </Border>
 
             <StackPanel VerticalAlignment="Center" Spacing="-1">
-                <TextBlock x:Name="NameTextBlock"
-                           FontSize="{DynamicResource SearchResultFontSize}"
-                           Foreground="{DynamicResource Text1}"
-                           Text="{Binding Name}"
-                           FontFamily="{StaticResource Geist}"
-                           FontWeight="{DynamicResource TextBoxFontWeight}" />
-                <!-- <controls:AccentuatedTextBlock x:Name="NameTextBlock" -->
-                <!-- FontSize="{DynamicResource SearchResultFontSize}" -->
-                <!-- Foreground="{DynamicResource TextForeground}" -->
-                <!-- Text="{Binding Name}" -->
-                <!-- FontFamily="{StaticResource Geist}" /> -->
+                <controls:AccentuatedTextBlock x:Name="NameTextBlock"
+                                               FontSize="{DynamicResource SearchResultFontSize}"
+                                               Foreground="{DynamicResource Text1}"
+                                               AccentuatedForeground="{DynamicResource TextControlSelectionHighlightColor}"
+                                               Text="{Binding Name}"
+                                               FontFamily="{StaticResource Geist}"
+                                               FontWeight="{DynamicResource TextBoxFontWeight}" />
 
                 <TextBlock Text="{Binding Description}"
                            IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
