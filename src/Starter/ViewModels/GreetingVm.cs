@@ -57,18 +57,16 @@ public partial class GreetingVm : ObservableObject
         "Chaos organizer activated",
         "Another day, another shortcut",
         "What are we launching today?",
-        "1110001101010"
+        "00001 10100 111 010 111 100"
     ];
 
-    private readonly TimeSpan minimumTimeBeforeRefresh = TimeSpan.FromMinutes(5);
+    private readonly TimeSpan minimumTimeBeforeRefresh = TimeSpan.FromMinutes(30);
+    private string[]? lastGreetingSource;
     private DateTimeOffset lastRefresh;
     private readonly Random random = new();
 
-    [ObservableProperty] public partial string Greeting { get; set; }
-
-    private void ChooseNewGreeting()
-    {
-        var arr = DateTimeOffset.Now.Hour switch
+    private string[] CurrentGreetingArray() =>
+        DateTimeOffset.Now.Hour switch
         {
             >= 5 and < 12 => morning,
             >= 12 and < 18 => afternoon,
@@ -76,17 +74,38 @@ public partial class GreetingVm : ObservableObject
             _ => lateNight
         };
 
-        var idx = random.Next(arr.Length + others.Length);
-        Greeting = idx < arr.Length ? arr[idx] : others[idx-arr.Length];
+    [ObservableProperty] public partial string Greeting { get; set; }
+
+    private void ChooseNewGreeting(bool forceTimeGreeting)
+    {
+        var arr = CurrentGreetingArray();
+
+        if (forceTimeGreeting)
+        {
+            var idx = random.Next(arr.Length);
+            Greeting = arr[idx];
+            lastGreetingSource = arr;
+        }
+        else
+        {
+            var idx = random.Next(arr.Length + others.Length);
+            Greeting = idx < arr.Length ? arr[idx] : others[idx-arr.Length];
+            lastGreetingSource = idx < arr.Length ? arr : others;
+        }
+
         lastRefresh = DateTimeOffset.Now;
     }
 
-    public GreetingVm() => ChooseNewGreeting();
+    public GreetingVm() => ChooseNewGreeting(true);
 
     [RelayCommand]
     private void RefreshGreeting()
     {
-        if (lastRefresh + minimumTimeBeforeRefresh > DateTimeOffset.Now) return;
-        ChooseNewGreeting();
+        if (lastRefresh.Hour != DateTimeOffset.Now.Hour &&
+            lastGreetingSource != CurrentGreetingArray())
+            ChooseNewGreeting(true);
+
+        else if (lastRefresh + minimumTimeBeforeRefresh <= DateTimeOffset.Now)
+            ChooseNewGreeting(false);
     }
 }
