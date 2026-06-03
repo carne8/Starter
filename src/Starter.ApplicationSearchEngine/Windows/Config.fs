@@ -20,7 +20,7 @@ module FolderConfiguration =
     let Default =
         { Folders =
             [| Environment.GetFolderPath(Environment.SpecialFolder.Programs)
-               Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms) |]
+               Environment.GetFolderPath(Environment.SpecialFolder.CommonPrograms) |> Path.GetDirectoryName |> unbox |]
           ExcludedFolders =
             [| Environment.GetFolderPath(Environment.SpecialFolder.Startup)
                Environment.GetFolderPath(Environment.SpecialFolder.CommonStartup) |]
