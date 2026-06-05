@@ -75,8 +75,8 @@ public partial class MainWindow : TranslucentWindow
         // Subscribe to view model commands
         vm.ClearTextBox += (_, prefixLength) => Dispatcher.UIThread.Post(() =>
         {
+            TextBox.CaretIndex = 0; // Change caret index before text prevents a color bug
             TextBox.Text = TextBox.Text?[prefixLength..];
-            TextBox.CaretIndex -= prefixLength;
         });
         vm.HideWindow += (_, _) => Dispatcher.UIThread.Post(Hide);
 
