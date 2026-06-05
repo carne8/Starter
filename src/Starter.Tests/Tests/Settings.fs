@@ -72,16 +72,18 @@ let testLaunchAtStartup () =
     let launcher = Mock.launcher ignore ignore
 
     withSettingsWindow launcher platform [] (fun window settings _ ->
-        // Toggle launch at startup
+        // Assert disabled
         Assert.IsFalse(isLaunchAtStartupEnabled, "Launch at startup does not match config")
 
         let launchAtStartupToggle = settings.LaunchAtStartupSwitch
         Assert.IsTrue(launchAtStartupToggle.Focus(), "Failed to focus launch at startup toggle")
 
-        window.KeyReleaseQwerty(PhysicalKey.Space, RawInputModifiers.None) // Toggle
+        // Toggle
+        window.KeyReleaseQwerty(PhysicalKey.Space, RawInputModifiers.None)
         Assert.IsTrue(isLaunchAtStartupEnabled, "Launch at startup should have been cancelled")
 
-        window.KeyReleaseQwerty(PhysicalKey.Space, RawInputModifiers.None) // Toggle
+        // Toggle
+        window.KeyReleaseQwerty(PhysicalKey.Space, RawInputModifiers.None)
         Assert.IsFalse(isLaunchAtStartupEnabled, "Launch at startup should have been cancelled")
     )
 
