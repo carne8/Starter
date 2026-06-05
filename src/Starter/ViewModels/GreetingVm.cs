@@ -57,7 +57,7 @@ public partial class GreetingVm : ObservableObject
         "Chaos organizer activated",
         "Another day, another shortcut",
         "What are we launching today?",
-        "00001 10100 111 010 111 100"
+        "00010 10100 111 010 111 100"
     ];
 
     private readonly TimeSpan minimumTimeBeforeRefresh = TimeSpan.FromMinutes(30);
