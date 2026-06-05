@@ -4,9 +4,11 @@ open System
 open System.IO
 
 let private path =
-    "PATH"
-    |> Environment.GetEnvironmentVariable
-    |> _.Split(':')
+    let path = Environment.GetEnvironmentVariable "PATH"
+    if OperatingSystem.IsWindows() then
+        path.Split(';')
+    else
+        path.Split(':')
 
 /// Find an executable from the PATH environment variable
 let findCommandPath command =

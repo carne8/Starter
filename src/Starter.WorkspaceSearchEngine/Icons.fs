@@ -25,6 +25,7 @@ module IconName =
     let rustRover = "RustRover.svg"
     let cLion = "CLion.svg"
     let androidStudio = "Android_Studio.svg"
+    let windowsTerminal = "windows-terminal.svg"
 
 let loadIcon pluginPath iconName =
     let iconFile = Path.Combine(pluginPath, "Images", iconName)

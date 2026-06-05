@@ -19,6 +19,7 @@
         <Compile Include="WorkspaceSources\VsCode.fs" />
         <Compile Include="WorkspaceSources\JetBrains.fs" />
         <Compile Include="WorkspaceSources\AndroidStudio.fs" />
+        <Compile Include="WorkspaceSources\WindowsTerminal.fs" />
         <Compile Include="WorkspaceSources\WorkspaceSourceProvider.fs" />
         <Compile Include="Settings.axaml.fs" />
 
