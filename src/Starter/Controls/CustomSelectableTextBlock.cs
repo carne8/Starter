@@ -1,4 +1,5 @@
-﻿using System.Collections.Specialized;
+﻿using System.Collections;
+using System.Collections.Specialized;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Documents;
@@ -29,6 +30,13 @@ public class CustomSelectableTextBlock : SelectableTextBlock
             {
                 InlinesSource.CollectionChanged += OnCollectionChanged;
                 previousBoundCollection = InlinesSource;
+
+                if (InlinesSource is not IList list) return;
+                foreach (var item in list)
+                {
+                    if (item is not Inline newInline) continue;
+                    Inlines?.Add(newInline);
+                }
             }
         }
 
