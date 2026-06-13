@@ -16,6 +16,7 @@
         <Compile Include="Tests\SearchEngineIntegration.fs" />
         <Compile Include="Tests\KeyboardNavigation.fs" />
         <Compile Include="Tests\Settings.fs" />
+        <Compile Include="Tests\ExceptionResilience.fs" />
         <Compile Include="TestAppBuilder.fs" />
     </ItemGroup>
 
