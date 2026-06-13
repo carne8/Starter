@@ -2,6 +2,7 @@
     <ResourceDictionary.ThemeDictionaries>
         <!-- Light -->
         <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="IconsColor">Black</SolidColorBrush>
             <SolidColorBrush x:Key="Text1">#111114</SolidColorBrush>
             <SolidColorBrush x:Key="Text2">#70707e</SolidColorBrush>
             <SolidColorBrush x:Key="Text3">#b0b0be</SolidColorBrush>
@@ -20,6 +21,7 @@
 
         <!-- Dark -->
         <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="IconsColor">White</SolidColorBrush>
             <SolidColorBrush x:Key="Text1">#f0f0f2</SolidColorBrush>
             <SolidColorBrush x:Key="Text2">#858593</SolidColorBrush>
             <SolidColorBrush x:Key="Text3">#70707e</SolidColorBrush>

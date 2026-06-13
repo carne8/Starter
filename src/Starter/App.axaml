@@ -10,6 +10,7 @@
             <FontFamily x:Key="Geist">avares://Starter/Assets/Fonts#Geist</FontFamily>
             <FontFamily x:Key="GeistMono">avares://Starter/Assets/Fonts#Geist Mono</FontFamily>
             <ResourceDictionary.MergedDictionaries>
+                <MergeResourceInclude Source="/Views/Icons.axaml" />
                 <MergeResourceInclude Source="/Styles/Resources.axaml" />
                 <MergeResourceInclude Source="/Styles/ZoomModes.axaml" />
                 <MergeResourceInclude Source="/Styles/CustomTextBox.axaml" />

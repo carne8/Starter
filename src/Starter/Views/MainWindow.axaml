@@ -22,23 +22,26 @@
                             Antialiasing="{Binding ConfigSystemObservable^.Antialiasing}">
 
     <Window.Resources>
-        <DrawingGroup x:Key="SearchIconDg">
-            <DrawingGroup.ClipGeometry>
-                <RectangleGeometry Rect="0.0,0.0,14.0,14.0" />
-            </DrawingGroup.ClipGeometry>
-            <GeometryDrawing>
-                <GeometryDrawing.Pen>
-                    <Pen Brush="{DynamicResource Text3}"
-                         LineJoin="Miter"
-                         Thickness="1.6"
-                         LineCap="Round" />
-                </GeometryDrawing.Pen>
-                <GeometryDrawing.Geometry>
-                    <PathGeometry Figures="M 9.2998 9.30005 L 12.7998 12.8 M 9.7998 5.30005 C 9.7998 7.78533 7.78509 9.80005 5.2998 9.80005 C 2.81452 9.80005 0.799805 7.78533 0.799805 5.30005 C 0.799805 2.81477 2.81452 0.800049 5.2998 0.800049 C 7.78509 0.800049 9.7998 2.81477 9.7998 5.30005 Z" FillRule="NonZero" />
-                </GeometryDrawing.Geometry>
-            </GeometryDrawing>
-        </DrawingGroup>
-        <DrawingImage x:Key="SearchIcon" Drawing="{StaticResource SearchIconDg}" />
+        <Pen x:Key="SearchIconPen"
+             Brush="{DynamicResource Text3}"
+             Thickness="1.6"
+             LineCap="Round"
+             LineJoin="Round" />
+
+        <DrawingImage x:Key="SearchIcon">
+            <DrawingImage.Drawing>
+                <DrawingGroup ClipGeometry="M 0,0 L 24,0 24,24 0,24 Z">
+                    <GeometryDrawing Geometry="F1 m21 21-4.34-4.34" Pen="{StaticResource SearchIconPen}" />
+                    <GeometryDrawing Pen="{StaticResource SearchIconPen}">
+                        <GeometryDrawing.Geometry>
+                            <EllipseGeometry RadiusX="8"
+                                             RadiusY="8"
+                                             Center="11,11" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingGroup>
+            </DrawingImage.Drawing>
+        </DrawingImage>
 
         <local:FirstNonNullConverter x:Key="FirstNonNull" />
     </Window.Resources>

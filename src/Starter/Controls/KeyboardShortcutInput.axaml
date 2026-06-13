@@ -17,7 +17,7 @@
 
     <ui:FASettingsExpander Header="Keyboard shortcut" Classes.showDescription="{Binding !Enabled, Mode=OneTime}">
         <ui:FASettingsExpander.IconSource>
-            <ui:FASymbolIconSource Symbol="Keyboard" />
+            <ui:FAImageIconSource Source="{StaticResource Keyboard}" />
         </ui:FASettingsExpander.IconSource>
         <ui:FASettingsExpander.Footer>
             <TextBox x:Name="TextBox"

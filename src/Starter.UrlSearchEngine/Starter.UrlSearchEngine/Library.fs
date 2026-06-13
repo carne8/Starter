@@ -1,5 +1,6 @@
 module Starter.UrlSearchEngine
 
+open Avalonia
 open Starter.UrlSearchEngine.Regex
 open Starter.SearchEngine
 
@@ -9,7 +10,22 @@ open System.Text.RegularExpressions
 open Avalonia.Media
 open R3
 
-let icon = StarterIconSource(StreamGeometry.Parse "M34,14 C39.5228475,14 44,18.4771525 44,24 C44,29.4292399 39.6733292,33.8479317 34.2799048,33.9961582 L34,34 L28.25,34 C27.5596441,34 27,33.4403559 27,32.75 C27,32.1027913 27.4918747,31.5704661 28.1221948,31.5064536 L28.25,31.5 L34,31.5 C38.1421356,31.5 41.5,28.1421356 41.5,24 C41.5,19.9390827 38.2725256,16.6319825 34.2427311,16.5038536 L34,16.5 L28.25,16.5 C27.5596441,16.5 27,15.9403559 27,15.25 C27,14.6027913 27.4918747,14.0704661 28.1221948,14.0064536 L28.25,14 L34,14 Z M19.75,14 C20.4403559,14 21,14.5596441 21,15.25 C21,15.8972087 20.5081253,16.4295339 19.8778052,16.4935464 L19.75,16.5 L14,16.5 C9.85786438,16.5 6.5,19.8578644 6.5,24 C6.5,28.0609173 9.72747441,31.3680175 13.7572689,31.4961464 L14,31.5 L19.75,31.5 C20.4403559,31.5 21,32.0596441 21,32.75 C21,33.3972087 20.5081253,33.9295339 19.8778052,33.9935464 L19.75,34 L14,34 C8.4771525,34 4,29.5228475 4,24 C4,18.5707601 8.32667079,14.1520683 13.7200952,14.0038418 L14,14 L19.75,14 Z M13,22.75 L35,22.75 C35.6903559,22.75 36.25,23.3096441 36.25,24 C36.25,24.6472087 35.7581253,25.1795339 35.1278052,25.2435464 L35,25.25 L13,25.25 C12.3096441,25.25 11.75,24.6903559 11.75,24 C11.75,23.3527913 12.2418747,22.8204661 12.8721948,22.7564536 L13,22.75 L35,22.75 L13,22.75 Z")
+let createIcon lightMode =
+    let pen =
+        Pen(
+            (if lightMode then Brushes.Black else Brushes.White),
+            1.5,
+            lineCap = PenLineCap.Round,
+            lineJoin = PenLineJoin.Round
+        )
+
+    let group = DrawingGroup()
+    group.Children.Add(GeometryDrawing(Pen = pen, Geometry = StreamGeometry.Parse "F1 M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"))
+    group.Children.Add(GeometryDrawing(Pen = pen, Geometry = StreamGeometry.Parse "F1 M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"))
+
+    DrawingImage(group, Viewbox = Rect(0, 0, 24, 24))
+
+let icon = StarterIconSource(createIcon true, createIcon false)
 
 [<Struct>]
 type SearchResult =
