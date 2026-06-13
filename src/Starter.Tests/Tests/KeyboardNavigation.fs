@@ -15,13 +15,13 @@ let ensureKeyboardResultSelectionWorks () =
            Mock.searchResult "Result 2"
            Mock.searchResult "Result 3" |]
 
-    let searchEngines =
+    let searchEngine =
         { Id = "engine-id"
           OnLoadResults = fun () -> results
           OnSearchResultSelected = ignore
           Activators = Array.empty }
 
-    Mock.withWindowConfig Configuration.Default [ searchEngines ] (fun window _ ->
+    Mock.withWindowConfig Configuration.Default [ searchEngine ] (fun window _ ->
         // Type text
         window.KeyTextInput "result"
 
