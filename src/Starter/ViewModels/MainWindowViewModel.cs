@@ -45,6 +45,11 @@ public partial class MainWindowViewModel : ObservableObject
         this.resultScoreDb = resultScoreDb;
 
         searchResultStore = new SearchResultStore(resultScoreDb, searchEngineStore.SearchEngines);
+        searchEngineStore.SearchEngineAdded += se =>
+        {
+            if (se is IStaticSearchEngine staticSe) searchResultStore.AddSource(staticSe);
+            else if (se is IDynamicSearchEngine dynamicSe) searchResultStore.AddSource(dynamicSe);
+        };
         foreach (var se in searchEngineStore.StaticSearchEngines) searchResultStore.AddSource(se);
         foreach (var se in searchEngineStore.DynamicSearchEngines) searchResultStore.AddSource(se);
     }

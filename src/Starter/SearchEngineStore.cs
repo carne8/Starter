@@ -12,6 +12,9 @@ public class SearchEngineStore
     public readonly Dictionary<string, ISearchEngine> SearchEngines = new();
     public readonly Dictionary<string, SearchEngineFactory.SearchEngineSettings> Settings = new();
 
+    public event Action<ISearchEngine>? SearchEngineAdded;
+    public event Action<string, SearchEngineFactory.SearchEngineSettings>? SearchEngineSettingsAdded;
+
     public void LoadSearchEnginesFromDirectory(string directory, IClipboard clipboard)
     {
         foreach (var factory in SearchEngineLoading.loadFactoriesFromDirectory(directory))
@@ -42,7 +45,13 @@ public class SearchEngineStore
                 );
                 return;
             }
-            if (settings is not null) Settings.Add(engine.Id, settings);
+
+            SearchEngineAdded?.Invoke(engine);
+            if (settings is not null)
+            {
+                Settings.Add(engine.Id, settings);
+                SearchEngineSettingsAdded?.Invoke(engine.Id, settings);
+            }
         }
     }
 
@@ -50,11 +59,13 @@ public class SearchEngineStore
     {
         StaticSearchEngines.Add(se);
         SearchEngines.Add(se.Id, se);
+        SearchEngineAdded?.Invoke(se);
     }
 
     public void AddSearchEngine(IDynamicSearchEngine se)
     {
         DynamicSearchEngines.Add(se);
         SearchEngines.Add(se.Id, se);
+        SearchEngineAdded?.Invoke(se);
     }
 }

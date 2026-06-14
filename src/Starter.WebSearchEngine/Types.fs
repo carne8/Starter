@@ -7,6 +7,7 @@ open System.Text.Json
 open System.Threading
 open System.Threading.Tasks
 
+open Avalonia.Threading
 open Starter.SearchEngine
 open Starter.WebSearchEngine.Logger
 open Avalonia.Svg.Skia
@@ -130,8 +131,10 @@ type SearchEngine =
             )
 
         let lightIcon, darkIcon =
-            SvgImage(Source = SvgSource.Load ìconPath, Css = ".icon-color { fill: #282b2f; }"),
-            SvgImage(Source = SvgSource.Load ìconPath, Css = ".icon-color { fill: #ffffff; }")
+            Dispatcher.UIThread.Invoke(fun () ->
+                SvgImage(Source = SvgSource.Load ìconPath, Css = ".icon-color { fill: #282b2f; }"),
+                SvgImage(Source = SvgSource.Load ìconPath, Css = ".icon-color { fill: #ffffff; }")
+            )
 
         { Kind = seKind
           Name = seKind |> SearchEngineKind.getName

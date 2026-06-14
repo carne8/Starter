@@ -9,7 +9,7 @@ open Starter.ApplicationSearchEngine.Logger
 open Starter.SearchEngine
 
 type WindowsAppsSearchEngine(config: Observable<FolderConfiguration>) =
-    static let icon = Constants.icon
+    let icon = Constants.getIcon ()
 
     let resultsChanged = DelegateEvent<EventHandler<ISearchResult seq>>()
     let uwpLoader = UwpLoader.UwpAppsLoader()

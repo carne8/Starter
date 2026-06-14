@@ -1,5 +1,6 @@
 ﻿using Avalonia.Platform.Storage;
 using Microsoft.Extensions.DependencyInjection;
+using ObservableCollections;
 using R3;
 using Starter.Features.Config;
 using Starter.Features.PlatformInterop;
@@ -41,7 +42,7 @@ public partial class SettingsViewModel : ObservableObject
     public KeyboardShortcutInputViewModel KeyboardShortcutVm { get; }
 
     // Activator prefixes
-    public ActivatorInputFieldViewModel[] ActivatorViewModels { get; }
+    public ObservableList<ActivatorInputFieldViewModel> ActivatorViewModels { get; } = [];
 
     public SettingsViewModel(
         ILauncher launcher,
@@ -84,14 +85,24 @@ public partial class SettingsViewModel : ObservableObject
         KeyboardShortcutVm.KeyboardShortcutChanged +=
             shortcut => Config.OnNext(Config.Value.WithKeyboardShortcut(shortcut));
 
-        ActivatorViewModels = engines.SearchEngines.Values
-            .SelectMany(engine => engine.Activators)
-            .Select(activator => new ActivatorInputFieldViewModel(
-                activator,
-                baseConfig.ActivatorPrefixes,
-                ActivatorPrefixChanged
-            ))
-            .ToArray();
+        ActivatorViewModels.AddRange(
+            engines.SearchEngines.Values
+                .SelectMany(engine => engine.Activators)
+                .Select(activator => new ActivatorInputFieldViewModel(
+                    activator,
+                    baseConfig.ActivatorPrefixes,
+                    ActivatorPrefixChanged
+                ))
+        );
+        engines.SearchEngineAdded += se => ActivatorViewModels.AddRange(
+            se.Activators.Select(activator =>
+                new ActivatorInputFieldViewModel(
+                    activator,
+                    baseConfig.ActivatorPrefixes,
+                    ActivatorPrefixChanged
+                )
+            )
+        );
     }
 
     private void ActivatorPrefixChanged(ISearchEngineActivator activator, string newPrefix)

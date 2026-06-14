@@ -13,6 +13,7 @@ type FolderConfiguration =
 module Constants =
     open Avalonia
     open Avalonia.Media
+    open Avalonia.Threading
     open Starter.SearchEngine
 
     let [<Literal>] IconSize = 70
@@ -36,4 +37,7 @@ module Constants =
 
         DrawingImage(group, Viewbox = Rect(0, 0, 24, 24))
 
-    let icon = StarterIconSource(createIcon true, createIcon false)
+    let getIcon () =
+        Dispatcher.UIThread.Invoke(fun () ->
+            StarterIconSource(createIcon true, createIcon false)
+        )

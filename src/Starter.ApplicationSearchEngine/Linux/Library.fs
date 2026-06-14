@@ -11,7 +11,7 @@ open Starter.ApplicationSearchEngine.Logger
 open Starter.SearchEngine
 
 type LinuxAppsSearchEngine() =
-    static let icon = Constants.icon
+    let icon = Constants.getIcon ()
 
     static let defaultDataDirectories = // TODO: Make it respect the hierarchy and prioritize the first matches
         let userShare =

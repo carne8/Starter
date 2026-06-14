@@ -65,6 +65,15 @@ public partial class SettingsWindowViewModel : ObservableObject
         selectedPage = settingsPage;
 
         // Add search engine settings
+        searchEngineStore.SearchEngineSettingsAdded += (seId, settings) =>
+        {
+            if (!searchEngineStore.SearchEngines.TryGetValue(seId, out var engine)) return;
+            Pages.Add(new MenuItemViewModel(
+                engine,
+                settings.DataContext,
+                settings.DataTemplate
+            ));
+        };
         foreach (var kv in searchEngineStore.Settings)
         {
             if (!searchEngineStore.SearchEngines.TryGetValue(kv.Key, out var engine)) continue;

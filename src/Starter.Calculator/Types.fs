@@ -3,6 +3,7 @@ namespace Starter.Calculator.Types
 open Avalonia
 open Avalonia.Controls.Templates
 open Avalonia.Media
+open Avalonia.Threading
 open MathNet.Numerics
 open Starter.SearchEngine
 
@@ -58,7 +59,10 @@ module Icon =
 
         DrawingImage(group, Viewbox = Rect(0, 0, 24, 24))
 
-    let icon = StarterIconSource(createIcon true, createIcon false)
+    let icon =
+        Dispatcher.UIThread.Invoke(fun () ->
+            StarterIconSource(createIcon true, createIcon false)
+        )
 
 type LaTeXSearchResult =
     { LaTeX: string

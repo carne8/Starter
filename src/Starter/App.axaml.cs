@@ -95,7 +95,7 @@ public class App : Application
             var appLifetime = provider.GetRequiredService<IClassicDesktopStyleApplicationLifetime>();
             var engineStore = new SearchEngineStore();
 
-            LoadSearchEngines(engineStore, clipboard, appLifetime);
+            Task.Run(() => LoadSearchEngines(engineStore, clipboard, appLifetime));
 
             return engineStore;
         });
@@ -127,6 +127,7 @@ public class App : Application
             var engineStore = provider.GetRequiredService<SearchEngineStore>();
 
             var activatorStore = new ActivatorStore(config);
+            engineStore.SearchEngineAdded += activatorStore.AddSearchEngineActivators;
             foreach (var kv in engineStore.SearchEngines)
                 activatorStore.AddSearchEngineActivators(kv.Value);
 

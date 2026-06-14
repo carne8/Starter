@@ -8,6 +8,7 @@ open System.Text
 open System.Threading
 open System.Threading.Tasks
 
+open Avalonia.Threading
 open EverythingAPI
 open IconHelper
 open Helpers
@@ -146,7 +147,7 @@ type Factory(pluginPath) =
         | ValueNone -> raise <| PlatformNotSupportedException()
         | ValueSome api ->
             let svgSource = Path.Combine(pluginPath, "icon.svg") |> SvgSource.Load
-            let svg = SvgImage(Source = svgSource)
+            let svg = Dispatcher.UIThread.Invoke(fun () -> SvgImage(Source = svgSource))
             let icon = StarterIconSource(svg, svg)
 
             EverythingSearchEngine(icon, api), null

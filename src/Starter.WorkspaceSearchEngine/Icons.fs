@@ -7,7 +7,7 @@ open System.IO
 open Avalonia
 open Avalonia.Media
 open Avalonia.Svg.Skia
-
+open Avalonia.Threading
 
 
 let private createSearchEngineIcon lightMode =
@@ -27,7 +27,10 @@ let private createSearchEngineIcon lightMode =
 
     DrawingImage(group, Viewbox = Rect(0, 0, 24, 24))
 
-let searchEngineIcon = StarterIconSource(createSearchEngineIcon true, createSearchEngineIcon false)
+let searchEngineIcon =
+    Dispatcher.UIThread.Invoke(fun () ->
+        StarterIconSource(createSearchEngineIcon true, createSearchEngineIcon false)
+    )
 
 module IconName =
     let vsCode = "vscode.svg"
@@ -46,5 +49,5 @@ module IconName =
 
 let loadIcon pluginPath iconName =
     let iconFile = Path.Combine(pluginPath, "Images", iconName)
-    let svg = Avalonia.Threading.Dispatcher.UIThread.Invoke(fun () -> SvgImage(Source = SvgSource.Load iconFile))
+    let svg = Dispatcher.UIThread.Invoke(fun () -> SvgImage(Source = SvgSource.Load iconFile))
     StarterIconSource(svg, svg)
