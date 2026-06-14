@@ -38,6 +38,7 @@ type EverythingSearchEngine(icon, api: IEverything) =
     let pathStrBuilder = StringBuilder(300)
 
     let loadResultIcon (path: string) =
+        if path.Contains "$RECYCLE.BIN\\" then icon else
         try
             use shellItem = new ShellItem(path)
             use hBitmap =

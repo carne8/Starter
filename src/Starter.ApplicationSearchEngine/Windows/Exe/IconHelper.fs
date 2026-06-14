@@ -116,7 +116,10 @@ module IconHelper =
                 with _ -> ValueNone
 
             let! iconFileLine = lines |> Array.tryFind _.StartsWith("IconFile=")
-            let file = iconFileLine.Substring "IconFile=".Length
+            let! file =
+                iconFileLine.Substring "IconFile=".Length
+                |> ValueSome
+                |> ValueOption.filter (String.IsNullOrWhiteSpace >> not)
 
             try return new Avalonia.Media.Imaging.Bitmap(file)
             with _ -> return! ValueNone
