@@ -40,7 +40,7 @@ public static class Program
     private static AppBuilder BuildAvaloniaApp()
         => AppBuilder.Configure<App>()
             .UsePlatformDetect()
-            .UseR3()
+            // .UseR3() can't use because of https://github.com/Cysharp/R3/issues/379
             .With(Win32PlatformOptions)
             #if DEBUG
             .WithDeveloperTools()

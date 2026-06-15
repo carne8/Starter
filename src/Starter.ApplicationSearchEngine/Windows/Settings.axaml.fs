@@ -49,11 +49,11 @@ type SettingsViewModel(configDir) =
         foldersChanged
             .Debounce(TimeSpan.FromMilliseconds 600L)
             .Subscribe(fun () ->
-            { config.Value with
-                Folders = folders |> Seq.map _.Path |> Seq.toArray
-                ExcludedFolders = excludedFolders |> Seq.map _.Path |> Seq.toArray }
-            |> config.OnNext
-        ) |> ignore
+                { config.Value with
+                    Folders = folders |> Seq.map _.Path |> Seq.toArray
+                    ExcludedFolders = excludedFolders |> Seq.map _.Path |> Seq.toArray }
+                |> config.OnNext
+            ) |> ignore
 
     member this.Config = config
     member this.AllowDuplicates

@@ -38,6 +38,7 @@
                 </DrawingGroup>
             </DrawingImage.Drawing>
         </DrawingImage>
+
         <DataTemplate x:Key="FolderDataTemplate" DataType="vm:FolderViewModel">
             <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
                 <TextBox Grid.Column="0" Text="{Binding Path}" />

@@ -12,6 +12,7 @@ open System.Threading
 open System.Threading.Tasks
 open System.Diagnostics
 open System.Collections.Generic
+open System.Collections.Concurrent
 
 open FsToolkit.ErrorHandling
 open Vanara.PInvoke
@@ -57,7 +58,11 @@ let private getAppFromFile (file: string) =
         let! name = shellItem.GetDisplayName(ShellItemDisplayString.NormalDisplay)
         let icon =
             match ext = ".url" with
-            | false -> Dispatcher.UIThread.Invoke(fun () -> file |> IconHelper.getFileIcon Constants.iconPixelSize)
+            | false ->
+                Dispatcher.UIThread.Invoke(
+                    (fun () -> file |> IconHelper.getFileIcon Constants.iconPixelSize),
+                    DispatcherPriority.Input
+                )
             | true -> file |> IconHelper.getUrlFileIcon
             |> ValueOption.defaultWith (fun () ->
                 shellItem
@@ -76,45 +81,58 @@ let private getAppFromFile (file: string) =
     }
 
 let loadApplications (ct: CancellationToken) (config: FolderConfiguration) =
-    let appFiles =
-        config.Folders
-        |> Seq.collect (fun dir -> Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
-        |> Seq.filter (FolderConfiguration.isFileExcluded config >> not)
-        |> Seq.toArray
+    let loadAppsOfFolder folder =
+        task {
+            if ct.IsCancellationRequested then return seq {} else
 
-    // Load apps according to the config order to prevent duplicate names
-    let appsDict = Dictionary()
-    let apps = ResizeArray()
+            let files =
+                Directory.EnumerateFiles(folder, "*", SearchOption.AllDirectories)
+                |> Seq.filter (FolderConfiguration.isFileExcluded config >> not)
+                |> Seq.toArray
 
-    // Iter through app files / stop when cancellation requested
-    let rec loop i appFiles =
-        if ct.IsCancellationRequested then () else
-        if i >= Array.length appFiles then () else
+            let apps = ConcurrentBag()
 
-        appFiles[i]
-        |> getAppFromFile
-        |> ValueOption.iter (fun app ->
+            do! Parallel.ForEachAsync(
+                files,
+                ParallelOptions(CancellationToken = ct),
+                Func<_, _, ValueTask>(fun appFile _ ->
+                    appFile
+                    |> getAppFromFile
+                    |> ValueOption.iter apps.Add
+
+                    ValueTask.CompletedTask
+                )
+            )
+
+            return apps :> _ seq
+        }
+
+    task {
+        let! apps =
+            config.Folders
+            |> Array.map loadAppsOfFolder
+            |> Task.WhenAll
+
+        let appsDict = Dictionary()
+        let appsOutput = ResizeArray<ISearchResult>()
+
+        // Load apps according to the config order to prevent duplicate names
+        apps |> Array.iter (Seq.iter (fun app ->
             if config.AllowDuplicates then
-                match appsDict.TryAdd(app.Name, app) with
-                | false ->
+                if not <| appsDict.TryAdd(app.Name, app) then
                     logger.Verbose $"Duplicate app: {app.Path}"
                     appsDict[app.Name].AlternativeDescription <- true
                     app.AlternativeDescription <- true
-                | true -> ()
 
-                app
-                :> ISearchResult
-                |> apps.Add
+                appsOutput.Add app
             else
                 match appsDict.TryAdd(app.Name, app) with
                 | false -> logger.Verbose $"Duplicate app (file is ignored): {app.Path}"
-                | true -> app :> ISearchResult |> apps.Add
-        )
+                | true -> appsOutput.Add app
+        ))
 
-        loop (i+1) appFiles
-
-    loop 0 appFiles
-    apps
+        return appsOutput
+    }
 
 let observeFolder added removed (folder: string) =
     let watcher = new FileSystemWatcher(folder)
@@ -160,8 +178,9 @@ type ExeAppsLoader() =
         apps.Clear()
 
         Task.Run<unit>(fun () -> task {
-            let newApps = loadApplications ct folderConfig
+            let! newApps = loadApplications ct folderConfig
             if not ct.IsCancellationRequested then
+
                 apps.AddRange newApps
                 changedEvent.Trigger()
         })

@@ -2,7 +2,6 @@ namespace Starter.Features
 
 open System
 open System.Collections.Generic
-open System.Reactive.Linq
 open System.Threading
 open System.Threading.Tasks
 open Avalonia.Threading
@@ -100,8 +99,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
                     .Subscribe addResults
             | true ->
                 futureResults
-                    .AsSystemObservable()
-                    .Buffer(TimeSpan.FromMilliseconds 200L)
+                    .Chunk(TimeSpan.FromMilliseconds 200L)
                     .Select(Seq.collect (Seq.map (SearchResultData.createDynamic engine)))
                     .Subscribe(fun r -> Dispatcher.UIThread.Post(fun () -> addResults r))
             |> disposeOnCancelled ct
