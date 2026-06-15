@@ -1,13 +1,14 @@
 module Starter.UrlSearchEngine
 
-open Avalonia
 open Starter.UrlSearchEngine.Regex
 open Starter.SearchEngine
 
 open System
 open System.Diagnostics
 open System.Text.RegularExpressions
+open Avalonia
 open Avalonia.Media
+open Avalonia.Threading
 open R3
 
 let createIcon lightMode =
@@ -25,7 +26,10 @@ let createIcon lightMode =
 
     DrawingImage(group, Viewbox = Rect(0, 0, 24, 24))
 
-let icon = StarterIconSource(createIcon true, createIcon false)
+let icon =
+    Dispatcher.UIThread.Invoke(fun () ->
+        StarterIconSource(createIcon true, createIcon false)
+    )
 
 [<Struct>]
 type SearchResult =
