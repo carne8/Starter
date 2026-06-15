@@ -67,10 +67,10 @@ public partial class LogsViewModel : ObservableObject
         LogEventLevel.Fatal
     ];
 
-    [ObservableProperty] private LogEventLevel minimumLevel = LogEventLevel.Information;
-    [ObservableProperty] private ObservableCollection<Inline> lines = [];
-    [ObservableProperty] private bool wrapText;
-    [ObservableProperty] private string selectedLogContext = "None";
+    [ObservableProperty] public partial LogEventLevel MinimumLevel { get; set; } = LogEventLevel.Information;
+    [ObservableProperty] public partial ObservableCollection<Inline> Lines { get; set; } = [];
+    [ObservableProperty] public partial bool WrapText { get; set; }
+    [ObservableProperty] public partial string SelectedLogContext { get; set; } = "None";
     public ObservableCollection<string> LogContexts { get; } = [ "None" ];
 
     public LogsViewModel()

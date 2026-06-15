@@ -12,7 +12,7 @@
         <Style Selector="ScrollViewer.wrapText">
             <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
         </Style>
-        <Style Selector="ScrollViewer.wrapText &gt; controls|CustomSelectableTextBlock">
+        <Style Selector="ScrollViewer.wrapText &gt; StackPanel &gt; controls|CustomSelectableTextBlock">
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
     </UserControl.Styles>
