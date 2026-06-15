@@ -4,8 +4,9 @@ open System
 open System.Collections.Generic
 open System.Reactive.Linq
 open System.Threading
+open System.Threading.Tasks
 open Avalonia.Threading
-open Fusil
+open Starter.TextMatching
 open R3
 open Serilog
 open Starter.Features.CustomCollections
@@ -26,25 +27,50 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
     let results = ObservableList<SearchResultData> 300
 
     let fuzzyMatchResult normalizedText result =
-        let res = fuzzyMatch false true true slab normalizedText result.SearchResult.Name
-        result.FuzzyMatchResult <- res
+        match result.NormalizedStrings with
+        | ValueNone ->
+            let res = FuzzyMatch.string false true true slab normalizedText result.SearchResult.Name
 
-        match res with
-        | ValueSome fusilResult when fusilResult.Score > 0s ->
-            result.AccentuationMap <- fusilResult.MatchingPositions
-            true
-        | _ ->
-            match result.SearchResult.Keywords with
-            | null -> false
-            | keywords ->
-                keywords |> Array.exists (fun keyword ->
-                    match fuzzyMatch false true false slab normalizedText keyword with
-                    | ValueSome res when res.Score > 0s ->
-                        result.AccentuationMap <- null
-                        result.FuzzyMatchResult <- ValueSome res
-                        true
-                    | _ -> false
-                )
+            result.FuzzyMatchResult <- res
+
+            match res with
+            | ValueSome fusilResult when fusilResult.Score > 0s ->
+                result.AccentuationMap <- fusilResult.MatchingPositions
+                true
+            | _ ->
+                match result.SearchResult.Keywords with
+                | null -> false
+                | keywords ->
+                    keywords |> Array.exists (fun keyword ->
+                        match FuzzyMatch.string false true false slab normalizedText keyword with
+                        | ValueSome res when res.Score > 0s ->
+                            result.AccentuationMap <- null
+                            result.FuzzyMatchResult <- ValueSome res
+                            true
+                        | _ -> false
+                    )
+        | ValueSome n ->
+            let res = FuzzyMatch.runes false false true slab normalizedText (Span n.Name)
+
+            result.FuzzyMatchResult <- res
+
+            match res with
+            | ValueSome fusilResult when fusilResult.Score > 0s ->
+                result.AccentuationMap <- fusilResult.MatchingPositions
+                true
+            | _ ->
+                match n.Keywords with
+                | null -> false
+                | keywords ->
+                    keywords |> Array.exists (fun keyword ->
+                        match FuzzyMatch.runes false false false slab normalizedText (Span keyword) with
+                        | ValueSome res when res.Score > 0s ->
+                            result.AccentuationMap <- null
+                            result.FuzzyMatchResult <- ValueSome res
+                            true
+                        | _ -> false
+                    )
+
 
 
     let querySingleDynamicSearchEngine ct (activator: ISearchEngineActivator | null) query (engine: IDynamicSearchEngine) = // Show only this engine results
@@ -149,7 +175,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
     member this.Results = results
 
     member this.AddSource(searchEngine: IStaticSearchEngine) =
-        task {
+        Task.Run<unit>(fun () -> task {
             try
                 let! results = searchEngine.LoadResults()
 
@@ -182,7 +208,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
                             Log.Information $"{searchEngine.Name} results loaded"
                 ) |> ignore
             with e -> Log.Error(e, $"{searchEngine.Name} failed to load results:\n{e.Message}")
-        }
+        })
 
     member this.AddSource(searchEngine: IDynamicSearchEngine) =
         dynamicSearchEngines.Add searchEngine

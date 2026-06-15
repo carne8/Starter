@@ -1,6 +1,6 @@
 ﻿module Starter.ApplicationSearchEngine.Windows.ExeLoader
 
-open System.Diagnostics
+open Avalonia.Threading
 open Starter.SearchEngine
 open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Windows.Exe.IconHelper
@@ -10,6 +10,7 @@ open System
 open System.IO
 open System.Threading
 open System.Threading.Tasks
+open System.Diagnostics
 open System.Collections.Generic
 
 open FsToolkit.ErrorHandling
@@ -56,7 +57,7 @@ let private getAppFromFile (file: string) =
         let! name = shellItem.GetDisplayName(ShellItemDisplayString.NormalDisplay)
         let icon =
             match ext = ".url" with
-            | false -> file |> IconHelper.getFileIcon Constants.iconPixelSize
+            | false -> Dispatcher.UIThread.Invoke(fun () -> file |> IconHelper.getFileIcon Constants.iconPixelSize)
             | true -> file |> IconHelper.getUrlFileIcon
             |> ValueOption.defaultWith (fun () ->
                 shellItem

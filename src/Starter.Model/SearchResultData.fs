@@ -3,10 +3,17 @@
 open System
 open Starter.Features
 open Starter.SearchEngine
-open Fusil
+open Starter.TextMatching.FuzzyMatch
+open Starter.TextMatching.TextNormalization
+
+[<Struct>]
+type NormalizedStrings =
+    { Name: System.Text.Rune array
+      Keywords: System.Text.Rune array array | null }
 
 type SearchResultData =
     { SearchResult: ISearchResult
+      NormalizedStrings: NormalizedStrings voption
       Priority: ResultPriority
       SearchEngineId: string
       mutable FuzzyMatchResult: FuzzyResult voption
@@ -14,6 +21,14 @@ type SearchResultData =
 
     static member createStatic (searchEngine: IStaticSearchEngine) searchResult =
         { SearchResult = searchResult
+          NormalizedStrings =
+            ValueSome {
+                Name = String.normalize searchResult.Name
+                Keywords =
+                    match searchResult.Keywords with
+                    | null -> null
+                    | keywords -> keywords |> Array.map String.normalize
+            }
           Priority = ResultPriority.Static
           SearchEngineId = searchEngine.Id
           FuzzyMatchResult = ValueNone
@@ -21,6 +36,7 @@ type SearchResultData =
 
     static member createDynamic (searchEngine: IDynamicSearchEngine) searchResult =
         { SearchResult = searchResult
+          NormalizedStrings = ValueNone
           Priority = searchEngine.ResultsPriority
           SearchEngineId = searchEngine.Id
           FuzzyMatchResult = ValueNone
