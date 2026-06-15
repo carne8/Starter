@@ -1,54 +1,12 @@
 ﻿using System.Collections.ObjectModel;
 using System.Text;
-using Avalonia;
 using Avalonia.Controls.Documents;
-using Avalonia.Media;
-using Avalonia.Styling;
 using R3;
 using Serilog.Events;
 using Serilog.Formatting.Display;
 using Starter.Features;
 
 namespace Starter.ViewModels;
-
-public class CustomRun : Run
-{
-    private readonly LogEventLevel logLevel;
-
-    public CustomRun(string text, LogEventLevel logLevel) : base(text)
-    {
-        this.logLevel = logLevel;
-        SetForeground();
-    }
-
-    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
-    {
-        if (change.NewValue is ThemeVariant) SetForeground();
-        base.OnPropertyChanged(change);
-    }
-
-    private void SetForeground()
-    {
-        Foreground = logLevel switch
-        {
-            LogEventLevel.Verbose => ActualThemeVariant == ThemeVariant.Light ? LightBrushVerbose : DarkBrushVerbose,
-            LogEventLevel.Debug => BrushDebug,
-            LogEventLevel.Information => BrushInformation,
-            LogEventLevel.Warning => BrushWarning,
-            LogEventLevel.Error => BrushError,
-            LogEventLevel.Fatal => BrushFatal,
-            _ => Foreground
-        };
-    }
-
-    private static readonly SolidColorBrush LightBrushVerbose = new(new Color(255, 0, 0, 0));
-    private static readonly SolidColorBrush DarkBrushVerbose = new(new Color(255, 255, 255, 255));
-    private static readonly SolidColorBrush BrushDebug = new(new Color(255, 80, 161, 79));
-    private static readonly SolidColorBrush BrushInformation = new(new Color(255, 1, 132, 188));
-    private static readonly SolidColorBrush BrushWarning = new(new Color(255, 193, 131, 1));
-    private static readonly SolidColorBrush BrushError = new(new Color(255, 228, 86, 73));
-    private static readonly SolidColorBrush BrushFatal = new(new Color(255, 166, 38, 164));
-}
 
 public partial class LogsViewModel : ObservableObject
 {
@@ -88,6 +46,23 @@ public partial class LogsViewModel : ObservableObject
             });
     }
 
+    private Run CreateRun(string message, LogEventLevel level)
+    {
+        var run = new Run(message);
+        run.Classes.Add(level switch
+        {
+            LogEventLevel.Verbose => "log-verbose",
+            LogEventLevel.Debug => "log-debug",
+            LogEventLevel.Information => "log-information",
+            LogEventLevel.Warning => "log-warning",
+            LogEventLevel.Error => "log-error",
+            LogEventLevel.Fatal => "log-fatal",
+            _ => string.Empty
+        });
+
+        return run;
+    }
+
     private void PrintLogEvent(LogEvent logEvent)
     {
         var rawLogContext = logEvent.Properties["Context"].ToString();
@@ -107,7 +82,7 @@ public partial class LogsViewModel : ObservableObject
             sb.Append(logEvent.Exception.Message);
         }
 
-        Lines.Add(new CustomRun(sb.ToString(), logEvent.Level));
+        Lines.Add(CreateRun(sb.ToString(), logEvent.Level));
     }
 
     private void RefreshLogs()
