@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using System.Globalization;
 using R3;
 using Serilog;
 using Starter.Controls;
@@ -20,8 +21,26 @@ public class FirstNonNullConverter : IMultiValueConverter
         IList<object?> values,
         Type targetType,
         object? parameter,
-        System.Globalization.CultureInfo culture
+        CultureInfo culture
     ) => values.OfType<object>().FirstOrDefault();
+}
+
+public class TimeSpanConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is not TimeSpan t) return string.Empty;
+
+        if ((int)t.TotalMilliseconds > 0)
+            return $"{t.TotalMilliseconds.ToString("N2", culture)} ms";
+
+        if ((int)t.TotalMicroseconds > 0)
+            return $"{t.TotalMilliseconds.ToString("N2", culture)} μs";
+
+        return $"{t.TotalNanoseconds.ToString("N2", culture)} ns";
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => null;
 }
 
 public partial class MainWindow : TranslucentWindow

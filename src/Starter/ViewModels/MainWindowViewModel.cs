@@ -23,6 +23,7 @@ public partial class MainWindowViewModel : ObservableObject
     public BehaviorSubject<Configuration> Config { get; private set; }
     public IObservable<Configuration> ConfigSystemObservable { get; private set; }
     public ObservableList<SearchResultData> SearchResults => searchResultStore.Results;
+    public IObservable<TimeSpan?> LoadingTime => searchResultStore.LoadingTimes.AsSystemObservable();
 
     [ObservableProperty]
     public partial string Text { get; set; } = string.Empty;
