@@ -331,3 +331,42 @@ let string caseSensitive normalize withPos slab pattern (input: string) =
         i <- i+1
 
     runes caseSensitive normalize withPos slab pattern (span.Slice(0, i))
+
+let fastString caseSensitive (pattern: Rune array) (input: string) =
+    let n = pattern.Length
+    let mutable runes = input.EnumerateRunes()
+
+    if caseSensitive then
+        let rec loop start inputIdx i =
+            if i < n && runes.MoveNext() then
+                if pattern[i] = runes.Current then
+                    loop (if start = -1 then inputIdx else start) (inputIdx+1) (i+1)
+                else
+                    loop start (inputIdx+1) i
+            else if i >= n then
+                ValueSome {
+                    Start = start
+                    End = inputIdx-1
+                    Score = 1s
+                    MatchingPositions = null
+                }
+            else ValueNone
+
+        loop -1 0 0
+    else
+        let rec loop start inputIdx i =
+            if i < n && runes.MoveNext() then
+                if pattern[i] = Rune.ToLowerInvariant runes.Current then
+                    loop (if start = -1 then inputIdx else start) (inputIdx+1) (i+1)
+                else
+                    loop start (inputIdx+1) i
+            else if i >= n then
+                ValueSome {
+                    Start = start
+                    End = inputIdx-1
+                    Score = 1s
+                    MatchingPositions = null
+                }
+            else ValueNone
+
+        loop -1 0 0

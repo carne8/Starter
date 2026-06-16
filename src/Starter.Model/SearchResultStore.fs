@@ -30,49 +30,29 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
     let loadingTimes = new Subject<TimeSpan Nullable>()
 
     let fuzzyMatchResult normalizedText result =
-        match result.NormalizedStrings with
-        | ValueNone ->
-            let res = FuzzyMatch.string false true true slab normalizedText result.SearchResult.Name
+        let res =
+            match result.NormalizedName with
+            | ValueNone -> FuzzyMatch.string false true true slab normalizedText result.SearchResult.Name
+            | ValueSome name -> FuzzyMatch.runes false false true slab normalizedText (Span name)
 
-            result.FuzzyMatchResult <- res
+        result.FuzzyMatchResult <- res
 
-            match res with
-            | ValueSome fusilResult when fusilResult.Score > 0s ->
-                result.AccentuationMap <- fusilResult.MatchingPositions
-                true
-            | _ ->
-                match result.SearchResult.Keywords with
-                | null -> false
-                | keywords ->
-                    keywords |> Array.exists (fun keyword ->
-                        match FuzzyMatch.string false true false slab normalizedText keyword with
-                        | ValueSome res when res.Score > 0s ->
-                            result.AccentuationMap <- null
-                            result.FuzzyMatchResult <- ValueSome res
-                            true
-                        | _ -> false
-                    )
-        | ValueSome n ->
-            let res = FuzzyMatch.runes false false true slab normalizedText (Span n.Name)
-
-            result.FuzzyMatchResult <- res
-
-            match res with
-            | ValueSome fusilResult when fusilResult.Score > 0s ->
-                result.AccentuationMap <- fusilResult.MatchingPositions
-                true
-            | _ ->
-                match n.Keywords with
-                | null -> false
-                | keywords ->
-                    keywords |> Array.exists (fun keyword ->
-                        match FuzzyMatch.runes false false false slab normalizedText (Span keyword) with
-                        | ValueSome res when res.Score > 0s ->
-                            result.AccentuationMap <- null
-                            result.FuzzyMatchResult <- ValueSome res
-                            true
-                        | _ -> false
-                    )
+        match res with
+        | ValueSome fusilResult when fusilResult.Score > 0s ->
+            result.AccentuationMap <- fusilResult.MatchingPositions
+            true
+        | _ ->
+            match result.SearchResult.Keywords with
+            | null -> false
+            | keywords ->
+                keywords |> Array.exists (fun keyword ->
+                    match FuzzyMatch.fastString false normalizedText keyword with
+                    | ValueSome res when res.Score > 0s ->
+                        result.AccentuationMap <- null
+                        result.FuzzyMatchResult <- ValueSome res
+                        true
+                    | _ -> false
+                )
 
 
 
