@@ -48,7 +48,8 @@ module Database =
 
             let hicolor =
                 themesDirectories |> Array.choose (fun dir ->
-                    if Path.GetDirectoryName $"{dir}/" = "hicolor" then
+                    let themeDir = Path.Combine(dir, "hicolor")
+                    if Directory.Exists themeDir then
                         dir
                         |> IconThemeParser.parseFromDirectory
                         |> Option.ofResult
