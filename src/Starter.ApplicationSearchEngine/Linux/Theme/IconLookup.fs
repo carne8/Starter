@@ -119,4 +119,9 @@ let lookupIconInDatabase theme (iconName: string) size scale (db: Database) =
             |> Seq.filter (fun kv -> seenThemes.Contains kv.Key |> not)
             |> Seq.tryPickV (_.Value >> lookupIconInTheme iconName size scale)
         return! db.Hicolor |> Array.tryPickV (lookupIconInTheme iconName size scale)
+        return!
+            extensions |> Array.tryPickV (fun ext ->
+                Directory.EnumerateFiles("/usr/share/pixmaps", $"{iconName}.{ext}")
+                |> Seq.tryHeadV
+            )
     }
