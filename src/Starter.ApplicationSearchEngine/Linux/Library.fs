@@ -7,6 +7,7 @@ open System.Threading.Tasks
 open R3
 open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Linux
+open Starter.ApplicationSearchEngine.Linux.IconLoader
 open Starter.ApplicationSearchEngine.Logger
 open Starter.SearchEngine
 
@@ -56,10 +57,10 @@ type LinuxAppsSearchEngine() =
 
     member private this.LoadApps() =
         task {
-            let! appsIconThemes = IconLoader.loadThemes()
+            let! iconLoader = IconLoader.create()
             let! newApps =
                 AppsLoader.loadApplications
-                    appsIconThemes
+                    iconLoader
                     useGtkLaunch
                     defaultFolderConfig
 
@@ -68,7 +69,7 @@ type LinuxAppsSearchEngine() =
 
             let observable, disposable =
                 AppsLoader.observeApplicationChanges
-                    appsIconThemes
+                    iconLoader
                     useGtkLaunch
                     apps
                     defaultFolderConfig

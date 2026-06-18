@@ -3,22 +3,22 @@ module Helpers
 
 // TODO: Benchmark for the fun
 type OrElseBuilder() =
-    member _.Return x = ValueSome x
-    member _.ReturnFrom x = x
+    member inline _.Return x = ValueSome x
+    member inline _.ReturnFrom x = x
 
-    member _.Combine(a,b) =
+    member inline _.Combine(a,b) =
         match a with
         | Some _ -> a
         | None -> b()
 
-    member _.Combine(a,b) =
+    member inline _.Combine(a,b) =
         match a with
         | ValueSome _ -> a
         | ValueNone -> b()
 
-    member _.Zero() = ValueNone
-    member _.Delay f = f
-    member _.Run f = f()
+    member inline _.Zero() = ValueNone
+    member inline _.Delay f = f
+    member inline _.Run f = f()
 
 let orElse = OrElseBuilder()
 
@@ -53,6 +53,18 @@ module Seq =
                 ValueSome e.Current
             else
                 ValueNone
+
+    let tryPickV chooser (s: _ seq) =
+        let e = s.GetEnumerator()
+        let rec loop () =
+            if e.MoveNext()  then
+                match chooser e.Current with
+                | ValueSome e -> ValueSome e
+                | ValueNone -> loop ()
+            else
+                ValueNone
+
+        loop ()
 
 [<RequireQualifiedAccess>]
 module Task =

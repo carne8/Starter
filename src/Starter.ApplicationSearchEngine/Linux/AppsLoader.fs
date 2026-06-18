@@ -12,9 +12,9 @@ open Starter.SearchEngine
 open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Logger
 
-let loadApplication iconThemes useGtkLaunch entry =
+let loadApplication (iconLoader: IconLoader.IconLoader) useGtkLaunch entry =
     task {
-        let! icon = IconLoader.loadAppIcon iconThemes entry
+        let! icon = iconLoader.LoadIcon entry
 
         return
             { Id = $"application:{entry.DesktopFilePath}:{entry.Name}"
@@ -36,7 +36,7 @@ let loadApplication iconThemes useGtkLaunch entry =
     }
 
 
-let loadApplications iconThemes useGtkLaunch (config: FolderConfiguration) : Task<ISearchResult seq> =
+let loadApplications iconLoader useGtkLaunch (config: FolderConfiguration) : Task<ISearchResult seq> =
     Task.Run<ISearchResult seq>(fun () -> task {
         let sw = Diagnostics.Stopwatch()
         sw.Start()
@@ -64,7 +64,7 @@ let loadApplications iconThemes useGtkLaunch (config: FolderConfiguration) : Tas
             task {
                 let! desktopEntries = XDGDesktopFileParser.loadDesktopEntries desktopFile
                 for entry in desktopEntries do
-                    let! app = loadApplication iconThemes useGtkLaunch entry
+                    let! app = loadApplication iconLoader useGtkLaunch entry
 
                     app
                     :> ISearchResult
@@ -78,7 +78,7 @@ let loadApplications iconThemes useGtkLaunch (config: FolderConfiguration) : Tas
         return apps :> ISearchResult seq
     })
 
-let observeApplicationChanges iconThemes useGtkLaunch (appList: ResizeArray<ISearchResult>) (config: FolderConfiguration) =
+let observeApplicationChanges iconLoader useGtkLaunch (appList: ResizeArray<ISearchResult>) (config: FolderConfiguration) =
     let subject = new Subject<unit>()
     let semaphore = new SemaphoreSlim(1, 1)
 
@@ -98,7 +98,7 @@ let observeApplicationChanges iconThemes useGtkLaunch (appList: ResizeArray<ISea
 
                 // Add new apps
                 for entry in newEntries do
-                    let! app = loadApplication iconThemes useGtkLaunch entry
+                    let! app = loadApplication iconLoader useGtkLaunch entry
                     appList.Add app
 
                 subject.OnNext()
