@@ -14,7 +14,7 @@ let private extensions = [| "svg"; "png"; "xpm" |]
 type Database =
     { /// A dictionary where the keys are the name of the themes
       Themes: IDictionary<string, IconTheme>
-      Hicolor: IconTheme option }
+      Hicolor: IconTheme array }
 
 module Database =
     let private loadThemeForDirectory dir =
@@ -47,9 +47,14 @@ module Database =
                 :> Task
 
             let hicolor =
-                themesDirectories
-                |> Array.tryFind (fun dir -> Path.GetDirectoryName $"{dir}/" = "hicolor")
-                |> Option.bind (IconThemeParser.parseFromDirectory >> Option.ofResult)
+                themesDirectories |> Array.choose (fun dir ->
+                    if Path.GetDirectoryName $"{dir}/" = "hicolor" then
+                        dir
+                        |> IconThemeParser.parseFromDirectory
+                        |> Option.ofResult
+                    else
+                        None
+                )
 
             return { Themes = themes :> IDictionary<_, _>
                      Hicolor = hicolor }
@@ -112,8 +117,5 @@ let lookupIconInDatabase theme (iconName: string) size scale (db: Database) =
             db.Themes
             |> Seq.filter (fun kv -> seenThemes.Contains kv.Key |> not)
             |> Seq.tryPickV (_.Value >> lookupIconInTheme iconName size scale)
-        return!
-            db.Hicolor
-            |> ValueOption.ofOption
-            |> ValueOption.bind (lookupIconInTheme iconName size scale)
+        return! db.Hicolor |> Array.tryPickV (lookupIconInTheme iconName size scale)
     }
