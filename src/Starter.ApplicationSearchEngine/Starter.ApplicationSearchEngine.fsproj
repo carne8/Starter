@@ -29,7 +29,7 @@
         <Compile Include="Windows\Library.fs" />
         <PackageReference Include="Avalonia.Controls.ItemsRepeater" Version="12.0.0" />
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
-        <PackageReference Include="FluentAvaloniaUI" Version="3.0.0-preview2" />
+        <PackageReference Include="FluentAvaloniaUI" Version="3.0.1" />
         <PackageReference Include="Vanara.Windows.Shell" Version="5.0.5" />
     </ItemGroup>
 

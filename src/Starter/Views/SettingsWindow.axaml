@@ -21,9 +21,9 @@
                          MenuItemsSource="{Binding Pages}">
         <ui:FANavigationView.MenuItemTemplate>
             <DataTemplate DataType="vm:MenuItemViewModel">
-                <controls:CustomNavigationViewItem Content="{Binding Title}"
-                                                   StarterIconSource="{Binding Icon}"
-                                                   FontFamily="{StaticResource JetBrainsMono}" />
+                <ui:FANavigationViewItem controls:NavigationViewItemBehavior.StarterIconSource="{Binding Icon}"
+                                         Content="{Binding Title}"
+                                         FontFamily="{StaticResource JetBrainsMono}" />
             </DataTemplate>
         </ui:FANavigationView.MenuItemTemplate>
         <ContentControl x:Name="ContentControl"

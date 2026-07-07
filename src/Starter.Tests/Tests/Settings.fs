@@ -295,7 +295,7 @@ let testActivatorPrefixes () =
                     control
                     :?> ContentPresenter
                     |> _.Child
-                    :?> Controls.CustomSettingsExpander
+                    :?> FluentAvalonia.UI.Controls.FASettingsExpander
 
                 let vm = expander.Footer :?> ViewModels.ActivatorInputFieldViewModel
                 let tb = expander.FindDescendantOfType<TextBox>()
