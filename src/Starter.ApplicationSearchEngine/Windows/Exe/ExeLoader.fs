@@ -61,7 +61,7 @@ let private getAppFromFile (file: string) =
             | false ->
                 Dispatcher.UIThread.Invoke(
                     (fun () -> file |> IconHelper.getFileIcon Constants.iconPixelSize),
-                    DispatcherPriority.Input
+                    DispatcherPriority.Background
                 )
             | true -> file |> IconHelper.getUrlFileIcon
             |> ValueOption.defaultWith (fun () ->
@@ -180,7 +180,6 @@ type ExeAppsLoader() =
         Task.Run<unit>(fun () -> task {
             let! newApps = loadApplications ct folderConfig
             if not ct.IsCancellationRequested then
-
                 apps.AddRange newApps
                 changedEvent.Trigger()
         })
