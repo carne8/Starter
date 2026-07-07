@@ -1,7 +1,6 @@
 ﻿module Starter.ApplicationSearchEngine.Linux.IconLoader
 
 open System
-open System.Collections.Generic
 open System.IO
 open System.Threading.Tasks
 
