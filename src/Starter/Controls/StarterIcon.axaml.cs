@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
+using Avalonia.Svg.Skia;
 using Starter.SearchEngine;
 
 namespace Starter.Controls;
@@ -53,16 +54,28 @@ public partial class StarterIcon : UserControl
     private void SetContent(StarterIconSource? iconSource)
     {
         if (iconSource == null) return;
-        Content = iconSource.Geometry is null
-            ? new Image
-            {
-                Source = iconSource.GetImage(ActualThemeVariant == ThemeVariant.Light)
-            }
-            : new PathIcon
+
+        // Geometry
+        if (iconSource.Geometry is not null)
+        {
+            Content = new PathIcon
             {
                 Data = iconSource.Geometry,
                 Width = FontSize - ExtraPaddingForSymbol,
                 Height = FontSize - ExtraPaddingForSymbol
             };
+            return;
+        }
+
+        // SVG
+        if (iconSource.GetSvg(ActualThemeVariant == ThemeVariant.Light) is { } svgSource)
+        {
+            Content = new Image { Source = new SvgImage { Source = svgSource } };
+            return;
+        }
+
+        // IImage
+        if (iconSource.GetImage(ActualThemeVariant == ThemeVariant.Light) is { } imageSource)
+            Content = new Image { Source = imageSource };
     }
 }

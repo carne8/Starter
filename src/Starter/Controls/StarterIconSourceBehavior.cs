@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.Styling;
+using Avalonia.Svg.Skia;
 using FluentAvalonia.UI.Controls;
 using Starter.SearchEngine;
 
@@ -10,9 +11,14 @@ file static class StarterIconSourceExtension
     extension(StarterIconSource icon)
     {
         public FAIconSource Build(bool lightMode) =>
-            icon.Geometry is null
-                ? new FAImageIconSource { Source = icon.GetImage(lightMode) }
-                : new FAPathIconSource { Data = icon.Geometry };
+            icon.Geometry is not null
+                ? new FAPathIconSource { Data = icon.Geometry }
+                : new FAImageIconSource
+                {
+                    Source = icon.GetSvg(lightMode) is { } svg
+                        ? new SvgImage { Source = svg }
+                        : icon.GetImage(lightMode)
+                };
     }
 }
 
