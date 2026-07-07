@@ -6,7 +6,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Input.Platform;
 using Avalonia.Media;
-using Avalonia.Svg.Skia;
 using R3;
 using Serilog;
 
@@ -18,28 +17,18 @@ public class StarterIconSource()
 {
     public static readonly StarterIconSource Empty = new();
 
-    public StarterIconSource(Geometry geometry) : this() => Geometry = geometry;
     public StarterIconSource(IImage lightImage, IImage darkImage) : this()
     {
         LightImage = lightImage;
         DarkImage = darkImage;
     }
-    public StarterIconSource(SvgSource lightSvg, SvgSource darkSvg) : this()
-    {
-        LightSvg = lightSvg;
-        DarkSvg = darkSvg;
-    }
+    public StarterIconSource(Geometry geometry) : this() => Geometry = geometry;
 
     public readonly Geometry? Geometry;
-
-    public readonly SvgSource? LightSvg;
-    public readonly SvgSource? DarkSvg;
-
     public readonly IImage? LightImage;
     public readonly IImage? DarkImage;
 
     public IImage? GetImage(bool lightMode) => lightMode ? LightImage : DarkImage;
-    public SvgSource? GetSvg(bool lightMode) => lightMode ? LightSvg : DarkSvg;
 }
 
 public interface ISearchEngineActivator

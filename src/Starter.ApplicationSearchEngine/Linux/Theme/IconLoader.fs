@@ -2,27 +2,28 @@
 
 open System
 open System.IO
+open System.Threading.Tasks
 
 open FsToolkit.ErrorHandling
 open Starter.SearchEngine
 open Starter.ApplicationSearchEngine.Logger
 open Starter.ApplicationSearchEngine.Linux
 open Starter.ApplicationSearchEngine.Linux.Theme
+open Avalonia.Threading
 open Avalonia.Svg.Skia
 open Avalonia.Media.Imaging
 
 module private StarterIconSource =
-    let fromSvgSource (svgSource: SvgSource) =
-        StarterIconSource(svgSource, svgSource)
-        // Dispatcher.UIThread.InvokeAsync(fun () ->
-        //     try
-        //         let svg = SvgImage(Source = svgSource)
-        //         StarterIconSource(svg, svg)
-        //     with exn ->
-        //         logger.Warning $"Failed to load svg: {exn}"
-        //         StarterIconSource.Empty
-        // )
-        // |> _.GetTask()
+    let fromSvgSource svgSource =
+        Dispatcher.UIThread.InvokeAsync(fun () ->
+            try
+                let svg = SvgImage(Source = svgSource)
+                StarterIconSource(svg, svg)
+            with exn ->
+                logger.Warning $"Failed to load svg: {exn}"
+                StarterIconSource.Empty
+        )
+        |> _.GetTask()
 
     let fromPng iconFile =
         try
@@ -73,14 +74,18 @@ type IconLoader(currentTheme: string, database: IconLookup.Database) = // TODO: 
         match iconFile with
         | ValueNone ->
             logger.Debug $"Failed to find icon for {desktopEntry.Name}: {desktopEntry.IconName}"
-            StarterIconSource.Empty
+            ValueTask.FromResult StarterIconSource.Empty
         | ValueSome file ->
             match Path.GetExtension file with
             | ".svg" ->
                 file
                 |> loadSvgSource // This is taking time
                 |> StarterIconSource.fromSvgSource
-            | _ -> StarterIconSource.fromPng file
+                |> ValueTask<StarterIconSource>
+            | _ ->
+                file
+                |> StarterIconSource.fromPng
+                |> ValueTask.FromResult
 
     static member create () =
         task {

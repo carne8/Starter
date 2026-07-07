@@ -27,7 +27,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.3.0">
+        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.2.0">
             <ExcludeAssets>runtime;native</ExcludeAssets>
         </PackageReference>
         <PackageReference Include="Avalonia.ReactiveUI" Version="11.3.8" />
