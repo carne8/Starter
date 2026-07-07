@@ -13,6 +13,7 @@
                 <MergeResourceInclude Source="/Views/Icons.axaml" />
                 <MergeResourceInclude Source="/Styles/Resources.axaml" />
                 <MergeResourceInclude Source="/Styles/ZoomModes.axaml" />
+                <MergeResourceInclude Source="/Styles/Backgrounds.axaml" />
                 <MergeResourceInclude Source="/Styles/CustomTextBox.axaml" />
                 <MergeResourceInclude Source="/Styles/CustomListBox.axaml" />
             </ResourceDictionary.MergedDictionaries>

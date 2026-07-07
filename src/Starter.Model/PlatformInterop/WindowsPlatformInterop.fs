@@ -65,6 +65,7 @@ type WindowsPlatformInterop() =
     interface IPlatformInterop with
         override this.SupportBackground background =
             match background with
+            | Background.Gradient
             | Background.None
             | Background.Mica
             | Background.Acrylic -> true

@@ -61,6 +61,7 @@ public partial class SettingsViewModel : ObservableObject
         [
             new BackgroundKind("Acrylic", Background.Acrylic, platform.SupportBackground(Background.Acrylic)),
             new BackgroundKind("Mica", Background.Mica, platform.SupportBackground(Background.Mica)),
+            new BackgroundKind("Gradient", Background.Gradient, platform.SupportBackground(Background.Gradient)),
             new BackgroundKind("None", Background.None, platform.SupportBackground(Background.None))
         ];
 

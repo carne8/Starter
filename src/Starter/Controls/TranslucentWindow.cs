@@ -52,6 +52,18 @@ public class TranslucentWindow : Window
                 TransparencyLevelHint = NoneHint;
                 Background = BackgroundColor;
             }
+            else if (BackgroundKind.IsGradient)
+            {
+                TransparencyLevelHint = NoneHint;
+                Console.WriteLine("BackgroundBrush" + Random.Shared.Next(1, 4));
+                if (!this.TryFindResource(
+                        "BackgroundBrush" + Random.Shared.Next(1, 4),
+                        ActualThemeVariant,
+                        out var res
+                    )) return; // TODO: Add log
+                if (res as Brush is not { } brush) return;
+                Background = brush;
+            }
             else if (BackgroundKind.IsAcrylic)
             {
                 TransparencyLevelHint = AcrylicHint;

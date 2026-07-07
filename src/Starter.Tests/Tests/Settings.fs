@@ -116,8 +116,9 @@ let testBackground_Windows () =
         // Toggle background mode
         Assert.AreEqual(Background.Mica, vm.Config.Value.Background, "Background does not match config")
 
-        let none, mica, acrylic =
+        let none, gradient, mica, acrylic =
             vm.Backgrounds |> Array.find (fun b -> b.Value = Background.None),
+            vm.Backgrounds |> Array.find (fun b -> b.Value = Background.Gradient),
             vm.Backgrounds |> Array.find (fun b -> b.Value = Background.Mica),
             vm.Backgrounds |> Array.find (fun b -> b.Value = Background.Acrylic)
 
@@ -126,6 +127,9 @@ let testBackground_Windows () =
 
         comboBox.SelectedValue <- none
         Assert.AreEqual(Background.None, vm.Config.Value.Background, "Background has not been set to the correct value.")
+
+        comboBox.SelectedValue <- gradient
+        Assert.AreEqual(Background.Gradient, vm.Config.Value.Background, "Background has not been set to the correct value.")
 
         comboBox.SelectedValue <- acrylic
         Assert.AreEqual(Background.Acrylic, vm.Config.Value.Background, "Background has not been set to the correct value.")
@@ -143,6 +147,7 @@ let testBackground_Linux () =
                 { config with Background = Background.None }
             member this.SupportBackground(background) =
                 match background with
+                | Background.Gradient
                 | Background.None -> true
                 | Background.Mica
                 | Background.Acrylic -> false
@@ -157,8 +162,9 @@ let testBackground_Linux () =
         // Toggle background mode
         Assert.AreEqual(Background.None, vm.Config.Value.Background, "Background does not match config")
 
-        let none, mica, acrylic =
+        let none, gradient, mica, acrylic =
             vm.Backgrounds |> Array.find (fun b -> b.Value = Background.None),
+            vm.Backgrounds |> Array.find (fun b -> b.Value = Background.Gradient),
             vm.Backgrounds |> Array.find (fun b -> b.Value = Background.Mica),
             vm.Backgrounds |> Array.find (fun b -> b.Value = Background.Acrylic)
 
@@ -168,6 +174,10 @@ let testBackground_Linux () =
         Assert.IsTrue(
             comboBox.ContainerFromItem(none).IsEnabled,
             "None background should not be disabled on Linux"
+        )
+        Assert.IsTrue(
+            comboBox.ContainerFromItem(gradient).IsEnabled,
+            "Gradient background should not be disabled on Linux"
         )
         Assert.IsFalse(
             comboBox.ContainerFromItem(mica).IsEnabled,

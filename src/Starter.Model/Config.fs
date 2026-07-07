@@ -15,18 +15,21 @@ type Background =
     | Acrylic
     | Mica
     | None
+    | Gradient
 
     static member encoder background =
         match background with
         | Acrylic -> "acrylic" |> Encode.string
         | Mica -> "mica" |> Encode.string
         | None -> "none" |> Encode.string
+        | Gradient -> "gradient" |> Encode.string
 
     static member decoder: Decoder<_> =
         Decode.string |> Decode.andThen (function
             | "acrylic" -> Acrylic |> Decode.succeed
             | "mica" -> Mica |> Decode.succeed
             | "none" -> None |> Decode.succeed
+            | "gradient" -> Gradient |> Decode.succeed
             | other -> Decode.fail $"{other} is not a valid background value."
         )
 

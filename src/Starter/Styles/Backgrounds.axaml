@@ -1,0 +1,129 @@
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <DrawingBrush x:Key="BackgroundBrush1"
+                  Stretch="UniformToFill"
+                  AlignmentX="Left"
+                  AlignmentY="Top">
+        <DrawingBrush.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="0, 0, 100, 100" />
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <SolidColorBrush Color="#fcefe5" />
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="0, 0, 100, 100" />
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <RadialGradientBrush RadiusX="60" RadiusY="60">
+                            <GradientStop Offset="0" Color="#ffebf4" />
+                            <GradientStop Offset="1" Color="#fcefe5" />
+                            <RadialGradientBrush.Transform>
+                                <TranslateTransform X="-30" Y="10" />
+                            </RadialGradientBrush.Transform>
+                        </RadialGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+
+    <DrawingBrush x:Key="BackgroundBrush2"
+                  Stretch="UniformToFill"
+                  AlignmentX="Left"
+                  AlignmentY="Top">
+        <DrawingBrush.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="0, 0, 100, 100" />
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <SolidColorBrush Color="#fcefe5" />
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="0, 0, 100, 100" />
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <LinearGradientBrush>
+                            <GradientStop Offset="0" Color="#ffede8" />
+                            <GradientStop Offset="0.65" Color="#fff0d9" />
+                            <GradientStop Offset="1" Color="#ffeee6" />
+                            <LinearGradientBrush.Transform>
+                                <TransformGroup>
+                                    <ScaleTransform ScaleX="0.35" ScaleY="0.35" />
+                                    <RotateTransform Angle="-110" />
+                                    <TranslateTransform Y="20" />
+                                </TransformGroup>
+                            </LinearGradientBrush.Transform>
+                        </LinearGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+
+    <DrawingBrush x:Key="BackgroundBrush3"
+                  Stretch="UniformToFill"
+                  AlignmentX="Left"
+                  AlignmentY="Top">
+        <DrawingBrush.Drawing>
+            <DrawingGroup>
+                <GeometryDrawing Brush="#eaf4ff">
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="0, 0, 100, 100" />
+                    </GeometryDrawing.Geometry>
+                </GeometryDrawing>
+
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="0, 0, 100, 100" />
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <RadialGradientBrush RadiusX="70" RadiusY="60" Center="60%, 40%" GradientOrigin="60%, 40%">
+                            <GradientStop Offset="0" Color="#e1f8fe" />
+                            <GradientStop Offset="1" Color="#00eaf4ff" />
+                        </RadialGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="0, 0, 100, 100" />
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <RadialGradientBrush RadiusX="65" RadiusY="50" Center="80%, 20%" GradientOrigin="80%, 20%">
+                            <GradientStop Offset="0" Color="#e9f9e6" />
+                            <GradientStop Offset="1" Color="#00e1f8fe" />
+                        </RadialGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+                <GeometryDrawing>
+                    <GeometryDrawing.Geometry>
+                        <RectangleGeometry Rect="0, 0, 100, 100" />
+                    </GeometryDrawing.Geometry>
+                    <GeometryDrawing.Brush>
+                        <RadialGradientBrush RadiusX="65" RadiusY="50" Center="100%, 0%" GradientOrigin="100%, 0%">
+                            <GradientStop Offset="0" Color="#f6f4de" />
+                            <GradientStop Offset="1" Color="#00e9f9e6" />
+                        </RadialGradientBrush>
+                    </GeometryDrawing.Brush>
+                </GeometryDrawing>
+            </DrawingGroup>
+        </DrawingBrush.Drawing>
+    </DrawingBrush>
+
+    <!-- Radial f5effb -> faf2df -> f1f5e6 -->
+    <!-- 2 Radial f9ecfc -> ffecee <- f4f2ed -->
+    <!-- Top: f5eeff -> feeaff -> ffebf4 -->
+    <!-- Bizarre: ffeee5 -> fff2ce -> eff2fc -->
+    <!-- Trapez: f1f3f -> ffede7 and f2f2ee -->
+    <!-- Diag: eaf4ff -> e1f8fe -> e9f9e6 -> f6f4de -->
+    <!-- Blue: eef2fa -> e8f5fc -->
+</ResourceDictionary>

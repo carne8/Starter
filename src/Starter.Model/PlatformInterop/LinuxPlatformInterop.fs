@@ -62,6 +62,7 @@ Comment=Launch Starter at startup
     interface IPlatformInterop with
         override this.SupportBackground background =
             match background with
+            | Background.Gradient
             | Background.None -> true
             | Background.Mica
             | Background.Acrylic -> false
