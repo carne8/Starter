@@ -1,6 +1,7 @@
 ﻿module Starter.ApplicationSearchEngine.Linux.IconLoader
 
 open System
+open System.Collections.Generic
 open System.IO
 open System.Threading.Tasks
 
@@ -34,6 +35,21 @@ module private StarterIconSource =
             logger.Warning $"Failed to load icon {iconFile}: {exn}"
             StarterIconSource.Empty
 
+let private loadSvgSource (path: string) =
+    let svg = File.ReadAllText path
+    let builder = Text.StringBuilder(svg.Length)
+
+    let mutable lastCharWasDigit = false
+    for i = 0 to svg.Length-1 do
+        let c = svg[i]
+
+        if lastCharWasDigit && c = '-' then
+            builder.Append ' ' |> ignore
+
+        builder.Append c |> ignore
+        lastCharWasDigit <- Char.IsDigit c
+
+    SvgSource.LoadFromSvg (builder.ToString())
 
 type IconLoader(currentTheme: string, database: IconLookup.Database) = // TODO: Maybe make current theme dynamic ?
     let iconSize = 128
@@ -48,14 +64,23 @@ type IconLoader(currentTheme: string, database: IconLookup.Database) = // TODO: 
         let iconFile =
             desktopEntry.IconName
             |> ValueOption.bind findAppIconFile
+            |> ValueOption.bind (fun file ->
+                match File.ResolveLinkTarget(file, true) with
+                | null -> ValueSome file
+                | f ->
+                    logger.Debug $"{f}"
+                    ValueSome f.FullName
+            )
 
         match iconFile with
-        | ValueNone -> ValueTask.FromResult StarterIconSource.Empty
+        | ValueNone ->
+            logger.Debug $"Failed to find icon for {desktopEntry.Name}: {desktopEntry.IconName}"
+            ValueTask.FromResult StarterIconSource.Empty
         | ValueSome file ->
             match Path.GetExtension file with
             | ".svg" ->
                 file
-                |> SvgSource.Load // This is taking time
+                |> loadSvgSource // This is taking time
                 |> StarterIconSource.fromSvgSource
                 |> ValueTask<StarterIconSource>
             | _ ->
