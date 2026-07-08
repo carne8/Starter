@@ -69,7 +69,8 @@ public partial class SettingsViewModel : ObservableObject
         {
             Background.Tags.Acrylic => Backgrounds[0],
             Background.Tags.Mica => Backgrounds[1],
-            /* Background.Tags.Mica */ _ => Backgrounds[2]
+            Background.Tags.Gradient => Backgrounds[2],
+            /* Background.Tags.None */ _ => Backgrounds[3]
         };
 
         SelectedAntialiasing = baseConfig.Antialiasing.Tag switch
