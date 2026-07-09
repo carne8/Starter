@@ -55,12 +55,13 @@ public class TranslucentWindow : Window
             else if (BackgroundKind.IsGradient)
             {
                 TransparencyLevelHint = NoneHint;
-                Console.WriteLine("BackgroundBrush" + Random.Shared.Next(1, 4));
-                if (!this.TryFindResource(
-                        "BackgroundBrush" + Random.Shared.Next(1, 4),
-                        ActualThemeVariant,
-                        out var res
-                    )) return; // TODO: Add log
+                var brushFound = this.TryFindResource(
+                    "BackgroundBrush" + Random.Shared.Next(1, 5),
+                    ActualThemeVariant,
+                    out var res
+                );
+
+                if (!brushFound) return; // TODO: Add log
                 if (res as Brush is not { } brush) return;
                 Background = brush;
             }
