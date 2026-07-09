@@ -1,104 +1,65 @@
 module Starter.ApplicationSearchEngine.Linux.Theme.IconLookup
 
 open System
+open System.Collections.Concurrent
 open System.IO
 open System.Threading.Tasks
 open System.Collections.Generic
 
 open FsToolkit.ErrorHandling
-open Starter.ApplicationSearchEngine.Logger
 open Starter.ApplicationSearchEngine.Linux.Theme
 
 let private extensions = [| "svg"; "png"; "xpm" |]
 
-/// Directories to search for icons
-let private iconDirectories =
-    let xdgDataDirs =
-        Environment.GetEnvironmentVariable "XDG_DATA_DIRS"
-        |> Option.ofObj
-        |> Option.defaultValue "/usr/local/share:/usr/share"
+type Database =
+    { /// A dictionary where the keys are the name of the themes
+      Themes: IDictionary<string, IconTheme>
+      Hicolor: IconTheme array }
 
-    [| // $HOME/.icons
-        Path.Combine(Environment.GetFolderPath Environment.SpecialFolder.UserProfile, ".icons")
+module Database =
+    let private loadThemeForDirectory dir =
+        let indexPath = Path.Combine(dir, "index.theme")
 
-        // $HOME/.local/share/icons
-        Path.Combine(Environment.GetFolderPath Environment.SpecialFolder.UserProfile, ".local", "share", "icons")
-
-        // $XDG_DATA_DIRS/icons
-        for dataDir in xdgDataDirs.Split ':' do Path.Combine(dataDir, "icons") |]
-    |> Array.filter Directory.Exists
-
-let private fallbackThemes =
-    iconDirectories
-    |> Array.choose (fun dir ->
-        let themePath = Path.Combine(dir, "hicolor")
-        match Directory.Exists themePath, File.Exists(Path.Combine(themePath, "index.theme")) with // Prevent searching multiple times in a theme
-        | true, false ->
-            themePath
-            |> IconThemeParser.parseFromDirectory
+        if File.Exists indexPath then
+            indexPath
+            |> IconThemeParser.parseIndexTheme
             |> Some
-        | _ -> None
-    )
-    |> fun themes ->
-        themes
-        |> Array.map (fun theme -> $"({theme.Name}, {theme.ThemePath})")
-        |> fun arr -> "Fallback themes: " + String.Join("; ", arr)
-        |> logger.Debug
+        else
+            None
 
-        themes
+    let buildIconLookupDb (themesDirectories: string array) : Database Task =
+        task {
+            let themes = ConcurrentDictionary<string, IconTheme>()
 
-/// Returns a dictionary per theme matching the name provided.
-/// Each dictionary contains the theme and its parents.
-let buildIconLookupDb (iconThemeName: string) : struct (string * Dictionary<string, IconTheme>) array Task =
-    task {
-        let! themesOnSystem =
-            iconDirectories
-            |> Array.collect (fun directory ->
-                directory
-                |> Directory.EnumerateDirectories
-                |> Seq.choose (fun themeFolder ->
-                    let indexPath = Path.Combine(themeFolder, "index.theme")
-
-                    match File.Exists indexPath with
-                    | true -> Some indexPath
-                    | false -> None
-                )
-                |> Seq.toArray
-            )
-            |> Array.map IconThemeParser.parseIndexTheme
-            |> Task.WhenAll
-            |> Task.map (Array.choose id)
-
-        let themes = themesOnSystem |> Array.filter (fun theme -> theme.Name.Equals(iconThemeName, StringComparison.InvariantCultureIgnoreCase))
-
-        let db =
-            themes |> Array.map (fun theme ->
-                let d = Dictionary StringComparer.InvariantCultureIgnoreCase
-                d.Add(theme.Name, theme)
-
-                let rec addParents theme =
-                    theme.ParentThemes |> Array.iter (fun parent ->
-                        themesOnSystem
-                        |> Array.tryFind (fun theme -> theme.Name.Equals(parent, StringComparison.InvariantCultureIgnoreCase))
-                        |> Option.iter (fun theme ->
-                            d.TryAdd(theme.Name, theme) |> ignore
-                            addParents theme
-                        )
+            do! themesDirectories
+                |> Seq.collect (fun directory ->
+                    directory
+                    |> Directory.EnumerateDirectories
+                    |> Seq.choose (fun dir ->
+                        dir
+                        |> loadThemeForDirectory
+                        |> Option.map (Task.map (Option.iter (fun theme ->
+                            themes.TryAdd(theme.Name, theme) |> ignore
+                        )))
                     )
+                )
+                |> Task.WhenAll
+                :> Task
 
-                addParents theme
-                struct (theme.Name, d)
-            )
+            let hicolor =
+                themesDirectories |> Array.choose (fun dir ->
+                    let themeDir = Path.Combine(dir, "hicolor")
+                    if Directory.Exists themeDir then
+                        themeDir
+                        |> IconThemeParser.parseFromDirectory
+                        |> Option.ofResult
+                    else
+                        None
+                )
 
-        db
-        |> Seq.collect (fun struct (_, d) ->
-            d |> Seq.map (fun kv -> struct (kv.Value.Name, kv.Value.ThemePath))
-        )
-        |> fun seq -> "Themes used: " + String.Join("; ", seq)
-        |> logger.Debug
-
-        return db
-    }
+            return { Themes = themes :> IDictionary<_, _>
+                     Hicolor = hicolor }
+        }
 
 /// Look up icon in a specific theme
 let private lookupIconInTheme (iconName: string) size scale theme =
@@ -136,21 +97,31 @@ let private lookupIconInTheme (iconName: string) size scale theme =
             struct (Int32.MaxValue, ValueNone)
         |> fun struct (_, closestPath) -> closestPath
 
-let lookupIconInDb (iconName: string) size scale db =
-    let struct (mainTheme, themes: Dictionary<string, IconTheme>) = db
+let lookupIconInDatabase theme (iconName: string) size scale (db: Database) =
+    let seenThemes = HashSet(10)
+
+    let rec lookupTheme theme =
+        if seenThemes.Contains theme then ValueNone else
+        seenThemes.Add theme |> ignore
+
+        match db.Themes.TryGetValue theme with
+        | true, theme ->
+            match lookupIconInTheme iconName size scale theme with
+            | ValueSome i -> ValueSome i
+            | ValueNone -> theme.ParentThemes |> Array.tryPickV lookupTheme
+        | false, _ ->
+            ValueNone
 
     orElse {
-        return! themes[mainTheme] |> lookupIconInTheme iconName size scale
-        return! themes[mainTheme].ParentThemes |> Array.tryPickV (fun parentTheme ->
-            themes[parentTheme.ToLowerInvariant()] |> lookupIconInTheme iconName size scale
-        )
-    }
-
-let lookupIconInFallbackDirectories (iconName: string) size scale =
-    orElse {
-        return! fallbackThemes |> Array.tryPickV (lookupIconInTheme iconName size scale)
-        return! extensions |> Array.tryPickV (fun ext ->
-            Directory.EnumerateFiles("/usr/share/pixmaps", $"{iconName}.{ext}")
-            |> Seq.tryHeadV
-        )
+        return! lookupTheme theme
+        return!
+            db.Themes
+            |> Seq.filter (fun kv -> seenThemes.Contains kv.Key |> not)
+            |> Seq.tryPickV (_.Value >> lookupIconInTheme iconName size scale)
+        return! db.Hicolor |> Array.tryPickV (lookupIconInTheme iconName size scale)
+        return!
+            extensions |> Array.tryPickV (fun ext ->
+                Directory.EnumerateFiles("/usr/share/pixmaps", $"{iconName}.{ext}")
+                |> Seq.tryHeadV
+            )
     }

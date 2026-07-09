@@ -2,10 +2,11 @@ namespace Starter.Features
 
 open System
 open System.Collections.Generic
-open System.Reactive.Linq
+open System.Diagnostics
 open System.Threading
+open System.Threading.Tasks
 open Avalonia.Threading
-open Fusil
+open Starter.TextMatching
 open R3
 open Serilog
 open Starter.Features.CustomCollections
@@ -21,12 +22,19 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             compare (SearchResultData.getWeight resultScoreDb e1) (SearchResultData.getWeight resultScoreDb e2)
         )
 
+    let stopwatch = Stopwatch()
+
     let mutable queryCancellationTokenSource = new CancellationTokenSource()
     /// Output results
     let results = ObservableList<SearchResultData> 300
+    let loadingTimes = new Subject<TimeSpan Nullable>()
 
     let fuzzyMatchResult normalizedText result =
-        let res = fuzzyMatch false true true slab normalizedText result.SearchResult.Name
+        let res =
+            match result.NormalizedName with
+            | ValueNone -> FuzzyMatch.string false true true slab normalizedText result.SearchResult.Name
+            | ValueSome name -> FuzzyMatch.runes false false true slab normalizedText (Span name)
+
         result.FuzzyMatchResult <- res
 
         match res with
@@ -38,13 +46,14 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             | null -> false
             | keywords ->
                 keywords |> Array.exists (fun keyword ->
-                    match fuzzyMatch false true false slab normalizedText keyword with
+                    match FuzzyMatch.fastString false normalizedText keyword with
                     | ValueSome res when res.Score > 0s ->
                         result.AccentuationMap <- null
                         result.FuzzyMatchResult <- ValueSome res
                         true
                     | _ -> false
                 )
+
 
 
     let querySingleDynamicSearchEngine ct (activator: ISearchEngineActivator | null) query (engine: IDynamicSearchEngine) = // Show only this engine results
@@ -61,7 +70,10 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
 
             instantResults
             |> Seq.map (SearchResultData.createDynamic engine)
-            |> addResults
+            |> fun r ->
+                results.AddRange r
+                results.Sort comparer
+                results.NotifyChanged()
 
             match engine.BufferResults with
             | false ->
@@ -71,8 +83,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
                     .Subscribe addResults
             | true ->
                 futureResults
-                    .AsSystemObservable()
-                    .Buffer(TimeSpan.FromMilliseconds 200L)
+                    .Chunk(TimeSpan.FromMilliseconds 200L)
                     .Select(Seq.collect (Seq.map (SearchResultData.createDynamic engine)))
                     .Subscribe(fun r -> Dispatcher.UIThread.Post(fun () -> addResults r))
             |> disposeOnCancelled ct
@@ -80,6 +91,8 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             Log.Error(e, $"Failed to get results from dynamic search engine: {engine.Name}")
 
     let queryAllSearchEngines (ct: CancellationToken) query =
+        stopwatch.Restart()
+
         let normalizedText =
             query
             |> TextNormalization.String.normalize
@@ -88,6 +101,8 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
         let mutable cts = new CancellationTokenSource()
 
         staticResults.Subscribe(fun staticResults ->
+            stopwatch.Start()
+
             // Make sure to not call dynamic engines without cancelling the previous request
             cts.Cancel()
             cts <- new CancellationTokenSource()
@@ -104,16 +119,21 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             |> results.AddRange
             results.Sort comparer
             results.NotifyChanged()
+
+            stopwatch.Stop()
+            stopwatch.Elapsed |> loadingTimes.OnNext
         )
         |> disposeOnCancelled ct
 
     let querySingleStaticSearchEngine ct (activator: ISearchEngineActivator) query = // Show only this engine results
+        stopwatch.Restart()
         let normalizedText =
             query
             |> TextNormalization.String.normalize
             |> Array.map System.Text.Rune.ToLowerInvariant
 
         staticResults.Subscribe(fun staticResults ->
+            stopwatch.Start()
             results.Clear()
 
             match query with
@@ -137,6 +157,9 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
 
             results.Sort comparer
             results.NotifyChanged()
+
+            stopwatch.Stop()
+            stopwatch.Elapsed |> loadingTimes.OnNext
         ) |> disposeOnCancelled ct
 
 
@@ -144,9 +167,10 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
         member this.Dispose() = staticResults.Dispose()
 
     member this.Results = results
+    member this.LoadingTimes = loadingTimes
 
     member this.AddSource(searchEngine: IStaticSearchEngine) =
-        task {
+        Task.Run<unit>(fun () -> task {
             try
                 let! results = searchEngine.LoadResults()
 
@@ -179,12 +203,13 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
                             Log.Information $"{searchEngine.Name} results loaded"
                 ) |> ignore
             with e -> Log.Error(e, $"{searchEngine.Name} failed to load results:\n{e.Message}")
-        }
+        })
 
     member this.AddSource(searchEngine: IDynamicSearchEngine) =
         dynamicSearchEngines.Add searchEngine
 
     member this.ClearResults() =
+        loadingTimes.OnNext (Nullable())
         queryCancellationTokenSource.Cancel()
         results.Clear()
         results.NotifyChanged()
@@ -195,6 +220,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
         let ct = queryCancellationTokenSource.Token
 
         match activator with
+        | null when text = String.Empty -> this.ClearResults()
         | null -> queryAllSearchEngines ct text
         | activator ->
             match searchEngines.TryGetValue activator.SearchEngineId with

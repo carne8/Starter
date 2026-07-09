@@ -2,12 +2,15 @@
     <ResourceDictionary.ThemeDictionaries>
         <!-- Light -->
         <ResourceDictionary x:Key="Light">
-            <!-- Results -->
-            <SolidColorBrush x:Key="TextForeground">Black</SolidColorBrush>
-            <SolidColorBrush x:Key="DescriptionForeground">#5C5C5C</SolidColorBrush>
+            <SolidColorBrush x:Key="IconsColor">Black</SolidColorBrush>
+            <SolidColorBrush x:Key="Text1">#111114</SolidColorBrush>
+            <SolidColorBrush x:Key="Text2">#70707e</SolidColorBrush>
+            <SolidColorBrush x:Key="Text3">#b0b0be</SolidColorBrush>
+            <FontWeight x:Key="TextBoxFontWeight">SemiBold</FontWeight>
 
             <!-- Window -->
             <SolidColorBrush x:Key="WindowBackground">#B2F9F9F9</SolidColorBrush>
+            <!-- <SolidColorBrush x:Key="BorderBrush">rgba(0, 0, 0, 0.07)</SolidColorBrush> -->
             <SolidColorBrush x:Key="BorderBrush">rgba(103, 103, 103, 0.2)</SolidColorBrush>
             <Color x:Key="DefaultBackgroundColor">#F2F2F2</Color>
 
@@ -18,9 +21,11 @@
 
         <!-- Dark -->
         <ResourceDictionary x:Key="Dark">
-            <!-- Results -->
-            <SolidColorBrush x:Key="TextForeground">White</SolidColorBrush>
-            <SolidColorBrush x:Key="DescriptionForeground">#CCCCCC</SolidColorBrush>
+            <SolidColorBrush x:Key="IconsColor">White</SolidColorBrush>
+            <SolidColorBrush x:Key="Text1">#f0f0f2</SolidColorBrush>
+            <SolidColorBrush x:Key="Text2">#858593</SolidColorBrush>
+            <SolidColorBrush x:Key="Text3">#70707e</SolidColorBrush>
+            <FontWeight x:Key="TextBoxFontWeight">Regular</FontWeight>
 
             <!-- Window -->
             <SolidColorBrush x:Key="WindowBackground">#B2232323</SolidColorBrush>
@@ -34,5 +39,5 @@
     </ResourceDictionary.ThemeDictionaries>
 
     <Thickness x:Key="BorderThickness">1</Thickness>
-    <x:Double x:Key="BorderThicknessInt">1</x:Double>
+    <x:Double x:Key="BorderThicknessInt">0.8</x:Double>
 </ResourceDictionary>

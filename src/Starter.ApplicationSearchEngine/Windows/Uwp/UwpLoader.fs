@@ -9,6 +9,7 @@ open Starter.SearchEngine
 open System
 open System.Diagnostics
 open System.Security.Principal
+open System.Threading.Tasks
 
 open FsToolkit.ErrorHandling
 
@@ -49,8 +50,10 @@ type UwpAppsLoader() =
     member this.Apps = apps
 
     member this.LoadApps() =
-        loadApplications() |> apps.AddRange
-        changedEvent.Trigger()
+        Task.Run<unit>(fun () ->
+            loadApplications() |> apps.AddRange
+            changedEvent.Trigger()
+        ) |> ignore
 
     member this.ObserveFolders() =
         watcher |> ValueOption.iter _.Dispose()

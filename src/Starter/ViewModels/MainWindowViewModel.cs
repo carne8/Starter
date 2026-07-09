@@ -1,4 +1,4 @@
-﻿using R3;
+using R3;
 using Serilog;
 using Starter.Features;
 using Starter.Features.Config;
@@ -13,20 +13,27 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly SearchResultStore searchResultStore;
     private readonly SearchEngineStore searchEngineStore;
     private readonly ActivatorStore activatorStore;
-    private readonly IDictionary<string, ScoreDbEntry> resultScoreDb;
+    private readonly IScoreDb resultScoreDb;
 
     public event EventHandler? HideWindow;
     public event EventHandler<int>? ClearTextBox;
 
+    public GreetingVm GreetingVm { get; } = new();
+
     public BehaviorSubject<Configuration> Config { get; private set; }
     public IObservable<Configuration> ConfigSystemObservable { get; private set; }
-    [ObservableProperty] private string text = string.Empty;
-    [ObservableProperty] private ISearchEngineActivator? activator;
     public ObservableList<SearchResultData> SearchResults => searchResultStore.Results;
+    public IObservable<TimeSpan?> LoadingTime => searchResultStore.LoadingTimes.AsSystemObservable();
+
+    [ObservableProperty]
+    public partial string Text { get; set; } = string.Empty;
+    [ObservableProperty]
+    public partial ISearchEngineActivator? Activator { get; set; }
+
 
     public MainWindowViewModel(
         BehaviorSubject<Configuration> config,
-        IDictionary<string, ScoreDbEntry> resultScoreDb,
+        IScoreDb resultScoreDb,
         SearchEngineStore searchEngineStore,
         ActivatorStore activatorStore
     )
@@ -39,6 +46,11 @@ public partial class MainWindowViewModel : ObservableObject
         this.resultScoreDb = resultScoreDb;
 
         searchResultStore = new SearchResultStore(resultScoreDb, searchEngineStore.SearchEngines);
+        searchEngineStore.SearchEngineAdded += se =>
+        {
+            if (se is IStaticSearchEngine staticSe) searchResultStore.AddSource(staticSe);
+            else if (se is IDynamicSearchEngine dynamicSe) searchResultStore.AddSource(dynamicSe);
+        };
         foreach (var se in searchEngineStore.StaticSearchEngines) searchResultStore.AddSource(se);
         foreach (var se in searchEngineStore.DynamicSearchEngines) searchResultStore.AddSource(se);
     }
@@ -46,9 +58,9 @@ public partial class MainWindowViewModel : ObservableObject
     private void IncreaseResultScore(ISearchResult searchResult)
     {
         if (searchResult.Id is null) return;
-        ScoreDbModule.increaseResultScore(searchResult.Id, resultScoreDb);
-        ScoreDbModule.runMaxAgingPolicy(Const.ScoresMaxAging, resultScoreDb);
-        ScoreDbModule.writeToFile(Const.ResultScoresFile, resultScoreDb);
+        resultScoreDb.IncreaseResultScore(searchResult.Id);
+        resultScoreDb.RunMaxAgingPolicy();
+        resultScoreDb.SaveToFile(Const.ResultScoresFile);
         searchResultStore.SortResults(); // Sort results for next opening
     }
 
@@ -65,12 +77,15 @@ public partial class MainWindowViewModel : ObservableObject
         else searchResultStore.Query(value, Activator);
     }
 
-    partial void OnActivatorChanged(ISearchEngineActivator? value) => searchResultStore.Query(Text, value);
+    partial void OnActivatorChanged(ISearchEngineActivator? value)
+    {
+        if (value is not null) return;
+        searchResultStore.Query(Text, value);
+    }
 
     [RelayCommand]
     private void SelectResult(SearchResultData searchResult)
     {
-        Log.Debug("Selected {Result}", searchResult.SearchResult.Name);
         HideWindow?.Invoke(this, EventArgs.Empty);
 
         if (!searchEngineStore.SearchEngines.TryGetValue(searchResult.SearchEngineId, out var searchEngine))

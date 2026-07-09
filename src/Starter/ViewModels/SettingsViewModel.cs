@@ -1,4 +1,7 @@
-﻿using R3;
+﻿using Avalonia.Platform.Storage;
+using Microsoft.Extensions.DependencyInjection;
+using ObservableCollections;
+using R3;
 using Starter.Features.Config;
 using Starter.Features.PlatformInterop;
 using Starter.SearchEngine;
@@ -10,7 +13,8 @@ public record AntialiasingKind(string Name, Antialiasing Value);
 
 public partial class SettingsViewModel : ObservableObject
 {
-    private static readonly PlatformInterop Platform = PlatformInteropFactory.GetPlatformInterop();
+    private readonly ILauncher launcher;
+    private readonly IPlatformInterop platform;
     public readonly BehaviorSubject<Configuration> Config;
 
     // Background launch at startup
@@ -18,19 +22,8 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] public partial bool LaunchAtStartupLoading { get; set; } = true;
 
     // Background
-    public static readonly BackgroundKind[] Backgrounds =
-    [
-        new("Acrylic", Background.Acrylic, !OperatingSystem.IsLinux()),
-        new("Mica", Background.Mica, !OperatingSystem.IsLinux()),
-        new("None", Background.None, true)
-    ];
+    public BackgroundKind[] Backgrounds { get; }
     [ObservableProperty] public partial BackgroundKind SelectedBackground { get; set; }
-
-    public static string? BackgroundDescription =>
-        OperatingSystem.IsLinux()
-            ? "Acrylic and Mica background are not supported on Linux"
-            : null;
-
 
     // Zoomed mode
     [ObservableProperty] public partial bool ZoomedMode { get; set; }
@@ -46,20 +39,38 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty] public partial AntialiasingKind SelectedAntialiasing { get; set; }
 
     // Keyboard shortcut
-    public KeyboardShortcutInputViewModel KeyboardShortcutViewModel { get; }
+    public KeyboardShortcutInputViewModel KeyboardShortcutVm { get; }
 
     // Activator prefixes
-    public ActivatorInputFieldViewModel[] ActivatorViewModels { get; }
+    public ObservableList<ActivatorInputFieldViewModel> ActivatorViewModels { get; } = [];
 
-    public SettingsViewModel(Configuration baseConfig, SearchEngineStore engines)
+    public SettingsViewModel(
+        ILauncher launcher,
+        [FromKeyedServices("initial-config")] Configuration baseConfig,
+        SearchEngineStore engines,
+        IPlatformInterop platform,
+        KeyboardShortcutInputViewModel keyboardShortcutVm
+    )
     {
+        this.platform = platform;
+        this.launcher = launcher;
+
         Config = new BehaviorSubject<Configuration>(baseConfig);
+
+        Backgrounds =
+        [
+            new BackgroundKind("Acrylic", Background.Acrylic, platform.SupportBackground(Background.Acrylic)),
+            new BackgroundKind("Mica", Background.Mica, platform.SupportBackground(Background.Mica)),
+            new BackgroundKind("None", Background.None, platform.SupportBackground(Background.None))
+        ];
+
         SelectedBackground = baseConfig.Background.Tag switch
         {
             Background.Tags.Acrylic => Backgrounds[0],
             Background.Tags.Mica => Backgrounds[1],
             /* Background.Tags.Mica */ _ => Backgrounds[2]
         };
+
         SelectedAntialiasing = baseConfig.Antialiasing.Tag switch
         {
             Antialiasing.Tags.Alias => Antialiasings[0],
@@ -67,25 +78,39 @@ public partial class SettingsViewModel : ObservableObject
             Antialiasing.Tags.Subpixel => Antialiasings[2],
             /* Antialiasing.Tags.PlatformDefault */ _ => Antialiasings[3]
         };
+
         ZoomedMode = baseConfig.ZoomedMode;
 
-        KeyboardShortcutViewModel = new KeyboardShortcutInputViewModel(baseConfig.KeyboardShortcut);
-        KeyboardShortcutViewModel.KeyboardShortcutChanged +=
+        KeyboardShortcutVm = keyboardShortcutVm;
+        KeyboardShortcutVm.KeyboardShortcutChanged +=
             shortcut => Config.OnNext(Config.Value.WithKeyboardShortcut(shortcut));
 
-        ActivatorViewModels = engines.SearchEngines.Values
-            .SelectMany(engine => engine.Activators)
-            .Select(activator => new ActivatorInputFieldViewModel(
-                activator,
-                baseConfig.ActivatorPrefixes,
-                ActivatorPrefixChanged
-            ))
-            .ToArray();
+        ActivatorViewModels.AddRange(
+            engines.SearchEngines.Values
+                .SelectMany(engine => engine.Activators)
+                .Select(activator => new ActivatorInputFieldViewModel(
+                    activator,
+                    baseConfig.ActivatorPrefixes,
+                    ActivatorPrefixChanged
+                ))
+        );
+        engines.SearchEngineAdded += se => ActivatorViewModels.AddRange(
+            se.Activators.Select(activator =>
+                new ActivatorInputFieldViewModel(
+                    activator,
+                    baseConfig.ActivatorPrefixes,
+                    ActivatorPrefixChanged
+                )
+            )
+        );
     }
 
     private void ActivatorPrefixChanged(ISearchEngineActivator activator, string newPrefix)
     {
-        var newMap = Config.Value.ActivatorPrefixes.Add(activator.Id, newPrefix);
+        var newMap =
+            string.IsNullOrEmpty(newPrefix)
+                ? Config.Value.ActivatorPrefixes.Remove(activator.Id)
+                : Config.Value.ActivatorPrefixes.Add(activator.Id, newPrefix);
         var newConfig = Config.Value.WithActivatorPrefixes(newMap);
         Config.OnNext(newConfig);
     }
@@ -97,7 +122,7 @@ public partial class SettingsViewModel : ObservableObject
             // Checks if launch at startup is enabled
             try
             {
-                LaunchAtStartup = Platform.IsLaunchAtStartupEnabled();
+                LaunchAtStartup = platform.IsLaunchAtStartupEnabled();
                 LaunchAtStartupLoading = false;
             }
             catch (Exception)
@@ -108,8 +133,29 @@ public partial class SettingsViewModel : ObservableObject
         });
     }
 
-    partial void OnLaunchAtStartupChanged(bool value) => Task.Run(() => Platform.ToggleLaunchAtStartup(value));
+    partial void OnLaunchAtStartupChanged(bool value) => Task.Run(() => platform.ToggleLaunchAtStartup(value));
     partial void OnSelectedBackgroundChanged(BackgroundKind value) => Config.OnNext(Config.Value.WithBackground(value.Value));
     partial void OnZoomedModeChanged(bool value) => Config.OnNext(Config.Value.WithZoomedMode(value));
     partial void OnSelectedAntialiasingChanged(AntialiasingKind value) => Config.OnNext(Config.Value.WithAntialiasing(value.Value));
+
+    [RelayCommand]
+    public void OpenConfigDirectory()
+    {
+        var dir = new DirectoryInfo(Features.Constants.ConfigDirectory);
+        launcher.LaunchDirectoryInfoAsync(dir);
+    }
+
+    [RelayCommand]
+    public void OpenSearchEnginesDirectory()
+    {
+        var dir = new DirectoryInfo(Features.Constants.PluginsDirectory);
+        launcher.LaunchDirectoryInfoAsync(dir);
+    }
+
+    [RelayCommand]
+    public void OpenLogsDirectory()
+    {
+        var dir = new DirectoryInfo(Features.Constants.LogDirectory);
+        launcher.LaunchDirectoryInfoAsync(dir);
+    }
 }

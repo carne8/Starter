@@ -5,18 +5,49 @@
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              x:DataType="vm:SettingsViewModel">
     <UserControl.Resources>
-        <StreamGeometry x:Key="Plus">M14.5,13 L14.5,3.75378577 C14.5,3.33978577 14.164,3.00378577 13.75,3.00378577 C13.336,3.00378577 13,3.33978577 13,3.75378577 L13,13 L3.75387573,13 C3.33987573,13 3.00387573,13.336 3.00387573,13.75 C3.00387573,14.164 3.33987573,14.5 3.75387573,14.5 L13,14.5 L13,23.7523651 C13,24.1663651 13.336,24.5023651 13.75,24.5023651 C14.164,24.5023651 14.5,24.1663651 14.5,23.7523651 L14.5,14.5 L23.7498262,14.5030754 C24.1638262,14.5030754 24.4998262,14.1670754 24.4998262,13.7530754 C24.4998262,13.3390754 24.1638262,13.0030754 23.7498262,13.0030754 L14.5,13 Z</StreamGeometry>
-        <StreamGeometry x:Key="Cross">M3.52499419,3.71761187 L3.61611652,3.61611652 C4.0717282,3.16050485 4.79154862,3.13013074 5.28238813,3.52499419 L5.38388348,3.61611652 L14,12.233 L22.6161165,3.61611652 C23.1042719,3.12796116 23.8957281,3.12796116 24.3838835,3.61611652 C24.8720388,4.10427189 24.8720388,4.89572811 24.3838835,5.38388348 L15.767,14 L24.3838835,22.6161165 C24.8394952,23.0717282 24.8698693,23.7915486 24.4750058,24.2823881 L24.3838835,24.3838835 C23.9282718,24.8394952 23.2084514,24.8698693 22.7176119,24.4750058 L22.6161165,24.3838835 L14,15.767 L5.38388348,24.3838835 C4.89572811,24.8720388 4.10427189,24.8720388 3.61611652,24.3838835 C3.12796116,23.8957281 3.12796116,23.1042719 3.61611652,22.6161165 L12.233,14 L3.61611652,5.38388348 C3.16050485,4.9282718 3.13013074,4.20845138 3.52499419,3.71761187 L3.61611652,3.61611652 L3.52499419,3.71761187 Z</StreamGeometry>
-        <StreamGeometry x:Key="Multiplier2X">M6.162 10.245a.75.75 0 0 0 .836-.668 1.383 1.383 0 0 1 .23-.507c.182-.247.55-.57 1.389-.57.776 0 1.285.239 1.572.558.28.31.451.811.322 1.565-.073.425-.282.675-.638.897-.299.187-.632.317-1.043.477-.167.066-.347.136-.543.217-.62.257-1.34.608-1.891 1.252-.571.667-.896 1.564-.896 2.784a.75.75 0 0 0 .75.75h5a.75.75 0 0 0 0-1.5H7.062c.09-.492.27-.82.473-1.058.312-.364.754-.605 1.326-.842.122-.05.256-.103.397-.158.454-.177.982-.382 1.41-.65.627-.391 1.16-.973 1.321-1.915.189-1.096-.03-2.095-.685-2.822C10.658 7.336 9.691 7 8.617 7c-1.32 0-2.135.552-2.597 1.18a2.883 2.883 0 0 0-.508 1.182 1.525 1.525 0 0 0-.004.03l-.002.01v.008c0 .002-.047.388 0 .001a.75.75 0 0 0 .656.834Zm8.119 1.975a.75.75 0 0 0-1.061 1.06l1.22 1.22-1.22 1.22a.75.75 0 1 0 1.06 1.06l1.22-1.22 1.22 1.22a.75.75 0 1 0 1.06-1.06l-1.22-1.22 1.22-1.22a.75.75 0 0 0-1.06-1.06l-1.22 1.22-1.22-1.22Z</StreamGeometry>
+        <DrawingImage x:Key="Plus">
+            <DrawingImage.Drawing>
+                <DrawingGroup ClipGeometry="M 0,0 L 24,0 24,24 0,24 Z">
+                    <GeometryDrawing Pen="{StaticResource IconPen}" Geometry="F1 M5 12h14" />
+                    <GeometryDrawing Pen="{StaticResource IconPen}" Geometry="F1 M12 5v14" />
+                </DrawingGroup>
+            </DrawingImage.Drawing>
+        </DrawingImage>
+        <DrawingImage x:Key="Trash">
+            <DrawingImage.Drawing>
+                <DrawingGroup ClipGeometry="M 0,0 L 24,0 24,24 0,24 Z">
+                    <GeometryDrawing Pen="{StaticResource IconPen}" Geometry="F1 M10 11v6" />
+                    <GeometryDrawing Pen="{StaticResource IconPen}" Geometry="F1 M14 11v6" />
+                    <GeometryDrawing Pen="{StaticResource IconPen}" Geometry="F1 M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                    <GeometryDrawing Pen="{StaticResource IconPen}" Geometry="F1 M3 6h18" />
+                    <GeometryDrawing Pen="{StaticResource IconPen}" Geometry="F1 M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </DrawingGroup>
+            </DrawingImage.Drawing>
+        </DrawingImage>
+        <DrawingImage x:Key="Copy" Viewbox="0,0,24,24">
+            <DrawingImage.Drawing>
+                <DrawingGroup ClipGeometry="M 0,0 L 24,0 24,24 0,24 Z">
+                    <GeometryDrawing Pen="{StaticResource IconPen}">
+                        <GeometryDrawing.Geometry>
+                            <RectangleGeometry RadiusX="2"
+                                               RadiusY="2"
+                                               Rect="8,8,14,14" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                    <GeometryDrawing Pen="{StaticResource IconPen}" Geometry="F1 M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                </DrawingGroup>
+            </DrawingImage.Drawing>
+        </DrawingImage>
+
         <DataTemplate x:Key="FolderDataTemplate" DataType="vm:FolderViewModel">
             <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
                 <TextBox Grid.Column="0" Text="{Binding Path}" />
                 <Button Grid.Column="1"
                         VerticalAlignment="Stretch"
                         Command="{Binding Remove}">
-                    <PathIcon Width="14"
-                              Height="14"
-                              Data="{StaticResource Cross}" />
+                    <Image Width="14"
+                           Height="14"
+                           Source="{StaticResource Trash}" />
                 </Button>
             </Grid>
         </DataTemplate>
@@ -40,7 +71,7 @@
                     </Style>
                 </ui:FASettingsExpander.Styles>
                 <ui:FASettingsExpander.IconSource>
-                    <ui:FAPathIconSource Data="{StaticResource Multiplier2X}" />
+                    <ui:FAImageIconSource Source="{StaticResource Copy}" />
                 </ui:FASettingsExpander.IconSource>
                 <ui:FASettingsExpander.Footer>
                     <ToggleSwitch IsChecked="{Binding AllowDuplicates}" />
@@ -55,9 +86,9 @@
                     </ItemsRepeater.Layout>
                 </ItemsRepeater>
                 <Button HorizontalAlignment="Stretch" Command="{Binding AddFolder}">
-                    <PathIcon Width="14"
-                              Height="14"
-                              Data="{StaticResource Plus}" />
+                    <Image Width="14"
+                           Height="14"
+                           Source="{StaticResource Plus}" />
                 </Button>
             </StackPanel>
 
@@ -69,9 +100,9 @@
                     </ItemsRepeater.Layout>
                 </ItemsRepeater>
                 <Button HorizontalAlignment="Stretch" Command="{Binding AddExcludedFolder}">
-                    <PathIcon Width="14"
-                              Height="14"
-                              Data="{StaticResource Plus}" />
+                    <Image Width="14"
+                           Height="14"
+                           Source="{StaticResource Plus}" />
                 </Button>
             </StackPanel>
 

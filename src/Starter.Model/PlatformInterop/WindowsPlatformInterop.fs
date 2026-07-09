@@ -8,6 +8,7 @@ open Avalonia.Input
 open Avalonia.Win32.Input
 open Serilog
 open Starter.Features
+open Starter.Features.Config
 open Starter.Features.Logging
 open Vanara.PInvoke
 open Vanara.Windows.Shell
@@ -54,7 +55,6 @@ module VK =
             |> ValueSome
 
 type WindowsPlatformInterop() =
-    inherit PlatformInterop()
 
     static let startupFolder = Environment.SpecialFolder.Startup |> Environment.GetFolderPath
     static let startupFile = Path.Combine(startupFolder, Constants.Platform.Windows.StartupFile)
@@ -62,64 +62,73 @@ type WindowsPlatformInterop() =
     [<Literal>]
     static let hotkeyId = 0
 
-    override _.ToggleLaunchAtStartup(enable) =
-        try
-            match enable, File.Exists startupFile with
-            | false, true -> File.Delete startupFile
-            | true, false ->
-                use shortcut = new ShellLink(
-                    Constants.ProcessExecutableFile,
-                    null,
-                    Constants.ProcessDirectory,
-                    "Starter",
-                    IconLocation = IconLocation(Constants.ProcessExecutableFile, 0)
+    interface IPlatformInterop with
+        override this.SupportBackground background =
+            match background with
+            | Background.None
+            | Background.Mica
+            | Background.Acrylic -> true
+
+        override this.EnsureConfigCompatibility config = config
+
+        override _.ToggleLaunchAtStartup(enable) =
+            try
+                match enable, File.Exists startupFile with
+                | false, true -> File.Delete startupFile
+                | true, false ->
+                    use shortcut = new ShellLink(
+                        Constants.ProcessExecutableFile,
+                        null,
+                        Constants.ProcessDirectory,
+                        "Starter",
+                        IconLocation = IconLocation(Constants.ProcessExecutableFile, 0)
+                    )
+
+                    shortcut.SaveAs startupFile
+                | _ -> ()
+            with err ->
+                Log.Error(err, "Failed to toggle launch at startup")
+
+        override _.IsLaunchAtStartupEnabled() = File.Exists startupFile
+
+        override _.HotkeyRegistrable = true
+        override _.RegisterHotkey shortcut window =
+            result {
+                let! platformHandle =
+                    window.TryGetPlatformHandle()
+                    |> Result.requireNotNull "Failed to retrieve window platform handle"
+
+                User32.UnregisterHotKey(platformHandle.Handle, hotkeyId) |> ignore
+
+                let! key =
+                    shortcut.Key
+                    |> VK.fromKey
+                    |> Result.ofValueOption $"Failed to parse key: {shortcut.Key}"
+
+                let res = User32.RegisterHotKey(
+                    platformHandle.Handle,
+                    hotkeyId,
+                    shortcut.Modifiers |> HotKeyModifiers.fromKeys,
+                    key
                 )
 
-                shortcut.SaveAs startupFile
-            | _ -> ()
-        with err ->
-            Log.Error(err, "Failed to toggle launch at startup")
+                match res with
+                | false -> return! Error "Failed to setup hotkey"
+                | true -> return ()
+            }
+            |> function
+                | Ok () -> ValueTask.FromResult false
+                | Error err ->
+                    logger.Error err
+                    ValueTask.FromResult true
 
-    override _.IsLaunchAtStartupEnabled() = File.Exists startupFile
+        override _.SetupHotkeyCallback(window: Window) =
+            let wndProcCallback =
+                Win32Properties.CustomWndProcHookCallback(
+                    fun (_hWnd: nativeint) (msg: uint32) (_wParam: nativeint) (_lParam: nativeint) _ ->
+                        if msg = uint User32.WindowMessage.WM_HOTKEY then
+                            window.Show()
+                        0
+                )
 
-    override _.HotkeyRegistrable = true
-    override _.RegisterHotkey shortcut window =
-        result {
-            let! platformHandle =
-                window.TryGetPlatformHandle()
-                |> Result.requireNotNull "Failed to retrieve window platform handle"
-
-            User32.UnregisterHotKey(platformHandle.Handle, hotkeyId) |> ignore
-
-            let! key =
-                shortcut.Key
-                |> VK.fromKey
-                |> Result.ofValueOption $"Failed to parse key: {shortcut.Key}"
-
-            let res = User32.RegisterHotKey(
-                platformHandle.Handle,
-                hotkeyId,
-                shortcut.Modifiers |> HotKeyModifiers.fromKeys,
-                key
-            )
-
-            match res with
-            | false -> return! Error "Failed to setup hotkey"
-            | true -> return ()
-        }
-        |> function
-            | Ok () -> ValueTask.FromResult false
-            | Error err ->
-                logger.Error err
-                ValueTask.FromResult true
-
-    override _.SetupHotkeyCallback(window: Window) =
-        let wndProcCallback =
-            Win32Properties.CustomWndProcHookCallback(
-                fun (_hWnd: nativeint) (msg: uint32) (_wParam: nativeint) (_lParam: nativeint) _ ->
-                    if msg = uint User32.WindowMessage.WM_HOTKEY then
-                        window.Show()
-                    0
-            )
-
-        Win32Properties.AddWndProcHookCallback(window, wndProcCallback)
+            Win32Properties.AddWndProcHookCallback(window, wndProcCallback)

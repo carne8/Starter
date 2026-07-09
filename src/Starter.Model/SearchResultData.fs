@@ -3,10 +3,12 @@
 open System
 open Starter.Features
 open Starter.SearchEngine
-open Fusil
+open Starter.TextMatching.FuzzyMatch
+open Starter.TextMatching.TextNormalization
 
 type SearchResultData =
     { SearchResult: ISearchResult
+      NormalizedName: System.Text.Rune array voption
       Priority: ResultPriority
       SearchEngineId: string
       mutable FuzzyMatchResult: FuzzyResult voption
@@ -14,6 +16,7 @@ type SearchResultData =
 
     static member createStatic (searchEngine: IStaticSearchEngine) searchResult =
         { SearchResult = searchResult
+          NormalizedName = searchResult.Name |> String.normalize |> ValueSome
           Priority = ResultPriority.Static
           SearchEngineId = searchEngine.Id
           FuzzyMatchResult = ValueNone
@@ -21,17 +24,18 @@ type SearchResultData =
 
     static member createDynamic (searchEngine: IDynamicSearchEngine) searchResult =
         { SearchResult = searchResult
+          NormalizedName = ValueNone
           Priority = searchEngine.ResultsPriority
           SearchEngineId = searchEngine.Id
           FuzzyMatchResult = ValueNone
           AccentuationMap = null }
 
     // Returns a low number for a result that should be on top of the list
-    static member getWeight resultScoreDb (sr: SearchResultData) =
+    static member getWeight (resultScoreDb: IScoreDb) (sr: SearchResultData) =
         let struct (usageScore, d) =
             sr.SearchResult.Id
             |> ValueOption.ofObj
-            |> ValueOption.map (ScoreDb.getResultScore resultScoreDb)
+            |> ValueOption.map resultScoreDb.GetResultScore
             |> ValueOption.defaultValue (struct (Int32.MaxValue, TimeSpan.MaxValue))
 
         let fuzzyMatchScore =

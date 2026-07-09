@@ -6,7 +6,7 @@
              x:DataType="vm:ISearchResult">
 
     <Border Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
-        <StackPanel Orientation="Horizontal" Spacing="10">
+        <StackPanel Orientation="Horizontal" Spacing="6">
             <Border CornerRadius="4" ClipToBounds="True">
                 <controls:StarterIcon Width="{DynamicResource SearchResultIconSize}"
                                       Height="{DynamicResource SearchResultIconSize}"
@@ -16,18 +16,21 @@
                                       ExtraPaddingForSymbol="4" />
             </Border>
 
-            <StackPanel VerticalAlignment="Center">
+            <StackPanel VerticalAlignment="Center" Spacing="-1">
                 <controls:AccentuatedTextBlock x:Name="NameTextBlock"
                                                FontSize="{DynamicResource SearchResultFontSize}"
-                                               Foreground="{DynamicResource TextForeground}"
+                                               Foreground="{DynamicResource Text1}"
+                                               AccentuatedForeground="{DynamicResource TextControlSelectionHighlightColor}"
                                                Text="{Binding Name}"
-                                               FontFamily="{StaticResource JetBrainsMono}" />
+                                               FontFamily="{StaticResource Geist}"
+                                               FontWeight="{DynamicResource TextBoxFontWeight}" />
 
                 <TextBlock Text="{Binding Description}"
                            IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                           FontSize="12"
-                           FontWeight="Medium"
-                           Foreground="{DynamicResource DescriptionForeground}" />
+                           FontSize="{DynamicResource SearchResultDescriptionFontSize}"
+                           FontWeight="Regular"
+                           Foreground="{DynamicResource Text2}"
+                           FontFamily="{StaticResource GeistMono}" />
             </StackPanel>
         </StackPanel>
     </Border>

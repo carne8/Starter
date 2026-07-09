@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ParallelCompilation>true</ParallelCompilation>
+        <Deterministic>false</Deterministic>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+        <IsPlugin>true</IsPlugin>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Starter.UrlSearchEngine.Regex\Starter.UrlSearchEngine.Regex.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Include="Library.fs" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.2.0">
+            <ExcludeAssets>runtime;native</ExcludeAssets>
+        </PackageReference>
+        <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
+    </ItemGroup>
+</Project>

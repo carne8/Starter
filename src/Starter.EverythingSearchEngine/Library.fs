@@ -1,4 +1,4 @@
-﻿namespace Starter.EverythingSearchEngine
+namespace Starter.EverythingSearchEngine
 
 open System
 open System.Diagnostics
@@ -8,6 +8,7 @@ open System.Text
 open System.Threading
 open System.Threading.Tasks
 
+open Avalonia.Threading
 open EverythingAPI
 open IconHelper
 open Helpers
@@ -37,6 +38,7 @@ type EverythingSearchEngine(icon, api: IEverything) =
     let pathStrBuilder = StringBuilder(300)
 
     let loadResultIcon (path: string) =
+        if path.Contains "$RECYCLE.BIN\\" then icon else
         try
             use shellItem = new ShellItem(path)
             use hBitmap =
@@ -146,9 +148,7 @@ type Factory(pluginPath) =
         | ValueNone -> raise <| PlatformNotSupportedException()
         | ValueSome api ->
             let svgSource = Path.Combine(pluginPath, "icon.svg") |> SvgSource.Load
-            let svg = SvgImage(Source = svgSource)
+            let svg = Dispatcher.UIThread.Invoke(fun () -> SvgImage(Source = svgSource))
             let icon = StarterIconSource(svg, svg)
 
             EverythingSearchEngine(icon, api), null
-
-    override this.LoadDataTemplates() = null

@@ -20,13 +20,16 @@
             </Border>
 
             <StackPanel VerticalAlignment="Center">
-                <ContentControl FontFamily="{StaticResource JetBrainsMono}" Content="{Binding ControlDataContext}" />
+                <ContentControl FontFamily="{StaticResource Geist}"
+                                Content="{Binding ControlDataContext}"
+                                ContentTemplate="{Binding ControlDataTemplate}" />
 
                 <TextBlock Text="{Binding Description}"
                            IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                            FontSize="12"
-                           FontWeight="Medium"
-                           Foreground="{DynamicResource DescriptionForeground}" />
+                           FontWeight="Regular"
+                           Foreground="{DynamicResource Text2}"
+                           FontFamily="{StaticResource GeistMono}" />
             </StackPanel>
         </StackPanel>
     </Border>

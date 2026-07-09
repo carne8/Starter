@@ -96,19 +96,12 @@ type Configuration =
     member this.WithKeyboardShortcut newValue = { this with KeyboardShortcut = newValue }
     member this.WithActivatorPrefixes newValue = { this with ActivatorPrefixes = newValue }
 
-    static member ensurePlatformCompatibility config =
-        if OperatingSystem.IsLinux() then
-            { config with Background = Background.None }
-        else
-            config
-
     static member Default =
         { KeyboardShortcut = { Modifiers = [| Key.LeftAlt |]; Key = Key.Space }
           Background = Background.Mica
           ZoomedMode = false
           ActivatorPrefixes = Map.empty
           Antialiasing = Antialiasing.Grayscale }
-        |> Configuration.ensurePlatformCompatibility
 
     static member encoder config =
         Encode.object [
@@ -161,7 +154,6 @@ type Configuration =
             | json ->
                 json
                 |> Decode.fromString Configuration.decoder
-                |> Result.map Configuration.ensurePlatformCompatibility
 
     static member save (filePath: string) (config: Configuration) =
         taskResult {
@@ -196,7 +188,7 @@ type Configuration =
                 )
         }
 
-    static member ensurePluginsSymlinkExists () =
+    static member ensureDirectoriesExists () =
         // Ensure plugins directory exists
         if Constants.PluginsDirectory |> Directory.Exists |> not then
             logger.Debug "Plugins directory doesn't exist, creating it"
@@ -210,18 +202,3 @@ type Configuration =
             Constants.ConfigDirectory
             |> Directory.CreateDirectory
             |> ignore
-
-        // Ensure symlink exists
-        try
-            if Constants.PluginsSymlinkPath |> File.Exists then
-                File.Delete Constants.PluginsSymlinkPath
-
-            if Constants.PluginsSymlinkPath |> Directory.Exists then
-                Directory.Delete Constants.PluginsSymlinkPath
-
-            Directory.CreateSymbolicLink(
-                Constants.PluginsSymlinkPath,
-                Constants.PluginsDirectory
-            ) |> ignore
-        with e ->
-            logger.Error(e, "Failed to create symlink to plugins in config directory")

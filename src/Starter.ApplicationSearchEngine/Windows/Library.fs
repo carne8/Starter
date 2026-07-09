@@ -2,46 +2,49 @@ namespace Starter.ApplicationSearchEngine.Windows
 
 open System
 open System.Threading.Tasks
+open Avalonia.Controls.Templates
 open R3
 open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Logger
 open Starter.SearchEngine
 
 type WindowsAppsSearchEngine(config: Observable<FolderConfiguration>) =
-    static let icon = Constants.icon
+    let icon = Constants.getIcon ()
 
     let resultsChanged = DelegateEvent<EventHandler<ISearchResult seq>>()
     let uwpLoader = UwpLoader.UwpAppsLoader()
     let exeLoader = ExeLoader.ExeAppsLoader()
+
+    do
+        // Subscribe to loaders events
+        exeLoader.Changed.Subscribe(fun () ->
+            logger.Verbose "New Exe apps loaded"
+            resultsChanged.Trigger
+                [| null
+                   Seq.append
+                    exeLoader.Apps
+                    uwpLoader.Apps |]
+        ) |> ignore
+        uwpLoader.Changed.Subscribe(fun () ->
+            logger.Verbose "New UWP apps loaded"
+            resultsChanged.Trigger
+                [| null
+                   Seq.append
+                    exeLoader.Apps
+                    uwpLoader.Apps |]
+        ) |> ignore
 
     interface IStaticSearchEngine with
         member this.LoadResults() =
             if not <| OperatingSystem.IsWindows() then
                 logger.Warning("This search engine is not supported on this platform.")
             else
-                exeLoader.Changed.Subscribe(fun () ->
-                    logger.Verbose "New Exe apps loaded"
-                    resultsChanged.Trigger
-                        [| null
-                           Seq.append
-                            exeLoader.Apps
-                            uwpLoader.Apps |]
-                ) |> ignore
-                uwpLoader.Changed.Subscribe(fun () ->
-                    logger.Verbose "New UWP apps loaded"
-                    resultsChanged.Trigger
-                        [| null
-                           Seq.append
-                            exeLoader.Apps
-                            uwpLoader.Apps |]
-                ) |> ignore
-
                 uwpLoader.LoadApps()
                 config
                     .Select(Config.FolderConfiguration.normalize)
                     .DistinctUntilChanged()
                     .Subscribe(fun folderConfig ->
-                        logger.Information "Loading exe apps"
+                        logger.Verbose "Loading exe apps"
                         exeLoader.LoadApps folderConfig
                         exeLoader.ObserveFolders folderConfig
                     )
@@ -70,13 +73,17 @@ type WindowsAppsSearchEngine(config: Observable<FolderConfiguration>) =
 type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)
 
-    override this.LoadDataTemplates() = null
     override this.LoadSearchEngineIds() = [| nameof WindowsAppsSearchEngine |]
     override this.LoadSearchEngine(_, pluginConfigDirectory, logger, _) =
         Logger.logger <- logger
 
         let settingsViewModel = SettingsViewModel pluginConfigDirectory
-        let settingsControl = Settings(DataContext = settingsViewModel)
         let config = settingsViewModel.Config
 
-        WindowsAppsSearchEngine config, settingsControl
+        WindowsAppsSearchEngine config,
+        SearchEngineFactory.SearchEngineSettings(
+            settingsViewModel,
+            FuncDataTemplate<SettingsViewModel>(fun vm _ ->
+                Settings(DataContext = vm)
+            )
+        )

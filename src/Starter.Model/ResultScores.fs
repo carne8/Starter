@@ -4,6 +4,7 @@ namespace Starter.Features
 open System
 open System.IO
 open System.Collections.Generic
+open System.Threading.Tasks
 open MemoryPack
 
 [<Struct; MemoryPackable>]
@@ -23,73 +24,81 @@ type ScoreDbEntry =
 
         struct (f, d)
 
+
 [<MemoryPackable>]
-type ScoreDb = IDictionary<string, ScoreDbEntry>
+type private ScoreData = IDictionary<string, ScoreDbEntry>
 
-module ScoreDb =
-    let writeToFile filePath (scores: ScoreDb) =
-        task {
-            // Create directory if it doesn't exist
-            if filePath |> File.Exists |> not then
-                match filePath |> Path.GetDirectoryName with
-                | null -> failwith "Invalid file path"
-                | fileDir -> fileDir |> Directory.CreateDirectory |> ignore
+type IScoreDb =
+    abstract member SaveToFile: filePath: string -> Task
+    abstract member RunMaxAgingPolicy: unit -> unit
+    abstract member GetResultScore: resultId: string -> struct (float * TimeSpan)
+    abstract member IncreaseResultScore: resultId: string -> unit
 
-            use file = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Write)
-            do! MemoryPackSerializer.SerializeAsync<ScoreDb>(file, scores)
-        }
-
-    let readFromFile filePath =
+type ScoreDb(scores: ScoreData, maxAge: float) =
+    static member ReadFromFile filePath maxAge =
         match filePath |> File.Exists with
-        | false -> Dictionary() :> IDictionary<_, _>
+        | false -> ScoreDb(Dictionary(), maxAge)
         | true ->
             let bytes = filePath |> File.ReadAllBytes
             let scores =
-                try MemoryPackSerializer.Deserialize<ScoreDb> bytes
+                try MemoryPackSerializer.Deserialize<ScoreData> bytes
                 with _ -> null
 
             match scores with
-            | null -> Dictionary() :> IDictionary<_, _>
-            | scores -> scores
+            | null -> ScoreDb(Dictionary(), maxAge)
+            | scores -> ScoreDb(scores, maxAge)
 
-    // Remove excessive entries from the database
-    // Behaviour documented (and copied) here: https://github.com/ajeetdsouza/zoxide/wiki/Algorithm#aging
-    let runMaxAgingPolicy maxAge (scores: ScoreDb) =
-        let totalScore =
-            scores
-            |> Seq.sumBy (_.Value >> _.AccessCount)
-            |> float
+    interface IScoreDb with
+        member _.SaveToFile filePath =
+            task {
+                // Create directory if it doesn't exist
+                if filePath |> File.Exists |> not then
+                    match filePath |> Path.GetDirectoryName with
+                    | null -> failwith "Invalid file path"
+                    | fileDir -> fileDir |> Directory.CreateDirectory |> ignore
 
-        if totalScore > maxAge then
-            let k = (0.9 * maxAge) / totalScore
+                use file = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Write)
+                do! MemoryPackSerializer.SerializeAsync<ScoreData>(file, scores)
+            }
 
-            for kv in scores do
-                let resultScore = kv.Value
-                let newScore = float resultScore.AccessCount * k |> Math.Round |> int
+        // Remove excessive entries from the database
+        // Behaviour documented (and copied) here: https://github.com/ajeetdsouza/zoxide/wiki/Algorithm#aging
+        member _.RunMaxAgingPolicy() =
+            let totalScore =
+                scores
+                |> Seq.sumBy (_.Value >> _.AccessCount)
+                |> float
 
-                match newScore with
-                | 0 -> scores.Remove kv.Key |> ignore
-                | _ ->
-                    scores[kv.Key] <-
-                        { AccessCount = newScore
-                          LastAccessTime = resultScore.LastAccessTime }
+            if totalScore > maxAge then
+                let k = (0.9 * maxAge) / totalScore
 
-    /// Returns useful data for sorting results
-    let getResultScore (scores: ScoreDb) resultId =
-        match scores.TryGetValue resultId with
-        | false, _ -> struct (0., TimeSpan.MaxValue)
-        | true, resultScore -> resultScore |> ScoreDbEntry.computeScore
+                for kv in scores do
+                    let resultScore = kv.Value
+                    let newScore = float resultScore.AccessCount * k |> Math.Round |> int
 
-    /// Increase app score in the database
-    let increaseResultScore (resultId: string) (scores: ScoreDb) =
-        match scores.TryGetValue resultId with
-        | true, prevResultScore ->
-            scores[resultId] <-
-                { AccessCount = prevResultScore.AccessCount + 1
-                  LastAccessTime = DateTimeOffset.Now }
-        | false, _ ->
-            scores.Add(
-                resultId,
-                { AccessCount = 1
-                  LastAccessTime = DateTimeOffset.Now }
-            )
+                    match newScore with
+                    | 0 -> scores.Remove kv.Key |> ignore
+                    | _ ->
+                        scores[kv.Key] <-
+                            { AccessCount = newScore
+                              LastAccessTime = resultScore.LastAccessTime }
+
+        /// Returns useful data for sorting results
+        member _.GetResultScore resultId =
+            match scores.TryGetValue resultId with
+            | false, _ -> struct (0., TimeSpan.MaxValue)
+            | true, resultScore -> resultScore |> ScoreDbEntry.computeScore
+
+        /// Increase app score in the database
+        member _.IncreaseResultScore (resultId: string) =
+            match scores.TryGetValue resultId with
+            | true, prevResultScore ->
+                scores[resultId] <-
+                    { AccessCount = prevResultScore.AccessCount + 1
+                      LastAccessTime = DateTimeOffset.Now }
+            | false, _ ->
+                scores.Add(
+                    resultId,
+                    { AccessCount = 1
+                      LastAccessTime = DateTimeOffset.Now }
+                )

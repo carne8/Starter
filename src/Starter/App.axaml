@@ -7,7 +7,10 @@
     <Application.Resources>
         <ResourceDictionary>
             <FontFamily x:Key="JetBrainsMono">avares://Starter/Assets/Fonts#JetBrains Mono</FontFamily>
+            <FontFamily x:Key="Geist">avares://Starter/Assets/Fonts#Geist</FontFamily>
+            <FontFamily x:Key="GeistMono">avares://Starter/Assets/Fonts#Geist Mono</FontFamily>
             <ResourceDictionary.MergedDictionaries>
+                <MergeResourceInclude Source="/Views/Icons.axaml" />
                 <MergeResourceInclude Source="/Styles/Resources.axaml" />
                 <MergeResourceInclude Source="/Styles/ZoomModes.axaml" />
                 <MergeResourceInclude Source="/Styles/CustomTextBox.axaml" />
@@ -20,4 +23,17 @@
         <sty:FluentAvaloniaTheme PreferSystemTheme="True" PreferUserAccentColor="True" />
         <StyleInclude Source="/Styles/FontStyle.axaml" />
     </Application.Styles>
+    <TrayIcon.Icons>
+        <TrayIcons>
+            <TrayIcon ToolTipText="Starter"
+                      Clicked="TrayIcon_OnClicked"
+                      Icon="/Assets/avalonia-logo.ico">
+                <TrayIcon.Menu>
+                    <NativeMenu>
+                        <NativeMenuItem Header="Quit Starter" Click="NativeMenuItem_OnClickQuit" />
+                    </NativeMenu>
+                </TrayIcon.Menu>
+            </TrayIcon>
+        </TrayIcons>
+    </TrayIcon.Icons>
 </Application>

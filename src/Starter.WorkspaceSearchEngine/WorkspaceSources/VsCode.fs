@@ -26,6 +26,20 @@ let private formatFilePath (path: string) =
     else
         path
 
+let private formatRemoteName (remote: string) =
+    let linuxIdx = remote.IndexOf("linux", StringComparison.InvariantCultureIgnoreCase)
+
+    match linuxIdx with
+    | -1 -> remote
+    | i ->
+        let sb = StringBuilder(remote)
+        sb.Remove(0, 1) |> ignore
+        sb.Insert(0, Char.ToUpper remote[0]) |> ignore
+
+        sb.Remove(i, 1) |> ignore
+        sb.Insert(i, 'L') |> ignore
+        sb.ToString()
+
 let private findWorkspaceDbPath insiders =
     let path = Path.Combine(
         Environment.GetFolderPath Environment.SpecialFolder.ApplicationData,
@@ -77,8 +91,9 @@ let loadWorkspaces configPath vsCodePath =
                         let remote = file.Substring(protocolSeparatorIdx, remoteSeparatorIdx - protocolSeparatorIdx)
                         let path = file.Substring(remoteSeparatorIdx)
                         let name =
-                            if remote.StartsWith "wsl" then
-                                $"WSL - {path |> Path.GetFileName}"
+                            if remote.Contains "+" then
+                                let parts = remote.Split '+'
+                                $"{parts[0].ToUpper()} - {formatRemoteName parts[1]} - {path |> Path.GetFileName}"
                             else
                                 $"{remote} - {path |> Path.GetFileName}"
 

@@ -5,26 +5,25 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:Starter.ViewModels"
-             xmlns:viewModels="using:Starter.ViewModels"
              x:DataType="vm:KeyboardShortcutInputViewModel"
              d:DesignWidth="800"
              d:DesignHeight="450"
              mc:Ignorable="d">
     <UserControl.Styles>
-        <Style Selector="ui|FASettingsExpander.hideDescription">
+        <Style Selector="ui|FASettingsExpander.showDescription">
             <Setter Property="Description">Your desktop environment is not supported. Please use your system settings.</Setter>
         </Style>
     </UserControl.Styles>
 
-    <ui:FASettingsExpander Header="Keyboard shortcut" Classes.showDescription="{x:Static viewModels:KeyboardShortcutInputViewModel.NotEnabled}">
+    <ui:FASettingsExpander Header="Keyboard shortcut" Classes.showDescription="{Binding !Enabled, Mode=OneTime}">
         <ui:FASettingsExpander.IconSource>
-            <ui:FASymbolIconSource Symbol="Keyboard" />
+            <ui:FAImageIconSource Source="{StaticResource Keyboard}" />
         </ui:FASettingsExpander.IconSource>
         <ui:FASettingsExpander.Footer>
             <TextBox x:Name="TextBox"
                      IsReadOnly="True"
                      Text="{Binding Text}"
-                     IsEnabled="{x:Static viewModels:KeyboardShortcutInputViewModel.Enabled}"
+                     IsEnabled="{Binding Enabled, Mode=OneTime}"
                      KeyDown="TextBoxKeyDown"
                      GotFocus="TextBoxGotFocus"
                      LostFocus="TextBoxLostFocus" />

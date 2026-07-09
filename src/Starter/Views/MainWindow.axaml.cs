@@ -1,33 +1,86 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using System.Globalization;
+using R3;
 using Serilog;
+using Starter.Controls;
 using Starter.Features;
 using Starter.Features.PlatformInterop;
-using R3;
-using Starter.Controls;
 using Starter.ViewModels;
 
 namespace Starter.Views;
 
+public class FirstNonNullConverter : IMultiValueConverter
+{
+    public object? Convert(
+        IList<object?> values,
+        Type targetType,
+        object? parameter,
+        CultureInfo culture
+    ) => values.OfType<object>().FirstOrDefault();
+}
+
+public class TimeSpanConverter : IValueConverter
+{
+    public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+    {
+        if (value is not TimeSpan t) return string.Empty;
+
+        if ((int)t.TotalMilliseconds > 0)
+            return $"{t.TotalMilliseconds.ToString("N2", culture)} ms";
+
+        if ((int)t.TotalMicroseconds > 0)
+            return $"{t.TotalMilliseconds.ToString("N2", culture)} μs";
+
+        return $"{t.TotalNanoseconds.ToString("N2", culture)} ns";
+    }
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => null;
+}
+
 public partial class MainWindow : TranslucentWindow
 {
     private MainWindowViewModel vm = null!;
-    private readonly PlatformInterop platformInterop = PlatformInteropFactory.GetPlatformInterop();
+    private readonly IPlatformInterop platformInterop;
 
     public MainWindow()
     {
+        // Dummy constructor to prevent XAML warnings
+        throw new Exception("This constructor should never be called");
+    }
+
+    public MainWindow(IPlatformInterop platformInterop)
+    {
+        this.platformInterop = platformInterop;
+
         InitializeComponent();
         platformInterop.SetupHotkeyCallback(this);
         TextBox.AddHandler(KeyDownEvent, TextBox_OnKeyDown, RoutingStrategies.Tunnel);
+
+        Closing += (_, args) =>
+        {
+            if (args.IsProgrammatic) return;
+            args.Cancel = true;
+            Hide();
+        };
 
         Activated += (_, _) => OnActivated();
 #if !DEBUG
         Deactivated += (_, _) => Hide();
 #endif
+    }
+
+    protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
+    {
+        base.OnPropertyChanged(change);
+        if (change.Property != IsVisibleProperty) return;
+        if (!change.GetNewValue<bool>()) return;
+        vm.GreetingVm.RefreshGreetingCommand.Execute(null);
     }
 
     protected override void OnLoaded(RoutedEventArgs e)
@@ -41,8 +94,8 @@ public partial class MainWindow : TranslucentWindow
         // Subscribe to view model commands
         vm.ClearTextBox += (_, prefixLength) => Dispatcher.UIThread.Post(() =>
         {
+            TextBox.CaretIndex = 0; // Change caret index before text prevents a color bug
             TextBox.Text = TextBox.Text?[prefixLength..];
-            TextBox.CaretIndex -= prefixLength;
         });
         vm.HideWindow += (_, _) => Dispatcher.UIThread.Post(Hide);
 
@@ -51,14 +104,14 @@ public partial class MainWindow : TranslucentWindow
             .Select(config => config.ZoomedMode)
             .DistinctUntilChanged()
             .Subscribe(SetResourceDictionary);
+        SetResourceDictionary(vm.Config.Value.ZoomedMode);
 
         // Refresh keyboard shortcut when needed
+        if (!platformInterop.HotkeyRegistrable) return;
         vm.Config
             .Select(config => config.KeyboardShortcut)
             .DistinctUntilChanged()
             .Subscribe(shortcut => platformInterop.RegisterHotkey(shortcut, this));
-
-        SetResourceDictionary(vm.Config.Value.ZoomedMode);
         platformInterop.RegisterHotkey(vm.Config.Value.KeyboardShortcut, this);
     }
 
@@ -76,7 +129,7 @@ public partial class MainWindow : TranslucentWindow
             screen.WorkingArea.TopLeft
             + new PixelPoint(
                 (int)Math.Round((screen.WorkingArea.Width - Width * screen.Scaling) / 2.0),
-                (int)Math.Round(screen.WorkingArea.Height * (5.0 / 16.0))
+                (int)Math.Round((screen.WorkingArea.Height - 470 * screen.Scaling) / 2.0)
             );
 
         // Reset focus
@@ -126,7 +179,8 @@ public partial class MainWindow : TranslucentWindow
             this.GetVisualsAt(pos)
                 .FirstOrDefault(v => v.DataContext is SearchResultData);
 
-        vm.SelectResultCommand.Execute(clickedControl?.DataContext);
+        if (clickedControl is null) return;
+        vm.SelectResultCommand.Execute(clickedControl.DataContext);
     }
 
     private void TextBox_OnKeyDown(object? sender, KeyEventArgs e)

@@ -31,7 +31,7 @@ public partial class SearchResult : UserControl
 
 public class SearchResultDataTemplate : IRecyclingDataTemplate
 {
-    public bool Match(object? data) => data is SearchResultData;
+    public bool Match(object? data) => data is null || data is SearchResultData;
 
     public Control? Build(object? param, Control? existing)
     {

@@ -171,16 +171,18 @@ let private parseIconDirectory (dir: string) : IconThemeDirectory array option =
         }
 
 let parseFromDirectory (directory: string) =
-    { Name =
-        directory
-        |> Path.GetFileName
-        |> function
-            | null -> failwith "Cannot extirpate name from directory"
-            | other -> other
-      ThemePath = directory
-      Directories =
-        directory
-        |> Directory.GetDirectories
-        |> Array.choose parseIconDirectory
-        |> Array.concat
-      ParentThemes = Array.empty }
+    result {
+        let! name =
+           directory
+           |> Path.GetFileName
+           |> Result.requireNotNull "Cannot extirpate name from directory"
+
+        return { Name = name
+                 ThemePath = directory
+                 Directories =
+                   directory
+                   |> Directory.GetDirectories
+                   |> Array.choose parseIconDirectory
+                   |> Array.concat
+                 ParentThemes = Array.empty }
+    }

@@ -1,4 +1,4 @@
-﻿using Avalonia.Controls;
+﻿using Avalonia.Controls.Templates;
 using R3;
 using Starter.Features.Config;
 using Starter.SearchEngine;
@@ -8,15 +8,20 @@ namespace Starter.ViewModels;
 public partial class MenuItemViewModel(
     string title,
     StarterIconSource icon,
-    Control control
+    object vm,
+    IDataTemplate dataTemplate
 ) : ObservableObject
 {
     public string Title { get; init; } = title;
-    public Control Control { get; init; } = control;
-    [ObservableProperty] private StarterIconSource icon = icon;
+    public object ViewModel { get; init; } = vm;
+    public IDataTemplate DataTemplate { get; init; } = dataTemplate;
 
-    public MenuItemViewModel(ISearchEngine engine, Control control) : this(engine.Name, engine.Icon, control) =>
-        engine.Changed += (_, _) => Icon = engine.Icon;
+    [ObservableProperty] public partial StarterIconSource Icon { get; set; } = icon;
+
+    public MenuItemViewModel(ISearchEngine engine, object vm, IDataTemplate dataTemplate) :
+        this(engine.Name, engine.Icon, vm, dataTemplate)
+        =>
+            engine.Changed += (_, _) => Icon = engine.Icon;
 }
 
 public partial class SettingsWindowViewModel : ObservableObject
@@ -31,21 +36,27 @@ public partial class SettingsWindowViewModel : ObservableObject
     public BehaviorSubject<Configuration> Config => settingsVm.Config;
     public IObservable<Configuration> ConfigSystemObservable { get; private set; }
 
-    public SettingsWindowViewModel(Configuration config, SearchEngineStore searchEngineStore)
+    public SettingsWindowViewModel(SearchEngineStore searchEngineStore, SettingsViewModel settingsVm)
     {
-        settingsVm = new SettingsViewModel(config, searchEngineStore);
+        this.settingsVm = settingsVm;
         ConfigSystemObservable = Config.AsSystemObservable();
 
         // Add Starter settings
         settingsPage = new MenuItemViewModel(
             "Starter settings",
             Icons.Settings,
-            new Views.Settings { DataContext = settingsVm }
+            settingsVm,
+            new FuncDataTemplate<SettingsViewModel>((vm, _) =>
+                new Views.Settings { DataContext = vm }
+            )
         );
         logsPage = new MenuItemViewModel(
             "Logs",
             Icons.Logs,
-            new Views.Logs { DataContext = new LogsViewModel() }
+            new LogsViewModel(),
+            new FuncDataTemplate<LogsViewModel>((vm, _) =>
+                new Views.Logs { DataContext = vm }
+            )
         );
         Pages.Add(settingsPage);
         Pages.Add(logsPage);
@@ -54,10 +65,23 @@ public partial class SettingsWindowViewModel : ObservableObject
         selectedPage = settingsPage;
 
         // Add search engine settings
-        foreach (var kv in searchEngineStore.SettingsControls)
+        searchEngineStore.SearchEngineSettingsAdded += (seId, settings) =>
+        {
+            if (!searchEngineStore.SearchEngines.TryGetValue(seId, out var engine)) return;
+            Pages.Add(new MenuItemViewModel(
+                engine,
+                settings.DataContext,
+                settings.DataTemplate
+            ));
+        };
+        foreach (var kv in searchEngineStore.Settings)
         {
             if (!searchEngineStore.SearchEngines.TryGetValue(kv.Key, out var engine)) continue;
-            Pages.Add(new MenuItemViewModel(engine, kv.Value));
+            Pages.Add(new MenuItemViewModel(
+                engine,
+                kv.Value.DataContext,
+                kv.Value.DataTemplate
+            ));
         }
     }
 

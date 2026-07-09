@@ -7,11 +7,12 @@ open System.Threading.Tasks
 open R3
 open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Linux
+open Starter.ApplicationSearchEngine.Linux.IconLoader
 open Starter.ApplicationSearchEngine.Logger
 open Starter.SearchEngine
 
 type LinuxAppsSearchEngine() =
-    static let icon = Constants.icon
+    let icon = Constants.getIcon ()
 
     static let defaultDataDirectories = // TODO: Make it respect the hierarchy and prioritize the first matches
         let userShare =
@@ -56,10 +57,10 @@ type LinuxAppsSearchEngine() =
 
     member private this.LoadApps() =
         task {
-            let! appsIconThemes = IconLoader.loadThemes()
+            let! iconLoader = IconLoader.create()
             let! newApps =
                 AppsLoader.loadApplications
-                    appsIconThemes
+                    iconLoader
                     useGtkLaunch
                     defaultFolderConfig
 
@@ -68,7 +69,7 @@ type LinuxAppsSearchEngine() =
 
             let observable, disposable =
                 AppsLoader.observeApplicationChanges
-                    appsIconThemes
+                    iconLoader
                     useGtkLaunch
                     apps
                     defaultFolderConfig
@@ -120,7 +121,6 @@ type LinuxAppsSearchEngine() =
 type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)
 
-    override this.LoadDataTemplates() = null
     override this.LoadSearchEngineIds() = [| nameof LinuxAppsSearchEngine |]
     override this.LoadSearchEngine(_, _, logger, _) =
         Logger.logger <- logger

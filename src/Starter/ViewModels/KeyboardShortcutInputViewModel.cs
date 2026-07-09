@@ -1,4 +1,5 @@
-﻿using Serilog;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 using Starter.Features.Config;
 using Starter.Features.PlatformInterop;
 using Key = Avalonia.Input.Key;
@@ -7,7 +8,7 @@ namespace Starter.ViewModels;
 
 public partial class KeyboardShortcutInputViewModel : ObservableObject
 {
-    private static readonly PlatformInterop Platform = PlatformInteropFactory.GetPlatformInterop();
+    private readonly IPlatformInterop platform;
 
     private bool listenKeys;
     public event Action? StoppedListening;
@@ -16,14 +17,17 @@ public partial class KeyboardShortcutInputViewModel : ObservableObject
     private KeyboardShortcut keyboardShortcut;
     private readonly HashSet<Key> pressedModifiers = [];
     private Key pressedKey = Key.None;
-    [ObservableProperty] private string text = "";
+    [ObservableProperty] public partial string Text { get; set; } = "";
 
-    public static bool Enabled => Platform.HotkeyRegistrable;
-    public static bool NotEnabled => !Platform.HotkeyRegistrable;
+    public bool Enabled => platform.HotkeyRegistrable;
 
-    public KeyboardShortcutInputViewModel(KeyboardShortcut initialKeyboardShortcut)
+    public KeyboardShortcutInputViewModel(
+        [FromKeyedServices("initial-config")] Configuration initialConfig,
+        IPlatformInterop platform
+    )
     {
-        keyboardShortcut = initialKeyboardShortcut;
+        this.platform = platform;
+        keyboardShortcut = initialConfig.KeyboardShortcut;
         ResetText();
     }
 

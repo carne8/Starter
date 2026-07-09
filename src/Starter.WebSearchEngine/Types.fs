@@ -7,6 +7,7 @@ open System.Text.Json
 open System.Threading
 open System.Threading.Tasks
 
+open Avalonia.Threading
 open Starter.SearchEngine
 open Starter.WebSearchEngine.Logger
 open Avalonia.Svg.Skia
@@ -97,13 +98,17 @@ type SearchEngineKind =
                 res.EnsureSuccessStatusCode() |> ignore
                 let! jsonStream = res.Content.ReadAsStreamAsync()
 
-                return! jsonStream |> SearchEngineKind.deserializeSuggestionsRequest se query
+                let! suggestions =
+                    jsonStream
+                    |> SearchEngineKind.deserializeSuggestionsRequest se query
+
+                return Some suggestions
             with
             | :? OperationCanceledException
-            | :? TaskCanceledException -> return failwith "Task cancelled"
+            | :? TaskCanceledException -> return None
             | e ->
                 logger.Warning(e, "Failed to load suggestions\n{Req}", req)
-                return failwith "Failed to load suggestions"
+                return None
         }
 
 type SearchEngine =
@@ -114,7 +119,7 @@ type SearchEngine =
         {| Light: Avalonia.Media.IImage
            Dark: Avalonia.Media.IImage |}
       StarterIcon: StarterIconSource
-      LoadSuggestions: CancellationToken -> string -> Task<string array>
+      LoadSuggestions: CancellationToken -> string -> Task<string array option>
       LoadSearchUrl: string -> string }
 
     static member create pluginPath httpClient (seKind: SearchEngineKind) =
@@ -126,8 +131,10 @@ type SearchEngine =
             )
 
         let lightIcon, darkIcon =
-            SvgImage(Source = SvgSource.Load ìconPath, Css = ".icon-color { fill: #282b2f; }"),
-            SvgImage(Source = SvgSource.Load ìconPath, Css = ".icon-color { fill: #ffffff; }")
+            Dispatcher.UIThread.Invoke(fun () ->
+                SvgImage(Source = SvgSource.Load ìconPath, Css = ".icon-color { fill: #282b2f; }"),
+                SvgImage(Source = SvgSource.Load ìconPath, Css = ".icon-color { fill: #ffffff; }")
+            )
 
         { Kind = seKind
           Name = seKind |> SearchEngineKind.getName

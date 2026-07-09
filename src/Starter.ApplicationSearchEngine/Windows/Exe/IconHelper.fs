@@ -6,6 +6,7 @@ open System
 open System.IO
 open System.Runtime.InteropServices
 open Microsoft.FSharp.NativeInterop
+open Starter.ApplicationSearchEngine.Logger
 open Vanara.PInvoke
 
 type Gdi32.SafeHBITMAP with
@@ -95,24 +96,31 @@ module IconHelper =
         pixels |> Array.exists ((<>) 0uy)
 
     let getFileIcon desiredSize (filePath: string) =
-        voption {
-            use! jumboIcon = getFileHIcon Shell32.SHIL.SHIL_JUMBO filePath
+        try
+            voption {
+                use! jumboIcon = getFileHIcon Shell32.SHIL.SHIL_JUMBO filePath
 
-            match isValidIcon jumboIcon with
-            | true ->
-                return jumboIcon.CreateScaledBitmap(desiredSize, Avalonia.Media.Imaging.BitmapInterpolationMode.HighQuality)
-            | false -> return! getFileHIcon Shell32.SHIL.SHIL_EXTRALARGE filePath
-        }
+                match isValidIcon jumboIcon with
+                | true ->
+                    return jumboIcon.CreateScaledBitmap(desiredSize, Avalonia.Media.Imaging.BitmapInterpolationMode.HighQuality)
+                | false -> return! getFileHIcon Shell32.SHIL.SHIL_EXTRALARGE filePath
+            }
+        with e ->
+            logger.Warning(e, $"Failed to load icon for {filePath}")
+            ValueNone
 
     let getUrlFileIcon (file: string) =
-        file
-        |> File.ReadAllLines
-        |> Array.tryFind _.StartsWith("IconFile=")
-        |> Option.bind (fun line ->
-            let file = line.Substring "IconFile=".Length
+        voption {
+            let! lines =
+                try File.ReadAllLines file |> ValueSome
+                with _ -> ValueNone
 
-            match File.Exists file with
-            | false -> None
-            | true -> new Avalonia.Media.Imaging.Bitmap(file) |> Some
-        )
-        |> Option.toValueOption
+            let! iconFileLine = lines |> Array.tryFind _.StartsWith("IconFile=")
+            let! file =
+                iconFileLine.Substring "IconFile=".Length
+                |> ValueSome
+                |> ValueOption.filter (String.IsNullOrWhiteSpace >> not)
+
+            try return new Avalonia.Media.Imaging.Bitmap(file)
+            with _ -> return! ValueNone
+        }

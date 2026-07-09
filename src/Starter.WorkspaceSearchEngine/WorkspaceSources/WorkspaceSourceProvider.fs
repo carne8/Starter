@@ -21,7 +21,8 @@ let loadWorkspaceSources pluginPath (settings: Settings) : WorkspaceSource array
        WorkspaceSources.JetBrains.builder WorkspaceSources.JetBrains.JetBrainsIDE.RubyMine
        WorkspaceSources.JetBrains.builder WorkspaceSources.JetBrains.JetBrainsIDE.RustRover
        WorkspaceSources.JetBrains.builder WorkspaceSources.JetBrains.JetBrainsIDE.CLion
-       WorkspaceSources.AndroidStudio.builder |]
+       WorkspaceSources.AndroidStudio.builder
+       WorkspaceSources.WindowsTerminal.builder |]
     |> Array.choose (fun builder ->
         builder
         |> WorkspaceSourceBuilder.build false pluginPath

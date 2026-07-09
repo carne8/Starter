@@ -4,9 +4,10 @@
                             xmlns:vm="using:Starter.ViewModels"
                             xmlns:controls="using:Starter.Controls"
                             xmlns:starter="using:Starter.SearchEngine"
+                            xmlns:local="using:Starter.Views"
                             Title="Starter"
-                            Width="450"
-                            MinHeight="50"
+                            Width="560"
+                            MinHeight="52"
                             x:DataType="vm:MainWindowViewModel"
                             WindowDecorations="None"
                             SizeToContent="Height"
@@ -20,32 +21,77 @@
                             CornerRadius="{DynamicResource CornerRadius}"
                             Antialiasing="{Binding ConfigSystemObservable^.Antialiasing}">
 
+    <Window.Resources>
+        <Pen x:Key="SearchIconPen"
+             Brush="{DynamicResource Text3}"
+             Thickness="1.6"
+             LineCap="Round"
+             LineJoin="Round" />
+
+        <DrawingImage x:Key="SearchIcon">
+            <DrawingImage.Drawing>
+                <DrawingGroup ClipGeometry="M 0,0 L 24,0 24,24 0,24 Z">
+                    <GeometryDrawing Geometry="F1 m21 21-4.34-4.34" Pen="{StaticResource SearchIconPen}" />
+                    <GeometryDrawing Pen="{StaticResource SearchIconPen}">
+                        <GeometryDrawing.Geometry>
+                            <EllipseGeometry RadiusX="8"
+                                             RadiusY="8"
+                                             Center="11,11" />
+                        </GeometryDrawing.Geometry>
+                    </GeometryDrawing>
+                </DrawingGroup>
+            </DrawingImage.Drawing>
+        </DrawingImage>
+
+        <local:FirstNonNullConverter x:Key="FirstNonNull" />
+        <local:TimeSpanConverter x:Key="TimeSpanToString" />
+    </Window.Resources>
+
     <Window.Styles>
         <!-- Fix corner window radius -->
         <Style Selector="Window &gt; Panel &gt; Border">
             <Setter Property="CornerRadius" Value="{DynamicResource CornerRadius}" />
         </Style>
 
-        <Style Selector="TextBlock">
-            <Setter Property="FontFamily" Value="{StaticResource JetBrainsMono}" />
-        </Style>
-
         <Style Selector="TextBox#TextBox">
-            <Setter Property="Margin" Value="{DynamicResource TextBoxMargin}" />
-            <Setter Property="FontSize" Value="{DynamicResource TextBoxFontSize}" />
             <Setter Property="Height" Value="{DynamicResource TextBoxLineHeight}" />
+
+            <Setter Property="Theme" Value="{StaticResource CustomTextBoxTheme}" />
+            <Setter Property="FontSize" Value="{DynamicResource TextBoxFontSize}" />
+            <Setter Property="FontFamily" Value="{StaticResource Geist}" />
         </Style>
 
-        <Style Selector="Border#Separator">
+        <Style Selector="Border.Separator">
             <Setter Property="Background" Value="{DynamicResource BorderBrush}" />
             <Setter Property="Height" Value="{StaticResource BorderThicknessInt}" />
             <Setter Property="HorizontalAlignment" Value="Stretch" />
-            <Setter Property="Margin" Value="{DynamicResource SeparatorPadding}" />
         </Style>
 
         <Style Selector="ListBox#ResultList">
             <Setter Property="Padding" Value="{DynamicResource ResultsPadding}" />
             <Setter Property="MaxHeight" Value="380" />
+        </Style>
+
+        <Style Selector="Border.KeyboardSpan">
+            <Setter Property="Background" Value="rgba(0, 0, 0, 0.04)" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+            <Setter Property="CornerRadius" Value="5" />
+            <Setter Property="Padding" Value="6, 2" />
+            <Style Selector="^ TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource Text3}" />
+                <Setter Property="FontFamily" Value="{StaticResource GeistMono}" />
+            </Style>
+        </Style>
+
+        <Style Selector="ListBoxItem">
+            <Setter Property="CornerRadius" Value="14" />
+        </Style>
+
+        <Style Selector="ListBoxItem:selected">
+            <Setter Property="Background">
+                <SolidColorBrush Opacity="0.07" Color="{DynamicResource SystemAccentColor}" />
+            </Setter>
         </Style>
     </Window.Styles>
 
@@ -54,29 +100,44 @@
             BorderThickness="{StaticResource BorderThickness}">
         <StackPanel>
             <!-- Main text box -->
-            <Grid Margin="{DynamicResource GridMargin}" ColumnDefinitions="Auto, *">
-                <ContentControl Margin="{DynamicResource SearchEnginePillMargin}" Content="{Binding Activator}">
-                    <ContentControl.ContentTemplate>
-                        <DataTemplate DataType="starter:ISearchEngineActivator">
-                            <controls:ActivatorPill />
-                        </DataTemplate>
-                    </ContentControl.ContentTemplate>
-                </ContentControl>
-                <TextBox x:Name="TextBox"
-                         Grid.Column="1"
-                         Theme="{StaticResource CustomTextBoxTheme}"
-                         PlaceholderText="Start anything..."
-                         Text="{Binding Text}">
-                    <TextBox.KeyBindings>
-                        <KeyBinding Command="{Binding SelectResultCommand}"
-                                    CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
-                                    Gesture="Enter" />
-                    </TextBox.KeyBindings>
-                </TextBox>
-            </Grid>
+            <Border Height="52" Margin="14,0">
+                <Grid ColumnDefinitions="18, *" ColumnSpacing="10">
+                    <ContentControl Grid.Column="0"
+                                    IsVisible="{Binding Activator, Converter={x:Static ObjectConverters.IsNotNull}}"
+                                    Content="{Binding Activator}">
+                        <ContentControl.ContentTemplate>
+                            <DataTemplate DataType="starter:ISearchEngineActivator">
+                                <controls:StarterIcon Width="18"
+                                                      Height="18"
+                                                      FontSize="18"
+                                                      IconSource="{Binding Icon}" />
+                            </DataTemplate>
+                        </ContentControl.ContentTemplate>
+                    </ContentControl>
+
+                    <Image Grid.Column="0"
+                           Width="16"
+                           Height="16"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Source="{StaticResource SearchIcon}"
+                           IsVisible="{Binding Activator, Converter={x:Static ObjectConverters.IsNull}}" />
+
+                    <TextBox x:Name="TextBox"
+                             Grid.Column="1"
+                             PlaceholderText="Start anything..."
+                             Text="{Binding Text}">
+                        <TextBox.KeyBindings>
+                            <KeyBinding Command="{Binding SelectResultCommand}"
+                                        CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
+                                        Gesture="Enter" />
+                        </TextBox.KeyBindings>
+                    </TextBox>
+                </Grid>
+            </Border>
 
             <!-- Separator -->
-            <Border x:Name="Separator" IsVisible="{Binding SearchResults.Count}" />
+            <Border Classes="Separator" IsVisible="{Binding SearchResults.Count}" />
             <!-- Hide when empty -->
 
             <!-- Results -->
@@ -116,6 +177,66 @@
                     <controls:SearchResultDataTemplate />
                 </ListBox.ItemTemplate>
             </ListBox>
+
+            <!-- Footer -->
+            <Border Padding="14,7"
+                    BorderThickness="0,0.8,0,0"
+                    BorderBrush="{DynamicResource BorderBrush}"
+                    IsVisible="{Binding SearchResults.Count}">
+                <DockPanel>
+                    <TextBlock Margin="0,0,8,0"
+                               VerticalAlignment="Center"
+                               DockPanel.Dock="Left"
+                               TextAlignment="Left"
+                               FontSize="13"
+                               FontFamily="{StaticResource GeistMono}"
+                               FontWeight="SemiLight"
+                               Foreground="{DynamicResource Text3}"
+                               IsVisible="{Binding LoadingTime^, Converter={x:Static ObjectConverters.IsNotNull}}"
+                               Text="{Binding LoadingTime^, Converter={StaticResource TimeSpanToString}}" />
+
+                    <Border DockPanel.Dock="Left" Classes="KeyboardSpan">
+                        <TextBlock FontSize="11">↑↓</TextBlock>
+                    </Border>
+                    <TextBlock VerticalAlignment="Center"
+                               xml:space="preserve"
+                               DockPanel.Dock="Left"
+                               FontSize="13"
+                               FontFamily="{StaticResource Geist}"
+                               FontWeight="SemiLight"
+                               Foreground="{DynamicResource Text3}"> navigate</TextBlock>
+
+                    <Border Margin="8,0,0,0"
+                            DockPanel.Dock="Left"
+                            Classes="KeyboardSpan">
+                        <TextBlock FontSize="11">esc</TextBlock>
+                    </Border>
+                    <TextBlock VerticalAlignment="Center"
+                               xml:space="preserve"
+                               DockPanel.Dock="Left"
+                               FontSize="13"
+                               FontFamily="{StaticResource Geist}"
+                               FontWeight="SemiLight"
+                               Foreground="{DynamicResource Text3}"> close</TextBlock>
+
+                    <TextBlock x:Name="GreetingOrActivatorLabel"
+                               HorizontalAlignment="Right"
+                               VerticalAlignment="Center"
+                               DockPanel.Dock="Right"
+                               TextAlignment="Right"
+                               FontSize="13"
+                               FontFamily="{StaticResource GeistMono}"
+                               FontWeight="SemiLight"
+                               Foreground="{DynamicResource Text3}">
+                        <TextBlock.Text>
+                            <MultiBinding Converter="{StaticResource FirstNonNull}">
+                                <Binding Path="Activator?.Name" />
+                                <Binding Path="GreetingVm.Greeting" />
+                            </MultiBinding>
+                        </TextBlock.Text>
+                    </TextBlock>
+                </DockPanel>
+            </Border>
         </StackPanel>
     </Border>
 </controls:TranslucentWindow>

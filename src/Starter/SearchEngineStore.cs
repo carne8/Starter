@@ -1,6 +1,4 @@
-﻿using Avalonia.Controls;
-using Avalonia.Controls.Templates;
-using Avalonia.Input.Platform;
+﻿using Avalonia.Input.Platform;
 using Serilog;
 using Starter.Features;
 using Starter.SearchEngine;
@@ -12,26 +10,20 @@ public class SearchEngineStore
     public readonly List<IStaticSearchEngine> StaticSearchEngines = [];
     public readonly List<IDynamicSearchEngine> DynamicSearchEngines = [];
     public readonly Dictionary<string, ISearchEngine> SearchEngines = new();
-    public readonly Dictionary<string, Control> SettingsControls = new();
-    public readonly List<IDataTemplate> DataTemplates = new();
+    public readonly Dictionary<string, SearchEngineFactory.SearchEngineSettings> Settings = new();
 
-    // public event EventHandler? SearchEnginesChanged;
+    public event Action<ISearchEngine>? SearchEngineAdded;
+    public event Action<string, SearchEngineFactory.SearchEngineSettings>? SearchEngineSettingsAdded;
 
     public void LoadSearchEnginesFromDirectory(string directory, IClipboard clipboard)
     {
         foreach (var factory in SearchEngineLoading.loadFactoriesFromDirectory(directory))
-        {
             LoadSearchEnginesFromFactory(factory, clipboard);
-            if (factory.LoadDataTemplates() is { } dataTemplates)
-                DataTemplates.AddRange(dataTemplates);
-        }
-
-        // SearchEnginesChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void LoadSearchEnginesFromFactory(SearchEngineFactory factory, IClipboard clipboard)
     {
-        foreach (var (engine, settingsControl) in SearchEngineLoading.loadSearchEnginesFromFactory(clipboard, factory))
+        foreach (var (engine, settings) in SearchEngineLoading.loadSearchEnginesFromFactory(clipboard, factory))
         {
             switch (engine)
             {
@@ -42,8 +34,24 @@ public class SearchEngineStore
                     return;
             }
 
-            SearchEngines.Add(engine.Id, engine);
-            if (settingsControl is not null) SettingsControls.Add(engine.Id, settingsControl);
+            if (!SearchEngines.TryAdd(engine.Id, engine))
+            {
+                Log.Error(
+                    "Several engines have the same id: ({Engine1}, {Engine1Name}) and ({Engine2}, {Engine2Name})",
+                    engine.Id,
+                    engine.Name,
+                    engine.Id,
+                    SearchEngines[engine.Id].Name
+                );
+                return;
+            }
+
+            SearchEngineAdded?.Invoke(engine);
+            if (settings is not null)
+            {
+                Settings.Add(engine.Id, settings);
+                SearchEngineSettingsAdded?.Invoke(engine.Id, settings);
+            }
         }
     }
 
@@ -51,13 +59,13 @@ public class SearchEngineStore
     {
         StaticSearchEngines.Add(se);
         SearchEngines.Add(se.Id, se);
-        // SearchEnginesChanged?.Invoke(this, EventArgs.Empty);
+        SearchEngineAdded?.Invoke(se);
     }
 
     public void AddSearchEngine(IDynamicSearchEngine se)
     {
         DynamicSearchEngines.Add(se);
         SearchEngines.Add(se.Id, se);
-        // SearchEnginesChanged?.Invoke(this, EventArgs.Empty);
+        SearchEngineAdded?.Invoke(se);
     }
 }

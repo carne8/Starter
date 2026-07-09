@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -6,14 +6,8 @@
         <Deterministic>false</Deterministic>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <EnableDynamicLoading>true</EnableDynamicLoading>
+        <IsPlugin>true</IsPlugin>
     </PropertyGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\Starter.SearchEngineBase\Starter.SearchEngineBase.csproj">
-            <Private>false</Private>
-            <ExcludeAssets>runtime</ExcludeAssets>
-        </ProjectReference>
-    </ItemGroup>
 
     <ItemGroup>
         <Content Include="Images/*">
@@ -25,6 +19,7 @@
         <Compile Include="WorkspaceSources\VsCode.fs" />
         <Compile Include="WorkspaceSources\JetBrains.fs" />
         <Compile Include="WorkspaceSources\AndroidStudio.fs" />
+        <Compile Include="WorkspaceSources\WindowsTerminal.fs" />
         <Compile Include="WorkspaceSources\WorkspaceSourceProvider.fs" />
         <Compile Include="Settings.axaml.fs" />
 
@@ -32,8 +27,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.2.0">
+            <ExcludeAssets>runtime;native</ExcludeAssets>
+        </PackageReference>
         <PackageReference Include="Avalonia.ReactiveUI" Version="11.3.8" />
-        <PackageReference Include="FluentAvaloniaUI" Version="3.0.0-preview1" />
+        <PackageReference Include="FluentAvaloniaUI" Version="3.0.1" />
         <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
         <PackageReference Include="ObservableCollections" Version="3.3.4" />
     </ItemGroup>

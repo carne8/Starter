@@ -5,6 +5,24 @@
              xmlns:serilog="using:Serilog.Events"
              xmlns:controls="using:Starter.Controls"
              x:DataType="vm:LogsViewModel">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="LogBrushVerbose" Color="#000000" />
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="LogBrushVerbose" Color="#FFFFFF" />
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+            <SolidColorBrush x:Key="LogBrushDebug" Color="#50A14F" />
+            <SolidColorBrush x:Key="LogBrushInformation" Color="#0184BC" />
+            <SolidColorBrush x:Key="LogBrushWarning" Color="#C18301" />
+            <SolidColorBrush x:Key="LogBrushError" Color="#E45649" />
+            <SolidColorBrush x:Key="LogBrushFatal" Color="#A626A4" />
+        </ResourceDictionary>
+    </UserControl.Resources>
+
     <UserControl.Styles>
         <Style Selector="ScrollViewer">
             <Setter Property="HorizontalScrollBarVisibility" Value="Auto" />
@@ -12,8 +30,28 @@
         <Style Selector="ScrollViewer.wrapText">
             <Setter Property="HorizontalScrollBarVisibility" Value="Disabled" />
         </Style>
-        <Style Selector="ScrollViewer.wrapText &gt; controls|CustomSelectableTextBlock">
+        <Style Selector="ScrollViewer.wrapText &gt; StackPanel &gt; controls|CustomSelectableTextBlock">
             <Setter Property="TextWrapping" Value="Wrap" />
+        </Style>
+
+        <!-- Logs colors -->
+        <Style Selector="Run.log-verbose">
+            <Setter Property="Foreground" Value="{DynamicResource LogBrushVerbose}" />
+        </Style>
+        <Style Selector="Run.log-debug">
+            <Setter Property="Foreground" Value="{StaticResource LogBrushDebug}" />
+        </Style>
+        <Style Selector="Run.log-information">
+            <Setter Property="Foreground" Value="{StaticResource LogBrushInformation}" />
+        </Style>
+        <Style Selector="Run.log-warning">
+            <Setter Property="Foreground" Value="{StaticResource LogBrushWarning}" />
+        </Style>
+        <Style Selector="Run.log-error">
+            <Setter Property="Foreground" Value="{StaticResource LogBrushError}" />
+        </Style>
+        <Style Selector="Run.log-fatal">
+            <Setter Property="Foreground" Value="{StaticResource LogBrushFatal}" />
         </Style>
     </UserControl.Styles>
 
@@ -77,7 +115,12 @@
                 BorderThickness="{DynamicResource ExpanderHeaderBorderThickness}"
                 CornerRadius="8">
             <ScrollViewer VerticalScrollBarVisibility="Auto" Classes.wrapText="{Binding WrapText}">
-                <controls:CustomSelectableTextBlock InlinesSource="{Binding Lines}" SelectionBrush="{DynamicResource TextControlSelectionHighlightColor}" />
+                <StackPanel>
+                    <TextBlock IsVisible="{Binding !Lines.Count}" Foreground="{DynamicResource Text2}">No logs</TextBlock>
+                    <controls:CustomSelectableTextBlock InlinesSource="{Binding Lines}"
+                                                        SelectionBrush="{DynamicResource TextControlSelectionHighlightColor}"
+                                                        FontFamily="{StaticResource JetBrainsMono}" />
+                </StackPanel>
             </ScrollViewer>
         </Border>
     </DockPanel>
