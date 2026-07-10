@@ -1,4 +1,4 @@
-namespace Starter.EverythingSearchEngine
+﻿namespace Starter.EverythingSearchEngine
 
 open System
 open System.Diagnostics
@@ -33,6 +33,7 @@ type SearchResult =
         member this.Icon = this.Icon
         member this.ShowIfNoActivator = true
         member this.ActivatorFilter = Array.empty
+        member this.GetContextMenu() = null
 
 type EverythingSearchEngine(icon, api: IEverything) =
     let pathStrBuilder = StringBuilder(300)

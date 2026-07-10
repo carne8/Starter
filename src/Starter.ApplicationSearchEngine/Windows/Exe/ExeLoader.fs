@@ -15,8 +15,122 @@ open System.Collections.Generic
 open System.Collections.Concurrent
 
 open FsToolkit.ErrorHandling
+open Vanara.InteropServices
 open Vanara.PInvoke
 open Vanara.Windows.Shell
+
+open System.Runtime.InteropServices
+
+let getContextMenuItems (path: string) =
+    voption {
+        use item = new ShellItem(path)
+
+        let! parent = item.Parent
+        use folder = new ShellFolder(parent)
+
+        let contextMenu = folder.GetChildrenUIObjects<Shell32.IContextMenu>(HWND.NULL, item)
+
+        try
+            use hMenu = User32.CreatePopupMenu()
+            let res = contextMenu.QueryContextMenu(hMenu, 0u, 1u, 0x7FFFu, Shell32.CMF.CMF_NORMAL)
+            if res.Failed then return! ValueNone else
+
+            let count = User32.GetMenuItemCount(hMenu)
+            let results =
+                [| for i in 0 .. count - 1 do
+                    let mutable mii = User32.MENUITEMINFO()
+                    mii.cbSize <- uint32 (Marshal.SizeOf(typeof<User32.MENUITEMINFO>))
+                    mii.fMask <-
+                        User32.MenuItemInfoMask.MIIM_ID
+                        ||| User32.MenuItemInfoMask.MIIM_STRING
+                        ||| User32.MenuItemInfoMask.MIIM_FTYPE
+                        ||| User32.MenuItemInfoMask.MIIM_BITMAP
+
+                    // First call to get required string buffer size
+                    mii.dwTypeData <- StrPtrAuto()
+                    let succeeded = User32.GetMenuItemInfo(hMenu, uint32 i, true, &mii)
+                    if not succeeded then () else
+
+                    let cch = mii.cch + 1u
+                    mii.dwTypeData <- StrPtrAuto(uint cch * 2u) // wide chars
+                    mii.cch <- cch
+                    let succeeded = User32.GetMenuItemInfo(hMenu, uint32 i, true, &mii)
+                    if not succeeded then () else
+
+                    let isSeparator = mii.fType.HasFlag(User32.MenuItemType.MFT_SEPARATOR)
+                    let text =
+                        if isSeparator || mii.dwTypeData.IsNull then ""
+                        else mii.dwTypeData.ToString()
+                    mii.dwTypeData.Free()
+
+                    if not isSeparator && not (String.IsNullOrWhiteSpace text) && mii.wID <> 0u then
+                        let cmdId = int mii.wID - 1 // GetUIObjectOf offsets ids by idCmdFirst (1)
+
+                        // Description (help text) via GetCommandString
+                        let description =
+                            try
+                                let cchMax = 512u
+                                let buffer = Marshal.AllocHGlobal(int cchMax * 2) // wide chars, 2 bytes each
+                                try
+                                    let hr =
+                                        contextMenu.GetCommandString(
+                                            UIntPtr(uint32 cmdId),
+                                            Shell32.GCS.GCS_HELPTEXTW,
+                                            IntPtr.Zero,
+                                            buffer,
+                                            cchMax
+                                        )
+
+                                    if hr.Succeeded then
+                                        Marshal.PtrToStringUni(buffer) |> Option.ofObj |> Option.defaultValue ""
+                                    else
+                                        ""
+                                finally
+                                    Marshal.FreeHGlobal(buffer)
+                            with _ -> ""
+
+                        // Icon: mii.hbmpItem is an HBITMAP (may be a special "no icon" handle)
+                        let icon =
+                            if not mii.hbmpItem.IsNull
+                               && mii.hbmpItem.DangerousGetHandle().ToInt64() > 0xFFFFL then // filter HBMMENU_* pseudo-handles
+                                try
+                                    let i = mii.hbmpItem.ToAvaloniaBitmap()
+                                    StarterIconSource(i, i)
+                                with _ -> StarterIconSource.Empty
+                            else StarterIconSource.Empty
+
+                        yield
+                            { new ISearchResult with
+                                member this.GetContextMenu() = null
+                                member this.Id = null
+                                member this.Name = text.Replace("&", null)
+                                member this.Description = description
+                                member this.Keywords = null
+                                member this.Icon = icon
+                                member this.ShowIfNoActivator = true
+                                member this.ActivatorFilter = Array.empty } |]
+
+            return results
+        finally
+            if not (isNull (box contextMenu)) then
+                Marshal.ReleaseComObject(contextMenu) |> ignore
+    }
+
+
+                    // let invoke () =
+                    //     let mutable info = Shell32.CMINVOKECOMMANDINFO()
+                    //     info.hwnd <- HWND.NULL
+                    //     info.lpVerb <- Marshal.PtrToStringAnsi(IntPtr(cmdId))
+                    //     info.nShow <- ShowWindowCommand.SW_SHOWNORMAL
+                    //     contextMenu.InvokeCommand(&info) |> ignore
+
+
+let loadAppContextMenu (path: string) =
+    path
+    |> getContextMenuItems
+    |> function
+        | ValueNone -> null
+        | ValueSome results -> results
 
 type ExeApplication =
     { Id: string
@@ -34,6 +148,7 @@ type ExeApplication =
         member this.Icon = this.Icon
         member this.ShowIfNoActivator = true
         member this.ActivatorFilter = Array.empty
+        member this.GetContextMenu() = loadAppContextMenu this.Path
 
 let runApp (app: ExeApplication) =
     ProcessStartInfo(
@@ -139,6 +254,7 @@ let observeFolder added removed (folder: string) =
 
     watcher.Filters.Add("*.exe")
     watcher.Filters.Add("*.lnk")
+    watcher.Filters.Add("*.url")
     watcher.NotifyFilter <-
         NotifyFilters.CreationTime
         ||| NotifyFilters.DirectoryName

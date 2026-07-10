@@ -65,7 +65,8 @@ module Mock =
            member this.Keywords = null
            member this.Icon = StarterIconSource.Empty
            member this.ShowIfNoActivator = true
-           member this.ActivatorFilter = Array.empty }
+           member this.ActivatorFilter = Array.empty
+           member this.GetContextMenu() = null }
 
     let searchResultWithActivator name showIfNoActivator activators =
         { new ISearchResult with
@@ -75,7 +76,8 @@ module Mock =
            member this.Keywords = null
            member this.Icon = StarterIconSource.Empty
            member this.ShowIfNoActivator = showIfNoActivator
-           member this.ActivatorFilter = activators }
+           member this.ActivatorFilter = activators
+           member this.GetContextMenu() = null }
 
     let activator name engineId =
         { new ISearchEngineActivator with

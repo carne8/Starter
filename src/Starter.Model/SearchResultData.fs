@@ -14,11 +14,11 @@ type SearchResultData =
       mutable FuzzyMatchResult: FuzzyResult voption
       mutable AccentuationMap: bool array | null }
 
-    static member createStatic (searchEngine: IStaticSearchEngine) searchResult =
+    static member createStatic (searchEngineId: string) searchResult =
         { SearchResult = searchResult
           NormalizedName = searchResult.Name |> String.normalize |> ValueSome
           Priority = ResultPriority.Static
-          SearchEngineId = searchEngine.Id
+          SearchEngineId = searchEngineId
           FuzzyMatchResult = ValueNone
           AccentuationMap = null }
 

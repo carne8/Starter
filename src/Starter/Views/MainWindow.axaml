@@ -178,6 +178,42 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
+            <ListBox x:Name="ContextMenuResultList"
+                     ItemContainerTheme="{StaticResource CustomListBoxItem}"
+                     SelectionMode="AlwaysSelected"
+                     ItemsSource="{Binding ContextMenuItems}"
+                     IsVisible="{Binding ContextMenuItems, Converter={x:Static ObjectConverters.IsNotNull}}">
+                <!-- PointerReleased="ResultList_OnPointerReleased"> -->
+
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel />
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+
+                <ListBox.KeyBindings>
+                    <KeyBinding Command="{Binding SelectResultCommand}"
+                                CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
+                                Gesture="Enter" />
+                </ListBox.KeyBindings>
+
+                <!-- Add spacing between items -->
+                <ListBox.Styles>
+                    <Style Selector="ListBoxItem">
+                        <Setter Property="Margin" Value="0, 4, 0, 0" />
+                        <Setter Property="CornerRadius" Value="{DynamicResource SearchResultCornerRadius}" />
+                    </Style>
+                    <Style Selector="ListBoxItem:nth-child(1)">
+                        <!-- Why is the of the first one 1 ?! -->
+                        <Setter Property="Margin" Value="0, 0, 0, 0" />
+                    </Style>
+                </ListBox.Styles>
+
+                <ListBox.ItemTemplate>
+                    <controls:SearchResultDataTemplate />
+                </ListBox.ItemTemplate>
+            </ListBox>
+
             <!-- Footer -->
             <Border Padding="14,7"
                     BorderThickness="0,0.8,0,0"

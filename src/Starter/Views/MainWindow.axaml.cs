@@ -193,6 +193,14 @@ public partial class MainWindow : TranslucentWindow
             return;
         }
 
+        // Tab opens the context menu
+        if (e.Key == Key.Tab)
+        {
+            vm.OpenContextMenuCommand.Execute(ResultList.SelectedItem);
+            e.Handled = true;
+            return;
+        }
+
         // Set custom keyboard navigation
         // -> The goal is to be able to navigate in the listbox without losing the focus on the textbox
         int newSelectedIdx;

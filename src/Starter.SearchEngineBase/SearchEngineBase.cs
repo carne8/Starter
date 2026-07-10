@@ -73,6 +73,8 @@ public interface ISearchResult
     /// </summary>
     bool ShowIfNoActivator { get; }
     ISearchEngineActivator[] ActivatorFilter { get; }
+
+    ISearchResult[]? GetContextMenu();
 }
 
 public interface IControlSearchResult : ISearchResult

@@ -177,7 +177,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
                 Log.Debug $"{searchEngine.Name}: %A{results}"
 
                 results
-                |> Seq.map (SearchResultData.createStatic searchEngine)
+                |> Seq.map (SearchResultData.createStatic searchEngine.Id)
                 |> Seq.cache
                 |> function
                     | s when Seq.isEmpty s -> ()
@@ -192,7 +192,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
 
                     // Add new results
                     newResults
-                    |> Seq.map (SearchResultData.createStatic searchEngine)
+                    |> Seq.map (SearchResultData.createStatic searchEngine.Id)
                     |> Seq.cache
                     |> function
                         | s when Seq.isEmpty s -> ()

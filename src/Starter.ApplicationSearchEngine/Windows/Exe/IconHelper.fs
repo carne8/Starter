@@ -9,8 +9,7 @@ open Microsoft.FSharp.NativeInterop
 open Starter.ApplicationSearchEngine.Logger
 open Vanara.PInvoke
 
-type Gdi32.SafeHBITMAP with
-    /// Warning: this method does not dispose the current HBITMAP
+type HBITMAP with
     member this.ToAvaloniaBitmap() =
         let bitmap = Gdi32.GetObject<Gdi32.BITMAP> this
 
@@ -43,6 +42,10 @@ type Gdi32.SafeHBITMAP with
                 )
         finally
             Marshal.FreeHGlobal unmanagedData
+
+type Gdi32.SafeHBITMAP with
+    /// Warning: this method does not dispose the current HBITMAP
+    member this.ToAvaloniaBitmap() = HBITMAP(this.DangerousGetHandle()).ToAvaloniaBitmap()
 
 type User32.SafeHICON with
     member this.ToAvaloniaBitmap() =

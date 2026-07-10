@@ -29,6 +29,8 @@ public partial class MainWindowViewModel : ObservableObject
     public partial string Text { get; set; } = string.Empty;
     [ObservableProperty]
     public partial ISearchEngineActivator? Activator { get; set; }
+    [ObservableProperty]
+    public partial SearchResultData[]? ContextMenuItems { get; set; }
 
 
     public MainWindowViewModel(
@@ -108,4 +110,14 @@ public partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private void ResetActivator() => Activator = null;
+
+    [RelayCommand]
+    private void OpenContextMenu(SearchResultData? searchResult)
+    {
+        searchResultStore.ClearResults();
+        ContextMenuItems = searchResult?.SearchResult
+            .GetContextMenu()
+            ?.Select(res => SearchResultData.createStatic(searchResult.SearchEngineId, res))
+            .ToArray();
+    }
 }

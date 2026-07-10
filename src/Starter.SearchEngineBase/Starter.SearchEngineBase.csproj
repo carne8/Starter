@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -13,7 +13,7 @@
         <PackageTags>Interface</PackageTags>
         <PackageProjectUrl>https://github.com/carne8/Starter</PackageProjectUrl>
         <RepositoryUrl>https://github.com/carne8/Starter</RepositoryUrl>
-        <Version>0.2.0</Version>
+        <Version>0.3.0</Version>
         <PackageLicenseUrl>https://github.com/carne8/Starter/blob/main/LICENSE.txt</PackageLicenseUrl>
         <Url>https://github.com/carne8/Starter/blob/main/LICENSE.txt</Url>
     </PropertyGroup>
