@@ -117,7 +117,8 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto" Classes.wrapText="{Binding WrapText}">
                 <StackPanel>
                     <TextBlock IsVisible="{Binding !Lines.Count}" Foreground="{DynamicResource Text2}">No logs</TextBlock>
-                    <controls:CustomSelectableTextBlock InlinesSource="{Binding Lines}"
+                    <controls:CustomSelectableTextBlock Margin="0,0,20,20"
+                                                        InlinesSource="{Binding Lines}"
                                                         SelectionBrush="{DynamicResource TextControlSelectionHighlightColor}"
                                                         FontFamily="{StaticResource JetBrainsMono}" />
                 </StackPanel>
