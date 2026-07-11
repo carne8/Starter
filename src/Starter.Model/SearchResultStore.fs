@@ -25,8 +25,12 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
     let stopwatch = Stopwatch()
 
     let mutable queryCancellationTokenSource = new CancellationTokenSource()
+
+    let mutable contextMenu = ValueNone
+
     /// Output results
     let results = ObservableList<SearchResultData> 300
+    let contextMenuResults = ObservableList<SearchResultData> 20
     let loadingTimes = new Subject<TimeSpan Nullable>()
 
     let fuzzyMatchResult normalizedText result =
@@ -162,11 +166,50 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             stopwatch.Elapsed |> loadingTimes.OnNext
         ) |> disposeOnCancelled ct
 
+    let queryContextMenuResults (contextMenu: ISearchResult array) query =
+        stopwatch.Restart()
+        contextMenuResults.Clear()
+
+        let normalizedText =
+            query
+            |> TextNormalization.String.normalize
+            |> Array.map System.Text.Rune.ToLowerInvariant
+
+        match query with
+        | "" -> // Show all search engine results
+            contextMenu |> Seq.map (fun result ->
+                let result = SearchResultData.createStatic String.Empty result
+                result.AccentuationMap <- null
+                result
+            )
+        | _ -> // Show matching results
+            contextMenu |> Seq.choose (fun result ->
+                let result = SearchResultData.createStatic String.Empty result
+                if fuzzyMatchResult normalizedText result then
+                    result.AccentuationMap <- null
+                    Some result
+                else
+                    None
+            )
+        |> contextMenuResults.AddRange
+
+        // Don't sort results to keep order given by the search engine
+        contextMenuResults.NotifyChanged()
+
+        stopwatch.Stop()
+        stopwatch.Elapsed |> loadingTimes.OnNext
 
     interface IDisposable with
         member this.Dispose() = staticResults.Dispose()
 
+    member this.SetContextMenu(results: ISearchResult array) =
+        contextMenu <- ValueSome results
+
+    member this.ExitContextMenu() =
+        contextMenu <- ValueNone
+
     member this.Results = results
+    member this.ContextMenuResults = contextMenuResults
     member this.LoadingTimes = loadingTimes
 
     member this.AddSource(searchEngine: IStaticSearchEngine) =
@@ -219,16 +262,21 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
         queryCancellationTokenSource <- new CancellationTokenSource()
         let ct = queryCancellationTokenSource.Token
 
-        match activator with
-        | null when text = String.Empty -> this.ClearResults()
-        | null -> queryAllSearchEngines ct text
-        | activator ->
-            match searchEngines.TryGetValue activator.SearchEngineId with
-            | true, :? IStaticSearchEngine -> querySingleStaticSearchEngine ct activator text
-            | true, (:? IDynamicSearchEngine as searchEngine) ->
-                results.Clear()
-                querySingleDynamicSearchEngine ct activator text searchEngine
-            | _ -> Log.Error $"Cannot find search engine matching the current activator: {activator.Id}"
+        match contextMenu with
+        | ValueNone ->
+            match activator with
+            | null when text = String.Empty -> this.ClearResults()
+            | null -> queryAllSearchEngines ct text
+            | activator ->
+                match searchEngines.TryGetValue activator.SearchEngineId with
+                | true, :? IStaticSearchEngine -> querySingleStaticSearchEngine ct activator text
+                | true, (:? IDynamicSearchEngine as searchEngine) ->
+                    results.Clear()
+                    querySingleDynamicSearchEngine ct activator text searchEngine
+                | _ -> Log.Error $"Cannot find search engine matching the current activator: {activator.Id}"
+
+        | ValueSome contextMenu ->
+            queryContextMenuResults contextMenu text
 
     member this.SortResults() =
         results.Sort comparer

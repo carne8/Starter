@@ -45,6 +45,7 @@
 
         <local:FirstNonNullConverter x:Key="FirstNonNull" />
         <local:TimeSpanConverter x:Key="TimeSpanToString" />
+        <local:IsNotZeroConverter x:Key="IsNotZero" />
     </Window.Resources>
 
     <Window.Styles>
@@ -67,7 +68,7 @@
             <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
 
-        <Style Selector="ListBox#ResultList">
+        <Style Selector="ListBox.ResultList">
             <Setter Property="Padding" Value="{DynamicResource ResultsPadding}" />
             <Setter Property="MaxHeight" Value="380" />
         </Style>
@@ -137,23 +138,28 @@
             </Border>
 
             <!-- Separator -->
-            <Border Classes="Separator" IsVisible="{Binding SearchResults.Count}" />
-            <!-- Hide when empty -->
+            <Border Classes="Separator">
+                <Border.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                        <Binding Path="SearchResults.Count" Converter="{StaticResource IsNotZero}" />
+                        <Binding Path="ContextMenuActivated" />
+                    </MultiBinding>
+                </Border.IsVisible>
+            </Border>
 
             <!-- Results -->
             <ListBox x:Name="ResultList"
+                     Classes="ResultList"
                      ItemContainerTheme="{StaticResource CustomListBoxItem}"
                      SelectionMode="AlwaysSelected"
                      ItemsSource="{Binding SearchResults}"
-                     IsVisible="{Binding SearchResults.Count}"
                      PointerReleased="ResultList_OnPointerReleased">
-                <!-- Hide when empty -->
-
-                <!-- <ListBox.ItemsPanel> -->
-                <!--     <ItemsPanelTemplate> -->
-                <!--         <StackPanel /> -->
-                <!--     </ItemsPanelTemplate> -->
-                <!-- </ListBox.ItemsPanel> -->
+                <ListBox.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding Path="SearchResults.Count" Converter="{StaticResource IsNotZero}" />
+                        <Binding Path="!ContextMenuActivated" />
+                    </MultiBinding>
+                </ListBox.IsVisible>
 
                 <ListBox.KeyBindings>
                     <KeyBinding Command="{Binding SelectResultCommand}"
@@ -179,10 +185,11 @@
             </ListBox>
 
             <ListBox x:Name="ContextMenuResultList"
+                     Classes="ResultList"
                      ItemContainerTheme="{StaticResource CustomListBoxItem}"
                      SelectionMode="AlwaysSelected"
-                     ItemsSource="{Binding ContextMenuItems}"
-                     IsVisible="{Binding ContextMenuItems, Converter={x:Static ObjectConverters.IsNotNull}}">
+                     ItemsSource="{Binding ContextMenuResults}"
+                     IsVisible="{Binding ContextMenuActivated}">
                 <!-- PointerReleased="ResultList_OnPointerReleased"> -->
 
                 <ListBox.ItemsPanel>
@@ -217,8 +224,14 @@
             <!-- Footer -->
             <Border Padding="14,7"
                     BorderThickness="0,0.8,0,0"
-                    BorderBrush="{DynamicResource BorderBrush}"
-                    IsVisible="{Binding SearchResults.Count}">
+                    BorderBrush="{DynamicResource BorderBrush}">
+                <Border.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                        <Binding Path="SearchResults.Count" Converter="{StaticResource IsNotZero}" />
+                        <Binding Path="ContextMenuActivated" />
+                    </MultiBinding>
+                </Border.IsVisible>
+
                 <DockPanel>
                     <TextBlock Margin="0,0,8,0"
                                VerticalAlignment="Center"

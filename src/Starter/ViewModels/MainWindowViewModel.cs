@@ -23,14 +23,17 @@ public partial class MainWindowViewModel : ObservableObject
     public BehaviorSubject<Configuration> Config { get; private set; }
     public IObservable<Configuration> ConfigSystemObservable { get; private set; }
     public ObservableList<SearchResultData> SearchResults => searchResultStore.Results;
+    public ObservableList<SearchResultData> ContextMenuResults => searchResultStore.ContextMenuResults;
     public IObservable<TimeSpan?> LoadingTime => searchResultStore.LoadingTimes.AsSystemObservable();
 
     [ObservableProperty]
     public partial string Text { get; set; } = string.Empty;
     [ObservableProperty]
     public partial ISearchEngineActivator? Activator { get; set; }
+
+    private string? textBeforeContextMenu;
     [ObservableProperty]
-    public partial SearchResultData[]? ContextMenuItems { get; set; }
+    public partial bool ContextMenuActivated { get; set; }
 
 
     public MainWindowViewModel(
@@ -114,10 +117,20 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void OpenContextMenu(SearchResultData? searchResult)
     {
-        searchResultStore.ClearResults();
-        ContextMenuItems = searchResult?.SearchResult
-            .GetContextMenu()
-            ?.Select(res => SearchResultData.createStatic(searchResult.SearchEngineId, res))
-            .ToArray();
+        var contextMenu = searchResult?.SearchResult.GetContextMenu();
+        if (contextMenu is null) return;
+
+        searchResultStore.SetContextMenu(contextMenu);
+        ContextMenuActivated = true;
+        textBeforeContextMenu = Text;
+        Text = string.Empty;
+    }
+
+    [RelayCommand]
+    private void CloseContextMenu()
+    {
+        searchResultStore.ExitContextMenu();
+        if (textBeforeContextMenu is not null) Text = textBeforeContextMenu;
+        ContextMenuActivated = false;
     }
 }

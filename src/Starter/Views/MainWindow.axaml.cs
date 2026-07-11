@@ -43,6 +43,16 @@ public class TimeSpanConverter : IValueConverter
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => null;
 }
 
+public class IsNotZeroConverter : IValueConverter
+{
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) =>
+        value is int i
+            ? i > 0
+            : null;
+
+    public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) => null;
+}
+
 public partial class MainWindow : TranslucentWindow
 {
     private MainWindowViewModel vm = null!;
@@ -161,7 +171,8 @@ public partial class MainWindow : TranslucentWindow
         // Add escape key binding
         var onEscape = new RelayCommand(() =>
         {
-            if (vm.Activator is not null) vm.ResetActivatorCommand.Execute(null);
+            if (vm.ContextMenuActivated) vm.CloseContextMenuCommand.Execute(null);
+            else if (vm.Activator is not null) vm.ResetActivatorCommand.Execute(null);
             else Dispatcher.UIThread.Post(Hide);
         });
 
@@ -185,20 +196,33 @@ public partial class MainWindow : TranslucentWindow
 
     private void TextBox_OnKeyDown(object? sender, KeyEventArgs e)
     {
-        // Remove activator if caret is at start
-        if (e.Key == Key.Back && vm.Activator is not null && TextBox.CaretIndex == 0)
+        switch (e.Key)
         {
-            vm.ResetActivatorCommand.Execute(null);
-            e.Handled = true;
-            return;
-        }
+            // If caret is at start and backspace
+            case Key.Back when TextBox.CaretIndex == 0:
+            {
+                if (vm.ContextMenuActivated) // Close context menu
+                {
+                    vm.CloseContextMenuCommand.Execute(null);
+                    e.Handled = true;
+                    return;
+                }
 
-        // Tab opens the context menu
-        if (e.Key == Key.Tab)
-        {
-            vm.OpenContextMenuCommand.Execute(ResultList.SelectedItem);
-            e.Handled = true;
-            return;
+                if (vm.Activator is not null) // Disable activator
+                {
+                    vm.ResetActivatorCommand.Execute(null);
+                    e.Handled = true;
+                    return;
+                }
+
+                break;
+            }
+
+            // Tab opens the context menu
+            case Key.Tab:
+                vm.OpenContextMenuCommand.Execute(ResultList.SelectedItem);
+                e.Handled = true;
+                return;
         }
 
         // Set custom keyboard navigation
