@@ -186,7 +186,6 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             contextMenu |> Seq.choose (fun result ->
                 let result = SearchResultData.createStatic String.Empty result
                 if fuzzyMatchResult normalizedText result then
-                    result.AccentuationMap <- null
                     Some result
                 else
                     None
