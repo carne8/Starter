@@ -228,29 +228,27 @@ public partial class MainWindow : TranslucentWindow
         // Set custom keyboard navigation
         // -> The goal is to be able to navigate in the listbox without losing the focus on the textbox
         int newSelectedIdx;
+        var resultList =
+            vm.ContextMenuActivated
+                ? ContextMenuResultList
+                : ResultList;
 
-        if (e.Key == Key.Tab && vm.SearchResults.Count > 0)
-        {
-            newSelectedIdx = e.KeyModifiers.HasFlag(KeyModifiers.Shift)
-                ? Math.Max(ResultList.SelectedIndex - 1, 0)
-                : Math.Min(ResultList.SelectedIndex + 1, vm.SearchResults.Count - 1);
-        }
-        else if (e.Key.ToNavigationDirection() == NavigationDirection.Up)
-            newSelectedIdx = Math.Max(ResultList.SelectedIndex - 1, 0);
+        if (e.Key.ToNavigationDirection() == NavigationDirection.Up)
+            newSelectedIdx = Math.Max(resultList.SelectedIndex - 1, 0);
         else if (e.Key.ToNavigationDirection() == NavigationDirection.Down)
-            newSelectedIdx = Math.Min(ResultList.SelectedIndex + 1, vm.SearchResults.Count - 1);
+            newSelectedIdx = Math.Min(resultList.SelectedIndex + 1, resultList.ItemCount - 1);
         else return;
 
         // TODO: Always keep bottom padding
         // Scroll to top or bottom to preserve the paddings
-        if (ResultList.Scroll is not null)
+        if (resultList.Scroll is not null)
         {
-            if (newSelectedIdx == 0) ResultList.Scroll.Offset = new Vector(0, 0);
-            else if (newSelectedIdx == ResultList.ItemCount - 1) ResultList.Scroll.Offset = new Vector(0, ResultList.Scroll.Extent.Height);
+            if (newSelectedIdx == 0) resultList.Scroll.Offset = new Vector(0, 0);
+            else if (newSelectedIdx == resultList.ItemCount - 1) resultList.Scroll.Offset = new Vector(0, resultList.Scroll.Extent.Height);
         }
 
         // Select next item
-        ResultList.Selection.SelectedIndex = newSelectedIdx;
+        resultList.Selection.SelectedIndex = newSelectedIdx;
         e.Handled = true;
     }
 }
