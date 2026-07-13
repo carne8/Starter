@@ -8,8 +8,7 @@ open System.Runtime.InteropServices
 open Microsoft.FSharp.NativeInterop
 open Vanara.PInvoke
 
-type Gdi32.SafeHBITMAP with
-    /// Warning: this method does not dispose the current HBITMAP
+type HBITMAP with
     member this.ToAvaloniaBitmap() =
         let bitmap = Gdi32.GetObject<Gdi32.BITMAP> this
 
@@ -42,6 +41,10 @@ type Gdi32.SafeHBITMAP with
                 )
         finally
             Marshal.FreeHGlobal unmanagedData
+
+type Gdi32.SafeHBITMAP with
+    /// Warning: this method does not dispose the current HBITMAP
+    member this.ToAvaloniaBitmap() = HBITMAP(this.DangerousGetHandle()).ToAvaloniaBitmap()
 
 type User32.SafeHICON with
     member this.ToAvaloniaBitmap() =
@@ -95,24 +98,30 @@ module IconHelper =
         pixels |> Array.exists ((<>) 0uy)
 
     let getFileIcon desiredSize (filePath: string) =
-        voption {
-            use! jumboIcon = getFileHIcon Shell32.SHIL.SHIL_JUMBO filePath
+        try
+            voption {
+                use! jumboIcon = getFileHIcon Shell32.SHIL.SHIL_JUMBO filePath
 
-            match isValidIcon jumboIcon with
-            | true ->
-                return jumboIcon.CreateScaledBitmap(desiredSize, Avalonia.Media.Imaging.BitmapInterpolationMode.HighQuality)
-            | false -> return! getFileHIcon Shell32.SHIL.SHIL_EXTRALARGE filePath
-        }
+                match isValidIcon jumboIcon with
+                | true ->
+                    return jumboIcon.CreateScaledBitmap(desiredSize, Avalonia.Media.Imaging.BitmapInterpolationMode.HighQuality)
+                | false -> return! getFileHIcon Shell32.SHIL.SHIL_EXTRALARGE filePath
+            }
+        with e ->
+            ValueNone
 
     let getUrlFileIcon (file: string) =
-        file
-        |> File.ReadAllLines
-        |> Array.tryFind _.StartsWith("IconFile=")
-        |> Option.bind (fun line ->
-            let file = line.Substring "IconFile=".Length
+        voption {
+            let! lines =
+                try File.ReadAllLines file |> ValueSome
+                with _ -> ValueNone
 
-            match File.Exists file with
-            | false -> None
-            | true -> new Avalonia.Media.Imaging.Bitmap(file) |> Some
-        )
-        |> Option.toValueOption
+            let! iconFileLine = lines |> Array.tryFind _.StartsWith("IconFile=")
+            let! file =
+                iconFileLine.Substring "IconFile=".Length
+                |> ValueSome
+                |> ValueOption.filter (String.IsNullOrWhiteSpace >> not)
+
+            try return new Avalonia.Media.Imaging.Bitmap(file)
+            with _ -> return! ValueNone
+        }

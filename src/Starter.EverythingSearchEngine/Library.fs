@@ -33,7 +33,7 @@ type SearchResult =
         member this.Icon = this.Icon
         member this.ShowIfNoActivator = true
         member this.ActivatorFilter = Array.empty
-        member this.GetContextMenu() = null
+        member this.GetContextMenu() = ContextMenu.loadContextMenu this.Path
 
 type EverythingSearchEngine(icon, api: IEverything) =
     let pathStrBuilder = StringBuilder(300)
