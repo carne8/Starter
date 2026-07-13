@@ -1,4 +1,4 @@
-﻿module Starter.ApplicationSearchEngine.Windows.ExeLoader
+module Starter.ApplicationSearchEngine.Windows.ExeLoader
 
 open Avalonia.Threading
 open Starter.SearchEngine
@@ -84,12 +84,20 @@ let getContextMenuItems (path: string) =
                         else mii.dwTypeData.ToString()
                     mii.dwTypeData.Free()
 
-                    if mii.wID <> 0u then
+                    if isSeparator then
+                        { new IContextMenuResult with
+                            member this.Id = null
+                            member this.Name = String.Empty
+                            member this.Description = null
+                            member this.Keywords = null
+                            member this.Icon = StarterIconSource.Empty
+                            member this.IsSeparator = true
+                            member this.Invoke() = () }
+                    elif mii.wID <> 0u then
                         let cmdId = mii.wID - 1u // GetUIObjectOf offsets ids by idCmdFirst (1)
 
                         // Description (help text) via GetCommandString
                         let description =
-                            if isSeparator then String.Empty else
                             try
                                 let cchMax = 512u
                                 let buffer = Marshal.AllocHGlobal(int cchMax * 2) // wide chars, 2 bytes each
@@ -122,7 +130,6 @@ let getContextMenuItems (path: string) =
                             else StarterIconSource.Empty
 
                         let verb =
-                            if isSeparator then ValueNone else
                             let cchMax = 256u
                             let buffer = Marshal.AllocHGlobal(int cchMax * 2)
                             try
@@ -151,6 +158,7 @@ let getContextMenuItems (path: string) =
                                 member this.Description = description
                                 member this.Keywords = null
                                 member this.Icon = icon
+                                member this.IsSeparator = false
                                 member this.Invoke() = invokeContextMenuItem path verb } |]
 
             return results

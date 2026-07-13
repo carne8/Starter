@@ -6,23 +6,10 @@
              x:DataType="vm:ContextMenuResultData">
 
     <Border Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
-        <StackPanel Orientation="Horizontal" Spacing="6">
-            <Border CornerRadius="4" ClipToBounds="True">
-                <Border.IsVisible>
-                    <MultiBinding>
-                        <Binding Path="Result.Icon" />
-                        <Binding Path="Result.Icon" />
-                    </MultiBinding>
-                </Border.IsVisible>
-                <controls:StarterIcon Width="{DynamicResource SearchResultIconSize}"
-                                      Height="{DynamicResource SearchResultIconSize}"
-                                      VerticalAlignment="Center"
-                                      IconSource="{Binding Result.Icon}"
-                                      FontSize="{DynamicResource SearchResultIconSize}"
-                                      ExtraPaddingForSymbol="4" />
-            </Border>
-
-            <StackPanel VerticalAlignment="Center" Spacing="-1">
+        <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
+            <StackPanel Grid.Column="0"
+                        VerticalAlignment="Center"
+                        Spacing="-1">
                 <controls:AccentuatedTextBlock x:Name="NameTextBlock"
                                                FontSize="{DynamicResource SearchResultFontSize}"
                                                Foreground="{DynamicResource Text1}"
@@ -39,6 +26,17 @@
                            Foreground="{DynamicResource Text2}"
                            FontFamily="{StaticResource GeistMono}" />
             </StackPanel>
-        </StackPanel>
+
+            <Border Grid.Column="1"
+                    CornerRadius="4"
+                    ClipToBounds="True">
+                <controls:StarterIcon Width="{DynamicResource SearchResultIconSize}"
+                                      Height="{DynamicResource SearchResultIconSize}"
+                                      VerticalAlignment="Center"
+                                      IconSource="{Binding Result.Icon}"
+                                      FontSize="{DynamicResource SearchResultIconSize}"
+                                      ExtraPaddingForSymbol="4" />
+            </Border>
+        </Grid>
     </Border>
 </UserControl>

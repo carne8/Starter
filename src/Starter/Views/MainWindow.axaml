@@ -2,7 +2,6 @@
                             xmlns="https://github.com/avaloniaui"
                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                             xmlns:vm="using:Starter.ViewModels"
-                            xmlns:vm2="using:Starter.Features"
                             xmlns:controls="using:Starter.Controls"
                             xmlns:starter="using:Starter.SearchEngine"
                             xmlns:local="using:Starter.Views"
@@ -88,6 +87,10 @@
 
         <Style Selector="ListBoxItem">
             <Setter Property="CornerRadius" Value="14" />
+            <!-- Background needed for mouse click to work -->
+            <Setter Property="Background">
+                <SolidColorBrush Opacity="0" Color="White" />
+            </Setter>
         </Style>
 
         <Style Selector="ListBoxItem:selected">
@@ -198,6 +201,7 @@
                     <Style Selector="ListBoxItem">
                         <Setter Property="Margin" Value="0, 4, 0, 0" />
                         <Setter Property="CornerRadius" Value="{DynamicResource SearchResultCornerRadius}" />
+                        <Setter Property="MinHeight" Value="1" />
                     </Style>
                     <Style Selector="ListBoxItem:nth-child(1)">
                         <!-- Why is the of the first one 1 ?! -->
@@ -206,9 +210,7 @@
                 </ListBox.Styles>
 
                 <ListBox.ItemTemplate>
-                    <DataTemplate DataType="vm2:ContextMenuResultData">
-                        <controls:ContextMenuResult />
-                    </DataTemplate>
+                    <controls:ContextMenuResultDataTemplate />
                 </ListBox.ItemTemplate>
             </ListBox>
 

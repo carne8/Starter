@@ -86,7 +86,8 @@ public interface IContextMenuResult
     /// Additional strings that are compared to the user query
     /// </summary>
     string[]? Keywords { get; }
-    StarterIconSource? Icon { get; }
+    StarterIconSource Icon { get; }
+    bool IsSeparator { get; }
     void Invoke();
 }
 

@@ -188,10 +188,15 @@ public partial class MainWindow : TranslucentWindow
         var pos = e.GetPosition(this);
         var clickedControl =
             this.GetVisualsAt(pos)
-                .FirstOrDefault(v => v.DataContext is SearchResultData);
+                .FirstOrDefault(v => v.DataContext is SearchResultData or ContextMenuResultData);
 
         if (clickedControl is null) return;
-        vm.SelectResultCommand.Execute(clickedControl.DataContext);
+
+        if (clickedControl.DataContext is SearchResultData)
+            vm.SelectResultCommand.Execute(clickedControl.DataContext);
+
+        if (clickedControl.DataContext is ContextMenuResultData d && d.Result.IsSeparator)
+            vm.SelectContextMenuResultCommand.Execute(clickedControl.DataContext);
     }
 
     private void TextBox_OnKeyDown(object? sender, KeyEventArgs e)
@@ -254,7 +259,14 @@ public partial class MainWindow : TranslucentWindow
         }
 
         // Select next item
-        resultList.Selection.SelectedIndex = newSelectedIdx;
+        resultList.SelectedIndex = newSelectedIdx;
+
+        // Prevent focusing a separator
+        if (vm.ContextMenuActivated
+            && resultList.Selection.SelectedItem is ContextMenuResultData d
+            && d.Result.IsSeparator)
+            TextBox_OnKeyDown(sender, e);
+
         e.Handled = true;
     }
 }

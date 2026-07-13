@@ -1,9 +1,9 @@
 ﻿<UserControl x:Class="Starter.Controls.SearchResult"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:Starter.SearchEngine"
+             xmlns:vm="using:Starter.Features"
              xmlns:controls="using:Starter.Controls"
-             x:DataType="vm:ISearchResult">
+             x:DataType="vm:SearchResultData">
 
     <Border Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
         <StackPanel Orientation="Horizontal" Spacing="6">
@@ -11,7 +11,7 @@
                 <controls:StarterIcon Width="{DynamicResource SearchResultIconSize}"
                                       Height="{DynamicResource SearchResultIconSize}"
                                       VerticalAlignment="Center"
-                                      IconSource="{Binding Icon}"
+                                      IconSource="{Binding SearchResult.Icon}"
                                       FontSize="{DynamicResource SearchResultIconSize}"
                                       ExtraPaddingForSymbol="4" />
             </Border>
@@ -21,12 +21,13 @@
                                                FontSize="{DynamicResource SearchResultFontSize}"
                                                Foreground="{DynamicResource Text1}"
                                                AccentuatedForeground="{DynamicResource TextControlSelectionHighlightColor}"
-                                               Text="{Binding Name}"
+                                               AccentuationMap="{Binding AccentuationMap}"
+                                               Text="{Binding SearchResult.Name}"
                                                FontFamily="{StaticResource Geist}"
                                                FontWeight="{DynamicResource TextBoxFontWeight}" />
 
-                <TextBlock Text="{Binding Description}"
-                           IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                <TextBlock Text="{Binding SearchResult.Description}"
+                           IsVisible="{Binding SearchResult.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                            FontSize="{DynamicResource SearchResultDescriptionFontSize}"
                            FontWeight="Regular"
                            Foreground="{DynamicResource Text2}"

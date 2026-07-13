@@ -1,0 +1,6 @@
+﻿<Border x:Class="Starter.Controls.ResultSeparator"
+        xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Height="{StaticResource BorderThicknessInt}"
+        HorizontalAlignment="Stretch"
+        Background="{DynamicResource BorderBrush}" />
