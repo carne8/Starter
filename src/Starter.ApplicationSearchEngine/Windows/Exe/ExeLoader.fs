@@ -57,6 +57,7 @@ let getContextMenuItems (path: string) =
             if res.Failed then return! ValueNone else
 
             let count = hMenu.GetItemCount()
+            let mutable previousWasSeparator = false
             let results =
                 [| for i in 0 .. count - 1 do
                     let mutable mii = User32.MENUITEMINFO()
@@ -66,6 +67,7 @@ let getContextMenuItems (path: string) =
                         ||| User32.MenuItemInfoMask.MIIM_STRING
                         ||| User32.MenuItemInfoMask.MIIM_FTYPE
                         ||| User32.MenuItemInfoMask.MIIM_BITMAP
+                        ||| User32.MenuItemInfoMask.MIIM_SUBMENU
 
                     // First call to get required string buffer size
                     mii.dwTypeData <- StrPtrAuto()
@@ -85,15 +87,18 @@ let getContextMenuItems (path: string) =
                     mii.dwTypeData.Free()
 
                     if isSeparator then
-                        { new IContextMenuResult with
-                            member this.Id = null
-                            member this.Name = String.Empty
-                            member this.Description = null
-                            member this.Keywords = null
-                            member this.Icon = StarterIconSource.Empty
-                            member this.IsSeparator = true
-                            member this.Invoke() = () }
+                        if not previousWasSeparator then
+                            previousWasSeparator <- true
+                            { new IContextMenuResult with
+                                member this.Id = null
+                                member this.Name = String.Empty
+                                member this.Description = null
+                                member this.Keywords = null
+                                member this.Icon = StarterIconSource.Empty
+                                member this.IsSeparator = true
+                                member this.Invoke() = () }
                     elif mii.wID <> 0u then
+                        previousWasSeparator <- false
                         let cmdId = mii.wID - 1u // GetUIObjectOf offsets ids by idCmdFirst (1)
 
                         // Description (help text) via GetCommandString
@@ -119,15 +124,14 @@ let getContextMenuItems (path: string) =
                                     Marshal.FreeHGlobal(buffer)
                             with _ -> ""
 
-                        // Icon: mii.hbmpItem is an HBITMAP (may be a special "no icon" handle)
+                        // Icon
                         let icon =
-                            if not mii.hbmpItem.IsNull
-                               && mii.hbmpItem.DangerousGetHandle().ToInt64() > 0xFFFFL then // filter HBMMENU_* pseudo-handles
+                            if mii.hbmpItem.IsInvalid then StarterIconSource.Empty else
                                 try
                                     let i = mii.hbmpItem.ToAvaloniaBitmap()
                                     StarterIconSource(i, i)
-                                with _ -> StarterIconSource.Empty
-                            else StarterIconSource.Empty
+                                with _ ->
+                                    StarterIconSource.Empty
 
                         let verb =
                             let cchMax = 256u
@@ -150,7 +154,15 @@ let getContextMenuItems (path: string) =
                                 Marshal.FreeHGlobal(buffer)
 
                         match verb with
-                        | ValueNone -> ()
+                        | ValueNone ->
+                            { new IContextMenuResult with
+                                member this.Id = string cmdId
+                                member this.Name = text.Replace("&", null)
+                                member this.Description = description
+                                member this.Keywords = null
+                                member this.Icon = icon
+                                member this.IsSeparator = false
+                                member this.Invoke() = () }
                         | ValueSome verb ->
                             { new IContextMenuResult with
                                 member this.Id = string cmdId
