@@ -89,6 +89,8 @@ public interface IContextMenuResult
     StarterIconSource Icon { get; }
     bool IsSeparator { get; }
     void Invoke();
+
+    IContextMenuResult[]? GetContextMenu();
 }
 
 public interface IControlSearchResult : ISearchResult

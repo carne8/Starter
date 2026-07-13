@@ -31,9 +31,8 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     public partial ISearchEngineActivator? Activator { get; set; }
 
-    private string? textBeforeContextMenu;
-    [ObservableProperty]
-    public partial bool ContextMenuActivated { get; set; }
+    private readonly Stack<string> textBeforeContextMenu = new();
+    public bool ContextMenuActivated => searchResultStore.ContextMenuEnabled;
 
 
     public MainWindowViewModel(
@@ -114,11 +113,25 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void SelectContextMenuResult(ContextMenuResultData resultData)
     {
-        HideWindow?.Invoke(this, EventArgs.Empty);
-
         try
         {
-            resultData.Result.Invoke();
+            var newContextMenu = resultData.Result.GetContextMenu();
+            if (newContextMenu is null)
+            {
+                HideWindow?.Invoke(this, EventArgs.Empty);
+                resultData.Result.Invoke();
+            }
+            else
+            {
+                searchResultStore.SetContextMenu(newContextMenu);
+                textBeforeContextMenu.Push(Text);
+
+                if (Text == string.Empty)
+                    OnTextChanged(string.Empty);
+                else
+                    Text = string.Empty;
+                OnPropertyChanged(nameof(ContextMenuActivated));
+            }
         }
         catch (Exception exn)
         {
@@ -130,22 +143,34 @@ public partial class MainWindowViewModel : ObservableObject
     private void ResetActivator() => Activator = null;
 
     [RelayCommand]
-    private void OpenContextMenu(SearchResultData? searchResult)
+    private void OpenContextMenu(object? result)
     {
-        var contextMenu = searchResult?.SearchResult.GetContextMenu();
+        var contextMenu = result switch
+        {
+            SearchResultData searchResult => searchResult.SearchResult.GetContextMenu(),
+            ContextMenuResultData contextMenuResult => contextMenuResult.Result.GetContextMenu(),
+            _ => null
+        };
         if (contextMenu is null) return;
 
         searchResultStore.SetContextMenu(contextMenu);
-        ContextMenuActivated = true;
-        textBeforeContextMenu = Text;
+        textBeforeContextMenu.Push(Text);
         Text = string.Empty;
+        OnPropertyChanged(nameof(ContextMenuActivated));
     }
 
     [RelayCommand]
     private void CloseContextMenu()
     {
         searchResultStore.ExitContextMenu();
-        if (textBeforeContextMenu is not null) Text = textBeforeContextMenu;
-        ContextMenuActivated = false;
+        if (textBeforeContextMenu.Count > 0)
+        {
+            var newText = textBeforeContextMenu.Pop();
+            if (Text == newText)
+                OnTextChanged(newText);
+            else
+                Text = newText;
+        }
+        OnPropertyChanged(nameof(ContextMenuActivated));
     }
 }

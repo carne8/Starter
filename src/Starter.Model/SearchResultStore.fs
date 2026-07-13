@@ -33,7 +33,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
 
     let mutable queryCancellationTokenSource = new CancellationTokenSource()
 
-    let mutable contextMenu = ValueNone
+    let mutable contextMenu = Stack<ContextMenuResultData[]>()
 
     /// Output results
     let results = ObservableList<SearchResultData> 300
@@ -227,13 +227,12 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
         member this.Dispose() = staticResults.Dispose()
 
     member this.SetContextMenu(results: IContextMenuResult array) =
-        contextMenu <-
-            results
-            |> Array.map ContextMenuResultData.create
-            |> ValueSome
+        results
+        |> Array.map ContextMenuResultData.create
+        |> contextMenu.Push
 
-    member this.ExitContextMenu() =
-        contextMenu <- ValueNone
+    member this.ExitContextMenu() = contextMenu.TryPop() |> ignore
+    member this.ContextMenuEnabled = contextMenu.Count <> 0
 
     member this.Results = results
     member this.ContextMenuResults = contextMenuResults
@@ -289,8 +288,8 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
         queryCancellationTokenSource <- new CancellationTokenSource()
         let ct = queryCancellationTokenSource.Token
 
-        match contextMenu with
-        | ValueNone ->
+        match contextMenu.TryPeek() with
+        | false, _ ->
             match activator with
             | null when text = String.Empty -> this.ClearResults()
             | null -> queryAllSearchEngines ct text
@@ -302,7 +301,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
                     querySingleDynamicSearchEngine ct activator text searchEngine
                 | _ -> Log.Error $"Cannot find search engine matching the current activator: {activator.Id}"
 
-        | ValueSome contextMenu ->
+        | true, contextMenu ->
             queryContextMenuResults contextMenu text
 
     member this.SortResults() =

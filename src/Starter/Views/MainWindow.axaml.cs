@@ -231,7 +231,11 @@ public partial class MainWindow : TranslucentWindow
 
             // Tab opens the context menu
             case Key.Tab:
-                vm.OpenContextMenuCommand.Execute(ResultList.SelectedItem);
+                vm.OpenContextMenuCommand.Execute(
+                    vm.ContextMenuActivated
+                        ? ContextMenuResultList.SelectedItem
+                        : ResultList.SelectedItem
+                );
                 e.Handled = true;
                 return;
         }
