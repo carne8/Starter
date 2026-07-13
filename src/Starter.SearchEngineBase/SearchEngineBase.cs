@@ -74,7 +74,20 @@ public interface ISearchResult
     bool ShowIfNoActivator { get; }
     ISearchEngineActivator[] ActivatorFilter { get; }
 
-    ISearchResult[]? GetContextMenu();
+    IContextMenuResult[]? GetContextMenu();
+}
+
+public interface IContextMenuResult
+{
+    string? Id { get; }
+    string Name { get; }
+    string? Description { get; }
+    /// <summary>
+    /// Additional strings that are compared to the user query
+    /// </summary>
+    string[]? Keywords { get; }
+    StarterIconSource? Icon { get; }
+    void Invoke();
 }
 
 public interface IControlSearchResult : ISearchResult

@@ -21,6 +21,27 @@ open Vanara.Windows.Shell
 
 open System.Runtime.InteropServices
 
+let invokeContextMenuItem (shellItemPath: string) (verb: string) =
+    voption {
+        use item = new ShellItem(shellItemPath)
+        let! parent = item.Parent
+        use folder = new ShellFolder(parent)
+
+        let contextMenu = folder.GetChildrenUIObjects<Shell32.IContextMenu>(HWND.NULL, item)
+        try
+            use hMenu = User32.CreatePopupMenu()
+            let res = contextMenu.QueryContextMenu(hMenu, 0u, 1u, 0x7FFFu, Shell32.CMF.CMF_EXTENDEDVERBS)
+            if res.Failed then return! ValueNone else
+
+            let mutable info = Shell32.CMINVOKECOMMANDINFO(verb)
+            info.hwnd <- HWND.NULL
+            info.nShow <- ShowWindowCommand.SW_SHOWNORMAL
+            contextMenu.InvokeCommand(&info) |> ignore
+        finally
+            if not (isNull (box contextMenu)) then
+                Marshal.ReleaseComObject(contextMenu) |> ignore
+    } |> ignore
+
 let getContextMenuItems (path: string) =
     voption {
         use item = new ShellItem(path)
@@ -32,10 +53,10 @@ let getContextMenuItems (path: string) =
 
         try
             use hMenu = User32.CreatePopupMenu()
-            let res = contextMenu.QueryContextMenu(hMenu, 0u, 1u, 0x7FFFu, Shell32.CMF.CMF_NORMAL)
+            let res = contextMenu.QueryContextMenu(hMenu, 0u, 1u, 0x7FFFu, Shell32.CMF.CMF_EXTENDEDVERBS)
             if res.Failed then return! ValueNone else
 
-            let count = User32.GetMenuItemCount(hMenu)
+            let count = hMenu.GetItemCount()
             let results =
                 [| for i in 0 .. count - 1 do
                     let mutable mii = User32.MENUITEMINFO()
@@ -63,18 +84,19 @@ let getContextMenuItems (path: string) =
                         else mii.dwTypeData.ToString()
                     mii.dwTypeData.Free()
 
-                    if not isSeparator && not (String.IsNullOrWhiteSpace text) && mii.wID <> 0u then
-                        let cmdId = int mii.wID - 1 // GetUIObjectOf offsets ids by idCmdFirst (1)
+                    if mii.wID <> 0u then
+                        let cmdId = mii.wID - 1u // GetUIObjectOf offsets ids by idCmdFirst (1)
 
                         // Description (help text) via GetCommandString
                         let description =
+                            if isSeparator then String.Empty else
                             try
                                 let cchMax = 512u
                                 let buffer = Marshal.AllocHGlobal(int cchMax * 2) // wide chars, 2 bytes each
                                 try
                                     let hr =
                                         contextMenu.GetCommandString(
-                                            UIntPtr(uint32 cmdId),
+                                            UIntPtr(cmdId),
                                             Shell32.GCS.GCS_HELPTEXTW,
                                             IntPtr.Zero,
                                             buffer,
@@ -99,16 +121,37 @@ let getContextMenuItems (path: string) =
                                 with _ -> StarterIconSource.Empty
                             else StarterIconSource.Empty
 
-                        yield
-                            { new ISearchResult with
-                                member this.GetContextMenu() = null
-                                member this.Id = null
+                        let verb =
+                            if isSeparator then ValueNone else
+                            let cchMax = 256u
+                            let buffer = Marshal.AllocHGlobal(int cchMax * 2)
+                            try
+                                let hr = contextMenu.GetCommandString(
+                                    UIntPtr(cmdId),
+                                    Shell32.GCS.GCS_VERBW,
+                                    IntPtr.Zero,
+                                    buffer,
+                                    cchMax
+                                )
+                                if hr.Succeeded then
+                                    buffer
+                                    |> Marshal.PtrToStringUni
+                                    |> ValueOption.ofObj
+                                else
+                                    ValueNone
+                            finally
+                                Marshal.FreeHGlobal(buffer)
+
+                        match verb with
+                        | ValueNone -> ()
+                        | ValueSome verb ->
+                            { new IContextMenuResult with
+                                member this.Id = string cmdId
                                 member this.Name = text.Replace("&", null)
                                 member this.Description = description
                                 member this.Keywords = null
                                 member this.Icon = icon
-                                member this.ShowIfNoActivator = true
-                                member this.ActivatorFilter = Array.empty } |]
+                                member this.Invoke() = invokeContextMenuItem path verb } |]
 
             return results
         finally

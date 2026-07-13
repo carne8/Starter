@@ -19,8 +19,15 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
     let slab = Memory.Slab.createDefault()
     let comparer =
         Comparison<SearchResultData>(fun e1 e2 ->
-            compare (SearchResultData.getWeight resultScoreDb e1) (SearchResultData.getWeight resultScoreDb e2)
+            compare
+                (SearchResultData.getWeight resultScoreDb e1)
+                (SearchResultData.getWeight resultScoreDb e2)
         )
+    let contextMenuComparer =
+        fun e1 e2 ->
+            compare
+                (ContextMenuResultData.getWeight resultScoreDb e1)
+                (ContextMenuResultData.getWeight resultScoreDb e2)
 
     let stopwatch = Stopwatch()
 
@@ -30,7 +37,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
 
     /// Output results
     let results = ObservableList<SearchResultData> 300
-    let contextMenuResults = ObservableList<SearchResultData> 20
+    let contextMenuResults = ObservableList<ContextMenuResultData> 20
     let loadingTimes = new Subject<TimeSpan Nullable>()
 
     let fuzzyMatchResult normalizedText result =
@@ -47,6 +54,28 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             true
         | _ ->
             match result.SearchResult.Keywords with
+            | null -> false
+            | keywords ->
+                keywords |> Array.exists (fun keyword ->
+                    match FuzzyMatch.fastString false normalizedText keyword with
+                    | ValueSome res when res.Score > 0s ->
+                        result.AccentuationMap <- null
+                        result.FuzzyMatchResult <- ValueSome res
+                        true
+                    | _ -> false
+                )
+
+    let fuzzyMatchContextMenuResult normalizedText (result: ContextMenuResultData) =
+        let res = FuzzyMatch.string false true true slab normalizedText result.Name
+
+        result.FuzzyMatchResult <- res
+
+        match res with
+        | ValueSome fusilResult when fusilResult.Score > 0s ->
+            result.AccentuationMap <- fusilResult.MatchingPositions
+            true
+        | _ ->
+            match result.Result.Keywords with
             | null -> false
             | keywords ->
                 keywords |> Array.exists (fun keyword ->
@@ -166,7 +195,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             stopwatch.Elapsed |> loadingTimes.OnNext
         ) |> disposeOnCancelled ct
 
-    let queryContextMenuResults (contextMenu: ISearchResult array) query =
+    let queryContextMenuResults (contextMenu: ContextMenuResultData array) query =
         stopwatch.Restart()
         contextMenuResults.Clear()
 
@@ -176,23 +205,19 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             |> Array.map System.Text.Rune.ToLowerInvariant
 
         match query with
-        | "" -> // Show all search engine results
-            contextMenu |> Seq.map (fun result ->
-                let result = SearchResultData.createStatic String.Empty result
+        | "" ->
+            // Show all search engine results
+            contextMenu |> Array.iter (fun result ->
                 result.AccentuationMap <- null
-                result
             )
-        | _ -> // Show matching results
-            contextMenu |> Seq.choose (fun result ->
-                let result = SearchResultData.createStatic String.Empty result
-                if fuzzyMatchResult normalizedText result then
-                    Some result
-                else
-                    None
-            )
+            contextMenu :> _ seq
+        | _ ->
+            // Show matching results
+            contextMenu
+            |> Seq.filter (fuzzyMatchContextMenuResult normalizedText)
+            |> Seq.sortWith contextMenuComparer
         |> contextMenuResults.AddRange
 
-        // Don't sort results to keep order given by the search engine
         contextMenuResults.NotifyChanged()
 
         stopwatch.Stop()
@@ -201,8 +226,11 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
     interface IDisposable with
         member this.Dispose() = staticResults.Dispose()
 
-    member this.SetContextMenu(results: ISearchResult array) =
-        contextMenu <- ValueSome results
+    member this.SetContextMenu(results: IContextMenuResult array) =
+        contextMenu <-
+            results
+            |> Array.map ContextMenuResultData.create
+            |> ValueSome
 
     member this.ExitContextMenu() =
         contextMenu <- ValueNone

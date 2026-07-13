@@ -23,7 +23,7 @@ public partial class MainWindowViewModel : ObservableObject
     public BehaviorSubject<Configuration> Config { get; private set; }
     public IObservable<Configuration> ConfigSystemObservable { get; private set; }
     public ObservableList<SearchResultData> SearchResults => searchResultStore.Results;
-    public ObservableList<SearchResultData> ContextMenuResults => searchResultStore.ContextMenuResults;
+    public ObservableList<ContextMenuResultData> ContextMenuResults => searchResultStore.ContextMenuResults;
     public IObservable<TimeSpan?> LoadingTime => searchResultStore.LoadingTimes.AsSystemObservable();
 
     [ObservableProperty]
@@ -109,6 +109,21 @@ public partial class MainWindowViewModel : ObservableObject
         }
 
         IncreaseResultScore(searchResult.SearchResult);
+    }
+
+    [RelayCommand]
+    private void SelectContextMenuResult(ContextMenuResultData resultData)
+    {
+        HideWindow?.Invoke(this, EventArgs.Empty);
+
+        try
+        {
+            resultData.Result.Invoke();
+        }
+        catch (Exception exn)
+        {
+            Log.Error(exn, "Failed to select context menu result: {Result}", resultData.Name);
+        }
     }
 
     [RelayCommand]

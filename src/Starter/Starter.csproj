@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
     <PropertyGroup>
         <OutputType Condition="'$(Configuration)' == 'Debug' Or $(DefineConstants.Contains(DEBUG_LOGS))">Exe</OutputType>
         <OutputType Condition="'$(Configuration)' != 'Debug' And !$(DefineConstants.Contains(DEBUG_LOGS))">WinExe</OutputType>

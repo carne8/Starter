@@ -2,6 +2,7 @@
                             xmlns="https://github.com/avaloniaui"
                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                             xmlns:vm="using:Starter.ViewModels"
+                            xmlns:vm2="using:Starter.Features"
                             xmlns:controls="using:Starter.Controls"
                             xmlns:starter="using:Starter.SearchEngine"
                             xmlns:local="using:Starter.Views"
@@ -127,13 +128,7 @@
                     <TextBox x:Name="TextBox"
                              Grid.Column="1"
                              PlaceholderText="Start anything..."
-                             Text="{Binding Text}">
-                        <TextBox.KeyBindings>
-                            <KeyBinding Command="{Binding SelectResultCommand}"
-                                        CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
-                                        Gesture="Enter" />
-                        </TextBox.KeyBindings>
-                    </TextBox>
+                             Text="{Binding Text}" />
                 </Grid>
             </Border>
 
@@ -161,12 +156,6 @@
                     </MultiBinding>
                 </ListBox.IsVisible>
 
-                <ListBox.KeyBindings>
-                    <KeyBinding Command="{Binding SelectResultCommand}"
-                                CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
-                                Gesture="Enter" />
-                </ListBox.KeyBindings>
-
                 <!-- Add spacing between items -->
                 <ListBox.Styles>
                     <Style Selector="ListBoxItem">
@@ -189,8 +178,8 @@
                      ItemContainerTheme="{StaticResource CustomListBoxItem}"
                      SelectionMode="AlwaysSelected"
                      ItemsSource="{Binding ContextMenuResults}"
-                     IsVisible="{Binding ContextMenuActivated}">
-                <!-- PointerReleased="ResultList_OnPointerReleased"> -->
+                     IsVisible="{Binding ContextMenuActivated}"
+                     PointerReleased="ResultList_OnPointerReleased">
 
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -217,7 +206,9 @@
                 </ListBox.Styles>
 
                 <ListBox.ItemTemplate>
-                    <controls:SearchResultDataTemplate />
+                    <DataTemplate DataType="vm2:ContextMenuResultData">
+                        <controls:ContextMenuResult />
+                    </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
 

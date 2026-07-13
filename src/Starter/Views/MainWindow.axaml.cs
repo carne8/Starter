@@ -198,9 +198,16 @@ public partial class MainWindow : TranslucentWindow
     {
         switch (e.Key)
         {
+            case Key.Enter:
+                if (vm.ContextMenuActivated)
+                    vm.SelectContextMenuResultCommand.Execute(ContextMenuResultList.SelectedItem);
+                else
+                    vm.SelectResultCommand.Execute(ResultList.SelectedItem);
+
+                return;
+
             // If caret is at start and backspace
             case Key.Back when TextBox.CaretIndex == 0:
-            {
                 if (vm.ContextMenuActivated) // Close context menu
                 {
                     vm.CloseContextMenuCommand.Execute(null);
@@ -216,7 +223,6 @@ public partial class MainWindow : TranslucentWindow
                 }
 
                 break;
-            }
 
             // Tab opens the context menu
             case Key.Tab:
