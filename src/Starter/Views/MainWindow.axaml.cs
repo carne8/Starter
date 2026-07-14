@@ -277,6 +277,7 @@ public partial class MainWindow : TranslucentWindow
 
         // Prevent focusing a separator
         if (vm.ContextMenuActivated
+            && resultList.SelectedIndex != resultList.ItemCount - 1
             && resultList.Selection.SelectedItem is ContextMenuResultData { IsSeparator: true })
             TextBox_OnKeyDown(sender, e);
 
