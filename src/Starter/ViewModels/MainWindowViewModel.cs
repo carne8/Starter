@@ -59,13 +59,24 @@ public partial class MainWindowViewModel : ObservableObject
         foreach (var se in searchEngineStore.DynamicSearchEngines) searchResultStore.AddSource(se);
     }
 
-    private void IncreaseResultScore(ISearchResult searchResult)
+    private void IncreaseResultScore(string resultId)
     {
-        if (searchResult.Id is null) return;
-        resultScoreDb.IncreaseResultScore(searchResult.Id);
+        resultScoreDb.IncreaseResultScore(resultId);
         resultScoreDb.RunMaxAgingPolicy();
         resultScoreDb.SaveToFile(Const.ResultScoresFile);
         searchResultStore.SortResults(); // Sort results for next opening
+    }
+
+    private void IncreaseResultScore(ISearchResult searchResult)
+    {
+        if (searchResult.Id is null) return;
+        IncreaseResultScore(searchResult.Id);
+    }
+
+    private void IncreaseResultScore(IContextMenuEntry result)
+    {
+        if (result.Id is null) return;
+        IncreaseResultScore(result.Id);
     }
 
     partial void OnTextChanged(string value)
@@ -124,11 +135,13 @@ public partial class MainWindowViewModel : ObservableObject
             searchResultStore.SetContextMenu(newContextMenu);
             Text = string.Empty;
             OnPropertyChanged(nameof(ContextMenuActivated));
+
+            IncreaseResultScore(entry.Result);
             return true;
         }
         catch (Exception exn)
         {
-            Log.Error(exn, "Failed to select context menu result: {Result}", entry.Name);
+            Log.Error(exn, "Failed to invoke context menu result: {Result}", entry.Name);
             return false;
         }
     }
@@ -138,13 +151,23 @@ public partial class MainWindowViewModel : ObservableObject
 
     public bool OpenContextMenu(SearchResultData result)
     {
-        var contextMenu = result.SearchResult.GetContextMenu();
-        if (contextMenu is null) return false;
+        try
+        {
+            var contextMenu = result.SearchResult.GetContextMenu();
+            if (contextMenu is null) return false;
 
-        searchResultStore.SetContextMenu(contextMenu);
-        Text = string.Empty;
-        OnPropertyChanged(nameof(ContextMenuActivated));
-        return true;
+            searchResultStore.SetContextMenu(contextMenu);
+            Text = string.Empty;
+            OnPropertyChanged(nameof(ContextMenuActivated));
+
+            IncreaseResultScore(result.SearchResult);
+            return true;
+        }
+        catch (Exception exn)
+        {
+            Log.Error(exn, "Failed to open context menu: {Result}", result.SearchResult.Name);
+            return false;
+        }
     }
 
     [RelayCommand]

@@ -60,7 +60,7 @@ public partial class MainWindow : TranslucentWindow
     private readonly IPlatformInterop platformInterop;
     private readonly IPlatformHandle platformHandle;
 
-    private readonly Stack<(string? text, int caretPosition, int selectedItemIdex)> previousSelectionState = new();
+    private readonly Stack<(string? text, int caretPosition, object? selectedItem)> previousSelectionState = new();
 
     private ListBox CurrentResultList =>
         vm.ContextMenuActivated
@@ -209,7 +209,7 @@ public partial class MainWindow : TranslucentWindow
         previousSelectionState.Push((
             TextBox.Text,
             TextBox.CaretIndex,
-            CurrentResultList.SelectedIndex
+            CurrentResultList.SelectedItem
         ));
 
         var openedNewContextMenu = vm.SelectContextMenuResult(entry, platformHandle);
@@ -223,7 +223,7 @@ public partial class MainWindow : TranslucentWindow
         previousSelectionState.Push((
             TextBox.Text,
             TextBox.CaretIndex,
-            CurrentResultList.SelectedIndex
+            CurrentResultList.SelectedItem
         ));
 
         var openedNewContextMenu = vm.OpenContextMenu(data);
@@ -238,7 +238,7 @@ public partial class MainWindow : TranslucentWindow
         TextBox.Text = state.text;
         TextBox.CaretIndex = 0; // Fixes caret visual position bug
         TextBox.CaretIndex = state.caretPosition;
-        CurrentResultList.SelectedIndex = state.selectedItemIdex;
+        CurrentResultList.SelectedItem = state.selectedItem;
     }
 
     private void ResultList_OnPointerReleased(object? sender, PointerReleasedEventArgs e)
