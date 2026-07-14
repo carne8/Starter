@@ -1,11 +1,11 @@
-﻿module Starter.EverythingSearchEngine.ContextMenu
+﻿module Starter.Shared.ContextMenu
 
 open System
 open System.Runtime.InteropServices
 open Avalonia.Platform
 open FsToolkit.ErrorHandling
-open Starter.EverythingSearchEngine.IconHelper
 open Starter.SearchEngine
+open Starter.Shared.IconHelper
 open Vanara.InteropServices
 open Vanara.PInvoke
 open Vanara.Windows.Shell

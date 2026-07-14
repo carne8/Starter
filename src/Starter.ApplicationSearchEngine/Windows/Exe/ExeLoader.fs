@@ -3,9 +3,8 @@ module Starter.ApplicationSearchEngine.Windows.ExeLoader
 open Avalonia.Threading
 open Starter.SearchEngine
 open Starter.ApplicationSearchEngine
-open Starter.ApplicationSearchEngine.Windows.Exe.IconHelper
-open Starter.ApplicationSearchEngine.Windows.Exe
 open Starter.ApplicationSearchEngine.Logger
+open Starter.Shared
 
 open System
 open System.IO
@@ -16,6 +15,7 @@ open System.Collections.Generic
 open System.Collections.Concurrent
 
 open FsToolkit.ErrorHandling
+open Starter.Shared.IconHelper
 open Vanara.PInvoke
 open Vanara.Windows.Shell
 

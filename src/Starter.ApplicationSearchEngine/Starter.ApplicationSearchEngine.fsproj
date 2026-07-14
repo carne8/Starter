@@ -20,10 +20,8 @@
         <Compile Include="Windows\Uwp\Types.fs" />
         <Compile Include="Windows\Uwp\AppxManifest.fs" />
         <Compile Include="Windows\Uwp\UwpLoader.fs" />
-
-        <Compile Include="Windows\Exe\IconHelper.fs" />
-
-        <Compile Include="Windows\Exe\ContextMenu.fs" />
+        
+        <ProjectReference Include="../Starter.Shared/Starter.Shared.fsproj" />
         <Compile Include="Windows\Exe\ExeLoader.fs" />
 
         <Compile Include="Windows\Config.fs" />

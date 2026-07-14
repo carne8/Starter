@@ -1,4 +1,4 @@
-module Starter.EverythingSearchEngine.IconHelper
+module Starter.Shared.IconHelper
 
 #nowarn 9
 

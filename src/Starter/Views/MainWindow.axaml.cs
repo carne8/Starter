@@ -60,9 +60,17 @@ public partial class MainWindow : TranslucentWindow
     private readonly IPlatformInterop platformInterop;
     private readonly IPlatformHandle platformHandle;
 
+    private readonly Stack<(int caretPosition, int selectedItemIdex)> previousSelectionState = new();
+
+    private ListBox CurrentResultList =>
+        vm.ContextMenuActivated
+            ? ContextMenuResultList
+            : ResultList;
+
     public MainWindow()
     {
         // Dummy constructor to prevent XAML warnings
+        platformHandle = null!;
         throw new Exception("This constructor should never be called");
     }
 
@@ -74,7 +82,7 @@ public partial class MainWindow : TranslucentWindow
         if (platformHandle is null)
         {
             Log.Error("Failed to get platform handle");
-            return;
+            throw new Exception("Failed to get platform handle");
         }
         this.platformHandle = platformHandle;
 
@@ -181,7 +189,7 @@ public partial class MainWindow : TranslucentWindow
         // Add escape key binding
         var onEscape = new RelayCommand(() =>
         {
-            if (vm.ContextMenuActivated) vm.CloseContextMenuCommand.Execute(null);
+            if (vm.ContextMenuActivated) CloseContextMenu();
             else if (vm.Activator is not null) vm.ResetActivatorCommand.Execute(null);
             else Dispatcher.UIThread.Post(Hide);
         });
@@ -191,6 +199,35 @@ public partial class MainWindow : TranslucentWindow
             Command = onEscape,
             Gesture = new KeyGesture(Key.Escape)
         });
+    }
+
+    private void SelectContextMenuResult(object? result)
+    {
+        if (result is not ContextMenuResultData data) return;
+        if (!data.TryGetEntry(out var entry)) return;
+
+        previousSelectionState.Push((TextBox.CaretIndex, CurrentResultList.SelectedIndex));
+        var openedNewContextMenu = vm.SelectContextMenuResult(entry, platformHandle);
+        if (!openedNewContextMenu) previousSelectionState.Pop();
+    }
+
+    private void OpenContextMenu(object? result)
+    {
+        if (result is not SearchResultData data) return;
+
+        previousSelectionState.Push((TextBox.CaretIndex, CurrentResultList.SelectedIndex));
+        var openedNewContextMenu = vm.OpenContextMenu(data);
+        if (!openedNewContextMenu) previousSelectionState.Pop();
+    }
+
+    private void CloseContextMenu()
+    {
+        vm.CloseContextMenuCommand.Execute(null);
+        if (!previousSelectionState.TryPop(out var state)) return;
+
+        TextBox.CaretIndex = 0; // Fixes caret visual position bug
+        TextBox.CaretIndex = state.caretPosition;
+        CurrentResultList.SelectedIndex = state.selectedItemIdex;
     }
 
     private void ResultList_OnPointerReleased(object? sender, PointerReleasedEventArgs e)
@@ -206,7 +243,7 @@ public partial class MainWindow : TranslucentWindow
             vm.SelectResultCommand.Execute(clickedControl.DataContext);
 
         if (clickedControl.DataContext is ContextMenuResultData { IsSeparator: false })
-            vm.SelectContextMenuResultCommand.Execute((clickedControl.DataContext, platformHandle));
+            SelectContextMenuResult(clickedControl.DataContext);
     }
 
     private void TextBox_OnKeyDown(object? sender, KeyEventArgs e)
@@ -215,7 +252,7 @@ public partial class MainWindow : TranslucentWindow
         {
             case Key.Enter:
                 if (vm.ContextMenuActivated)
-                    vm.SelectContextMenuResultCommand.Execute((ContextMenuResultList.SelectedItem, platformHandle));
+                    SelectContextMenuResult(ContextMenuResultList.SelectedItem);
                 else
                     vm.SelectResultCommand.Execute(ResultList.SelectedItem);
 
@@ -225,7 +262,7 @@ public partial class MainWindow : TranslucentWindow
             case Key.Back when TextBox.CaretIndex == 0:
                 if (vm.ContextMenuActivated) // Close context menu
                 {
-                    vm.CloseContextMenuCommand.Execute(null);
+                    CloseContextMenu();
                     e.Handled = true;
                     return;
                 }
@@ -242,9 +279,9 @@ public partial class MainWindow : TranslucentWindow
             // Tab opens the context menu
             case Key.Tab:
                 if (vm.ContextMenuActivated)
-                    vm.SelectContextMenuResultCommand.Execute((ContextMenuResultList.SelectedItem, platformHandle));
+                    SelectContextMenuResult(ContextMenuResultList.SelectedItem);
                 else
-                    vm.OpenContextMenuCommand.Execute(ResultList.SelectedItem);
+                    OpenContextMenu(ResultList.SelectedItem);
 
                 e.Handled = true;
                 return;
@@ -253,32 +290,28 @@ public partial class MainWindow : TranslucentWindow
         // Set custom keyboard navigation
         // -> The goal is to be able to navigate in the listbox without losing the focus on the textbox
         int newSelectedIdx;
-        var resultList =
-            vm.ContextMenuActivated
-                ? ContextMenuResultList
-                : ResultList;
 
         if (e.Key.ToNavigationDirection() == NavigationDirection.Up)
-            newSelectedIdx = Math.Max(resultList.SelectedIndex - 1, 0);
+            newSelectedIdx = Math.Max(CurrentResultList.SelectedIndex - 1, 0);
         else if (e.Key.ToNavigationDirection() == NavigationDirection.Down)
-            newSelectedIdx = Math.Min(resultList.SelectedIndex + 1, resultList.ItemCount - 1);
+            newSelectedIdx = Math.Min(CurrentResultList.SelectedIndex + 1, CurrentResultList.ItemCount - 1);
         else return;
 
         // TODO: Always keep bottom padding
         // Scroll to top or bottom to preserve the paddings
-        if (resultList.Scroll is not null)
+        if (CurrentResultList.Scroll is not null)
         {
-            if (newSelectedIdx == 0) resultList.Scroll.Offset = new Vector(0, 0);
-            else if (newSelectedIdx == resultList.ItemCount - 1) resultList.Scroll.Offset = new Vector(0, resultList.Scroll.Extent.Height);
+            if (newSelectedIdx == 0) CurrentResultList.Scroll.Offset = new Vector(0, 0);
+            else if (newSelectedIdx == CurrentResultList.ItemCount - 1) CurrentResultList.Scroll.Offset = new Vector(0, CurrentResultList.Scroll.Extent.Height);
         }
 
         // Select next item
-        resultList.SelectedIndex = newSelectedIdx;
+        CurrentResultList.SelectedIndex = newSelectedIdx;
 
         // Prevent focusing a separator
         if (vm.ContextMenuActivated
-            && resultList.SelectedIndex != resultList.ItemCount - 1
-            && resultList.Selection.SelectedItem is ContextMenuResultData { IsSeparator: true })
+            && ContextMenuResultList.SelectedIndex != CurrentResultList.ItemCount - 1
+            && ContextMenuResultList.Selection.SelectedItem is ContextMenuResultData { IsSeparator: true })
             TextBox_OnKeyDown(sender, e);
 
         e.Handled = true;

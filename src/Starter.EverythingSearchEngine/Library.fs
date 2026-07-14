@@ -10,9 +10,10 @@ open System.Threading.Tasks
 
 open Avalonia.Threading
 open EverythingAPI
-open IconHelper
 open Helpers
 open Starter.SearchEngine
+open Starter.Shared
+open Starter.Shared.IconHelper
 
 open Avalonia.Svg.Skia
 open R3

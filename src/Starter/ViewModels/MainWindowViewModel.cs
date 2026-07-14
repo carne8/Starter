@@ -111,19 +111,15 @@ public partial class MainWindowViewModel : ObservableObject
         IncreaseResultScore(searchResult.SearchResult);
     }
 
-    [RelayCommand]
-    private void SelectContextMenuResult((object? obj, IPlatformHandle platformHandle) param)
+    public bool SelectContextMenuResult(ContextMenuEntryData entry, IPlatformHandle platformHandle)
     {
-        var (obj, platformHandle) = param;
-        if (obj is not ContextMenuResultData resultData) return;
         try
         {
-            if (!resultData.TryGetEntry(out var entry)) return;
             var newContextMenu = entry.Result.Invoke(platformHandle);
             if (newContextMenu is null)
             {
                 HideWindow?.Invoke(this, EventArgs.Empty);
-                return;
+                return false;
             }
 
             searchResultStore.SetContextMenu(newContextMenu);
@@ -134,26 +130,28 @@ public partial class MainWindowViewModel : ObservableObject
             else
                 Text = string.Empty;
             OnPropertyChanged(nameof(ContextMenuActivated));
+            return true;
         }
         catch (Exception exn)
         {
-            Log.Error(exn, "Failed to select context menu result: {Result}", resultData);
+            Log.Error(exn, "Failed to select context menu result: {Result}", entry.Name);
+            return false;
         }
     }
 
     [RelayCommand]
     private void ResetActivator() => Activator = null;
 
-    [RelayCommand]
-    private void OpenContextMenu(SearchResultData result)
+    public bool OpenContextMenu(SearchResultData result)
     {
         var contextMenu = result.SearchResult.GetContextMenu();
-        if (contextMenu is null) return;
+        if (contextMenu is null) return false;
 
         searchResultStore.SetContextMenu(contextMenu);
         textBeforeContextMenu.Push(Text);
         Text = string.Empty;
         OnPropertyChanged(nameof(ContextMenuActivated));
+        return true;
     }
 
     [RelayCommand]

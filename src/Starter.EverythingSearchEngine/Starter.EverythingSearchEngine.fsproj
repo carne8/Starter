@@ -11,6 +11,8 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <ProjectReference Include="../Starter.Shared/Starter.Shared.fsproj" />
+        
         <Content Include="Everything32.dll">
             <CopyToOutputDirectory>Always</CopyToOutputDirectory>
         </Content>
@@ -27,10 +29,6 @@
         <Compile Include="EverythingAPI\x86.fs" />
         <Compile Include="EverythingAPI\arm64.fs" />
         <Compile Include="EverythingAPI\Common.fs" />
-
-        <Compile Include="IconHelper.fs" />
-
-        <Compile Include="ContextMenu.fs" />
         <Compile Include="Helpers.fs" />
         <Compile Include="Library.fs" />
     </ItemGroup>
@@ -39,8 +37,7 @@
         <PackageReference Include="StarterApp.SearchEngineBase" Version="0.3.0">
             <ExcludeAssets>runtime;native</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
-        <PackageReference Include="Vanara.Windows.Shell" Version="5.0.5" />
+        <PackageReference Include="FsToolkit.ErrorHandling" Version="5.2.0" />
     </ItemGroup>
 
 </Project>
