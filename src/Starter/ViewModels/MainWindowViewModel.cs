@@ -1,3 +1,4 @@
+using Avalonia.Platform;
 using R3;
 using Serilog;
 using Starter.Features;
@@ -111,31 +112,32 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SelectContextMenuResult(ContextMenuResultData resultData)
+    private void SelectContextMenuResult((object? obj, IPlatformHandle platformHandle) param)
     {
+        var (obj, platformHandle) = param;
+        if (obj is not ContextMenuResultData resultData) return;
         try
         {
-            var newContextMenu = resultData.Result.GetContextMenu();
+            if (!resultData.TryGetEntry(out var entry)) return;
+            var newContextMenu = entry.Result.Invoke(platformHandle);
             if (newContextMenu is null)
             {
                 HideWindow?.Invoke(this, EventArgs.Empty);
-                resultData.Result.Invoke();
+                return;
             }
-            else
-            {
-                searchResultStore.SetContextMenu(newContextMenu);
-                textBeforeContextMenu.Push(Text);
 
-                if (Text == string.Empty)
-                    OnTextChanged(string.Empty);
-                else
-                    Text = string.Empty;
-                OnPropertyChanged(nameof(ContextMenuActivated));
-            }
+            searchResultStore.SetContextMenu(newContextMenu);
+            textBeforeContextMenu.Push(Text);
+
+            if (Text == string.Empty)
+                OnTextChanged(string.Empty);
+            else
+                Text = string.Empty;
+            OnPropertyChanged(nameof(ContextMenuActivated));
         }
         catch (Exception exn)
         {
-            Log.Error(exn, "Failed to select context menu result: {Result}", resultData.Name);
+            Log.Error(exn, "Failed to select context menu result: {Result}", resultData);
         }
     }
 
@@ -143,14 +145,9 @@ public partial class MainWindowViewModel : ObservableObject
     private void ResetActivator() => Activator = null;
 
     [RelayCommand]
-    private void OpenContextMenu(object? result)
+    private void OpenContextMenu(SearchResultData result)
     {
-        var contextMenu = result switch
-        {
-            SearchResultData searchResult => searchResult.SearchResult.GetContextMenu(),
-            ContextMenuResultData contextMenuResult => contextMenuResult.Result.GetContextMenu(),
-            _ => null
-        };
+        var contextMenu = result.SearchResult.GetContextMenu();
         if (contextMenu is null) return;
 
         searchResultStore.SetContextMenu(contextMenu);

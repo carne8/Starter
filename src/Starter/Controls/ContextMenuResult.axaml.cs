@@ -17,19 +17,20 @@ public class ContextMenuResultDataTemplate : IRecyclingDataTemplate
     {
         if (param is not ContextMenuResultData data) return null;
 
+        // Entry
+        if (data.TryGetEntry(out var entry))
+        {
+            var c = existing as ContextMenuResult ?? new ContextMenuResult();
+            c.DataContext = entry;
+            return c;
+        }
+
         // Separator
-        if (data.Result.IsSeparator)
+        if (data.IsSeparator)
             return existing as ResultSeparator ?? new ResultSeparator();
 
-        // No recycling
-        return existing as ContextMenuResult ?? new ContextMenuResult();
+        return null;
     }
 
-    public Control? Build(object? param)
-    {
-        if (param is not ContextMenuResultData data) return null;
-        return data.Result.IsSeparator
-            ? new ResultSeparator()
-            : new ContextMenuResult();
-    }
+    public Control? Build(object? param) => Build(param, null);
 }

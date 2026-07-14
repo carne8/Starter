@@ -2,6 +2,7 @@
 
 open System
 open System.Runtime.InteropServices
+open Avalonia.Platform
 open FsToolkit.ErrorHandling
 open Starter.EverythingSearchEngine.IconHelper
 open Starter.SearchEngine
@@ -71,18 +72,20 @@ module private HMenu =
                     )
 
                 if hr.Succeeded then
-                    Marshal.PtrToStringUni(buffer) |> Option.ofObj |> Option.defaultValue ""
+                    Marshal.PtrToStringUni(buffer)
+                    |> ValueOption.ofObj
+                    |> ValueOption.map _.Replace("&", null)
                 else
-                    ""
+                    ValueNone
             finally
                 Marshal.FreeHGlobal(buffer)
-        with _ -> ""
+        with _ -> ValueNone
 
 
-let private invokeContextMenuItem (shellItemPath: string) (verb: string) =
+let private invokeContextMenuItem (shellItemPath: string) (verb: string) (platformHandle: IPlatformHandle) =
     loadContextMenuInterface shellItemPath (fun contextMenu _ ->
         let mutable info = Shell32.CMINVOKECOMMANDINFO(verb)
-        info.hwnd <- HWND.NULL
+        info.hwnd <- HWND(platformHandle.Handle)
         info.nShow <- ShowWindowCommand.SW_SHOWNORMAL
         contextMenu.InvokeCommand(&info) |> ignore
     ) |> ignore
@@ -136,7 +139,7 @@ let rec private loadContextMenuEntries contextMenu (hMenu: User32.SafeHMENU) =
                     struct {|
                         Id = string cmdId
                         Text = text.Replace("&", null)
-                        Description = description
+                        Description = description |> ValueOption.defaultValue String.Empty
                         Icon = icon
                         Verb = verb
                         SubMenu = if subMenu.IsInvalid then ValueNone else ValueSome i
@@ -151,32 +154,30 @@ let private loadSubContextMenu path itemIdx =
         return! loadContextMenuEntries contextMenu subHMenu
     })
     |> ValueOption.bind id
-    |> ValueOption.map (Array.choose (function
-        | Choice1Of2 () -> None
+    |> ValueOption.map (Array.map (function
+        | Choice1Of2 () -> ContextMenuSeparator.Instance :> IContextMenuResult
         | Choice2Of2 entry ->
             match entry.Verb with
             | ValueNone ->
-                { new IContextMenuResult with
+                { new IContextMenuEntry with
                     member this.Id = entry.Id
                     member this.Name = "NO VERB: " + entry.Text
                     member this.Description = entry.Description
                     member this.Keywords = null
                     member this.Icon = entry.Icon
-                    member this.IsSeparator = false
-                    member this.Invoke() = ()
-                    member this.GetContextMenu() = null }
-                |> Some
+                    member this.Invoke _ = null }
+                :> IContextMenuResult
             | ValueSome verb ->
-                { new IContextMenuResult with
+                { new IContextMenuEntry with
                     member this.Id = entry.Id
                     member this.Name = entry.Text
                     member this.Description = entry.Description
                     member this.Keywords = null
                     member this.Icon = entry.Icon
-                    member this.IsSeparator = false
-                    member this.Invoke() = invokeContextMenuItem path verb
-                    member this.GetContextMenu() = null }
-                |> Some
+                    member this.Invoke(platformHandle) =
+                        invokeContextMenuItem path verb platformHandle
+                        null }
+                :> IContextMenuResult
     ))
     |> ValueOption.defaultValue null
 
@@ -185,39 +186,32 @@ let loadContextMenu (path: string) =
         loadContextMenuEntries contextMenu hMenu
         |> ValueOption.map (Array.choose (function
             | Choice1Of2 () ->
-                { new IContextMenuResult with
-                    member this.Id = null
-                    member this.Name = String.Empty
-                    member this.Description = null
-                    member this.Keywords = null
-                    member this.Icon = StarterIconSource.Empty
-                    member this.IsSeparator = true
-                    member this.Invoke() = ()
-                    member this.GetContextMenu() = null }
+                ContextMenuSeparator.Instance
+                :> IContextMenuResult
                 |> Some
             | Choice2Of2 entry ->
                 match entry.Verb, entry.SubMenu with
                 | ValueSome verb, ValueNone ->
-                    { new IContextMenuResult with
+                    { new IContextMenuEntry with
                         member this.Id = entry.Id
                         member this.Name = entry.Text
                         member this.Description = entry.Description
                         member this.Keywords = null
                         member this.Icon = entry.Icon
-                        member this.IsSeparator = false
-                        member this.Invoke() = invokeContextMenuItem path verb
-                        member this.GetContextMenu() = null }
+                        member this.Invoke(platformHandle) =
+                            invokeContextMenuItem path verb platformHandle
+                            null }
+                    :> IContextMenuResult
                     |> Some
                 | ValueNone, ValueSome itemIdx ->
-                    { new IContextMenuResult with
+                    { new IContextMenuEntry with
                         member this.Id = entry.Id
                         member this.Name = entry.Text
                         member this.Description = entry.Description
                         member this.Keywords = null
                         member this.Icon = entry.Icon
-                        member this.IsSeparator = false
-                        member this.Invoke() = ()
-                        member this.GetContextMenu() = loadSubContextMenu path itemIdx }
+                        member this.Invoke _ = loadSubContextMenu path itemIdx }
+                    :> IContextMenuResult
                     |> Some
                 | _ -> None
         ))

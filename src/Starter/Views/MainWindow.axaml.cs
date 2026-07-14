@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using System.Globalization;
+using Avalonia.Platform;
 using R3;
 using Serilog;
 using Starter.Controls;
@@ -57,6 +58,7 @@ public partial class MainWindow : TranslucentWindow
 {
     private MainWindowViewModel vm = null!;
     private readonly IPlatformInterop platformInterop;
+    private readonly IPlatformHandle platformHandle;
 
     public MainWindow()
     {
@@ -67,6 +69,14 @@ public partial class MainWindow : TranslucentWindow
     public MainWindow(IPlatformInterop platformInterop)
     {
         this.platformInterop = platformInterop;
+
+        var platformHandle = TryGetPlatformHandle();
+        if (platformHandle is null)
+        {
+            Log.Error("Failed to get platform handle");
+            return;
+        }
+        this.platformHandle = platformHandle;
 
         InitializeComponent();
         platformInterop.SetupHotkeyCallback(this);
@@ -195,8 +205,8 @@ public partial class MainWindow : TranslucentWindow
         if (clickedControl.DataContext is SearchResultData)
             vm.SelectResultCommand.Execute(clickedControl.DataContext);
 
-        if (clickedControl.DataContext is ContextMenuResultData d && d.Result.IsSeparator)
-            vm.SelectContextMenuResultCommand.Execute(clickedControl.DataContext);
+        if (clickedControl.DataContext is ContextMenuResultData { IsSeparator: false })
+            vm.SelectContextMenuResultCommand.Execute((clickedControl.DataContext, platformHandle));
     }
 
     private void TextBox_OnKeyDown(object? sender, KeyEventArgs e)
@@ -205,7 +215,7 @@ public partial class MainWindow : TranslucentWindow
         {
             case Key.Enter:
                 if (vm.ContextMenuActivated)
-                    vm.SelectContextMenuResultCommand.Execute(ContextMenuResultList.SelectedItem);
+                    vm.SelectContextMenuResultCommand.Execute((ContextMenuResultList.SelectedItem, platformHandle));
                 else
                     vm.SelectResultCommand.Execute(ResultList.SelectedItem);
 
@@ -231,11 +241,11 @@ public partial class MainWindow : TranslucentWindow
 
             // Tab opens the context menu
             case Key.Tab:
-                vm.OpenContextMenuCommand.Execute(
-                    vm.ContextMenuActivated
-                        ? ContextMenuResultList.SelectedItem
-                        : ResultList.SelectedItem
-                );
+                if (vm.ContextMenuActivated)
+                    vm.SelectContextMenuResultCommand.Execute((ContextMenuResultList.SelectedItem, platformHandle));
+                else
+                    vm.OpenContextMenuCommand.Execute(ResultList.SelectedItem);
+
                 e.Handled = true;
                 return;
         }
@@ -267,8 +277,7 @@ public partial class MainWindow : TranslucentWindow
 
         // Prevent focusing a separator
         if (vm.ContextMenuActivated
-            && resultList.Selection.SelectedItem is ContextMenuResultData d
-            && d.Result.IsSeparator)
+            && resultList.Selection.SelectedItem is ContextMenuResultData { IsSeparator: true })
             TextBox_OnKeyDown(sender, e);
 
         e.Handled = true;

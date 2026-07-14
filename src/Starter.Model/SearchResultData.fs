@@ -30,7 +30,7 @@ type SearchResultData =
           FuzzyMatchResult = ValueNone
           AccentuationMap = null }
 
-    // Returns a low number for a result that should be on top of the list
+    // Returns a low value for a result that should be on top of the list
     static member getWeight (resultScoreDb: IScoreDb) (sr: SearchResultData) =
         let struct (usageScore, d) =
             sr.SearchResult.Id
@@ -51,9 +51,8 @@ type SearchResultData =
             sr.SearchResult.Name
         )
 
-
-type ContextMenuResultData =
-    { Result: IContextMenuResult
+type ContextMenuEntryData =
+    { Result: IContextMenuEntry
       mutable FuzzyMatchResult: FuzzyResult voption
       mutable AccentuationMap: bool array | null }
 
@@ -64,8 +63,8 @@ type ContextMenuResultData =
           FuzzyMatchResult = ValueNone
           AccentuationMap = null }
 
-    // Returns a low number for a result that should be on top of the list
-    static member getWeight (resultScoreDb: IScoreDb) (r: ContextMenuResultData) =
+    // Returns a low value for a result that should be on top of the list
+    static member getWeight (resultScoreDb: IScoreDb) (r: ContextMenuEntryData) =
         let struct (usageScore, d) =
             r.Result.Id
             |> ValueOption.ofObj
@@ -84,3 +83,34 @@ type ContextMenuResultData =
             r.Name.Length,
             r.Name
         )
+
+[<RequireQualifiedAccess>]
+type ContextMenuResultData =
+    | Separator
+    | Entry of ContextMenuEntryData
+
+    static member create (result: IContextMenuResult) =
+        match result with
+        | :? IContextMenuEntry as entry ->
+            entry
+            |> ContextMenuEntryData.create
+            |> ContextMenuResultData.Entry
+
+        | _ -> ContextMenuResultData.Separator
+
+    static member getWeight (resultScoreDb: IScoreDb) (r: ContextMenuResultData) =
+        match r with
+        | Separator ->
+            struct (
+                ResultPriority.Search,
+                Double.MaxValue,
+                TimeSpan.MaxValue,
+                Int32.MaxValue,
+                String.Empty
+            )
+        | Entry entry -> ContextMenuEntryData.getWeight resultScoreDb entry
+
+    member this.TryGetEntry(entry: ContextMenuEntryData outref) =
+        match this with
+        | Separator -> false
+        | Entry data -> entry <- data; true

@@ -77,7 +77,9 @@ public interface ISearchResult
     IContextMenuResult[]? GetContextMenu();
 }
 
-public interface IContextMenuResult
+public interface IContextMenuResult {}
+
+public interface IContextMenuEntry : IContextMenuResult
 {
     string? Id { get; }
     string Name { get; }
@@ -87,10 +89,13 @@ public interface IContextMenuResult
     /// </summary>
     string[]? Keywords { get; }
     StarterIconSource Icon { get; }
-    bool IsSeparator { get; }
-    void Invoke();
+    IContextMenuResult[]? Invoke(Avalonia.Platform.IPlatformHandle platformHandle);
+}
 
-    IContextMenuResult[]? GetContextMenu();
+public sealed class ContextMenuSeparator : IContextMenuResult
+{
+    private ContextMenuSeparator() {}
+    public static readonly ContextMenuSeparator Instance = new();
 }
 
 public interface IControlSearchResult : ISearchResult

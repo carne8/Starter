@@ -65,7 +65,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
                     | _ -> false
                 )
 
-    let fuzzyMatchContextMenuResult normalizedText (result: ContextMenuResultData) =
+    let fuzzyMatchContextMenuResult normalizedText (result: ContextMenuEntryData) =
         let res = FuzzyMatch.string false true true slab normalizedText result.Name
 
         result.FuzzyMatchResult <- res
@@ -207,14 +207,21 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
         match query with
         | "" ->
             // Show all search engine results
-            contextMenu |> Array.iter (fun result ->
-                result.AccentuationMap <- null
+            contextMenu
+            |> Array.filter (function
+                | ContextMenuResultData.Separator -> true
+                | ContextMenuResultData.Entry entry ->
+                    entry.AccentuationMap <- null
+                    true
             )
-            contextMenu :> _ seq
+            :> _ seq
         | _ ->
             // Show matching results
             contextMenu
-            |> Seq.filter (fuzzyMatchContextMenuResult normalizedText)
+            |> Seq.filter (function
+                | ContextMenuResultData.Separator -> false
+                | ContextMenuResultData.Entry entry -> fuzzyMatchContextMenuResult normalizedText entry
+            )
             |> Seq.sortWith contextMenuComparer
         |> contextMenuResults.AddRange
 
