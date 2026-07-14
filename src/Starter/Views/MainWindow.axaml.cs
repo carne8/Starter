@@ -60,7 +60,7 @@ public partial class MainWindow : TranslucentWindow
     private readonly IPlatformInterop platformInterop;
     private readonly IPlatformHandle platformHandle;
 
-    private readonly Stack<(int caretPosition, int selectedItemIdex)> previousSelectionState = new();
+    private readonly Stack<(string? text, int caretPosition, int selectedItemIdex)> previousSelectionState = new();
 
     private ListBox CurrentResultList =>
         vm.ContextMenuActivated
@@ -206,7 +206,12 @@ public partial class MainWindow : TranslucentWindow
         if (result is not ContextMenuResultData data) return;
         if (!data.TryGetEntry(out var entry)) return;
 
-        previousSelectionState.Push((TextBox.CaretIndex, CurrentResultList.SelectedIndex));
+        previousSelectionState.Push((
+            TextBox.Text,
+            TextBox.CaretIndex,
+            CurrentResultList.SelectedIndex
+        ));
+
         var openedNewContextMenu = vm.SelectContextMenuResult(entry, platformHandle);
         if (!openedNewContextMenu) previousSelectionState.Pop();
     }
@@ -215,7 +220,12 @@ public partial class MainWindow : TranslucentWindow
     {
         if (result is not SearchResultData data) return;
 
-        previousSelectionState.Push((TextBox.CaretIndex, CurrentResultList.SelectedIndex));
+        previousSelectionState.Push((
+            TextBox.Text,
+            TextBox.CaretIndex,
+            CurrentResultList.SelectedIndex
+        ));
+
         var openedNewContextMenu = vm.OpenContextMenu(data);
         if (!openedNewContextMenu) previousSelectionState.Pop();
     }
@@ -225,6 +235,7 @@ public partial class MainWindow : TranslucentWindow
         vm.CloseContextMenuCommand.Execute(null);
         if (!previousSelectionState.TryPop(out var state)) return;
 
+        TextBox.Text = state.text;
         TextBox.CaretIndex = 0; // Fixes caret visual position bug
         TextBox.CaretIndex = state.caretPosition;
         CurrentResultList.SelectedIndex = state.selectedItemIdex;

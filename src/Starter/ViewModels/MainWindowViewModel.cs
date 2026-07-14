@@ -32,7 +32,6 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     public partial ISearchEngineActivator? Activator { get; set; }
 
-    private readonly Stack<string> textBeforeContextMenu = new();
     public bool ContextMenuActivated => searchResultStore.ContextMenuEnabled;
 
 
@@ -123,12 +122,7 @@ public partial class MainWindowViewModel : ObservableObject
             }
 
             searchResultStore.SetContextMenu(newContextMenu);
-            textBeforeContextMenu.Push(Text);
-
-            if (Text == string.Empty)
-                OnTextChanged(string.Empty);
-            else
-                Text = string.Empty;
+            Text = string.Empty;
             OnPropertyChanged(nameof(ContextMenuActivated));
             return true;
         }
@@ -148,7 +142,6 @@ public partial class MainWindowViewModel : ObservableObject
         if (contextMenu is null) return false;
 
         searchResultStore.SetContextMenu(contextMenu);
-        textBeforeContextMenu.Push(Text);
         Text = string.Empty;
         OnPropertyChanged(nameof(ContextMenuActivated));
         return true;
@@ -158,14 +151,6 @@ public partial class MainWindowViewModel : ObservableObject
     private void CloseContextMenu()
     {
         searchResultStore.ExitContextMenu();
-        if (textBeforeContextMenu.Count > 0)
-        {
-            var newText = textBeforeContextMenu.Pop();
-            if (Text == newText)
-                OnTextChanged(newText);
-            else
-                Text = newText;
-        }
         OnPropertyChanged(nameof(ContextMenuActivated));
     }
 }
