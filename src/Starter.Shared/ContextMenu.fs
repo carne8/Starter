@@ -15,10 +15,10 @@ open Vanara.Windows.Shell
 
 type WindowsContextMenuEntry =
     { Id: string
+      CmdId: uint32
       Text: string
       Description: string
       Icon: StarterIconSource
-      Verb: string voption
       SubMenu: int voption }
 
 let private loadContextMenuInterface (shellItemPath: string) (f: Shell32.IContextMenu -> User32.SafeHMENU -> 'a) =
@@ -48,26 +48,6 @@ module private HMenu =
             with _ ->
                 StarterIconSource.Empty
 
-    let loadVerb (contextMenu: Shell32.IContextMenu) (cmdId: uint32) =
-        let cchMax = 256u
-        let buffer = Marshal.AllocHGlobal(int cchMax * 2)
-        try
-            let hr = contextMenu.GetCommandString(
-                UIntPtr(cmdId),
-                Shell32.GCS.GCS_VERBW,
-                IntPtr.Zero,
-                buffer,
-                cchMax
-            )
-            if hr.Succeeded then
-                buffer
-                |> Marshal.PtrToStringUni
-                |> ValueOption.ofObj
-            else
-                ValueNone
-        finally
-            Marshal.FreeHGlobal(buffer)
-
     let loadDescription (contextMenu: Shell32.IContextMenu) (cmdId: uint32) =
         try
             let cchMax = 512u
@@ -93,13 +73,15 @@ module private HMenu =
         with _ -> ValueNone
 
 
-let private invokeContextMenuItem (shellItemPath: string) (verb: string) (platformHandle: IPlatformHandle) =
+let private invokeContextMenuItem (shellItemPath: string) (cmdId: uint32) (platformHandle: IPlatformHandle) =
     loadContextMenuInterface shellItemPath (fun contextMenu _ ->
-        let mutable info = Shell32.CMINVOKECOMMANDINFO(verb)
+        let mutable info = Shell32.CMINVOKECOMMANDINFOEX(int cmdId)
+
+        info.fMask <- Shell32.CMIC.CMIC_MASK_UNICODE
         info.hwnd <- HWND(platformHandle.Handle)
         info.nShow <- ShowWindowCommand.SW_SHOWNORMAL
-        contextMenu.InvokeCommand(&info) |> ignore
 
+        contextMenu.InvokeCommand(&info) |> ignore
         ValueSome ()
     ) |> ignore
 
@@ -153,119 +135,75 @@ let rec private loadContextMenuEntries
 
                 let description = HMenu.loadDescription contextMenu cmdId
                 let icon = HMenu.loadIcon mii
-                let verb = HMenu.loadVerb contextMenu cmdId
 
                 use subMenu = new User32.SafeHMENU(hMenu.GetSub(i))
 
                 { Id = string cmdId
+                  CmdId = cmdId
                   Text = text.Replace("&", null)
                   Description = description |> ValueOption.defaultValue String.Empty
                   Icon = icon
-                  Verb = verb
                   SubMenu = if subMenu.IsInvalid then ValueNone else ValueSome i }
                 |> Choice2Of2
                 |> resultLoaded i
         with e ->
             resultFailed i e
 
-// let private loadSubContextMenu path itemIdx =
-//     Task.Run<_ array | null>(fun () -> task {
-//         let! entries =
-//             loadContextMenuInterface path (fun contextMenu hMenu -> voption {
-//                 use subHMenu = new User32.SafeHMENU(hMenu.GetSub(itemIdx))
-//                 if subHMenu.IsInvalid then return! ValueNone else
-//                 return! loadContextMenuEntries contextMenu subHMenu
-//             })
-//
-//         match entries with
-//         | ValueNone -> return null
-//         | ValueSome entries ->
-//             return entries |> Array.map (function
-//                 | Choice1Of2 () -> ContextMenuSeparator.Instance |> ValueTask<IContextMenuResult>
-//                 | Choice2Of2 entryTask ->
-//                     entryTask
-//                     |> Task.map (fun entry ->
-//                         match entry.Verb with
-//                         | ValueNone ->
-//                             { new IContextMenuEntry with
-//                                 member this.Id = entry.Id
-//                                 member this.Name = "NO VERB: " + entry.Text
-//                                 member this.Description = entry.Description
-//                                 member this.Keywords = null
-//                                 member this.Icon = entry.Icon
-//                                 member this.Invoke _ = null }
-//                             :> IContextMenuResult
-//                         | ValueSome verb ->
-//                             { new IContextMenuEntry with
-//                                 member this.Id = entry.Id
-//                                 member this.Name = entry.Text
-//                                 member this.Description = entry.Description
-//                                 member this.Keywords = null
-//                                 member this.Icon = entry.Icon
-//                                 member this.Invoke(platformHandle) =
-//                                     invokeContextMenuItem path verb platformHandle
-//                                     null }
-//                             :> IContextMenuResult
-//                     )
-//                     |> ValueTask<IContextMenuResult>
-//             )
-//     })
-//     |> ValueTask<ValueTask<IContextMenuResult>[] | null>
-//
-// let loadContextMenu (path: string) =
-//     Task.Run<_ array | null>(fun () -> task {
-//         let! entries = loadContextMenuInterface path loadContextMenuEntries
-//
-//         match entries with
-//         | ValueNone -> return null
-//         | ValueSome entries ->
-//             return entries |> Array.map (function
-//                 | Choice1Of2 () -> ContextMenuSeparator.Instance |> ValueTask<IContextMenuResult>
-//                 | Choice2Of2 entryTask ->
-//                     entryTask
-//                     |> Task.map (fun entry ->
-//                         match entry.Verb, entry.SubMenu with
-//                         | ValueSome verb, ValueNone -> // Action
-//                             { new IContextMenuEntry with
-//                                 member this.Id = entry.Id
-//                                 member this.Name = entry.Text
-//                                 member this.Description = entry.Description
-//                                 member this.Keywords = null
-//                                 member this.Icon = entry.Icon
-//                                 member this.Invoke(platformHandle) =
-//                                     invokeContextMenuItem path verb platformHandle
-//                                     null }
-//                             :> IContextMenuResult
-//                         | ValueNone, ValueSome itemIdx -> // Sub menu
-//                             { new IContextMenuEntry with
-//                                 member this.Id = entry.Id
-//                                 member this.Name = entry.Text
-//                                 member this.Description = entry.Description
-//                                 member this.Keywords = null
-//                                 member this.Icon = entry.Icon
-//                                 member this.Invoke _ = unbox loadSubContextMenu path itemIdx }
-//                             :> IContextMenuResult
-//                         | _ -> // Other
-//                             failwith $"Failed to load \"{entry.Text}\" context menu entry"
-//                     )
-//                     |> ValueTask<IContextMenuResult>
-//             )
-//     })
-//     |> ValueTask<ValueTask<IContextMenuResult>[] | null>
+type SubContextMenuLoader(itemPath: string, itemIdx) =
+    member private _.ParseContextMenuEntry(entry: WindowsContextMenuEntry) : IContextMenuResult =
+        { new IContextMenuEntry with
+            member this.Id = entry.Id
+            member this.Name = entry.Text
+            member this.Description = entry.Description
+            member this.Keywords = null
+            member this.Icon = entry.Icon
+            member this.Invoke(platformHandle) =
+                invokeContextMenuItem itemPath entry.CmdId platformHandle
+                null }
+
+    interface IContextMenuLoader with
+        override this.LoadItems(itemsListed, resultLoaded, resultFailed, completed) =
+            let thread =
+                Thread(fun () ->
+                    loadContextMenuInterface itemPath (fun contextMenu hMenu ->
+                        use subHMenu = new User32.SafeHMENU(hMenu.GetSub(itemIdx))
+                        if subHMenu.IsInvalid then () else
+
+                        loadContextMenuEntries
+                            itemsListed.Invoke
+                            (fun idx entry ->
+                                let result =
+                                    match entry with
+                                    | Choice1Of2 () -> ContextMenuSeparator.Instance :> IContextMenuResult
+                                    | Choice2Of2 entry -> this.ParseContextMenuEntry entry
+
+                                resultLoaded.Invoke(result, idx)
+                            )
+                            (fun idx error -> resultFailed.Invoke(error, idx))
+                            contextMenu
+                            subHMenu
+                    ) |> ignore
+
+                    completed.Invoke()
+                )
+
+            thread.SetApartmentState(ApartmentState.STA)
+            thread.IsBackground <- true
+            thread.Start()
 
 type ContextMenuLoader(itemPath: string) =
     member private _.ParseContextMenuEntry(entry: WindowsContextMenuEntry) : IContextMenuResult =
-        match entry.Verb, entry.SubMenu with
-        | _, ValueSome itemIdx -> // Sub menu
+        match entry.SubMenu with
+        | ValueSome itemIdx -> // Sub menu
             { new IContextMenuEntry with
                 member this.Id = entry.Id
                 member this.Name = entry.Text
                 member this.Description = entry.Description
                 member this.Keywords = null
                 member this.Icon = entry.Icon
-                member this.Invoke _ = unbox () }
+                member this.Invoke _ = SubContextMenuLoader(itemPath, itemIdx) }
 
-        | ValueSome verb, _ -> // Action
+        | ValueNone -> // Action
             { new IContextMenuEntry with
                 member this.Id = entry.Id
                 member this.Name = entry.Text
@@ -273,17 +211,8 @@ type ContextMenuLoader(itemPath: string) =
                 member this.Keywords = null
                 member this.Icon = entry.Icon
                 member this.Invoke(platformHandle) =
-                    invokeContextMenuItem itemPath verb platformHandle
+                    invokeContextMenuItem itemPath entry.CmdId platformHandle
                     null }
-
-        | ValueNone, ValueNone -> // Other
-            { new IContextMenuEntry with
-                member this.Id = entry.Id
-                member this.Name = "NO VERB | NO SUBMENU: " + entry.Text
-                member this.Description = entry.Description
-                member this.Keywords = null
-                member this.Icon = entry.Icon
-                member this.Invoke _ = unbox () }
 
     interface IContextMenuLoader with
         override this.LoadItems(itemsListed, resultLoaded, resultFailed, completed) =

@@ -174,6 +174,7 @@ public partial class MainWindowViewModel : ObservableObject
     private void CloseContextMenu()
     {
         searchResultStore.ExitContextMenu();
+        OnTextChanged(Text);
         OnPropertyChanged(nameof(ContextMenuActivated));
     }
 }

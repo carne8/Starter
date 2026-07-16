@@ -271,26 +271,35 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
 
             loader.LoadItems(
                 (fun itemCount ->
-                    Dispatcher.UIThread.Post(fun () ->
-                        state := ContextMenuState.SomeItemsLoaded (
-                            loader,
-                            Array.init itemCount id |> ResizeArray,
-                            Array.create itemCount ContextMenuResultData.Loading |> ResizeArray
-                        )
+                    Dispatcher.UIThread.Post(
+                        (fun () ->
+                            state.contents <- ContextMenuState.SomeItemsLoaded (
+                                loader,
+                                Array.init itemCount id |> ResizeArray,
+                                Array.create itemCount ContextMenuResultData.Loading |> ResizeArray
+                            )
+                        ),
+                        DispatcherPriority.Background
                     )
                 ),
                 (fun result idx ->
-                    Dispatcher.UIThread.Post(fun () ->
-                        let data = ContextMenuResultData.create result
-                        insert idx data 0
-                        this.Requery()
+                    Dispatcher.UIThread.Post(
+                        (fun () ->
+                            let data = ContextMenuResultData.create result
+                            insert idx data 0
+                            this.Requery()
+                        ),
+                        DispatcherPriority.Background
                     )
                 ),
                 (fun exn idx ->
-                    Dispatcher.UIThread.Post(fun () ->
-                        let data = ContextMenuResultData.LoadFailed exn
-                        insert idx data 0
-                        this.Requery()
+                    Dispatcher.UIThread.Post(
+                        (fun () ->
+                            let data = ContextMenuResultData.LoadFailed exn
+                            insert idx data 0
+                            this.Requery()
+                        ),
+                        DispatcherPriority.Background
                     )
                 ),
                 ignore
