@@ -111,7 +111,19 @@ type ContextMenuStore(resultScoreDb) =
         | true, { contents = Loading _ } -> true
         | true, { contents = SomeItemsLoaded _ } -> false
 
-    member this.ExitContextMenu() = contextMenu.TryPop() |> ignore
+    member this.ExitContextMenu() =
+        match contextMenu.TryPop() with
+        | false, _ -> ()
+        | true, c ->
+            let loader =
+                match c.Value with
+                | Loading l
+                | SomeItemsLoaded (l, _, _) -> l
+
+            match loader with
+            | :? System.IDisposable as d -> d.Dispose()
+            | _ -> ()
+
     member this.SetContextMenu(loader: IContextMenuLoader) =
         try
             contextMenuResults.Clear()

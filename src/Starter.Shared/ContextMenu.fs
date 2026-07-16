@@ -13,30 +13,61 @@ open Vanara.InteropServices
 open Vanara.PInvoke
 open Vanara.Windows.Shell
 
+type StaThreadDispatcher() =
+    let queue = new BlockingCollection<unit -> unit>()
+
+    let thread =
+        Thread(fun () ->
+            for action in queue.GetConsumingEnumerable() do
+                action ()
+        )
+
+    do
+        thread.SetApartmentState(ApartmentState.STA)
+        thread.IsBackground <- true
+        thread.Start()
+
+    member _.Invoke(func: unit -> unit) = queue.Add func
+
+    interface IDisposable with
+        member _.Dispose() =
+            queue.CompleteAdding()
+            thread.Join()
+
 type WindowsContextMenuEntry =
     { Id: string
-      CmdId: uint32
+      CmdOffset: uint32
       Text: string
       Description: string
       Icon: StarterIconSource
       SubMenu: int voption }
 
-let private loadContextMenuInterface (shellItemPath: string) (f: Shell32.IContextMenu -> User32.SafeHMENU -> 'a) =
+let idCmdFirst = 1u
+
+let private loadContextMenuInterface (shellItemPath: string) =
     voption {
-        use item = new ShellItem(shellItemPath)
+        let item = new ShellItem(shellItemPath)
         let! parent = item.Parent |> ValueOption.ofObj
-        use folder = new ShellFolder(parent)
+        let folder = new ShellFolder(parent)
 
         let contextMenu = folder.GetChildrenUIObjects<Shell32.IContextMenu>(HWND.NULL, item)
-        try
-            use hMenu = User32.CreatePopupMenu()
-            let res = contextMenu.QueryContextMenu(hMenu, 0u, 1u, 0x7FFFu, Shell32.CMF.CMF_NORMAL)
-            if res.Failed then return! ValueNone else
+        let hMenu = User32.CreatePopupMenu()
 
-            return f contextMenu hMenu
-        finally
-            if not (isNull (box contextMenu)) then
-                Marshal.ReleaseComObject(contextMenu) |> ignore
+        let disposable =
+            { new IDisposable with
+                override _.Dispose() =
+                    (item :> IDisposable).Dispose()
+                    (folder :> IDisposable).Dispose()
+                    (hMenu :> IDisposable).Dispose()
+                    if not (isNull (box contextMenu)) then
+                        Marshal.ReleaseComObject(contextMenu) |> ignore }
+
+        let res = contextMenu.QueryContextMenu(hMenu, 0u, idCmdFirst, 0x7FFFu, Shell32.CMF.CMF_EXTENDEDVERBS)
+        if res.Failed then
+            disposable.Dispose()
+            return! ValueNone
+        else
+            return contextMenu, hMenu, disposable
     }
 
 module private HMenu =
@@ -73,17 +104,19 @@ module private HMenu =
         with _ -> ValueNone
 
 
-let private invokeContextMenuItem (shellItemPath: string) (cmdId: uint32) (platformHandle: IPlatformHandle) =
-    loadContextMenuInterface shellItemPath (fun contextMenu _ ->
-        let mutable info = Shell32.CMINVOKECOMMANDINFOEX(int cmdId)
+let private invokeContextMenuItem
+    (contextMenu: Shell32.IContextMenu)
+    (cmdOffset: uint32)
+    (platformHandle: IPlatformHandle)
+    =
+    let mutable info = Shell32.CMINVOKECOMMANDINFOEX()
 
-        info.fMask <- Shell32.CMIC.CMIC_MASK_UNICODE
-        info.hwnd <- HWND(platformHandle.Handle)
-        info.nShow <- ShowWindowCommand.SW_SHOWNORMAL
+    info.lpVerb <- ResourceId.op_Implicit(nativeint cmdOffset)
+    info.fMask <- Shell32.CMIC.CMIC_MASK_UNICODE
+    info.hwnd <- HWND(platformHandle.Handle)
+    info.nShow <- ShowWindowCommand.SW_SHOWNORMAL
 
-        contextMenu.InvokeCommand(&info) |> ignore
-        ValueSome ()
-    ) |> ignore
+    contextMenu.InvokeCommand(&info) |> ignore
 
 let rec private loadContextMenuEntries
     itemCountLoaded
@@ -95,7 +128,16 @@ let rec private loadContextMenuEntries
     let count = hMenu.GetItemCount()
     let mutable previousWasSeparator = false
 
-    itemCountLoaded count
+    if count < 0 then
+        let error =
+            Marshal.GetLastWin32Error()
+            |> uint32
+            |> Win32Error
+            |> _.ToString()
+
+        Serilog.Log.Error($"Failed to load menu entries: {error}")
+    else
+        itemCountLoaded count
 
     for i in 0 .. count - 1 do
         try
@@ -113,7 +155,7 @@ let rec private loadContextMenuEntries
             let succeeded = User32.GetMenuItemInfo(hMenu, uint32 i, true, &mii)
             if not succeeded then () else
 
-            let cch = mii.cch + 1u
+            let cch = mii.cch + idCmdFirst
             mii.dwTypeData <- StrPtrAuto(uint cch * 2u) // wide chars
             mii.cch <- cch
             let succeeded = User32.GetMenuItemInfo(hMenu, uint32 i, true, &mii)
@@ -129,17 +171,17 @@ let rec private loadContextMenuEntries
                 if not previousWasSeparator then
                     previousWasSeparator <- true
                     Choice1Of2 () |> resultLoaded i
-            elif mii.wID <> 0u then
+            elif idCmdFirst <= mii.wID then
                 previousWasSeparator <- false
-                let cmdId = mii.wID - 1u // GetUIObjectOf offsets ids by idCmdFirst (1)
+                let cmdOffset = mii.wID - idCmdFirst // GetUIObjectOf offsets ids by idCmdFirst (1)
 
-                let description = HMenu.loadDescription contextMenu cmdId
+                let description = HMenu.loadDescription contextMenu cmdOffset
                 let icon = HMenu.loadIcon mii
 
                 use subMenu = new User32.SafeHMENU(hMenu.GetSub(i))
 
-                { Id = string cmdId
-                  CmdId = cmdId
+                { Id = string cmdOffset
+                  CmdOffset = cmdOffset
                   Text = text.Replace("&", null)
                   Description = description |> ValueOption.defaultValue String.Empty
                   Icon = icon
@@ -149,7 +191,12 @@ let rec private loadContextMenuEntries
         with e ->
             resultFailed i e
 
-type SubContextMenuLoader(itemPath: string, itemIdx) =
+type SubContextMenuLoader(
+        sta: StaThreadDispatcher,
+        contextMenu: Shell32.IContextMenu,
+        itemIdx
+    )
+    =
     member private _.ParseContextMenuEntry(entry: WindowsContextMenuEntry) : IContextMenuResult =
         { new IContextMenuEntry with
             member this.Id = entry.Id
@@ -158,40 +205,43 @@ type SubContextMenuLoader(itemPath: string, itemIdx) =
             member this.Keywords = null
             member this.Icon = entry.Icon
             member this.Invoke(platformHandle) =
-                invokeContextMenuItem itemPath entry.CmdId platformHandle
+                sta.Invoke(fun () ->
+                    invokeContextMenuItem contextMenu entry.CmdOffset platformHandle
+                )
                 null }
 
     interface IContextMenuLoader with
         override this.LoadItems(itemsListed, resultLoaded, resultFailed, completed) =
-            let thread =
-                Thread(fun () ->
-                    loadContextMenuInterface itemPath (fun contextMenu hMenu ->
-                        use subHMenu = new User32.SafeHMENU(hMenu.GetSub(itemIdx))
-                        if subHMenu.IsInvalid then () else
+            sta.Invoke(fun () ->
+                use hMenu = User32.CreatePopupMenu()
+                let res = contextMenu.QueryContextMenu(hMenu, 0u, idCmdFirst, 0x7FFFu, Shell32.CMF.CMF_EXTENDEDVERBS)
+                if res.Failed then () else
 
-                        loadContextMenuEntries
-                            itemsListed.Invoke
-                            (fun idx entry ->
-                                let result =
-                                    match entry with
-                                    | Choice1Of2 () -> ContextMenuSeparator.Instance :> IContextMenuResult
-                                    | Choice2Of2 entry -> this.ParseContextMenuEntry entry
+                use subHMenu = new User32.SafeHMENU(hMenu.GetSub(itemIdx))
+                if subHMenu.IsInvalid then () else
 
-                                resultLoaded.Invoke(result, idx)
-                            )
-                            (fun idx error -> resultFailed.Invoke(error, idx))
-                            contextMenu
-                            subHMenu
-                    ) |> ignore
+                loadContextMenuEntries
+                    itemsListed.Invoke
+                    (fun idx entry ->
+                        let result =
+                            match entry with
+                            | Choice1Of2 () -> ContextMenuSeparator.Instance :> IContextMenuResult
+                            | Choice2Of2 entry -> this.ParseContextMenuEntry entry
 
-                    completed.Invoke()
-                )
+                        resultLoaded.Invoke(result, idx)
+                    )
+                    (fun idx error -> resultFailed.Invoke(error, idx))
+                    contextMenu
+                    subHMenu
 
-            thread.SetApartmentState(ApartmentState.STA)
-            thread.IsBackground <- true
-            thread.Start()
+                completed.Invoke()
+            )
+
 
 type ContextMenuLoader(itemPath: string) =
+    let sta = new StaThreadDispatcher()
+    let mutable savedInterfaces = ValueNone
+
     member private _.ParseContextMenuEntry(entry: WindowsContextMenuEntry) : IContextMenuResult =
         match entry.SubMenu with
         | ValueSome itemIdx -> // Sub menu
@@ -201,7 +251,11 @@ type ContextMenuLoader(itemPath: string) =
                 member this.Description = entry.Description
                 member this.Keywords = null
                 member this.Icon = entry.Icon
-                member this.Invoke _ = SubContextMenuLoader(itemPath, itemIdx) }
+                member this.Invoke platformHandle =
+                    match savedInterfaces with
+                    | ValueNone -> null
+                    | ValueSome (contextMenu, _) ->
+                        SubContextMenuLoader(sta, contextMenu, itemIdx) }
 
         | ValueNone -> // Action
             { new IContextMenuEntry with
@@ -211,30 +265,43 @@ type ContextMenuLoader(itemPath: string) =
                 member this.Keywords = null
                 member this.Icon = entry.Icon
                 member this.Invoke(platformHandle) =
-                    invokeContextMenuItem itemPath entry.CmdId platformHandle
+                    match savedInterfaces with
+                    | ValueNone -> ()
+                    | ValueSome (contextMenu, _) ->
+                        sta.Invoke(fun () ->
+                            invokeContextMenuItem contextMenu entry.CmdOffset platformHandle
+                        )
                     null }
 
     interface IContextMenuLoader with
         override this.LoadItems(itemsListed, resultLoaded, resultFailed, completed) =
-            let thread =
-                Thread(fun () ->
-                    loadContextMenuInterface itemPath (
-                        loadContextMenuEntries
-                            itemsListed.Invoke
-                            (fun idx entry ->
-                                let result =
-                                    match entry with
-                                    | Choice1Of2 () -> ContextMenuSeparator.Instance :> IContextMenuResult
-                                    | Choice2Of2 entry -> this.ParseContextMenuEntry entry
+            sta.Invoke(fun () ->
+                match loadContextMenuInterface itemPath with
+                | ValueNone -> ()
+                | ValueSome (contextMenu, hMenu, disposable) ->
+                    savedInterfaces <- ValueSome (contextMenu, disposable)
 
-                                resultLoaded.Invoke(result, idx)
-                            )
-                            (fun idx error -> resultFailed.Invoke(error, idx))
-                    ) |> ignore
+                    loadContextMenuEntries
+                        itemsListed.Invoke
+                        (fun idx entry ->
+                            let result =
+                                match entry with
+                                | Choice1Of2 () -> ContextMenuSeparator.Instance :> IContextMenuResult
+                                | Choice2Of2 entry -> this.ParseContextMenuEntry entry
 
-                    completed.Invoke()
-                )
+                            resultLoaded.Invoke(result, idx)
+                        )
+                        (fun idx error -> resultFailed.Invoke(error, idx))
+                        contextMenu
+                        hMenu
 
-            thread.SetApartmentState(ApartmentState.STA)
-            thread.IsBackground <- true
-            thread.Start()
+                completed.Invoke()
+            )
+
+    interface IDisposable with
+        override _.Dispose() =
+            savedInterfaces |> ValueOption.iter (fun (_, disposable) ->
+                disposable.Dispose()
+            )
+
+            (sta :> IDisposable).Dispose()
