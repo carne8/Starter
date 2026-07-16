@@ -11,8 +11,9 @@ namespace Starter.ViewModels;
 
 public partial class MainWindowViewModel : ObservableObject
 {
-    private readonly SearchResultStore searchResultStore;
     private readonly SearchEngineStore searchEngineStore;
+    private readonly SearchResultStore searchResultStore;
+    private readonly ContextMenuStore contextMenuStore;
     private readonly ActivatorStore activatorStore;
     private readonly IScoreDb resultScoreDb;
 
@@ -24,7 +25,7 @@ public partial class MainWindowViewModel : ObservableObject
     public BehaviorSubject<Configuration> Config { get; private set; }
     public IObservable<Configuration> ConfigSystemObservable { get; private set; }
     public ObservableList<SearchResultData> SearchResults => searchResultStore.Results;
-    public ObservableList<ContextMenuResultData> ContextMenuResults => searchResultStore.ContextMenuResults;
+    public ObservableList<ContextMenuResultData> ContextMenuResults => contextMenuStore.ContextMenuResults;
     public IObservable<TimeSpan?> LoadingTime => searchResultStore.LoadingTimes.AsSystemObservable();
 
     [ObservableProperty]
@@ -32,7 +33,7 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     public partial ISearchEngineActivator? Activator { get; set; }
 
-    public bool ContextMenuActivated => searchResultStore.ContextMenuEnabled;
+    public bool ContextMenuActivated => contextMenuStore.ContextMenuEnabled;
 
 
     public MainWindowViewModel(
@@ -57,6 +58,8 @@ public partial class MainWindowViewModel : ObservableObject
         };
         foreach (var se in searchEngineStore.StaticSearchEngines) searchResultStore.AddSource(se);
         foreach (var se in searchEngineStore.DynamicSearchEngines) searchResultStore.AddSource(se);
+
+        contextMenuStore = new ContextMenuStore(resultScoreDb);
     }
 
     private void IncreaseResultScore(string resultId)
@@ -81,6 +84,12 @@ public partial class MainWindowViewModel : ObservableObject
 
     partial void OnTextChanged(string value)
     {
+        if (ContextMenuActivated)
+        {
+            contextMenuStore.Query(value);
+            return;
+        }
+
         var res = activatorStore.GetActivatorFromText(value);
         if (res.IsSome)
         {
@@ -132,7 +141,7 @@ public partial class MainWindowViewModel : ObservableObject
                 return false;
             }
 
-            searchResultStore.SetContextMenu(newContextMenu);
+            contextMenuStore.SetContextMenu(newContextMenu);
             Text = string.Empty;
             OnPropertyChanged(nameof(ContextMenuActivated));
 
@@ -156,7 +165,7 @@ public partial class MainWindowViewModel : ObservableObject
             var contextMenu = result.SearchResult.GetContextMenu();
             if (contextMenu is null) return false;
 
-            searchResultStore.SetContextMenu(contextMenu);
+            contextMenuStore.SetContextMenu(contextMenu);
             Text = string.Empty;
             OnPropertyChanged(nameof(ContextMenuActivated));
 
@@ -173,7 +182,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void CloseContextMenu()
     {
-        searchResultStore.ExitContextMenu();
+        contextMenuStore.ExitContextMenu();
         OnTextChanged(Text);
         OnPropertyChanged(nameof(ContextMenuActivated));
     }

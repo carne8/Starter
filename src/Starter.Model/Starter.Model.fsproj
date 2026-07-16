@@ -35,6 +35,7 @@
         <Compile Include="CustomCollections.fs" />
         <Compile Include="SearchResultData.fs" />
         <Compile Include="SearchResultStore.fs" />
+        <Compile Include="ContextMenuStore.fs" />
     </ItemGroup>
 
     <ItemGroup>
