@@ -16,4 +16,5 @@ type UwpApplication =
         member this.Icon = this.Icon
         member this.ShowIfNoActivator = true
         member this.ActivatorFilter = Array.empty
+        member this.HasContextMenu = false
         member this.GetContextMenu() = null

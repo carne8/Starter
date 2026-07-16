@@ -6,8 +6,10 @@
              x:DataType="vm:SearchResultData">
 
     <Border Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
-        <StackPanel Orientation="Horizontal" Spacing="6">
-            <Border CornerRadius="4" ClipToBounds="True">
+        <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="6">
+            <Border Grid.Column="0"
+                    CornerRadius="4"
+                    ClipToBounds="True">
                 <controls:StarterIcon Width="{DynamicResource SearchResultIconSize}"
                                       Height="{DynamicResource SearchResultIconSize}"
                                       VerticalAlignment="Center"
@@ -16,7 +18,9 @@
                                       ExtraPaddingForSymbol="4" />
             </Border>
 
-            <StackPanel VerticalAlignment="Center" Spacing="-1">
+            <StackPanel Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Spacing="-1">
                 <controls:AccentuatedTextBlock x:Name="NameTextBlock"
                                                FontSize="{DynamicResource SearchResultFontSize}"
                                                Foreground="{DynamicResource Text1}"
@@ -33,6 +37,6 @@
                            Foreground="{DynamicResource Text2}"
                            FontFamily="{StaticResource GeistMono}" />
             </StackPanel>
-        </StackPanel>
+        </Grid>
     </Border>
 </UserControl>

@@ -203,6 +203,7 @@ type SubContextMenuLoader(
             member this.Description = entry.Description
             member this.Keywords = null
             member this.Icon = entry.Icon
+            member this.HasContextMenu = false
             member this.Invoke(platformHandle) =
                 sta.Invoke(fun () ->
                     invokeContextMenuItem contextMenu entry.CmdOffset platformHandle
@@ -250,6 +251,7 @@ type ContextMenuLoader(itemPath: string) =
                 member this.Description = entry.Description
                 member this.Keywords = null
                 member this.Icon = entry.Icon
+                member this.HasContextMenu = true
                 member this.Invoke platformHandle =
                     match savedInterfaces with
                     | ValueNone -> null
@@ -263,6 +265,7 @@ type ContextMenuLoader(itemPath: string) =
                 member this.Description = entry.Description
                 member this.Keywords = null
                 member this.Icon = entry.Icon
+                member this.HasContextMenu = false
                 member this.Invoke(platformHandle) =
                     match savedInterfaces with
                     | ValueNone -> ()

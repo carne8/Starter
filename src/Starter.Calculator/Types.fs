@@ -79,6 +79,7 @@ type LaTeXSearchResult =
         member this.ShowIcon = true
         member this.ControlDataContext = this
         member this.ControlDataTemplate = this.DataTemplate
+        member this.HasContextMenu = false
         member this.GetContextMenu() = null
 
 type NumberSearchResult =
@@ -92,4 +93,5 @@ type NumberSearchResult =
         member this.Icon = Icon.icon
         member this.ShowIfNoActivator = true
         member this.ActivatorFilter = Array.empty
+        member this.HasContextMenu = false
         member this.GetContextMenu() = null

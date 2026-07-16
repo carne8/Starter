@@ -13,8 +13,7 @@ file enum TargetPage
     Logs
 }
 
-file class SettingsSearchResult(string name, string description, TargetPage targetPage, StarterIconSource icon)
-    : ISearchResult
+file class SettingsSearchResult(string name, string description, TargetPage targetPage, StarterIconSource icon) : ISearchResult
 {
     public TargetPage TargetPage { get; } = targetPage;
     public string? Id => null;
@@ -24,6 +23,7 @@ file class SettingsSearchResult(string name, string description, TargetPage targ
     public StarterIconSource Icon => icon;
     public bool ShowIfNoActivator => true;
     public ISearchEngineActivator[] ActivatorFilter => [];
+    public bool HasContextMenu => false;
     public IContextMenuLoader? GetContextMenu() => null;
 }
 

@@ -261,6 +261,19 @@
                                FontWeight="SemiLight"
                                Foreground="{DynamicResource Text3}"> close</TextBlock>
 
+                    <Border Margin="8,0,0,0"
+                            DockPanel.Dock="Left"
+                            Classes="KeyboardSpan">
+                        <TextBlock FontSize="11">tab</TextBlock>
+                    </Border>
+                    <TextBlock VerticalAlignment="Center"
+                               xml:space="preserve"
+                               DockPanel.Dock="Left"
+                               FontSize="13"
+                               FontFamily="{StaticResource Geist}"
+                               FontWeight="SemiLight"
+                               Foreground="{DynamicResource Text3}"> more</TextBlock>
+
                     <TextBlock x:Name="GreetingOrActivatorLabel"
                                HorizontalAlignment="Right"
                                VerticalAlignment="Center"

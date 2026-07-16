@@ -74,10 +74,11 @@ public interface ISearchResult
     bool ShowIfNoActivator { get; }
     ISearchEngineActivator[] ActivatorFilter { get; }
 
+    bool HasContextMenu { get; }
     IContextMenuLoader? GetContextMenu();
 }
 
-public interface IContextMenuResult {}
+public interface IContextMenuResult;
 
 public interface IContextMenuEntry : IContextMenuResult
 {
@@ -89,6 +90,8 @@ public interface IContextMenuEntry : IContextMenuResult
     /// </summary>
     string[]? Keywords { get; }
     StarterIconSource Icon { get; }
+
+    bool HasContextMenu { get; }
     IContextMenuLoader? Invoke(Avalonia.Platform.IPlatformHandle platformHandle);
 }
 
