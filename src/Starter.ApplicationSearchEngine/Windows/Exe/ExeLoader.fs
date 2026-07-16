@@ -35,7 +35,7 @@ type ExeApplication =
         member this.Icon = this.Icon
         member this.ShowIfNoActivator = true
         member this.ActivatorFilter = Array.empty
-        member this.GetContextMenu() = ContextMenu.loadContextMenu this.Path
+        member this.GetContextMenu() = ContextMenu.ContextMenuLoader this.Path
 
 let runApp (app: ExeApplication) =
     ProcessStartInfo(

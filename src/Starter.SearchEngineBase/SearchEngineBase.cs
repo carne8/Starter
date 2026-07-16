@@ -74,7 +74,7 @@ public interface ISearchResult
     bool ShowIfNoActivator { get; }
     ISearchEngineActivator[] ActivatorFilter { get; }
 
-    IContextMenuResult[]? GetContextMenu();
+    IContextMenuLoader? GetContextMenu();
 }
 
 public interface IContextMenuResult {}
@@ -89,13 +89,23 @@ public interface IContextMenuEntry : IContextMenuResult
     /// </summary>
     string[]? Keywords { get; }
     StarterIconSource Icon { get; }
-    IContextMenuResult[]? Invoke(Avalonia.Platform.IPlatformHandle platformHandle);
+    IContextMenuLoader? Invoke(Avalonia.Platform.IPlatformHandle platformHandle);
 }
 
 public sealed class ContextMenuSeparator : IContextMenuResult
 {
     private ContextMenuSeparator() {}
     public static readonly ContextMenuSeparator Instance = new();
+}
+
+public interface IContextMenuLoader
+{
+    public void LoadItems(
+        Action<int> itemsListed,
+        Action<IContextMenuResult, int> resultLoaded,
+        Action<Exception, int> resultFailed,
+        Action completed
+    );
 }
 
 public interface IControlSearchResult : ISearchResult

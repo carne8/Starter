@@ -12,6 +12,10 @@ open Serilog
 open Starter.Features.CustomCollections
 open Starter.SearchEngine
 
+type ContextMenuState =
+    | Loading of IContextMenuLoader
+    | SomeItemsLoaded of IContextMenuLoader * ResizeArray<int> * ResizeArray<ContextMenuResultData>
+
 type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearchEngine>) =
     let staticResults = new BehaviorSubject<_>(ResizeArray())
     let dynamicSearchEngines = ResizeArray<IDynamicSearchEngine>()
@@ -33,7 +37,8 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
 
     let mutable queryCancellationTokenSource = new CancellationTokenSource()
 
-    let mutable contextMenu = Stack<ContextMenuResultData[]>()
+    let mutable contextMenu = Stack<_>()
+    let mutable lastQuery = ValueNone
 
     /// Output results
     let results = ObservableList<SearchResultData> 300
@@ -195,35 +200,36 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             stopwatch.Elapsed |> loadingTimes.OnNext
         ) |> disposeOnCancelled ct
 
-    let queryContextMenuResults (contextMenu: ContextMenuResultData array) query =
+    let queryContextMenuResults (contextMenu: ContextMenuState) query =
         stopwatch.Restart()
         contextMenuResults.Clear()
 
-        let normalizedText =
-            query
-            |> TextNormalization.String.normalize
-            |> Array.map System.Text.Rune.ToLowerInvariant
+        match contextMenu with
+        | Loading _ -> ()
+        | SomeItemsLoaded (_, _, results) ->
+            let normalizedText =
+                query
+                |> TextNormalization.String.normalize
+                |> Array.map System.Text.Rune.ToLowerInvariant
 
-        match query with
-        | "" ->
-            // Show all search engine results
-            contextMenu
-            |> Array.filter (function
-                | ContextMenuResultData.Separator -> true
-                | ContextMenuResultData.Entry entry ->
-                    entry.AccentuationMap <- null
-                    true
-            )
-            :> _ seq
-        | _ ->
-            // Show matching results
-            contextMenu
-            |> Seq.filter (function
-                | ContextMenuResultData.Separator -> false
-                | ContextMenuResultData.Entry entry -> fuzzyMatchContextMenuResult normalizedText entry
-            )
-            |> Seq.sortWith contextMenuComparer
-        |> contextMenuResults.AddRange
+            match query with
+            | "" ->
+                // Show all search engine results
+                results |> Seq.iter (function
+                    | ContextMenuResultData.Entry entry -> entry.AccentuationMap <- null
+                    | _ -> ()
+                )
+
+                results :> _ seq
+            | _ ->
+                // Show matching results
+                results
+                |> Seq.filter (function
+                    | ContextMenuResultData.Entry entry -> fuzzyMatchContextMenuResult normalizedText entry
+                    | _ -> false
+                )
+                |> Seq.sortWith contextMenuComparer
+            |> contextMenuResults.AddRange
 
         contextMenuResults.NotifyChanged()
 
@@ -233,10 +239,64 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
     interface IDisposable with
         member this.Dispose() = staticResults.Dispose()
 
-    member this.SetContextMenu(results: IContextMenuResult array) =
-        results
-        |> Array.map ContextMenuResultData.create
-        |> contextMenu.Push
+    member this.SetContextMenu(loader: IContextMenuLoader) =
+        try
+            contextMenuResults.Clear()
+            let state = ContextMenuState.Loading loader |> ref
+            contextMenu.Push state
+
+            let rec insert (idx: int) (data: ContextMenuResultData) (pos: int) =
+                match state.Value with
+                | Loading _ -> ()
+                | SomeItemsLoaded (_, indexes, results) ->
+                    if pos >= results.Count then
+                        indexes.Add idx
+                        results.Add data
+
+                    elif idx < indexes[pos] then
+                        indexes.Add idx
+                        results.Add data
+
+                        for i = results.Count-1 to pos+1 do
+                            let temp = results[i-1]
+                            results[i-1] <- results[i]
+                            results[i] <- temp
+
+                            let temp = indexes[i-1]
+                            indexes[i-1] <- indexes[i]
+                            indexes[i] <- temp
+                    elif idx = indexes[pos] then
+                        results[pos] <- data
+                    else insert idx data (pos+1)
+
+            loader.LoadItems(
+                (fun itemCount ->
+                    Dispatcher.UIThread.Post(fun () ->
+                        state := ContextMenuState.SomeItemsLoaded (
+                            loader,
+                            Array.init itemCount id |> ResizeArray,
+                            Array.create itemCount ContextMenuResultData.Loading |> ResizeArray
+                        )
+                    )
+                ),
+                (fun result idx ->
+                    Dispatcher.UIThread.Post(fun () ->
+                        let data = ContextMenuResultData.create result
+                        insert idx data 0
+                        this.Requery()
+                    )
+                ),
+                (fun exn idx ->
+                    Dispatcher.UIThread.Post(fun () ->
+                        let data = ContextMenuResultData.LoadFailed exn
+                        insert idx data 0
+                        this.Requery()
+                    )
+                ),
+                ignore
+            )
+        with e ->
+            Log.Error(e, "Failed to load context menu")
 
     member this.ExitContextMenu() = contextMenu.TryPop() |> ignore
     member this.ContextMenuEnabled = contextMenu.Count <> 0
@@ -294,6 +354,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
         queryCancellationTokenSource.Cancel()
         queryCancellationTokenSource <- new CancellationTokenSource()
         let ct = queryCancellationTokenSource.Token
+        lastQuery <- ValueSome text
 
         match contextMenu.TryPeek() with
         | false, _ ->
@@ -309,8 +370,13 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
                 | _ -> Log.Error $"Cannot find search engine matching the current activator: {activator.Id}"
 
         | true, contextMenu ->
-            queryContextMenuResults contextMenu text
+            queryContextMenuResults contextMenu.Value text
 
     member this.SortResults() =
         results.Sort comparer
         results.NotifyChanged()
+
+    member private this.Requery() =
+        match lastQuery with
+        | ValueNone -> ()
+        | ValueSome lastQuery -> this.Query(lastQuery, null)

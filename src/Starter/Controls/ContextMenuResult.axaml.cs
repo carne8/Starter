@@ -17,6 +17,16 @@ public class ContextMenuResultDataTemplate : IRecyclingDataTemplate
     {
         if (param is not ContextMenuResultData data) return null;
 
+        // Loading
+        if (data.IsLoading)
+        {
+            return new TextBlock { Text = "Loading..." };
+        }
+        if (data.TryGetException(out var exn))
+        {
+            return new TextBlock { Text = exn.Message };
+        }
+
         // Entry
         if (data.TryGetEntry(out var entry))
         {

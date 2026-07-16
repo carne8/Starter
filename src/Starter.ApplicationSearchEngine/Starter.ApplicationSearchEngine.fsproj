@@ -20,7 +20,7 @@
         <Compile Include="Windows\Uwp\Types.fs" />
         <Compile Include="Windows\Uwp\AppxManifest.fs" />
         <Compile Include="Windows\Uwp\UwpLoader.fs" />
-        
+
         <ProjectReference Include="../Starter.Shared/Starter.Shared.fsproj" />
         <Compile Include="Windows\Exe\ExeLoader.fs" />
 
@@ -54,7 +54,7 @@
         <PackageReference Include="StarterApp.SearchEngineBase" Version="0.3.0">
             <ExcludeAssets>runtime;native</ExcludeAssets>
         </PackageReference>
-        <PackageReference Include="FsToolkit.ErrorHandling" Version="5.1.0" />
+        <PackageReference Include="FsToolkit.ErrorHandling" Version="5.2.0" />
     </ItemGroup>
 
 </Project>

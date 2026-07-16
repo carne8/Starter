@@ -1,4 +1,4 @@
-﻿namespace Starter.Features
+namespace Starter.Features
 
 open System
 open Starter.Features
@@ -88,6 +88,8 @@ type ContextMenuEntryData =
 type ContextMenuResultData =
     | Separator
     | Entry of ContextMenuEntryData
+    | Loading
+    | LoadFailed of (Exception | null)
 
     static member create (result: IContextMenuResult) =
         match result with
@@ -95,11 +97,12 @@ type ContextMenuResultData =
             entry
             |> ContextMenuEntryData.create
             |> ContextMenuResultData.Entry
-
         | _ -> ContextMenuResultData.Separator
 
     static member getWeight (resultScoreDb: IScoreDb) (r: ContextMenuResultData) =
         match r with
+        | Loading
+        | LoadFailed _
         | Separator ->
             struct (
                 ResultPriority.Search,
@@ -112,5 +115,14 @@ type ContextMenuResultData =
 
     member this.TryGetEntry(entry: ContextMenuEntryData outref) =
         match this with
+        | Loading
+        | LoadFailed _
         | Separator -> false
         | Entry data -> entry <- data; true
+
+    member this.TryGetException(exn: (Exception | null) outref) =
+        match this with
+        | Loading
+        | Entry _
+        | Separator -> false
+        | LoadFailed e -> exn <- e; true
