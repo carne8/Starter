@@ -193,12 +193,15 @@ type ContextMenuStore(resultScoreDb) =
             match text with
             | "" ->
                 // Show all search engine results
-                results |> Seq.iter (function
-                    | ContextMenuResultData.Entry entry -> entry.AccentuationMap <- null
-                    | _ -> ()
+                results
+                |> Seq.filter (function
+                    | ContextMenuResultData.Entry entry ->
+                        entry.AccentuationMap <- null
+                        true
+                    | ContextMenuResultData.LoadFailed _ -> false
+                    | _ -> true
                 )
-
-                results :> _ seq
+                :> _ seq
             | _ ->
                 // Show matching results
                 results

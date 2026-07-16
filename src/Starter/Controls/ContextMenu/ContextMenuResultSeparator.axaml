@@ -1,4 +1,4 @@
-﻿<Border x:Class="Starter.Controls.ResultSeparator"
+﻿<Border x:Class="Starter.Controls.ContextMenuResultSeparator"
         xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Height="{StaticResource BorderThicknessInt}"

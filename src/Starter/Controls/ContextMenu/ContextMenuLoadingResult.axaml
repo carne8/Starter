@@ -1,0 +1,25 @@
+﻿<UserControl x:Class="Starter.Controls.ContextMenu.ContextMenuLoadingResult"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Border Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
+        <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
+            <StackPanel Grid.Column="0"
+                        VerticalAlignment="Center"
+                        Spacing="-1">
+                <TextBlock FontSize="{DynamicResource SearchResultFontSize}"
+                           Foreground="{DynamicResource Text1}"
+                           FontFamily="{StaticResource Geist}"
+                           FontWeight="{DynamicResource TextBoxFontWeight}">
+                    Loading...
+                </TextBlock>
+
+                <TextBlock Text="Loading..."
+                           FontSize="{DynamicResource SearchResultDescriptionFontSize}"
+                           FontWeight="Regular"
+                           Foreground="{DynamicResource Text2}"
+                           FontFamily="{StaticResource GeistMono}" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

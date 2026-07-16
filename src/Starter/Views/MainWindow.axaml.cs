@@ -1,12 +1,12 @@
+using System.Globalization;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Platform;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
-using System.Globalization;
-using Avalonia.Platform;
 using R3;
 using Serilog;
 using Starter.Controls;

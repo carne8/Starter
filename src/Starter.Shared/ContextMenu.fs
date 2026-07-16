@@ -4,7 +4,6 @@ open System
 open System.Collections.Concurrent
 open System.Runtime.InteropServices
 open System.Threading
-open System.Threading.Tasks
 open Avalonia.Platform
 open FsToolkit.ErrorHandling
 open Starter.SearchEngine
