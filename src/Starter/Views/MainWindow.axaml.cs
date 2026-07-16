@@ -317,11 +317,12 @@ public partial class MainWindow : TranslucentWindow
         }
 
         // Select next item
+        var previousSelectedIdx = CurrentResultList.SelectedIndex;
         CurrentResultList.SelectedIndex = newSelectedIdx;
 
         // Prevent focusing a separator
         if (vm.ContextMenuActivated
-            && ContextMenuResultList.SelectedIndex != CurrentResultList.ItemCount - 1
+            && previousSelectedIdx != newSelectedIdx
             && ContextMenuResultList.Selection.SelectedItem is ContextMenuResultData { IsSeparator: true })
             TextBox_OnKeyDown(sender, e);
 
