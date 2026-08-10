@@ -4,7 +4,7 @@ using Avalonia.Media;
 
 namespace Starter.Controls;
 
-public class TextOptionsBehavior
+public abstract class TextOptionsBehavior : AvaloniaObject
 {
     public static readonly AttachedProperty<TextRenderingMode> TextRenderingModeProperty =
         AvaloniaProperty.RegisterAttached<Visual, TextBlock, TextRenderingMode>(nameof(TextRenderingMode));
