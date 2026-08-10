@@ -1,6 +1,6 @@
 #!/bin/bash
 rm -rf ./build
-dotnet publish src/Starter                                         --configuration Release -o ./build # -p:DefineConstants=DEBUG_LOGS
+dotnet publish src/Starter                                         --configuration Release -o ./build -p:PublishReadyToRun=false # -p:DefineConstants=DEBUG_LOGS
 dotnet publish src/Starter.ApplicationSearchEngine                 --configuration Release --ucr -f net10.0 -p:EnableWindowsTargeting=true -o ./build/Plugins/ApplicationSearchEngine
 dotnet publish src/Starter.EverythingSearchEngine                  --configuration Release -o ./build/Plugins/EverythingSearchEngine
 dotnet publish src/Starter.UrlSearchEngine/Starter.UrlSearchEngine --configuration Release -o ./build/Plugins/UrlSearchEngine
