@@ -1,4 +1,5 @@
-﻿using Avalonia.Platform.Storage;
+﻿using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using ObservableCollections;
 using R3;
@@ -9,7 +10,7 @@ using Starter.SearchEngine;
 namespace Starter.ViewModels;
 
 public record BackgroundKind(string Name, Background Value, bool Available);
-public record AntialiasingKind(string Name, Antialiasing Value);
+public record AntialiasingKind(string Name, Antialiasing Value, TextRenderingMode TextRenderingMode);
 
 public partial class SettingsViewModel : ObservableObject
 {
@@ -31,10 +32,10 @@ public partial class SettingsViewModel : ObservableObject
     // Antialiasing
     public static readonly AntialiasingKind[] Antialiasings =
     [
-        new("Alias", Antialiasing.Alias),
-        new("Grayscale", Antialiasing.Grayscale),
-        new("Subpixel", Antialiasing.Subpixel),
-        new("Platform default", Antialiasing.PlatformDefault)
+        new("Alias", Antialiasing.Alias, TextRenderingMode.Alias),
+        new("Grayscale", Antialiasing.Grayscale, TextRenderingMode.Antialias),
+        new("Subpixel", Antialiasing.Subpixel, TextRenderingMode.SubpixelAntialias),
+        new("Platform default", Antialiasing.PlatformDefault, TextRenderingMode.Unspecified)
     ];
     [ObservableProperty] public partial AntialiasingKind SelectedAntialiasing { get; set; }
 
