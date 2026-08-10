@@ -10,10 +10,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="Libraries\CSharpMath\CSharpMath.Avalonia\CSharpMath.Avalonia.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
         <Compile Include="Types.fs" />
         <Compile Include="Expression.fs" />
         <Compile Include="Parser.fs" />
@@ -26,10 +22,13 @@
 
     <ItemGroup>
         <PackageReference Include="StarterApp.SearchEngineBase" Version="0.3.2" ExcludeAssets="runtime" />
-        <!--<ProjectReference Include="Libraries\CSharpMath\CSharpMath.Avalonia\CSharpMath.Avalonia.csproj" />-->
         <PackageReference Include="FParsec" Version="1.1.1" />
         <PackageReference Include="FsToolkit.ErrorHandling" Version="5.2.0" />
         <PackageReference Include="MathNet.Numerics.FSharp" Version="5.0.0" />
+
+        <ProjectReference Include="Libraries\CSharpMath\CSharpMath.Avalonia\CSharpMath.Avalonia.csproj" />
+        <!--<ProjectReference Include="Libraries\CSharpMath\CSharpMath.Avalonia\CSharpMath.Avalonia.csproj" />-->
+        <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" IncludeAssets="compile" />
     </ItemGroup>
 
 </Project>

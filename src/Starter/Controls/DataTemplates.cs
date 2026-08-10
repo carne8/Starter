@@ -16,7 +16,7 @@ public class SearchResultDataTemplate : IRecyclingDataTemplate
         if (param is not SearchResultData data) return null;
 
         return data.SearchResult is IControlSearchResult
-            ? existing as ControlSearchResult ?? new ControlSearchResult()
+            ? existing as ControlSearchResult ?? new ControlSearchResult { DataContext = data.SearchResult }
             : existing ?? new SearchResult();
     }
 
