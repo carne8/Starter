@@ -179,22 +179,20 @@ public class App : Application
         return platform.EnsureConfigCompatibility(configRes.ResultValue);
     }
 
-    private void LoadSearchEngines(SearchEngineStore searchEngineStore, IClipboard clipboard, IClassicDesktopStyleApplicationLifetime appLifetime)
+    private static void LoadSearchEngines(SearchEngineStore searchEngineStore, IClipboard clipboard, IClassicDesktopStyleApplicationLifetime appLifetime)
     {
 #if DEBUG
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.UrlSearchEngine/Starter.UrlSearchEngine/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.WebSearchEngine/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.WorkspaceSearchEngine/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.Calculator/bin/Debug/net10.0/", clipboard);
+        searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.EverythingSearchEngine/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory(
             OperatingSystem.IsWindows()
                 ? "./src/Starter.ApplicationSearchEngine/bin/Debug/net10.0-windows10.0.19041.0/"
                 : "./src/Starter.ApplicationSearchEngine/bin/Debug/net10.0/",
             clipboard
         );
-
-        if (OperatingSystem.IsWindows())
-            searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.EverythingSearchEngine/bin/Debug/net10.0/", clipboard);
 #else
         foreach (var pluginDir in Directory.GetDirectories(Const.PluginsDirectory))
             searchEngineStore.LoadSearchEnginesFromDirectory(pluginDir, clipboard);

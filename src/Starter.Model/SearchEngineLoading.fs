@@ -9,21 +9,17 @@ open FsToolkit.ErrorHandling
 open Starter.Features.Logging
 open Starter.SearchEngine
 
+let private logger = logger.ForContext("Context", "Starter/EngineLoading")
+
 type private SearchEngineLoadContext(dllPath) =
     inherit AssemblyLoadContext()
 
     let resolver = AssemblyDependencyResolver dllPath
 
-    let isSharedAssembly (assemblyName: AssemblyName) =
-        match assemblyName.Name with
-        | null -> false
-        | assemblyName ->
-            Constants.SharedAssemblies |> Seq.contains assemblyName
-
     override this.Load(assemblyName: AssemblyName): Assembly | null =
-        match assemblyName |> isSharedAssembly with
-        | true -> Assembly.Load assemblyName
-        | false ->
+        try
+            Assembly.Load assemblyName
+        with _ ->
             let assemblyPath = resolver.ResolveAssemblyToPath assemblyName
             match assemblyPath with
             | null -> null
@@ -99,13 +95,19 @@ let loadFactoriesFromDirectory directoryPath =
             logger.Warning $"Failed to load factories in directory {directoryPath}: {e.Message}"
             Array.empty
 
-    files |> Seq.collect (fun dir ->
+    files |> Seq.collect (fun assemblyPath ->
         try
-            dir
-            |> loadAssembly
-            |> loadAssemblyFactories
+            let factories =
+                assemblyPath
+                |> loadAssembly
+                |> loadAssemblyFactories
+
+            if Array.isEmpty factories then
+                logger.Warning("Assembly {AssemblyPath} does not contain factories", assemblyPath)
+
+            factories
         with exn ->
-            logger.Warning(exn, $"Failed to load assembly at {dir}")
+            logger.Warning(exn, "Failed to load assembly at {AssemblyPath}", assemblyPath)
             Array.empty
     )
 

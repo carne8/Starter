@@ -145,10 +145,15 @@ type Factory(pluginPath) =
 
     override this.LoadSearchEngine(_, _, _, _) =
         if OperatingSystem.IsWindows() |> not then
-            raise <| PlatformNotSupportedException("Unsupported OS")
+            "Cannot create Everything search engine: Unsupported OS"
+            |> PlatformNotSupportedException
+            |> raise
 
         match api with
-        | ValueNone -> raise <| PlatformNotSupportedException()
+        | ValueNone ->
+            "No Everything library can be loaded for the current process architecture"
+            |> PlatformNotSupportedException
+            |> raise
         | ValueSome api ->
             let svgSource = Path.Combine(pluginPath, "icon.svg") |> SvgSource.Load
             let svg = Dispatcher.UIThread.Invoke(fun () -> SvgImage(Source = svgSource))

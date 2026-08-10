@@ -63,7 +63,6 @@ let logger =
         #if DEBUG || DEBUG_LOGS
         .WriteTo.Console(
             outputTemplate = logTemplate,
-            theme = Sinks.SystemConsole.Themes.ConsoleTheme.None,
             restrictedToMinimumLevel = LogEventLevel.Verbose
         )
         #endif

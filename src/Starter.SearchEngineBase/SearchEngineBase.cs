@@ -208,27 +208,3 @@ public abstract class SearchEngineFactory(string pluginDirectory)
         IClipboard clipboard
     );
 }
-
-public static class Constants
-{
-    public static readonly string[] SharedAssemblies = [
-        "Avalonia.Base",
-        "Avalonia.Controls",
-        "Avalonia.DesignerSupport",
-        "Avalonia.Dialogs",
-        "Avalonia",
-        "Avalonia.Markup",
-        "Avalonia.Markup.Xaml",
-        "Avalonia.Metal",
-        "Avalonia.MicroCom",
-        "Avalonia.OpenGL",
-        "Avalonia.Remote.Protocol",
-        "Avalonia.Skia",
-        "Avalonia.Vulkan",
-        "Svg.Controls.Skia.Avalonia",
-        "Svg.Custom",
-        "Svg.Model",
-        "Svg.Skia",
-        "FluentAvalonia"
-    ];
-}

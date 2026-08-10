@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFrameworks>net10.0;net10.0-windows10.0.19041.0</TargetFrameworks>
@@ -8,7 +8,6 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <EnableDynamicLoading>true</EnableDynamicLoading>
         <Nullable>enable</Nullable>
-        <IsPlugin>true</IsPlugin>
     </PropertyGroup>
 
     <ItemGroup>
@@ -51,7 +50,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.3.0" />
+        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.3.2" ExcludeAssets="runtime" />
         <PackageReference Include="FsToolkit.ErrorHandling" Version="5.2.0" />
     </ItemGroup>
 

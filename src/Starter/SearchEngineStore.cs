@@ -21,6 +21,8 @@ public class SearchEngineStore
             LoadSearchEnginesFromFactory(factory, clipboard);
     }
 
+    private ILogger log = Log.ForContext("Context", "Starter/EngineLoading");
+
     private void LoadSearchEnginesFromFactory(SearchEngineFactory factory, IClipboard clipboard)
     {
         foreach (var (engine, settings) in SearchEngineLoading.loadSearchEnginesFromFactory(clipboard, factory))
@@ -30,13 +32,13 @@ public class SearchEngineStore
                 case IStaticSearchEngine staticEngine: StaticSearchEngines.Add(staticEngine); break;
                 case IDynamicSearchEngine dynamicEngine: DynamicSearchEngines.Add(dynamicEngine); break;
                 default:
-                    Log.Warning("Unknown search engine type: {Engine}", engine);
+                    log.Warning("Unknown search engine type: {Engine}", engine);
                     return;
             }
 
             if (!SearchEngines.TryAdd(engine.Id, engine))
             {
-                Log.Error(
+                log.Error(
                     "Several engines have the same id: ({Engine1}, {Engine1Name}) and ({Engine2}, {Engine2Name})",
                     engine.Id,
                     engine.Name,
@@ -47,6 +49,7 @@ public class SearchEngineStore
             }
 
             SearchEngineAdded?.Invoke(engine);
+            log.Information("Loaded {EngineId}", engine.Id);
             if (settings is not null)
             {
                 Settings.Add(engine.Id, settings);

@@ -4,20 +4,4 @@
     <SkiaSharpVersion>4.151.1</SkiaSharpVersion>
     <HarfBuzzSharpVersion>14.2.1.2</HarfBuzzSharpVersion>
   </PropertyGroup>
-  <ItemGroup Condition="'$(IsPlugin)' == 'true'">
-    <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" ExcludeAssets="runtime;native" />
-    <PackageReference Include="Avalonia.Skia" Version="$(AvaloniaVersion)" ExcludeAssets="runtime;native" />
-    
-    <PackageReference Include="SkiaSharp" Version="$(SkiaSharpVersion)" ExcludeAssets="runtime;native" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="$(SkiaSharpVersion)" ExcludeAssets="runtime;native" />
-    <PackageReference Include="SkiaSharp.NativeAssets.macOS" Version="$(SkiaSharpVersion)" ExcludeAssets="runtime;native" />
-    <PackageReference Include="SkiaSharp.NativeAssets.WebAssembly" Version="$(SkiaSharpVersion)" ExcludeAssets="runtime;native" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Win32" Version="$(SkiaSharpVersion)" ExcludeAssets="runtime;native" />
-    
-    <PackageReference Include="HarfBuzzSharp" Version="$(HarfBuzzSharpVersion)" ExcludeAssets="runtime;native" />
-    <PackageReference Include="HarfBuzzSharp.NativeAssets.Linux" Version="$(HarfBuzzSharpVersion)" ExcludeAssets="runtime;native" />
-    <PackageReference Include="HarfBuzzSharp.NativeAssets.macOS" Version="$(HarfBuzzSharpVersion)" ExcludeAssets="runtime;native" />
-    <PackageReference Include="HarfBuzzSharp.NativeAssets.WebAssembly" Version="$(HarfBuzzSharpVersion)" ExcludeAssets="runtime;native" />
-    <PackageReference Include="HarfBuzzSharp.NativeAssets.Win32" Version="$(HarfBuzzSharpVersion)" ExcludeAssets="runtime;native" />
-  </ItemGroup>
 </Project>

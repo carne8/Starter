@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
@@ -10,11 +10,9 @@
         <Compile Include="IconHelper.fs" />
         <Compile Include="ContextMenu.fs" />
     </ItemGroup>
-    
+
     <ItemGroup>
-        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.3.0">
-            <ExcludeAssets>runtime;native</ExcludeAssets>
-        </PackageReference>
+        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.3.2" ExcludeAssets="runtime" />
         <PackageReference Include="Vanara.Windows.Shell" Version="5.0.5" />
         <PackageReference Include="FsToolkit.ErrorHandling" Version="5.2.0" />
     </ItemGroup>
