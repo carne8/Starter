@@ -57,7 +57,7 @@ let private loadAssemblyFactories (assemblyDir: string, assembly: Assembly) =
     )
 
 let loadSearchEnginesFromFactory clipboard (factory: SearchEngineFactory) =
-    factory.LoadSearchEngineIds() |> Seq.choose (fun id ->
+    factory.LoadSearchEngineIds() |> Array.choose (fun id ->
         match id.IndexOfAny(Path.GetInvalidFileNameChars()) < 0 with
         | false ->
             logger.Error $"Invalid search engine id: {id}"

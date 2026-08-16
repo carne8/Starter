@@ -152,7 +152,6 @@ public class App : Application
 
         platformInterop
             .RegisterHotkey(initialConfig.KeyboardShortcut, window)
-            .AsTask()
             .ContinueWith(task =>
             {
                 if (task.IsFaulted)

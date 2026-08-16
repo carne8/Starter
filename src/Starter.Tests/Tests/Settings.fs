@@ -63,7 +63,7 @@ let testLaunchAtStartup () =
                 isLaunchAtStartupEnabled
             member this.EnsureConfigCompatibility(config) = config
             member this.SupportBackground(background) = true
-            member this.RegisterHotkey shortcut window = ValueTask.FromResult true
+            member this.RegisterHotkey shortcut window = Task.FromResult true
             member this.SetupHotkeyCallback(window) = ()
             member this.ToggleLaunchAtStartup(enable) =
                 isLaunchAtStartupEnabled <- not isLaunchAtStartupEnabled
@@ -146,7 +146,7 @@ let testBackground_Linux () =
                 | Background.None -> true
                 | Background.Mica
                 | Background.Acrylic -> false
-            member this.RegisterHotkey shortcut window = ValueTask.FromResult true
+            member this.RegisterHotkey shortcut window = Task.FromResult true
             member this.SetupHotkeyCallback(window) = ()
             member this.ToggleLaunchAtStartup(enable) = ()
             member this.HotkeyRegistrable = true }

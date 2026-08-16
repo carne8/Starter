@@ -18,14 +18,21 @@ public class SearchEngineStore
     public void LoadSearchEnginesFromDirectory(string directory, IClipboard clipboard)
     {
         foreach (var factory in SearchEngineLoading.loadFactoriesFromDirectory(directory))
-            LoadSearchEnginesFromFactory(factory, clipboard);
+            LoadSearchEnginesFromFactory(directory, factory, clipboard);
     }
 
-    private ILogger log = Log.ForContext("Context", "Starter/EngineLoading");
+    private readonly ILogger log = Log.ForContext("Context", "Starter/EngineLoading");
 
-    private void LoadSearchEnginesFromFactory(SearchEngineFactory factory, IClipboard clipboard)
+    private void LoadSearchEnginesFromFactory(string dir, SearchEngineFactory factory, IClipboard clipboard)
     {
-        foreach (var (engine, settings) in SearchEngineLoading.loadSearchEnginesFromFactory(clipboard, factory))
+        var factories = SearchEngineLoading.loadSearchEnginesFromFactory(clipboard, factory);
+        if (factories.Length == 0)
+        {
+            log.Warning("{FactoryDir} does not provide any search engine", dir);
+            return;
+        }
+
+        foreach (var (engine, settings) in factories)
         {
             switch (engine)
             {

@@ -141,14 +141,13 @@ type Factory(pluginPath) =
         | Architecture.Arm64 -> EverythingArm64() :> IEverything |> ValueSome
         | _ -> ValueNone
 
-    override this.LoadSearchEngineIds() = [| nameof EverythingSearchEngine |]
+    override this.LoadSearchEngineIds() =
+        if OperatingSystem.IsWindows() then
+            [| nameof EverythingSearchEngine |]
+        else
+            Array.empty
 
     override this.LoadSearchEngine(_, _, _, _) =
-        if OperatingSystem.IsWindows() |> not then
-            "Cannot create Everything search engine: Unsupported OS"
-            |> PlatformNotSupportedException
-            |> raise
-
         match api with
         | ValueNone ->
             "No Everything library can be loaded for the current process architecture"

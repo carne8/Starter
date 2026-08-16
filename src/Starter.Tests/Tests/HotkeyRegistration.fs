@@ -23,7 +23,7 @@ let ensureHotkeyRegistration () =
             member this.SupportBackground(background) = true
             member this.RegisterHotkey shortcut window =
                 hotkeyRegistered <- true
-                ValueTask.FromResult true
+                Task.FromResult true
             member this.SetupHotkeyCallback(window) = callbackRegistered <- Some window
             member this.ToggleLaunchAtStartup(enable) = ()
             member this.HotkeyRegistrable = true }
@@ -56,7 +56,7 @@ let ensureHotkeyNotRegisteredWhenNotRegistrable () =
             member this.SupportBackground(background) = true
             member this.RegisterHotkey shortcut window =
                 hotkeyRegistered <- true
-                ValueTask.FromResult true
+                Task.FromResult true
             member this.SetupHotkeyCallback(window) = callbackRegistered <- Some window
             member this.ToggleLaunchAtStartup(enable) = ()
             member this.HotkeyRegistrable = false }
