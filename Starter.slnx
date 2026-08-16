@@ -1,9 +1,4 @@
 <Solution>
-  <Folder Name="/Others/">
-    <Project Path="src/Starter.Calculator/Libraries/CSharpMath/CSharpMath.Avalonia/CSharpMath.Avalonia.csproj" />
-    <Project Path="src/Starter.Calculator/Libraries/CSharpMath/CSharpMath.Rendering/CSharpMath.Rendering.csproj" />
-    <Project Path="src/Starter.Calculator/Libraries/CSharpMath/CSharpMath/CSharpMath.csproj" />
-  </Folder>
   <Folder Name="/Plugins/">
     <Project Path="src/Starter.WebSearchEngine/Starter.WebSearchEngine.fsproj" />
     <Project Path="src/Starter.WorkspaceSearchEngine/Starter.WorkspaceSearchEngine.fsproj" />
