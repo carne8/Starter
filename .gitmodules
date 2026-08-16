@@ -1,4 +1,0 @@
-[submodule "src/Starter.Calculator/Libraries/CSharpMath"]
-	path = src/Starter.Calculator/Libraries/CSharpMath
-	url = https://github.com/verybadcat/CSharpMath.git
-	branch = avalonia12

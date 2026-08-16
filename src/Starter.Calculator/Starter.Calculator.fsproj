@@ -26,8 +26,7 @@
         <PackageReference Include="FsToolkit.ErrorHandling" Version="5.2.0" />
         <PackageReference Include="MathNet.Numerics.FSharp" Version="5.0.0" />
 
-        <ProjectReference Include="Libraries\CSharpMath\CSharpMath.Avalonia\CSharpMath.Avalonia.csproj" />
-        <!--<ProjectReference Include="Libraries\CSharpMath\CSharpMath.Avalonia\CSharpMath.Avalonia.csproj" />-->
+        <PackageReference Include="CSharpMath.Avalonia" Version="1.0.0-pre.2" />
         <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" IncludeAssets="compile" />
     </ItemGroup>
 
