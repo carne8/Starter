@@ -63,7 +63,8 @@ let logger =
         #if DEBUG || DEBUG_LOGS
         .WriteTo.Console(
             outputTemplate = logTemplate,
-            restrictedToMinimumLevel = LogEventLevel.Verbose
+            restrictedToMinimumLevel = LogEventLevel.Verbose,
+            theme = Serilog.Sinks.SystemConsole.Themes.AnsiConsoleTheme.Sixteen
         )
         #endif
         .CreateLogger()
