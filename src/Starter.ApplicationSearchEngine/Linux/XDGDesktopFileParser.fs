@@ -6,21 +6,7 @@ open System.Text
 open System.Collections.Generic
 open FsToolkit.ErrorHandling
 open Starter.ApplicationSearchEngine.Logger
-
-type private String with
-    member inline this.TryIndexOf(s: string) =
-        match this.IndexOf s with
-        | -1 -> ValueNone
-        | n -> ValueSome n
-
-    member inline this.TryIndexOf(c: char) =
-        match this.IndexOf c with
-        | -1 -> ValueNone
-        | n -> ValueSome n
-
-module Seq =
-    let inline choosev f =
-        Seq.choose (f >> Option.ofValueOption)
+open Starter.ApplicationSearchEngine.Linux.Localization
 
 /// Represents a raw desktop entry parsed from a .desktop file
 [<Struct>]
@@ -58,50 +44,47 @@ let private parseKeyValuePair (line: string) =
         let keyWithLocalization = line[..equalIndex-1]
         let value = line[equalIndex+1..]
 
-        // Separate key and localization
-        let key, localization =
-            match keyWithLocalization.TryIndexOf '[' with
-            | ValueNone -> keyWithLocalization, ValueNone
-            | ValueSome i -> keyWithLocalization[..i-1], ValueSome keyWithLocalization[i+1..]
-
-        return struct {| Key = key
-                         Localization = localization
-                         Value = value |}
+        return KeyValuePair(keyWithLocalization, value)
     }
 
 /// Transform the lines of a desktop entry from .desktop file
 /// into a DesktopEntry struct
-let private parseDesktopEntryLines filePath (lines: string seq) =
-    let keyValuePairs = lines |> Seq.choosev parseKeyValuePair
+let private parseDesktopEntryLines (localeLookupKeys: string array) filePath (lines: string seq) =
+    let keyValuePairs =
+        lines
+        |> Seq.choosev parseKeyValuePair
+        |> Dictionary
 
-    let mutable shouldBeShown = true
-    let mutable name = ValueNone
-    let mutable comment = ValueNone
-    let mutable iconName = ValueNone
-    let mutable exec = ValueNone
-    let mutable path = ValueNone
-    let mutable additionalSearchStrings = List.empty
+    let tryFindKey key =
+        localeLookupKeys
+        |> Array.tryPick (fun locale ->
+            $"{key}[{locale}]"
+            |> keyValuePairs.TryGetValue
+            |> Option.ofPair
+        )
+        |> Option.orElseWith (fun () ->
+            key
+            |> keyValuePairs.TryGetValue
+            |> Option.ofPair
+        )
+        |> Option.toValueOption
 
-    use enumerator = keyValuePairs.GetEnumerator()
-    while shouldBeShown && enumerator.MoveNext() do
-        let kv = enumerator.Current
-        match kv.Key with
-        | "Hidden"
-        | "NoDisplay" when kv.Value.ToLowerInvariant() = "true" -> shouldBeShown <- false
-        | "Name" when kv.Localization.IsNone -> name <- ValueSome kv.Value // TODO: Add name localization
-        | "Comment" when kv.Localization.IsNone -> comment <- ValueSome kv.Value // TODO: Add name localization
-        | "Icon" -> iconName <- ValueSome kv.Value
-        | "Exec" -> exec <- ValueSome kv.Value
-        | "Path" -> path <- ValueSome kv.Value
-        | "GenericName"
-        | "Keywords" ->
-            additionalSearchStrings <-
-                (kv.Value.Split ';' |> Array.toList) @ additionalSearchStrings
-        | _ -> ()
-        // TODO: | "OnlyShowIn" | "NotShowIn"
-        // TODO: | "TryExec"
-        // TODO: | "DBusActivatable"
-        // TODO: | "PrefersNonDefaultGPU"
+    let shouldBeShown =
+        match tryFindKey "NoDisplay" with
+        | ValueSome v when v.ToLowerInvariant() = "true" -> false
+        | _ -> true
+
+    let name = tryFindKey "Name"
+    let comment = tryFindKey "Comment"
+    let iconName = tryFindKey "Icon"
+    let exec = tryFindKey "Exec"
+    let path = tryFindKey "Path"
+    let additionalSearchStrings = tryFindKey "Keywords"  |> ValueOption.map _.Split(';')
+
+    // TODO: | "OnlyShowIn" | "NotShowIn"
+    // TODO: | "TryExec"
+    // TODO: | "DBusActivatable"
+    // TODO: | "PrefersNonDefaultGPU"
 
     match shouldBeShown, name, exec with
     | true, ValueSome name, ValueSome exec ->
@@ -112,8 +95,9 @@ let private parseDesktopEntryLines filePath (lines: string seq) =
           WorkingDirectory = path
           AdditionalSearchKeywords =
             match additionalSearchStrings with
-            | [] -> null
-            | l -> l |> List.toArray
+            | ValueNone
+            | ValueSome [||] -> null
+            | ValueSome arr -> arr
           DesktopFilePath = filePath }
         |> ValueSome
     | _ -> ValueNone
@@ -165,10 +149,12 @@ let parseExec (entry: DesktopEntry) =
         | _ -> ValueSome <| exec.ToString()
 
 let loadDesktopEntries desktopFile =
+    let localeLookupKeys = Localization.getLocaleLookupKeys ()
+
     desktopFile
     |> File.ReadAllLinesAsync
     |> Task.map (fun lines ->
         lines
         |> groupLinesByEntry
-        |> Seq.choosev (parseDesktopEntryLines desktopFile)
+        |> Seq.choosev (parseDesktopEntryLines localeLookupKeys desktopFile)
     )

@@ -37,6 +37,7 @@
         <AvaloniaXaml Remove="Windows\Settings.axaml" />
         <Compile Include="Linux\Types.fs" />
         <Compile Include="Linux\Helpers.fs" />
+        <Compile Include="Linux\Localization.fs" />
 
         <Compile Include="Linux\XDGDesktopFileParser.fs" />
         <Compile Include="Linux\Theme\Types.fs" />
