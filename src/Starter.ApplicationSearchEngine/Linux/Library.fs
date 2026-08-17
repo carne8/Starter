@@ -61,7 +61,6 @@ type LinuxAppsSearchEngine() =
             let! newApps =
                 AppsLoader.loadApplications
                     iconLoader
-                    useGtkLaunch
                     defaultFolderConfig
 
             newApps |> apps.AddRange
@@ -70,7 +69,6 @@ type LinuxAppsSearchEngine() =
             let observable, disposable =
                 AppsLoader.observeApplicationChanges
                     iconLoader
-                    useGtkLaunch
                     apps
                     defaultFolderConfig
 
@@ -96,9 +94,15 @@ type LinuxAppsSearchEngine() =
         member _.SearchResultSelected(searchResult) =
             match searchResult with
             | :? DesktopApplication as app ->
+                let command =
+                    if useGtkLaunch then
+                        $"gtk-launch {app.DesktopFile |> Path.GetFileNameWithoutExtension}"
+                    else
+                        app.Exec
+
                 ProcessStartInfo(
                     FileName = "setsid",
-                    Arguments = app.Exec,
+                    Arguments = command,
                     #if DEBUG // Hide process logs
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,

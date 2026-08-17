@@ -1,4 +1,4 @@
-﻿namespace Starter.Features
+namespace Starter.Features
 
 open System
 open Starter.SearchEngine

@@ -26,6 +26,7 @@ module Seq =
 [<Struct>]
 type DesktopEntry =
     { Name: string
+      Comment: string voption
       Exec: string
       WorkingDirectory: string voption
       IconName: string voption
@@ -75,6 +76,7 @@ let private parseDesktopEntryLines filePath (lines: string seq) =
 
     let mutable shouldBeShown = true
     let mutable name = ValueNone
+    let mutable comment = ValueNone
     let mutable iconName = ValueNone
     let mutable exec = ValueNone
     let mutable path = ValueNone
@@ -87,6 +89,7 @@ let private parseDesktopEntryLines filePath (lines: string seq) =
         | "Hidden"
         | "NoDisplay" when kv.Value.ToLowerInvariant() = "true" -> shouldBeShown <- false
         | "Name" when kv.Localization.IsNone -> name <- ValueSome kv.Value // TODO: Add name localization
+        | "Comment" when kv.Localization.IsNone -> comment <- ValueSome kv.Value // TODO: Add name localization
         | "Icon" -> iconName <- ValueSome kv.Value
         | "Exec" -> exec <- ValueSome kv.Value
         | "Path" -> path <- ValueSome kv.Value
@@ -103,6 +106,7 @@ let private parseDesktopEntryLines filePath (lines: string seq) =
     match shouldBeShown, name, exec with
     | true, ValueSome name, ValueSome exec ->
         { Name = name
+          Comment = comment
           Exec = exec
           IconName = iconName
           WorkingDirectory = path

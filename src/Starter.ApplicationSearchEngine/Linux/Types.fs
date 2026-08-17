@@ -6,6 +6,7 @@ type DesktopApplication =
     { Id: string
       Name: string
       Exec: string
+      DesktopFile: string
       WorkingDirectory: string ValueOption
       Icon: StarterIconSource
       Description: string

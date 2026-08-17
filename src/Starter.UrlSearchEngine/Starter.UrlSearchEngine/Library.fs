@@ -46,7 +46,7 @@ type SearchResult =
         member this.HasContextMenu = false
         member this.GetContextMenu() = null
 
-type UrlSearchEngine() =
+type UrlSearchEngine(icon) =
     let regex = UriRegex.Regex()
 
     let tryParseUri (match': Match) =
@@ -109,4 +109,4 @@ type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)
 
     override this.LoadSearchEngineIds() = [| nameof UrlSearchEngine |]
-    override this.LoadSearchEngine(_, _, _, _) = UrlSearchEngine(), null
+    override this.LoadSearchEngine(_, _, _, _) = UrlSearchEngine(icon), null
