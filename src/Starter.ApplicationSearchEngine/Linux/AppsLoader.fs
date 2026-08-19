@@ -12,9 +12,20 @@ open Starter.SearchEngine
 open Starter.ApplicationSearchEngine
 open Starter.ApplicationSearchEngine.Logger
 
-let loadApplication (iconLoader: IconLoader.IconLoader) entry =
+let loadApplication (iconLoader: IconLoader.IconLoader) useGtkLaunch entry =
     task {
         let! icon = iconLoader.LoadIcon entry
+
+        let exec =
+            if useGtkLaunch then
+                $"gtk-launch {entry.DesktopFilePath |> Path.GetFileNameWithoutExtension}"
+            else
+                entry
+                |> XDGDesktopFileParser.parseExec
+                |> ValueOption.defaultWith (fun () ->
+                    logger.Warning $"{entry.DesktopFilePath} does not provide a valid Exec string"
+                    String.Empty
+                )
 
         return
             { Id = $"application:{entry.DesktopFilePath}:{entry.Name}"
@@ -23,18 +34,12 @@ let loadApplication (iconLoader: IconLoader.IconLoader) entry =
               Icon = icon
               Description = entry.Comment |> ValueOption.defaultValue "Applications" // TODO: I18n
               Keywords = entry.AdditionalSearchKeywords
-              Exec =
-                entry
-                |> XDGDesktopFileParser.parseExec
-                |> ValueOption.defaultWith (fun () ->
-                    logger.Warning $"{entry.DesktopFilePath} does not provide a valid Exec string"
-                    String.Empty
-                )
+              Exec = exec
               WorkingDirectory = entry.WorkingDirectory }
     }
 
 
-let loadApplications iconLoader (config: FolderConfiguration) : Task<ISearchResult seq> =
+let loadApplications iconLoader useGtkLaunch (config: FolderConfiguration) : Task<ISearchResult seq> =
     Task.Run<ISearchResult seq>(fun () -> task {
         let sw = Diagnostics.Stopwatch()
         sw.Start()
@@ -62,7 +67,7 @@ let loadApplications iconLoader (config: FolderConfiguration) : Task<ISearchResu
             task {
                 let! desktopEntries = XDGDesktopFileParser.loadDesktopEntries desktopFile
                 for entry in desktopEntries do
-                    let! app = loadApplication iconLoader entry
+                    let! app = loadApplication iconLoader useGtkLaunch entry
 
                     app
                     :> ISearchResult
@@ -76,7 +81,7 @@ let loadApplications iconLoader (config: FolderConfiguration) : Task<ISearchResu
         return apps :> ISearchResult seq
     })
 
-let observeApplicationChanges iconLoader (appList: ResizeArray<ISearchResult>) (config: FolderConfiguration) =
+let observeApplicationChanges iconLoader useGtkLaunch (config: FolderConfiguration) (appList: ResizeArray<ISearchResult>) =
     let subject = new Subject<unit>()
     let semaphore = new SemaphoreSlim(1, 1)
 
@@ -96,7 +101,7 @@ let observeApplicationChanges iconLoader (appList: ResizeArray<ISearchResult>) (
 
                 // Add new apps
                 for entry in newEntries do
-                    let! app = loadApplication iconLoader entry
+                    let! app = loadApplication iconLoader useGtkLaunch entry
                     appList.Add app
 
                 subject.OnNext()

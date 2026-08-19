@@ -12,8 +12,7 @@ internal class ExitSearchResult : ISearchResult
     public StarterIconSource Icon => Icons.Exit;
     public bool ShowIfNoActivator => true;
     public ISearchEngineActivator[] ActivatorFilter => [];
-    public bool HasContextMenu => false;
-    public IContextMenuLoader? GetContextMenu() => null;
+    public IContextMenuLoader? ContextMenuLoader => null;
 }
 
 internal class ExitSearchEngine(IClassicDesktopStyleApplicationLifetime lifetime) : IStaticSearchEngine

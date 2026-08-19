@@ -134,14 +134,14 @@ public partial class MainWindowViewModel : ObservableObject
     {
         try
         {
-            var newContextMenu = entry.Result.Invoke(platformHandle);
+            var newContextMenu = entry.Result.Invoke();
             if (newContextMenu is null)
             {
                 HideWindow?.Invoke(this, EventArgs.Empty);
                 return false;
             }
 
-            contextMenuStore.SetContextMenu(newContextMenu);
+            contextMenuStore.SetContextMenu(platformHandle, newContextMenu);
             Text = string.Empty;
             OnPropertyChanged(nameof(ContextMenuActivated));
 
@@ -158,14 +158,14 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void ResetActivator() => Activator = null;
 
-    public bool OpenContextMenu(SearchResultData result)
+    public bool OpenContextMenu(SearchResultData result, IPlatformHandle platformHandle)
     {
         try
         {
-            var contextMenu = result.SearchResult.GetContextMenu();
+            var contextMenu = result.SearchResult.ContextMenuLoader;
             if (contextMenu is null) return false;
 
-            contextMenuStore.SetContextMenu(contextMenu);
+            contextMenuStore.SetContextMenu(platformHandle, contextMenu);
             Text = string.Empty;
             OnPropertyChanged(nameof(ContextMenuActivated));
 

@@ -226,7 +226,7 @@ public partial class MainWindow : TranslucentWindow
             CurrentResultList.SelectedItem
         ));
 
-        var openedNewContextMenu = vm.OpenContextMenu(data);
+        var openedNewContextMenu = vm.OpenContextMenu(data, platformHandle);
         if (!openedNewContextMenu) previousSelectionState.Pop();
     }
 

@@ -91,8 +91,7 @@ type SearchResult =
         member this.Icon = this.Source.Icon
         member this.ShowIfNoActivator = this.Source.ShowIfNoActivator
         member this.ActivatorFilter = [| this.Source |]
-        member this.HasContextMenu = false
-        member this.GetContextMenu() = null
+        member this.ContextMenuLoader = null
 
     static member fromWorkspace (workspaceSource: WorkspaceSource) (workspace: Workspace) =
         { Id = $"{workspaceSource.Id}:{workspace.Id}"

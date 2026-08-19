@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using Avalonia.Input.Platform;
 using Avalonia.Media;
@@ -73,9 +72,7 @@ public interface ISearchResult
     /// </summary>
     bool ShowIfNoActivator { get; }
     ISearchEngineActivator[] ActivatorFilter { get; }
-
-    bool HasContextMenu { get; }
-    IContextMenuLoader? GetContextMenu();
+    IContextMenuLoader? ContextMenuLoader { get; }
 }
 
 public interface IContextMenuResult;
@@ -90,9 +87,7 @@ public interface IContextMenuEntry : IContextMenuResult
     /// </summary>
     string[]? Keywords { get; }
     StarterIconSource Icon { get; }
-
-    bool HasContextMenu { get; }
-    IContextMenuLoader? Invoke(Avalonia.Platform.IPlatformHandle platformHandle);
+    IContextMenuLoader? Invoke();
 }
 
 public sealed class ContextMenuSeparator : IContextMenuResult
@@ -104,9 +99,10 @@ public sealed class ContextMenuSeparator : IContextMenuResult
 public interface IContextMenuLoader
 {
     public void LoadItems(
+        Avalonia.Platform.IPlatformHandle? platformHandle,
         Action<int> itemsListed,
-        Action<IContextMenuResult, int> resultLoaded,
-        Action<Exception, int> resultFailed,
+        Action<(IContextMenuResult, int)[]> resultLoaded,
+        Action<(Exception, int)[]> resultFailed,
         Action completed
     );
 }

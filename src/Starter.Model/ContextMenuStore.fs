@@ -124,13 +124,14 @@ type ContextMenuStore(resultScoreDb) =
             | :? System.IDisposable as d -> d.Dispose()
             | _ -> ()
 
-    member this.SetContextMenu(loader: IContextMenuLoader) =
+    member this.SetContextMenu(platformHandle, loader: IContextMenuLoader) =
         try
             contextMenuResults.Clear()
             let state = ContextMenuState.Loading loader |> ref
             contextMenu.Push state
 
             loader.LoadItems(
+                platformHandle,
                 (fun itemCount ->
                     Dispatcher.UIThread.Post(
                         (fun () ->
@@ -143,21 +144,25 @@ type ContextMenuStore(resultScoreDb) =
                         DispatcherPriority.Background
                     )
                 ),
-                (fun result idx ->
+                (fun results ->
                     Dispatcher.UIThread.Post(
                         (fun () ->
-                            let data = ContextMenuResultData.create result
-                            insert state idx data 0
+                            results |> Array.iter (fun struct (result, idx) ->
+                                let data = ContextMenuResultData.create result
+                                insert state idx data 0
+                            )
                             this.RefreshResults()
                         ),
                         DispatcherPriority.Background
                     )
                 ),
-                (fun exn idx ->
+                (fun errors ->
                     Dispatcher.UIThread.Post(
                         (fun () ->
-                            let data = ContextMenuResultData.LoadFailed exn
-                            insert state idx data 0
+                            errors |> Array.iter (fun struct (exn, idx) ->
+                                let data = ContextMenuResultData.LoadFailed exn
+                                insert state idx data 0
+                            )
                             this.RefreshResults()
                         ),
                         DispatcherPriority.Background
@@ -171,6 +176,11 @@ type ContextMenuStore(resultScoreDb) =
                         ),
                         DispatcherPriority.Background
                     )
+
+                    // Dispose if possible
+                    match loader with
+                    | :? System.IDisposable as disposable -> disposable.Dispose()
+                    | _ -> ()
                 )
             )
         with e ->

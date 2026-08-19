@@ -196,22 +196,21 @@ type SubContextMenuLoader(
         itemIdx
     )
     =
-    member private _.ParseContextMenuEntry(entry: WindowsContextMenuEntry) : IContextMenuResult =
+    member private _.ParseContextMenuEntry (entry: WindowsContextMenuEntry) platformHandle : IContextMenuResult =
         { new IContextMenuEntry with
             member this.Id = entry.Id
             member this.Name = entry.Text
             member this.Description = entry.Description
             member this.Keywords = null
             member this.Icon = entry.Icon
-            member this.HasContextMenu = false
-            member this.Invoke(platformHandle) =
+            member this.Invoke() =
                 sta.Invoke(fun () ->
                     invokeContextMenuItem contextMenu entry.CmdOffset platformHandle
                 )
                 null }
 
     interface IContextMenuLoader with
-        override this.LoadItems(itemsListed, resultLoaded, resultFailed, completed) =
+        override this.LoadItems(platformHandle, itemsListed, resultLoaded, resultFailed, completed) =
             sta.Invoke(fun () ->
                 use hMenu = User32.CreatePopupMenu()
                 let res = contextMenu.QueryContextMenu(hMenu, 0u, idCmdFirst, 0x7FFFu, Shell32.CMF.CMF_EXTENDEDVERBS)
@@ -226,11 +225,13 @@ type SubContextMenuLoader(
                         let result =
                             match entry with
                             | Choice1Of2 () -> ContextMenuSeparator.Instance :> IContextMenuResult
-                            | Choice2Of2 entry -> this.ParseContextMenuEntry entry
+                            | Choice2Of2 entry -> this.ParseContextMenuEntry entry platformHandle
 
-                        resultLoaded.Invoke(result, idx)
+                        resultLoaded.Invoke [| struct (result, idx) |]
                     )
-                    (fun idx error -> resultFailed.Invoke(error, idx))
+                    (fun idx error ->
+                        resultFailed.Invoke [| struct (error, idx) |]
+                    )
                     contextMenu
                     subHMenu
 
@@ -239,10 +240,10 @@ type SubContextMenuLoader(
 
 
 type ContextMenuLoader(itemPath: string) =
-    let sta = new StaThreadDispatcher()
+    let mutable sta = null
     let mutable savedInterfaces = ValueNone
 
-    member private _.ParseContextMenuEntry(entry: WindowsContextMenuEntry) : IContextMenuResult =
+    member private _.ParseContextMenuEntry (entry: WindowsContextMenuEntry) platformHandle : IContextMenuResult =
         match entry.SubMenu with
         | ValueSome itemIdx -> // Sub menu
             { new IContextMenuEntry with
@@ -251,8 +252,7 @@ type ContextMenuLoader(itemPath: string) =
                 member this.Description = entry.Description
                 member this.Keywords = null
                 member this.Icon = entry.Icon
-                member this.HasContextMenu = true
-                member this.Invoke platformHandle =
+                member this.Invoke() =
                     match savedInterfaces with
                     | ValueNone -> null
                     | ValueSome (contextMenu, _) ->
@@ -265,8 +265,7 @@ type ContextMenuLoader(itemPath: string) =
                 member this.Description = entry.Description
                 member this.Keywords = null
                 member this.Icon = entry.Icon
-                member this.HasContextMenu = false
-                member this.Invoke(platformHandle) =
+                member this.Invoke() =
                     match savedInterfaces with
                     | ValueNone -> ()
                     | ValueSome (contextMenu, _) ->
@@ -276,7 +275,8 @@ type ContextMenuLoader(itemPath: string) =
                     null }
 
     interface IContextMenuLoader with
-        override this.LoadItems(itemsListed, resultLoaded, resultFailed, completed) =
+        override this.LoadItems(platformHandle, itemsListed, resultLoaded, resultFailed, completed) =
+            sta <- new StaThreadDispatcher()
             sta.Invoke(fun () ->
                 match loadContextMenuInterface itemPath with
                 | ValueNone -> ()
@@ -289,11 +289,13 @@ type ContextMenuLoader(itemPath: string) =
                             let result =
                                 match entry with
                                 | Choice1Of2 () -> ContextMenuSeparator.Instance :> IContextMenuResult
-                                | Choice2Of2 entry -> this.ParseContextMenuEntry entry
+                                | Choice2Of2 entry -> this.ParseContextMenuEntry entry platformHandle
 
-                            resultLoaded.Invoke(result, idx)
+                            resultLoaded.Invoke [| struct (result, idx) |]
                         )
-                        (fun idx error -> resultFailed.Invoke(error, idx))
+                        (fun idx error ->
+                            resultFailed.Invoke [| struct (error, idx) |]
+                        )
                         contextMenu
                         hMenu
 
@@ -306,4 +308,5 @@ type ContextMenuLoader(itemPath: string) =
                 disposable.Dispose()
             )
 
-            (sta :> IDisposable).Dispose()
+            if sta |> isNull |> not then
+                (sta :> IDisposable).Dispose()

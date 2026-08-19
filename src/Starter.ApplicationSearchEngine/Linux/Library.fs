@@ -61,6 +61,7 @@ type LinuxAppsSearchEngine() =
             let! newApps =
                 AppsLoader.loadApplications
                     iconLoader
+                    useGtkLaunch
                     defaultFolderConfig
 
             newApps |> apps.AddRange
@@ -69,8 +70,9 @@ type LinuxAppsSearchEngine() =
             let observable, disposable =
                 AppsLoader.observeApplicationChanges
                     iconLoader
-                    apps
+                    useGtkLaunch
                     defaultFolderConfig
+                    apps
 
             disposables.Add disposable
             observable.Subscribe(fun () -> resultsChanged.Trigger [| null; apps |]) |> ignore
@@ -93,25 +95,7 @@ type LinuxAppsSearchEngine() =
 
         member _.SearchResultSelected(searchResult) =
             match searchResult with
-            | :? DesktopApplication as app ->
-                let command =
-                    if useGtkLaunch then
-                        $"gtk-launch {app.DesktopFile |> Path.GetFileNameWithoutExtension}"
-                    else
-                        app.Exec
-
-                ProcessStartInfo(
-                    FileName = "setsid",
-                    Arguments = command,
-                    #if DEBUG // Hide process logs
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    #endif
-                    CreateNoWindow = true
-                )
-                |> Process.Start
-                |> function null -> () | d -> d.Dispose()
-
+            | :? DesktopApplication as app ->  app.Launch()
                 // TODO: DBus Activation -> https://specifications.freedesktop.org/desktop-entry-spec/latest/dbus.html
                 // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
                 // TODO: Maybe this https://specifications.freedesktop.org/desktop-entry-spec/latest/extra-actions.html

@@ -21,7 +21,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.3.2" ExcludeAssets="runtime" />
+        <PackageReference Include="StarterApp.SearchEngineBase" Version="0.3.3" ExcludeAssets="runtime" />
         <PackageReference Include="FParsec" Version="1.1.1" />
         <PackageReference Include="FsToolkit.ErrorHandling" Version="5.2.0" />
         <PackageReference Include="MathNet.Numerics.FSharp" Version="5.0.0" />

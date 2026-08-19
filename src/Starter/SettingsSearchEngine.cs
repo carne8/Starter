@@ -23,8 +23,7 @@ file class SettingsSearchResult(string name, string description, TargetPage targ
     public StarterIconSource Icon => icon;
     public bool ShowIfNoActivator => true;
     public ISearchEngineActivator[] ActivatorFilter => [];
-    public bool HasContextMenu => false;
-    public IContextMenuLoader? GetContextMenu() => null;
+    public IContextMenuLoader? ContextMenuLoader => null;
 }
 
 internal class SettingsSearchEngine(ILogger logger, SettingsWindowViewModel windowVm) : IStaticSearchEngine
