@@ -13,7 +13,7 @@
         <PackageTags>Interface</PackageTags>
         <PackageProjectUrl>https://github.com/carne8/Starter</PackageProjectUrl>
         <RepositoryUrl>https://github.com/carne8/Starter</RepositoryUrl>
-        <Version>0.3.2</Version>
+        <Version>0.4.0</Version>
         <PackageLicenseUrl>https://github.com/carne8/Starter/blob/main/LICENSE.txt</PackageLicenseUrl>
         <Url>https://github.com/carne8/Starter/blob/main/LICENSE.txt</Url>
     </PropertyGroup>
