@@ -7,6 +7,7 @@
                             xmlns:local="using:Starter.Views"
                             Title="Starter"
                             Width="560"
+                            MinWidth="560"
                             MinHeight="52"
                             x:DataType="vm:MainWindowViewModel"
                             WindowDecorations="None"
@@ -197,13 +198,6 @@
                      ItemsSource="{Binding ContextMenuResults}"
                      IsVisible="{Binding ContextMenuActivated}"
                      PointerReleased="ResultList_OnPointerReleased">
-
-                <ListBox.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel />
-                    </ItemsPanelTemplate>
-                </ListBox.ItemsPanel>
-
                 <ListBox.KeyBindings>
                     <KeyBinding Command="{Binding SelectResultCommand}"
                                 CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
