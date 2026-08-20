@@ -100,7 +100,6 @@ let loadWorkspaces (configFilePath: string) ideExePath =
 let builder : WorkspaceSourceBuilder =
     { Id = "workspace-android-studio"
       Name = "Android Studio"
-      ShortName = "studio"
       LoadIcon = fun pluginPath -> Icons.loadIcon pluginPath Icons.IconName.androidStudio
       FindExecutablePath = findIdeExecutable
       FindWorkspacesDb = findWorkspaceDbPath

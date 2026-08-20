@@ -67,7 +67,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
 
                 if c <> results.Count then // If r was not empty
                     results.Sort comparer
-                    results.NotifyChanged()
+                    Dispatcher.UIThread.Post(results.NotifyChanged, DispatcherPriority.Background)
 
             instantResults
             |> Seq.map (SearchResultData.createDynamic engine)
@@ -80,13 +80,13 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             | false ->
                 futureResults
                     .Select(Seq.map (SearchResultData.createDynamic engine))
-                    .ObserveOnUIThreadDispatcher()
                     .Subscribe addResults
             | true ->
                 futureResults
+                    .ObserveOnThreadPool()
                     .Chunk(TimeSpan.FromMilliseconds 200L)
                     .Select(Seq.collect (Seq.map (SearchResultData.createDynamic engine)))
-                    .Subscribe(fun r -> Dispatcher.UIThread.Post(fun () -> addResults r))
+                    .Subscribe addResults
             |> disposeOnCancelled ct
         with e ->
             Log.Error(e, $"Failed to get results from dynamic search engine: {engine.Name}")
@@ -226,8 +226,11 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             match searchEngines.TryGetValue activator.SearchEngineId with
             | true, :? IStaticSearchEngine -> querySingleStaticSearchEngine ct activator text
             | true, (:? IDynamicSearchEngine as searchEngine) ->
+                stopwatch.Start()
                 results.Clear()
                 querySingleDynamicSearchEngine ct activator text searchEngine
+                stopwatch.Stop()
+                stopwatch.Elapsed |> loadingTimes.OnNext
             | _ -> Log.Error $"Cannot find search engine matching the current activator: {activator.Id}"
 
     member this.SortResults() =

@@ -186,6 +186,7 @@ public class App : Application
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.WorkspaceSearchEngine/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.Calculator/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.EverythingSearchEngine/bin/Debug/net10.0/", clipboard);
+        searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.FileSearchEngine/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory(
             OperatingSystem.IsWindows()
                 ? "./src/Starter.ApplicationSearchEngine/bin/Debug/net10.0-windows10.0.19041.0/"

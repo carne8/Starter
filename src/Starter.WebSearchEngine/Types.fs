@@ -29,14 +29,6 @@ type SearchEngineKind =
         | Bing -> "Bing"
         | Ecosia -> "Ecosia"
 
-    static member getShortName =
-        function
-        | Google -> "Google"
-        | Qwant -> "Qwant"
-        | DuckDuckGo -> "DDG"
-        | Bing -> "Bing"
-        | Ecosia -> "Ecosia"
-
     static member getIconFilename =
         function
         | Google -> "Google.svg"
@@ -114,7 +106,6 @@ type SearchEngineKind =
 type SearchEngine =
     { Kind: SearchEngineKind
       Name: string
-      ShortName: string
       Icon:
         {| Light: Avalonia.Media.IImage
            Dark: Avalonia.Media.IImage |}
@@ -138,7 +129,6 @@ type SearchEngine =
 
         { Kind = seKind
           Name = seKind |> SearchEngineKind.getName
-          ShortName = seKind |> SearchEngineKind.getShortName
           Icon = {| Light = lightIcon; Dark = darkIcon |}
           StarterIcon = StarterIconSource(lightIcon, darkIcon)
           LoadSuggestions = seKind |> SearchEngineKind.loadSuggestions httpClient

@@ -36,17 +36,6 @@ type JetBrainsIDE =
         | RustRover -> "RustRover"
         | CLion -> "CLion"
 
-    static member getShortName = function
-        | Rider -> "Rider"
-        | PyCharm -> "PyCharm"
-        | IntelliJ _ -> "IntelliJ"
-        | GoLand -> "GoLand"
-        | PhpStorm -> "PhpStorm"
-        | WebStorm -> "WebStorm"
-        | RubyMine -> "RubyMine"
-        | RustRover -> "RustRover"
-        | CLion -> "CLion"
-
     static member getExecutableNameWindows = function
         | Rider -> "rider64.exe"
         | PyCharm -> "pycharm64.exe"
@@ -278,7 +267,6 @@ let private findIdeExecutable ide =
 let builder ide : WorkspaceSourceBuilder =
     { Id = $"workspace-jetbrains-{ide |> JetBrainsIDE.getName |> _.ToLowerInvariant()}"
       Name = "JetBrains " + (ide |> JetBrainsIDE.getName)
-      ShortName = ide |> JetBrainsIDE.getShortName
       LoadIcon = fun pluginPath -> Icons.loadIcon pluginPath (JetBrainsIDE.getIconName ide)
       FindExecutablePath = fun () -> findIdeExecutable ide
       FindWorkspacesDb = fun () -> findWorkspaceDbPath ide

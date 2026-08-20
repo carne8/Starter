@@ -148,7 +148,6 @@ let findVsCode insiders =
 let builder insiders : WorkspaceSourceBuilder =
     { Id = if insiders then "workspace-vscode-insiders" else "workspace-vscode"
       Name = if insiders then "Visual Studio Code Insiders" else "Visual Studio Code"
-      ShortName = "vscode"
       LoadIcon =
         if insiders then
             fun pluginPath -> Icons.loadIcon pluginPath Icons.IconName.vsCodeInsiders

@@ -89,7 +89,6 @@ type LinuxAppsSearchEngine() =
 
         member _.Id = nameof LinuxAppsSearchEngine
         member _.Name = "Applications"
-        member _.ShortName = "Apps"
         member _.Icon = icon
         member this.Activators = [| DefaultSearchEngineActivator(this) |]
 

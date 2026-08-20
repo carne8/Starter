@@ -7,6 +7,7 @@
     <Project Path="src/Starter.EverythingSearchEngine/Starter.EverythingSearchEngine.fsproj" />
     <Project Path="src/Starter.ApplicationSearchEngine/Starter.ApplicationSearchEngine.fsproj" />
     <Project Path="src/Starter.Calculator/Starter.Calculator.fsproj" />
+    <Project Path="src/Starter.FileSearchEngine/Starter.FileSearchEngine.fsproj" />
     <Project Path="src/Starter.Shared/Starter.Shared.fsproj" />
   </Folder>
   <Project Path="src/Starter.SearchEngineBase/Starter.SearchEngineBase.csproj" />

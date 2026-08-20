@@ -30,7 +30,6 @@ internal class SettingsSearchEngine(ILogger logger, SettingsWindowViewModel wind
 {
     public string Id => nameof(SettingsSearchEngine);
     public string Name => "Settings";
-    public string ShortName => "Settings";
     public StarterIconSource Icon => Icons.Settings;
     public ISearchEngineActivator[] Activators => [];
 

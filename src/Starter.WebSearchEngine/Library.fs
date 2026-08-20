@@ -74,13 +74,11 @@ type WebSearchEngine(searchEngine: BehaviorSubject<SearchEngine>) as this =
 
     member this.Id = nameof(WebSearchEngine)
     member this.Name = "Web search"
-    member this.ShortName = searchEngine.Value.ShortName
     member this.Icon = searchEngine.Value.StarterIcon
 
     interface IDynamicSearchEngine with
         member this.Id = this.Id
         member this.Name = this.Name
-        member this.ShortName = this.ShortName
         member this.Icon = this.Icon
         member this.ResultsPriority = ResultPriority.Fallback
         member this.BufferResults = false
@@ -91,7 +89,6 @@ type WebSearchEngine(searchEngine: BehaviorSubject<SearchEngine>) as this =
             [| { new ISearchEngineDynamicActivator with
                    member _.Id = this.Id
                    member _.Name = this.Name
-                   member _.ShortName = this.ShortName
                    member _.Icon = this.Icon
                    member _.SearchEngineId = this.Id
 

@@ -19,7 +19,6 @@ internal class ExitSearchEngine(IClassicDesktopStyleApplicationLifetime lifetime
 {
     public string Id => nameof(ExitSearchEngine);
     public string Name => "Exit";
-    public string ShortName => "Exit";
     public StarterIconSource Icon => Icons.Exit;
     public ISearchEngineActivator[] Activators => [];
 

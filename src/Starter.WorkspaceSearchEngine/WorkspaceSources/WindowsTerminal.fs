@@ -100,7 +100,6 @@ let detectWorkspaceChanges (configPath: string) =
 let builder : WorkspaceSourceBuilder =
     { Id = "windows-terminal"
       Name = "Windows Terminal"
-      ShortName = "terminal"
       LoadIcon = fun pluginPath -> Icons.loadIcon pluginPath Icons.IconName.windowsTerminal
       FindExecutablePath = findExe
       FindWorkspacesDb = findWorkspaceDbPath
