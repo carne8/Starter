@@ -92,7 +92,7 @@ public partial class MainWindow : TranslucentWindow
 
         Closing += (_, args) =>
         {
-            if (args.IsProgrammatic) return;
+            if (args.IsProgrammatic && args.CloseReason != WindowCloseReason.OwnerWindowClosing) return;
             args.Cancel = true;
             Hide();
         };
@@ -262,9 +262,9 @@ public partial class MainWindow : TranslucentWindow
         switch (e.Key)
         {
             case Key.Enter:
-                if (vm.ContextMenuActivated)
+                if (vm.ContextMenuActivated && ContextMenuResultList.SelectedItem is not null)
                     SelectContextMenuResult(ContextMenuResultList.SelectedItem);
-                else
+                else if (ResultList.SelectedItem is not null)
                     vm.SelectResultCommand.Execute(ResultList.SelectedItem);
 
                 return;
