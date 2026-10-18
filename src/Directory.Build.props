@@ -1,6 +1,6 @@
 <Project>
   <PropertyGroup>
-    <AvaloniaVersion>12.1.1</AvaloniaVersion>
+    <AvaloniaVersion>12.1.4</AvaloniaVersion>
     <SkiaSharpVersion>4.151.1</SkiaSharpVersion>
     <HarfBuzzSharpVersion>14.2.1.2</HarfBuzzSharpVersion>
   </PropertyGroup>

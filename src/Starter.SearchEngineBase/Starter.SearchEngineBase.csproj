@@ -19,8 +19,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="12.1.1" IncludeAssets="compile" />
-        <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.13" IncludeAssets="compile" />
+        <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" IncludeAssets="compile" />
+        <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.17" IncludeAssets="compile" />
         <PackageReference Include="R3" Version="1.3.1" IncludeAssets="compile" />
         <PackageReference Include="Serilog" Version="4.4.0" IncludeAssets="compile" />
     </ItemGroup>
