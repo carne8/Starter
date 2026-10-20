@@ -97,7 +97,6 @@ let testDynamicSearchEngineCrash_OnSelectResult () =
             member this.Search(query, ct, activator) = [ Mock.searchResult "Result" ], R3.Observable.Empty()
             member this.Id = "crashing-engine-id"
             member this.Name = "Engine name: crashing-engine-id"
-            member this.ShortName = "Engine short name: crashing-engine-id"
             member this.Icon = StarterIconSource.Empty
             member this.Activators = [| |]
             member this.ResultsPriority = ResultPriority.Search

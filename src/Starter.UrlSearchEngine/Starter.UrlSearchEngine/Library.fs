@@ -67,7 +67,6 @@ type UrlSearchEngine(icon) =
     interface IDynamicSearchEngine with
         member this.Id = nameof UrlSearchEngine
         member this.Name = "Link opener"
-        member this.ShortName = "Link"
         member this.Icon = icon
         member this.Activators = [| DefaultSearchEngineActivator(this) |]
         member this.ResultsPriority = ResultPriority.Fallback

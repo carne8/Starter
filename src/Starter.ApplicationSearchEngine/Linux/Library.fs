@@ -89,13 +89,12 @@ type LinuxAppsSearchEngine() =
 
         member _.Id = nameof LinuxAppsSearchEngine
         member _.Name = "Applications"
-        member _.ShortName = "Apps"
         member _.Icon = icon
         member this.Activators = [| DefaultSearchEngineActivator(this) |]
 
         member _.SearchResultSelected(searchResult) =
             match searchResult with
-            | :? DesktopApplication as app ->  app.Launch()
+            | :? DesktopApplication as app ->  app.Launch(false)
                 // TODO: DBus Activation -> https://specifications.freedesktop.org/desktop-entry-spec/latest/dbus.html
                 // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
                 // TODO: Maybe this https://specifications.freedesktop.org/desktop-entry-spec/latest/extra-actions.html

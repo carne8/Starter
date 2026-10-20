@@ -29,7 +29,6 @@ type Calculator(clipboard: IClipboard) =
     interface IDynamicSearchEngine with
         member this.Id = nameof Calculator
         member this.Name = "Calculator"
-        member this.ShortName = "Calculator"
         member this.Icon = Icon.icon
         member this.Activators = [| DefaultSearchEngineActivator(this) |]
         member this.ResultsPriority = ResultPriority.Unique

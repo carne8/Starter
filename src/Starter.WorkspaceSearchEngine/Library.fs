@@ -38,7 +38,6 @@ type WorkspaceSearchEngine(workspaceSources, _settingsSaver) = // Kee a referenc
     interface IStaticSearchEngine with
         member this.Id = Constants.searchEngineId
         member this.Name = "Dev workspaces"
-        member this.ShortName = "workspaces"
         member this.Icon = Icons.searchEngineIcon
         member this.Activators = workspaceSources |> Array.map (fun s -> s :> ISearchEngineActivator)
 

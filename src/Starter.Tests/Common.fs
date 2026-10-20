@@ -26,7 +26,6 @@ type TestStaticSearchEngine =
         member this.SearchResultSelected result = this.OnSearchResultSelected result
         member this.Id = this.Id
         member this.Name = $"Engine name: {this.Id}"
-        member this.ShortName = $"Engine short name: {this.Id}"
         member this.Icon = StarterIconSource.Empty
         member this.Activators = this.Activators |> Seq.toArray
         member this.add_Changed _ = ()
@@ -66,8 +65,7 @@ module Mock =
            member this.Icon = StarterIconSource.Empty
            member this.ShowIfNoActivator = true
            member this.ActivatorFilter = Array.empty
-           member this.HasContextMenu = false
-           member this.GetContextMenu() = null }
+           member this.ContextMenuLoader = null }
 
     let searchResultWithActivator name showIfNoActivator activators =
         { new ISearchResult with
@@ -78,15 +76,13 @@ module Mock =
            member this.Icon = StarterIconSource.Empty
            member this.ShowIfNoActivator = showIfNoActivator
            member this.ActivatorFilter = activators
-           member this.HasContextMenu = false
-           member this.GetContextMenu() = null }
+           member this.ContextMenuLoader = null }
 
     let activator name engineId =
         { new ISearchEngineActivator with
             member this.Id = name
             member this.SearchEngineId = engineId
             member this.Name = $"Activator name: {name}"
-            member this.ShortName = $"Activator short name: {name}"
             member this.Icon = StarterIconSource.Empty }
 
     let staticSearchEngine id activators onLoadResults =
@@ -95,7 +91,6 @@ module Mock =
             member this.SearchResultSelected result = ()
             member this.Id = id
             member this.Name = $"Engine name: {id}"
-            member this.ShortName = $"Engine short name: {id}"
             member this.Icon = StarterIconSource.Empty
             member this.Activators = activators |> Seq.toArray
             member this.add_Changed _ = ()
@@ -109,7 +104,6 @@ module Mock =
             member this.Search(query, ct, activator) = onQueryResults query ct activator, Observable.Empty()
             member this.Id = id
             member this.Name = $"Engine name: {id}"
-            member this.ShortName = $"Engine short name: {id}"
             member this.Icon = StarterIconSource.Empty
             member this.Activators = activators |> Seq.toArray
             member this.ResultsPriority = ResultPriority.Search

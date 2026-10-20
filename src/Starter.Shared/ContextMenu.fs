@@ -4,6 +4,7 @@ open System
 open System.Collections.Concurrent
 open System.Runtime.InteropServices
 open System.Threading
+open System.Threading.Tasks
 open Avalonia.Platform
 open FsToolkit.ErrorHandling
 open Starter.SearchEngine
@@ -33,13 +34,58 @@ type StaThreadDispatcher() =
             queue.CompleteAdding()
             thread.Join()
 
-type WindowsContextMenuEntry =
-    { Id: string
-      CmdOffset: uint32
-      Text: string
-      Description: string
-      Icon: StarterIconSource
-      SubMenu: int voption }
+type WindowsContextMenuEntry(invokeSubMenu, invoke) =
+    let mutable loaded = false
+    let mutable isSeparator = false
+    let mutable data = ValueNone
+    let onLoadedEvent = Event<EventHandler<bool>, bool>()
+
+    member this.SetLoaded(
+        id: string | null,
+        cmdOffset: uint32,
+        text: string,
+        description: string | null,
+        icon: StarterIconSource,
+        subMenu: int voption
+    ) =
+        loaded <- true
+        data <- ValueSome struct {|
+            Id = id;
+            CmdOffset = cmdOffset;
+            Text = text;
+            Description = description;
+            Icon = icon;
+            SubMenu = subMenu
+        |}
+
+        onLoadedEvent.Trigger(this, true)
+
+    member this.SetSeparator() =
+        isSeparator <- true
+        onLoadedEvent.Trigger(this, true)
+
+    member this.SetFailed() = onLoadedEvent.Trigger(this, false)
+
+    member _.Loaded = loaded
+    member _.CmdOffset = data |> ValueOption.get |> _.CmdOffset
+
+    interface IContextMenuEntry with
+        member _.Loaded = loaded
+        [<CLIEvent>]
+        member _.OnLoaded = onLoadedEvent.Publish
+
+        member _.IsSeparator = isSeparator
+
+        member _.Id = data |> ValueOption.get |> _.Id
+        member _.Name = data |> ValueOption.get |> _.Text
+        member _.Description = data |> ValueOption.get |> _.Description
+        member _.Keywords = null
+        member _.Icon = data |> ValueOption.get |> _.Icon
+        member this.Invoke() =
+            match data |> ValueOption.bind _.SubMenu with
+            | ValueNone -> invoke this
+            | ValueSome subMenu -> invokeSubMenu this subMenu
+
 
 let idCmdFirst = 1u
 
@@ -117,13 +163,7 @@ let private invokeContextMenuItem
 
     contextMenu.InvokeCommand(&info) |> ignore
 
-let rec private loadContextMenuEntries
-    itemCountLoaded
-    resultLoaded
-    resultFailed
-    contextMenu
-    (hMenu: User32.SafeHMENU)
-    =
+let rec private loadContextMenuEntries itemsCountLoaded separatorLoaded itemLoaded itemFailed contextMenu (hMenu: User32.SafeHMENU) =
     let count = hMenu.GetItemCount()
     let mutable previousWasSeparator = false
 
@@ -135,60 +175,62 @@ let rec private loadContextMenuEntries
             |> _.ToString()
 
         Serilog.Log.Error($"Failed to load menu entries: {error}")
+        false
     else
-        itemCountLoaded count
+        itemsCountLoaded count
+        for i = 0 to count - 1 do
+            try
+                let mutable mii = User32.MENUITEMINFO()
+                mii.cbSize <- uint32 (Marshal.SizeOf(typeof<User32.MENUITEMINFO>))
+                mii.fMask <-
+                    User32.MenuItemInfoMask.MIIM_ID
+                    ||| User32.MenuItemInfoMask.MIIM_STRING
+                    ||| User32.MenuItemInfoMask.MIIM_FTYPE
+                    ||| User32.MenuItemInfoMask.MIIM_BITMAP
+                    ||| User32.MenuItemInfoMask.MIIM_SUBMENU
 
-    for i in 0 .. count - 1 do
-        try
-            let mutable mii = User32.MENUITEMINFO()
-            mii.cbSize <- uint32 (Marshal.SizeOf(typeof<User32.MENUITEMINFO>))
-            mii.fMask <-
-                User32.MenuItemInfoMask.MIIM_ID
-                ||| User32.MenuItemInfoMask.MIIM_STRING
-                ||| User32.MenuItemInfoMask.MIIM_FTYPE
-                ||| User32.MenuItemInfoMask.MIIM_BITMAP
-                ||| User32.MenuItemInfoMask.MIIM_SUBMENU
+                // First call to get required string buffer size
+                mii.dwTypeData <- StrPtrAuto()
+                let succeeded = User32.GetMenuItemInfo(hMenu, uint32 i, true, &mii)
+                if not succeeded then () else
 
-            // First call to get required string buffer size
-            mii.dwTypeData <- StrPtrAuto()
-            let succeeded = User32.GetMenuItemInfo(hMenu, uint32 i, true, &mii)
-            if not succeeded then () else
+                let cch = mii.cch + idCmdFirst
+                mii.dwTypeData <- StrPtrAuto(uint cch * 2u) // wide chars
+                mii.cch <- cch
+                let succeeded = User32.GetMenuItemInfo(hMenu, uint32 i, true, &mii)
+                if not succeeded then () else
 
-            let cch = mii.cch + idCmdFirst
-            mii.dwTypeData <- StrPtrAuto(uint cch * 2u) // wide chars
-            mii.cch <- cch
-            let succeeded = User32.GetMenuItemInfo(hMenu, uint32 i, true, &mii)
-            if not succeeded then () else
+                let isSeparator = mii.fType.HasFlag(User32.MenuItemType.MFT_SEPARATOR)
+                let text =
+                    if isSeparator || mii.dwTypeData.IsNull then ""
+                    else mii.dwTypeData.ToString()
+                mii.dwTypeData.Free()
 
-            let isSeparator = mii.fType.HasFlag(User32.MenuItemType.MFT_SEPARATOR)
-            let text =
-                if isSeparator || mii.dwTypeData.IsNull then ""
-                else mii.dwTypeData.ToString()
-            mii.dwTypeData.Free()
+                if isSeparator then
+                    if not previousWasSeparator then
+                        previousWasSeparator <- true
+                        separatorLoaded i
+                elif idCmdFirst <= mii.wID then
+                    previousWasSeparator <- false
+                    let cmdOffset = mii.wID - idCmdFirst // GetUIObjectOf offsets ids by idCmdFirst (1)
 
-            if isSeparator then
-                if not previousWasSeparator then
-                    previousWasSeparator <- true
-                    Choice1Of2 () |> resultLoaded i
-            elif idCmdFirst <= mii.wID then
-                previousWasSeparator <- false
-                let cmdOffset = mii.wID - idCmdFirst // GetUIObjectOf offsets ids by idCmdFirst (1)
+                    let description = HMenu.loadDescription contextMenu cmdOffset
+                    let icon = HMenu.loadIcon mii
 
-                let description = HMenu.loadDescription contextMenu cmdOffset
-                let icon = HMenu.loadIcon mii
+                    use subMenu = new User32.SafeHMENU(hMenu.GetSub(i))
 
-                use subMenu = new User32.SafeHMENU(hMenu.GetSub(i))
-
-                { Id = string cmdOffset
-                  CmdOffset = cmdOffset
-                  Text = text.Replace("&", null)
-                  Description = description |> ValueOption.defaultValue String.Empty
-                  Icon = icon
-                  SubMenu = if subMenu.IsInvalid then ValueNone else ValueSome i }
-                |> Choice2Of2
-                |> resultLoaded i
-        with e ->
-            resultFailed i e
+                    struct {|
+                        Id = string cmdOffset
+                        CmdOffset = cmdOffset
+                        Text = text.Replace("&", null)
+                        Description = description |> ValueOption.defaultValue String.Empty
+                        Icon = icon
+                        SubMenu = if subMenu.IsInvalid then ValueNone else ValueSome i
+                    |}
+                    |> itemLoaded i
+                with e ->
+                    itemFailed i e
+        true
 
 type SubContextMenuLoader(
         sta: StaThreadDispatcher,
@@ -196,21 +238,16 @@ type SubContextMenuLoader(
         itemIdx
     )
     =
-    member private _.ParseContextMenuEntry (entry: WindowsContextMenuEntry) platformHandle : IContextMenuResult =
-        { new IContextMenuEntry with
-            member this.Id = entry.Id
-            member this.Name = entry.Text
-            member this.Description = entry.Description
-            member this.Keywords = null
-            member this.Icon = entry.Icon
-            member this.Invoke() =
-                sta.Invoke(fun () ->
-                    invokeContextMenuItem contextMenu entry.CmdOffset platformHandle
-                )
-                null }
+
+    member private _.Invoke platformHandle (entry: WindowsContextMenuEntry) =
+        sta.Invoke(fun () ->
+            invokeContextMenuItem contextMenu entry.CmdOffset platformHandle
+        )
+        null
 
     interface IContextMenuLoader with
-        override this.LoadItems(platformHandle, itemsListed, resultLoaded, resultFailed, completed) =
+        override this.LoadItems(platformHandle, _) =
+            let tcs = TaskCompletionSource<_>()
             sta.Invoke(fun () ->
                 use hMenu = User32.CreatePopupMenu()
                 let res = contextMenu.QueryContextMenu(hMenu, 0u, idCmdFirst, 0x7FFFu, Shell32.CMF.CMF_EXTENDEDVERBS)
@@ -219,88 +256,106 @@ type SubContextMenuLoader(
                 use subHMenu = new User32.SafeHMENU(hMenu.GetSub(itemIdx))
                 if subHMenu.IsInvalid then () else
 
-                loadContextMenuEntries
-                    itemsListed.Invoke
-                    (fun idx entry ->
-                        let result =
-                            match entry with
-                            | Choice1Of2 () -> ContextMenuSeparator.Instance :> IContextMenuResult
-                            | Choice2Of2 entry -> this.ParseContextMenuEntry entry platformHandle
+                let mutable entries = null
 
-                        resultLoaded.Invoke [| struct (result, idx) |]
-                    )
-                    (fun idx error ->
-                        resultFailed.Invoke [| struct (error, idx) |]
-                    )
-                    contextMenu
-                    subHMenu
-
-                completed.Invoke()
-            )
-
-
-type ContextMenuLoader(itemPath: string) =
-    let mutable sta = null
-    let mutable savedInterfaces = ValueNone
-
-    member private _.ParseContextMenuEntry (entry: WindowsContextMenuEntry) platformHandle : IContextMenuResult =
-        match entry.SubMenu with
-        | ValueSome itemIdx -> // Sub menu
-            { new IContextMenuEntry with
-                member this.Id = entry.Id
-                member this.Name = entry.Text
-                member this.Description = entry.Description
-                member this.Keywords = null
-                member this.Icon = entry.Icon
-                member this.Invoke() =
-                    match savedInterfaces with
-                    | ValueNone -> null
-                    | ValueSome (contextMenu, _) ->
-                        SubContextMenuLoader(sta, contextMenu, itemIdx) }
-
-        | ValueNone -> // Action
-            { new IContextMenuEntry with
-                member this.Id = entry.Id
-                member this.Name = entry.Text
-                member this.Description = entry.Description
-                member this.Keywords = null
-                member this.Icon = entry.Icon
-                member this.Invoke() =
-                    match savedInterfaces with
-                    | ValueNone -> ()
-                    | ValueSome (contextMenu, _) ->
-                        sta.Invoke(fun () ->
-                            invokeContextMenuItem contextMenu entry.CmdOffset platformHandle
-                        )
-                    null }
-
-    interface IContextMenuLoader with
-        override this.LoadItems(platformHandle, itemsListed, resultLoaded, resultFailed, completed) =
-            sta <- new StaThreadDispatcher()
-            sta.Invoke(fun () ->
-                match loadContextMenuInterface itemPath with
-                | ValueNone -> ()
-                | ValueSome (contextMenu, hMenu, disposable) ->
-                    savedInterfaces <- ValueSome (contextMenu, disposable)
-
+                let res =
                     loadContextMenuEntries
-                        itemsListed.Invoke
-                        (fun idx entry ->
-                            let result =
-                                match entry with
-                                | Choice1Of2 () -> ContextMenuSeparator.Instance :> IContextMenuResult
-                                | Choice2Of2 entry -> this.ParseContextMenuEntry entry platformHandle
-
-                            resultLoaded.Invoke [| struct (result, idx) |]
+                        (fun count -> // Items count loaded
+                            entries <- Array.init count (fun _ ->
+                                WindowsContextMenuEntry(
+                                    (fun _ _ -> null),
+                                    this.Invoke platformHandle
+                                )
+                            )
                         )
-                        (fun idx error ->
-                            resultFailed.Invoke [| struct (error, idx) |]
-                        )
+                        (fun i -> entries[i].SetSeparator()) // Separator loaded
+                        (fun i entry -> entries[i].SetLoaded( // Item loaded
+                            entry.Id,
+                            entry.CmdOffset,
+                            entry.Text,
+                            entry.Description,
+                            entry.Icon,
+                            entry.SubMenu
+                        ))
+                        (fun i _ -> entries[i].SetFailed()) // Item failed
                         contextMenu
                         hMenu
 
-                completed.Invoke()
+                if res then
+                    tcs.SetResult entries
+                else
+                    tcs.SetException(exn "Failed to load context menu entries.")
             )
+
+            tcs.Task |> Task.map (Array.map (fun e -> e :> IContextMenuEntry))
+
+
+type ContextMenuLoader(itemPath: string) =
+    let mutable sta: StaThreadDispatcher | null = null
+    let mutable savedInterfaces = ValueNone
+
+    member private _.Invoke platformHandle (entry: WindowsContextMenuEntry) =
+        match savedInterfaces with
+        | ValueNone -> ()
+        | ValueSome (contextMenu, _) ->
+            sta.Invoke(fun () ->
+                invokeContextMenuItem contextMenu entry.CmdOffset platformHandle
+            )
+        null
+
+    member private _.InvokeSubMenu (entry: WindowsContextMenuEntry) subMenu =
+        match savedInterfaces with
+        | ValueNone ->
+            null :> IContextMenuLoader
+        | ValueSome (contextMenu, _) ->
+            SubContextMenuLoader(sta, contextMenu, subMenu)
+
+    interface IContextMenuLoader with
+        override this.LoadItems(platformHandle, onNewResult) =
+            let tcs = TaskCompletionSource<_>()
+            sta <- new StaThreadDispatcher()
+            sta.Invoke(fun () ->
+                match loadContextMenuInterface itemPath with
+                | ValueNone -> tcs.SetException(exn "Failed to load context menu interface.")
+                | ValueSome (contextMenu, hMenu, disposable) ->
+                    savedInterfaces <- ValueSome (contextMenu, disposable)
+
+                    let mutable entries = null
+
+                    let res =
+                        loadContextMenuEntries
+                            (fun count -> // Items count loaded
+                                entries <- Array.init count (fun _ ->
+                                    WindowsContextMenuEntry(
+                                        this.InvokeSubMenu,
+                                        this.Invoke platformHandle
+                                    )
+                                )
+                                tcs.SetResult entries
+                            )
+                            (fun i -> entries[i].SetSeparator()) // Separator loaded
+                            (fun i entry ->
+                                entries[i].SetLoaded( // Item loaded
+                                    entry.Id,
+                                    entry.CmdOffset,
+                                    entry.Text,
+                                    entry.Description,
+                                    entry.Icon,
+                                    entry.SubMenu
+                                )
+
+                                if i = entries.Length - 1 then // When last item has been loaded
+                                    entries |> Array.iter (fun e -> if not e.Loaded then e.SetFailed())
+                            )
+                            (fun i _ -> entries[i].SetFailed()) // Item failed
+                            contextMenu
+                            hMenu
+
+                    if not res then
+                        tcs.SetException(exn "Failed to load context menu entries.")
+            )
+
+            tcs.Task |> Task.map (Array.map (fun e -> e :> IContextMenuEntry))
 
     interface IDisposable with
         override _.Dispose() =

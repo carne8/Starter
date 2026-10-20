@@ -1,15 +1,14 @@
 ﻿namespace Starter.Features
 
 open System.Collections.Generic
+open System.Threading
+open System.Threading.Tasks
 open Avalonia.Threading
+open FsToolkit.ErrorHandling
 open Serilog
 open Starter.Features.CustomCollections
 open Starter.SearchEngine
 open Starter.TextMatching
-
-type ContextMenuState =
-    | Loading of IContextMenuLoader
-    | SomeItemsLoaded of IContextMenuLoader * ResizeArray<int> * ResizeArray<ContextMenuResultData>
 
 type ContextMenuStore(resultScoreDb) =
     let contextMenuComparer =
@@ -42,185 +41,93 @@ type ContextMenuStore(resultScoreDb) =
                 )
 
 
-    let rec insert (state: ContextMenuState ref) (idx: int) (data: ContextMenuResultData) (pos: int) =
-        match state.Value with
-        | Loading _ -> ()
-        | SomeItemsLoaded (_, indexes, results) ->
-            if pos >= results.Count then
-                indexes.Add idx
-                results.Add data
-
-            elif idx < indexes[pos] then
-                indexes.Add idx
-                results.Add data
-
-                for i = results.Count-1 to pos+1 do
-                    let temp = results[i-1]
-                    results[i-1] <- results[i]
-                    results[i] <- temp
-
-                    let temp = indexes[i-1]
-                    indexes[i-1] <- indexes[i]
-                    indexes[i] <- temp
-
-            elif idx = indexes[pos] then
-                results[pos] <- data
-
-            else insert state idx data (pos+1)
-
-    let removeAllLoading (state: ContextMenuState ref) =
-        match state.Value with
-        | Loading _ -> ()
-        | SomeItemsLoaded (_, indexes, results) ->
-            let n = results.Count
-            let mutable freeIdx = 0
-
-            // Find first element that we want to remove
-            while freeIdx < n && not results[freeIdx].IsLoading do
-                freeIdx <- freeIdx+1
-
-            let mutable current = freeIdx+1
-            while current < n do
-                // Find first element we want to keep
-                while current < n &&
-                      (results[current].IsLoading ||
-                       (freeIdx >= 1
-                        && results[current].IsSeparator
-                        && results[freeIdx-1].IsSeparator)) do // Prevent consecutive separator
-                    current <- current + 1
-
-                if current < n then
-                    indexes[freeIdx] <- indexes[current]
-                    results[freeIdx] <- results[current]
-                    freeIdx <- freeIdx+1
-                    current <- current+1
-
-            indexes.RemoveRange(freeIdx, n - freeIdx)
-            results.RemoveRange(freeIdx, n - freeIdx)
-
-
-    let mutable contextMenu = Stack<_>()
+    let mutable cts = new CancellationTokenSource()
+    let mutable contextMenuStack = Stack<struct {| Items: Task<List<_>>; Loader: obj |}>()
     let contextMenuResults = ObservableList<ContextMenuResultData> 20
     let mutable lastQueryText = ValueNone
 
     member this.ContextMenuResults = contextMenuResults
-    member this.ContextMenuEnabled = contextMenu.Count <> 0
+    member this.ContextMenuEnabled = contextMenuStack.Count <> 0
     member this.ContextMenuLoading =
-        match contextMenu.TryPeek() with
+        match contextMenuStack.TryPeek() with
         | false, _ -> false
-        | true, { contents = Loading _ } -> true
-        | true, { contents = SomeItemsLoaded _ } -> false
+        | true, l ->
+            not l.Items.IsCompleted
+            || l.Items.IsCompleted && l.Items.Result.Count > 0
 
     member this.ExitContextMenu() =
-        match contextMenu.TryPop() with
+        match contextMenuStack.TryPop() with
         | false, _ -> ()
         | true, c ->
-            let loader =
-                match c.Value with
-                | Loading l
-                | SomeItemsLoaded (l, _, _) -> l
-
-            match loader with
+            match c.Loader with
             | :? System.IDisposable as d -> d.Dispose()
             | _ -> ()
 
     member this.SetContextMenu(platformHandle, loader: IContextMenuLoader) =
         try
             contextMenuResults.Clear()
-            let state = ContextMenuState.Loading loader |> ref
-            contextMenu.Push state
 
-            loader.LoadItems(
-                platformHandle,
-                (fun itemCount ->
-                    Dispatcher.UIThread.Post(
-                        (fun () ->
-                            state.Value <- ContextMenuState.SomeItemsLoaded (
-                                loader,
-                                Array.init itemCount id |> ResizeArray,
-                                Array.create itemCount ContextMenuResultData.Loading |> ResizeArray
-                            )
-                        ),
-                        DispatcherPriority.Background
-                    )
-                ),
-                (fun results ->
-                    Dispatcher.UIThread.Post(
-                        (fun () ->
-                            results |> Array.iter (fun struct (result, idx) ->
-                                let data = ContextMenuResultData.create result
-                                insert state idx data 0
-                            )
-                            this.RefreshResults()
-                        ),
-                        DispatcherPriority.Background
-                    )
-                ),
-                (fun errors ->
-                    Dispatcher.UIThread.Post(
-                        (fun () ->
-                            errors |> Array.iter (fun struct (exn, idx) ->
-                                let data = ContextMenuResultData.LoadFailed exn
-                                insert state idx data 0
-                            )
-                            this.RefreshResults()
-                        ),
-                        DispatcherPriority.Background
-                    )
-                ),
-                (fun () ->
-                    Dispatcher.UIThread.Post(
-                        (fun () ->
-                            removeAllLoading state
-                            this.RefreshResults()
-                        ),
-                        DispatcherPriority.Background
-                    )
-
-                    // Dispose if possible
-                    match loader with
-                    | :? System.IDisposable as disposable -> disposable.Dispose()
-                    | _ -> ()
+            let rec items: Task<List<_>> =
+                loader.LoadItems(platformHandle, fun newResult newResultIdx ->
+                    if not items.IsCompletedSuccessfully then
+                        Log.Error "Cannot insert new result in context menu before it is loaded."
+                    else
+                        items.Result.Insert(
+                            newResultIdx,
+                            newResult |> ContextMenuResultData.create
+                        )
+                        this.RefreshResults()
                 )
-            )
+                |> Task.map (Seq.map ContextMenuResultData.create >> List)
+
+            contextMenuStack.Push(struct {| Items = items; Loader = loader |})
         with e ->
             Log.Error(e, "Failed to load context menu")
 
     member this.Query(text: string) =
+        cts.Cancel()
+        cts <- new CancellationTokenSource()
+
         lastQueryText <- ValueSome text
         // stopwatch.Restart()
         contextMenuResults.Clear()
 
-        match contextMenu.TryPeek() with
+        match contextMenuStack.TryPeek() with
         | false, _ -> ()
-        | true, { contents = Loading _ } -> ()
-        | true, { contents = SomeItemsLoaded (_, _, results) } ->
+        | true, c ->
             let normalizedText =
                 text
                 |> TextNormalization.String.normalize
                 |> Array.map System.Text.Rune.ToLowerInvariant
 
-            match text with
-            | "" ->
-                // Show all search engine results
-                results
-                |> Seq.filter (function
-                    | ContextMenuResultData.Entry entry ->
-                        entry.AccentuationMap <- null
-                        true
-                    | ContextMenuResultData.LoadFailed _ -> false
-                    | _ -> true
-                )
-                :> _ seq
-            | _ ->
-                // Show matching results
-                results
-                |> Seq.filter (function
-                    | ContextMenuResultData.Entry entry -> fuzzyMatchResult normalizedText entry
-                    | _ -> false
-                )
-                |> Seq.sortWith contextMenuComparer
-            |> contextMenuResults.AddRange
+            Task.Run<unit>(fun () -> task {
+                let! items = c.Items
+                if cts.Token.IsCancellationRequested then () else
+
+                match text with
+                | "" ->
+                    // Show all search engine results
+                    items
+                    |> Seq.filter (function
+                        | ContextMenuResultData.Entry entry ->
+                            entry.AccentuationMap <- null
+                            true
+                        | ContextMenuResultData.LoadFailed _ -> false
+                        | _ -> true
+                    )
+                    :> _ seq
+                | _ ->
+                    // Show matching results
+                    items
+                    |> Seq.filter (function
+                        | ContextMenuResultData.Entry entry -> fuzzyMatchResult normalizedText entry
+                        | _ -> false
+                    )
+                    |> Seq.sortWith contextMenuComparer
+                |> contextMenuResults.AddRange
+
+                Dispatcher.UIThread.Post(fun () -> contextMenuResults.NotifyChanged())
+            }) |> ignore
 
         contextMenuResults.NotifyChanged()
 

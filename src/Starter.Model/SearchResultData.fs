@@ -91,13 +91,13 @@ type ContextMenuResultData =
     | Loading
     | LoadFailed of (Exception | null)
 
-    static member create (result: IContextMenuResult) =
-        match result with
-        | :? IContextMenuEntry as entry ->
+    static member create (entry: IContextMenuEntry) =
+        if entry.IsSeparator then
+            ContextMenuResultData.Separator
+        else
             entry
             |> ContextMenuEntryData.create
             |> ContextMenuResultData.Entry
-        | _ -> ContextMenuResultData.Separator
 
     static member getWeight (resultScoreDb: IScoreDb) (r: ContextMenuResultData) =
         match r with

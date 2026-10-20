@@ -26,7 +26,6 @@ type Workspace =
 type WorkspaceSource =
     { Id: string
       Name: string
-      ShortName: string
       Icon: StarterIconSource
       LoadWorkspaces: unit -> Task<Workspace seq>
       WorkspacesChanged: Observable<unit>
@@ -38,7 +37,6 @@ type WorkspaceSource =
         member this.Id = this.Id
         member this.Icon = this.Icon
         member this.Name = this.Name
-        member this.ShortName = this.ShortName
         member this.SearchEngineId = Constants.searchEngineId
 
 type WorkspaceSourceBuilder =
@@ -67,7 +65,6 @@ type WorkspaceSourceBuilder =
             return
                 { Id = builder.Id
                   Name = builder.Name
-                  ShortName = builder.ShortName
                   Icon = pluginPath |> builder.LoadIcon
                   LoadWorkspaces = fun () -> builder.LoadWorkspaces dbPath executablePath
                   WorkspacesChanged = workspacesChanged

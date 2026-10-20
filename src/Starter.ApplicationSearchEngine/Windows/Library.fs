@@ -54,7 +54,6 @@ type WindowsAppsSearchEngine(config: Observable<FolderConfiguration>) =
 
         member _.Id = nameof WindowsAppsSearchEngine
         member _.Name = "Applications"
-        member _.ShortName = "Apps"
         member _.Icon = icon
         member this.Activators = [| DefaultSearchEngineActivator(this) |]
 

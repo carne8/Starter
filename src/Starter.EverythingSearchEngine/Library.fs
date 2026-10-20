@@ -102,7 +102,6 @@ type EverythingSearchEngine(icon, api: IEverything) =
     interface IDynamicSearchEngine with
         member this.Id = nameof EverythingSearchEngine
         member this.Name = "Everything"
-        member this.ShortName = "Everything"
         member this.Icon = icon
         member this.Activators = [| DefaultSearchEngineActivator(this) |]
         member this.ResultsPriority = ResultPriority.Search

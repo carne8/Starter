@@ -1,17 +1,18 @@
 using System;
+using System.Threading.Tasks;
 
 namespace Starter.SearchEngine;
 
 /// <summary>
-/// Anything returned by a `IContextMenuLoader`
-/// </summary>
-public interface IContextMenuResult;
-
-/// <summary>
 /// An invokable entry of a context menu
 /// </summary>
-public interface IContextMenuEntry : IContextMenuResult
+public interface IContextMenuEntry
 {
+    bool Loaded { get; }
+    event EventHandler<bool>? OnLoaded;
+
+    bool IsSeparator { get; }
+
     string? Id { get; }
     string Name { get; }
     string? Description { get; }
@@ -24,24 +25,12 @@ public interface IContextMenuEntry : IContextMenuResult
 }
 
 /// <summary>
-/// A separator for a context menu, separating its entries
-/// </summary>
-public sealed class ContextMenuSeparator : IContextMenuResult
-{
-    private ContextMenuSeparator() {}
-    public static readonly ContextMenuSeparator Instance = new();
-}
-
-/// <summary>
 /// Something to load a context menu gradually
 /// </summary>
 public interface IContextMenuLoader
 {
-    public void LoadItems(
+    public Task<IContextMenuEntry[]> LoadItems(
         Avalonia.Platform.IPlatformHandle? platformHandle,
-        Action<int> itemsListed,
-        Action<(IContextMenuResult, int)[]> resultLoaded,
-        Action<(Exception, int)[]> resultFailed,
-        Action completed
+        Action<IContextMenuEntry, int> newEntryLoaded
     );
 }
