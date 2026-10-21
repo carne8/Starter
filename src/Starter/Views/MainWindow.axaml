@@ -2,6 +2,7 @@
                             xmlns="https://github.com/avaloniaui"
                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                             xmlns:vm="using:Starter.ViewModels"
+                            xmlns:ui="using:FluentAvalonia.UI.Controls"
                             xmlns:controls="using:Starter.Controls"
                             xmlns:starter="using:Starter.SearchEngine"
                             xmlns:local="using:Starter.Views"
@@ -155,7 +156,7 @@
                 <Border.IsVisible>
                     <MultiBinding Converter="{x:Static BoolConverters.Or}">
                         <Binding Path="SearchResults.Count" Converter="{StaticResource IsNotZero}" />
-                        <Binding Path="ContextMenuActivated" />
+                        <Binding Path="ContextMenu.ContextMenuEnabled" />
                     </MultiBinding>
                 </Border.IsVisible>
             </Border>
@@ -170,7 +171,7 @@
                 <ListBox.IsVisible>
                     <MultiBinding Converter="{x:Static BoolConverters.And}">
                         <Binding Path="SearchResults.Count" Converter="{StaticResource IsNotZero}" />
-                        <Binding Path="!ContextMenuActivated" />
+                        <Binding Path="!ContextMenu.ContextMenuEnabled" />
                     </MultiBinding>
                 </ListBox.IsVisible>
 
@@ -191,13 +192,26 @@
                 </ListBox.ItemTemplate>
             </ListBox>
 
+            <Border Height="150" IsVisible="{Binding ContextMenu.ContextMenuLoading}">
+                <ui:FAProgressRing IsIndeterminate="True"
+                                   Width="50"
+                                   Height="50"
+                                   VerticalAlignment="Center"
+                                   HorizontalAlignment="Center" />
+            </Border>
+
             <ListBox x:Name="ContextMenuResultList"
                      Classes="ResultList"
                      ItemContainerTheme="{StaticResource CustomListBoxItem}"
                      SelectionMode="AlwaysSelected"
                      ItemsSource="{Binding ContextMenuResults}"
-                     IsVisible="{Binding ContextMenuActivated}"
                      PointerReleased="ResultList_OnPointerReleased">
+                <ListBox.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding Path="ContextMenu.ContextMenuEnabled" />
+                        <Binding Path="ContextMenu.ContextMenuLoading" Converter="{x:Static BoolConverters.Not}" />
+                    </MultiBinding>
+                </ListBox.IsVisible>
                 <ListBox.KeyBindings>
                     <KeyBinding Command="{Binding SelectResultCommand}"
                                 CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
@@ -218,7 +232,9 @@
                 </ListBox.Styles>
 
                 <ListBox.ItemTemplate>
-                    <controls:ContextMenuResultDataTemplate />
+                    <DataTemplate>
+                        <controls:ContextMenuResult />
+                    </DataTemplate>
                 </ListBox.ItemTemplate>
             </ListBox>
 
@@ -229,7 +245,7 @@
                 <Border.IsVisible>
                     <MultiBinding Converter="{x:Static BoolConverters.Or}">
                         <Binding Path="SearchResults.Count" Converter="{StaticResource IsNotZero}" />
-                        <Binding Path="ContextMenuActivated" />
+                        <Binding Path="ContextMenu.ContextMenuEnabled" />
                     </MultiBinding>
                 </Border.IsVisible>
 

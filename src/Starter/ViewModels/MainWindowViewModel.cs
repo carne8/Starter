@@ -24,16 +24,15 @@ public partial class MainWindowViewModel : ObservableObject
 
     public BehaviorSubject<Configuration> Config { get; private set; }
     public IObservable<Configuration> ConfigSystemObservable { get; private set; }
+    public ContextMenuStore ContextMenu => contextMenuStore;
     public ObservableList<SearchResultData> SearchResults => searchResultStore.Results;
-    public ObservableList<ContextMenuResultData> ContextMenuResults => contextMenuStore.ContextMenuResults;
+    public ObservableList<ContextMenuEntryData> ContextMenuResults => contextMenuStore.ContextMenuResults;
     public IObservable<TimeSpan?> LoadingTime => searchResultStore.LoadingTimes.AsSystemObservable();
 
     [ObservableProperty]
     public partial string Text { get; set; } = string.Empty;
     [ObservableProperty]
     public partial ISearchEngineActivator? Activator { get; set; }
-
-    public bool ContextMenuActivated => contextMenuStore.ContextMenuEnabled;
 
 
     public MainWindowViewModel(
@@ -84,7 +83,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     partial void OnTextChanged(string value)
     {
-        if (ContextMenuActivated)
+        if (ContextMenu.ContextMenuEnabled)
         {
             contextMenuStore.Query(value);
             return;
@@ -142,8 +141,8 @@ public partial class MainWindowViewModel : ObservableObject
             }
 
             contextMenuStore.SetContextMenu(platformHandle, newContextMenu);
-            Text = string.Empty;
-            OnPropertyChanged(nameof(ContextMenuActivated));
+            if (Text == string.Empty) OnTextChanged(Text);
+            else Text = string.Empty;
 
             IncreaseResultScore(entry.Result);
             return true;
@@ -167,7 +166,6 @@ public partial class MainWindowViewModel : ObservableObject
 
             contextMenuStore.SetContextMenu(platformHandle, contextMenu);
             Text = string.Empty;
-            OnPropertyChanged(nameof(ContextMenuActivated));
 
             IncreaseResultScore(result.SearchResult);
             return true;
@@ -184,6 +182,5 @@ public partial class MainWindowViewModel : ObservableObject
     {
         contextMenuStore.ExitContextMenu();
         OnTextChanged(Text);
-        OnPropertyChanged(nameof(ContextMenuActivated));
     }
 }

@@ -197,7 +197,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
                     |> function
                         | s when Seq.isEmpty s -> ()
                         | s ->
-                            staticResults.Value.AddRange s
+                            staticResults.Value.AddRange s // TODO: Prevent parallel execution
                             staticResults.Value.Sort comparer
                             staticResults.Value |> staticResults.OnNext
                             Log.Information $"{searchEngine.Name} results loaded"

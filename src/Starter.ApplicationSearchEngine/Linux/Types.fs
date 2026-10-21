@@ -1,6 +1,7 @@
 ﻿namespace Starter.ApplicationSearchEngine.Linux
 
 open System.Diagnostics
+open System.Threading.Tasks
 open Starter.SearchEngine
 
 type DesktopApplication =

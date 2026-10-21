@@ -61,6 +61,7 @@ type WindowsContextMenuEntry(invokeSubMenu, invoke) =
         onLoadedEvent.Trigger(this, true)
 
     member this.SetSeparator() =
+        loaded <- true
         isSeparator <- true
         onLoadedEvent.Trigger(this, true)
 
@@ -77,10 +78,10 @@ type WindowsContextMenuEntry(invokeSubMenu, invoke) =
         member _.IsSeparator = isSeparator
 
         member _.Id = data |> ValueOption.get |> _.Id
-        member _.Name = data |> ValueOption.get |> _.Text
-        member _.Description = data |> ValueOption.get |> _.Description
+        member _.Name = data |> ValueOption.map _.Text |> ValueOption.defaultValue null
+        member _.Description = data |> ValueOption.map _.Description |> ValueOption.defaultValue null
         member _.Keywords = null
-        member _.Icon = data |> ValueOption.get |> _.Icon
+        member _.Icon = data |> ValueOption.map _.Icon |> ValueOption.defaultValue StarterIconSource.Empty
         member this.Invoke() =
             match data |> ValueOption.bind _.SubMenu with
             | ValueNone -> invoke this
@@ -279,7 +280,7 @@ type SubContextMenuLoader(
                         ))
                         (fun i _ -> entries[i].SetFailed()) // Item failed
                         contextMenu
-                        hMenu
+                        subHMenu
 
                 if res then
                     tcs.SetResult entries

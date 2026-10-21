@@ -1,6 +1,8 @@
 namespace Starter.Features
 
 open System
+open System.ComponentModel
+open System.Collections.Generic
 open Starter.Features
 open Starter.SearchEngine
 open Starter.TextMatching.FuzzyMatch
@@ -8,7 +10,7 @@ open Starter.TextMatching.TextNormalization
 
 type SearchResultData =
     { SearchResult: ISearchResult
-      NormalizedName: System.Text.Rune array voption
+      NormalizedName: Text.Rune array voption
       Priority: ResultPriority
       SearchEngineId: string
       mutable FuzzyMatchResult: FuzzyResult voption
@@ -54,14 +56,27 @@ type SearchResultData =
 type ContextMenuEntryData =
     { Result: IContextMenuEntry
       mutable FuzzyMatchResult: FuzzyResult voption
-      mutable AccentuationMap: bool array | null }
+      mutable AccentuationMap: bool array | null
+      EventHandlers: List<PropertyChangedEventHandler> }
 
     member this.Name = this.Result.Name
+    member this.Description = this.Result.Description
+    member this.Icon = this.Result.Icon
+    member this.Loaded = this.Result.Loaded
+    member this.IsSeparator = this.Result.IsSeparator
 
-    static member create result =
+    static member create (result: IContextMenuEntry) =
+        let handlers = List<_>()
+        result.OnLoaded.Subscribe(fun _succeed ->
+            for i = 0 to handlers.Count - 1 do
+                let h: PropertyChangedEventHandler = handlers[i]
+                h.Invoke(null, PropertyChangedEventArgs null)
+        ) |> ignore
+
         { Result = result
           FuzzyMatchResult = ValueNone
-          AccentuationMap = null }
+          AccentuationMap = null
+          EventHandlers = handlers }
 
     // Returns a low value for a result that should be on top of the list
     static member getWeight (resultScoreDb: IScoreDb) (r: ContextMenuEntryData) =
@@ -69,7 +84,7 @@ type ContextMenuEntryData =
             r.Result.Id
             |> ValueOption.ofObj
             |> ValueOption.map resultScoreDb.GetResultScore
-            |> ValueOption.defaultValue (struct (Int32.MaxValue, TimeSpan.MaxValue))
+            |> ValueOption.defaultValue struct (Int32.MaxValue, TimeSpan.MaxValue)
 
         let fuzzyMatchScore =
             match r.FuzzyMatchResult with
@@ -84,45 +99,12 @@ type ContextMenuEntryData =
             r.Name
         )
 
-[<RequireQualifiedAccess>]
-type ContextMenuResultData =
-    | Separator
-    | Entry of ContextMenuEntryData
-    | Loading
-    | LoadFailed of (Exception | null)
-
-    static member create (entry: IContextMenuEntry) =
-        if entry.IsSeparator then
-            ContextMenuResultData.Separator
-        else
-            entry
-            |> ContextMenuEntryData.create
-            |> ContextMenuResultData.Entry
-
-    static member getWeight (resultScoreDb: IScoreDb) (r: ContextMenuResultData) =
-        match r with
-        | Loading
-        | LoadFailed _
-        | Separator ->
-            struct (
-                ResultPriority.Search,
-                Double.MaxValue,
-                TimeSpan.MaxValue,
-                Int32.MaxValue,
-                String.Empty
-            )
-        | Entry entry -> ContextMenuEntryData.getWeight resultScoreDb entry
-
-    member this.TryGetEntry(entry: ContextMenuEntryData outref) =
-        match this with
-        | Loading
-        | LoadFailed _
-        | Separator -> false
-        | Entry data -> entry <- data; true
-
-    member this.TryGetException(exn: (Exception | null) outref) =
-        match this with
-        | Loading
-        | Entry _
-        | Separator -> false
-        | LoadFailed e -> exn <- e; true
+    interface INotifyPropertyChanged with
+        member this.add_PropertyChanged (handler: (PropertyChangedEventHandler | null)) =
+            match handler with
+            | null -> ()
+            | handler -> this.EventHandlers.Add handler
+        member this.remove_PropertyChanged (handler: (PropertyChangedEventHandler | null)) =
+            match handler with
+            | null -> ()
+            | handler -> this.EventHandlers.Remove handler |> ignore

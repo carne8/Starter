@@ -63,7 +63,7 @@ public partial class MainWindow : TranslucentWindow
     private readonly Stack<(string? text, int caretPosition, object? selectedItem)> previousSelectionState = new();
 
     private ListBox CurrentResultList =>
-        vm.ContextMenuActivated
+        vm.ContextMenu.ContextMenuEnabled
             ? ContextMenuResultList
             : ResultList;
 
@@ -189,7 +189,7 @@ public partial class MainWindow : TranslucentWindow
         // Add escape key binding
         var onEscape = new RelayCommand(() =>
         {
-            if (vm.ContextMenuActivated) CloseContextMenu();
+            if (vm.ContextMenu.ContextMenuEnabled) CloseContextMenu();
             else if (vm.Activator is not null) vm.ResetActivatorCommand.Execute(null);
             else Dispatcher.UIThread.Post(Hide);
         });
@@ -203,8 +203,7 @@ public partial class MainWindow : TranslucentWindow
 
     private void SelectContextMenuResult(object? result)
     {
-        if (result is not ContextMenuResultData data) return;
-        if (!data.TryGetEntry(out var entry)) return;
+        if (result is not ContextMenuEntryData data) return;
 
         previousSelectionState.Push((
             TextBox.Text,
@@ -212,7 +211,7 @@ public partial class MainWindow : TranslucentWindow
             CurrentResultList.SelectedItem
         ));
 
-        var openedNewContextMenu = vm.SelectContextMenuResult(entry, platformHandle);
+        var openedNewContextMenu = vm.SelectContextMenuResult(data, platformHandle);
         if (!openedNewContextMenu) previousSelectionState.Pop();
     }
 
@@ -232,6 +231,9 @@ public partial class MainWindow : TranslucentWindow
 
     private void CloseContextMenu()
     {
+        ContextMenuResultList.Selection.Clear();
+        ContextMenuResultList.Scroll?.Offset = Vector.Zero;
+
         vm.CloseContextMenuCommand.Execute(null);
         if (!previousSelectionState.TryPop(out var state)) return;
 
@@ -246,14 +248,14 @@ public partial class MainWindow : TranslucentWindow
         var pos = e.GetPosition(this);
         var clickedControl =
             this.GetVisualsAt(pos)
-                .FirstOrDefault(v => v.DataContext is SearchResultData or ContextMenuResultData);
+                .FirstOrDefault(v => v.DataContext is SearchResultData or ContextMenuEntryData);
 
         if (clickedControl is null) return;
 
         if (clickedControl.DataContext is SearchResultData)
             vm.SelectResultCommand.Execute(clickedControl.DataContext);
 
-        if (clickedControl.DataContext is ContextMenuResultData { IsSeparator: false })
+        if (clickedControl.DataContext is ContextMenuEntryData { IsSeparator: false })
             SelectContextMenuResult(clickedControl.DataContext);
     }
 
@@ -262,7 +264,7 @@ public partial class MainWindow : TranslucentWindow
         switch (e.Key)
         {
             case Key.Enter:
-                if (vm.ContextMenuActivated && ContextMenuResultList.SelectedItem is not null)
+                if (vm.ContextMenu.ContextMenuEnabled && ContextMenuResultList.SelectedItem is not null)
                     SelectContextMenuResult(ContextMenuResultList.SelectedItem);
                 else if (ResultList.SelectedItem is not null)
                     vm.SelectResultCommand.Execute(ResultList.SelectedItem);
@@ -271,7 +273,7 @@ public partial class MainWindow : TranslucentWindow
 
             // If caret is at start and backspace
             case Key.Back when TextBox.CaretIndex == 0:
-                if (vm.ContextMenuActivated) // Close context menu
+                if (vm.ContextMenu.ContextMenuEnabled) // Close context menu
                 {
                     CloseContextMenu();
                     e.Handled = true;
@@ -289,7 +291,7 @@ public partial class MainWindow : TranslucentWindow
 
             // Tab opens the context menu
             case Key.Tab:
-                if (vm.ContextMenuActivated)
+                if (vm.ContextMenu.ContextMenuEnabled)
                     SelectContextMenuResult(ContextMenuResultList.SelectedItem);
                 else
                     OpenContextMenu(ResultList.SelectedItem);
@@ -312,7 +314,7 @@ public partial class MainWindow : TranslucentWindow
         // Scroll to top or bottom to preserve the paddings
         if (CurrentResultList.Scroll is not null)
         {
-            if (newSelectedIdx == 0) CurrentResultList.Scroll.Offset = new Vector(0, 0);
+            if (newSelectedIdx == 0) CurrentResultList.Scroll.Offset = Vector.Zero;
             else if (newSelectedIdx == CurrentResultList.ItemCount - 1) CurrentResultList.Scroll.Offset = new Vector(0, CurrentResultList.Scroll.Extent.Height);
         }
 
@@ -321,9 +323,9 @@ public partial class MainWindow : TranslucentWindow
         CurrentResultList.SelectedIndex = newSelectedIdx;
 
         // Prevent focusing a separator
-        if (vm.ContextMenuActivated
+        if (vm.ContextMenu.ContextMenuEnabled
             && previousSelectedIdx != newSelectedIdx
-            && ContextMenuResultList.Selection.SelectedItem is ContextMenuResultData { IsSeparator: true })
+            && ContextMenuResultList.Selection.SelectedItem is ContextMenuEntryData { IsSeparator: true })
             TextBox_OnKeyDown(sender, e);
 
         e.Handled = true;

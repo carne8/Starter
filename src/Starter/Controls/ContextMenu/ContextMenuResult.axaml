@@ -4,39 +4,79 @@
              xmlns:vm="using:Starter.Features"
              xmlns:controls="using:Starter.Controls"
              x:DataType="vm:ContextMenuEntryData">
+    <Panel>
+        <!-- Loading -->
+        <Border x:Name="LoadingControl" IsVisible="{Binding !Loaded}" Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
+            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
+                <StackPanel Grid.Column="0"
+                            VerticalAlignment="Center"
+                            Spacing="-1">
+                    <TextBlock FontSize="{DynamicResource SearchResultFontSize}"
+                               Foreground="{DynamicResource Text1}"
+                               FontFamily="{StaticResource Geist}"
+                               FontWeight="{DynamicResource TextBoxFontWeight}">
+                        Loading...
+                    </TextBlock>
 
-    <Border Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
-        <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
-            <StackPanel Grid.Column="0"
-                        VerticalAlignment="Center"
-                        Spacing="-1">
-                <controls:AccentuatedTextBlock x:Name="NameTextBlock"
-                                               FontSize="{DynamicResource SearchResultFontSize}"
-                                               Foreground="{DynamicResource Text1}"
-                                               AccentuatedForeground="{DynamicResource TextControlSelectionHighlightColor}"
-                                               AccentuationMap="{Binding AccentuationMap}"
-                                               Text="{Binding Name}"
-                                               FontFamily="{StaticResource Geist}"
-                                               FontWeight="{DynamicResource TextBoxFontWeight}" />
+                    <TextBlock Text="Loading..."
+                               FontSize="{DynamicResource SearchResultDescriptionFontSize}"
+                               FontWeight="Regular"
+                               Foreground="{DynamicResource Text2}"
+                               FontFamily="{StaticResource GeistMono}" />
+                </StackPanel>
+            </Grid>
+        </Border>
 
-                <TextBlock Text="{Binding Result.Description}"
-                           IsVisible="{Binding Result.Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                           FontSize="{DynamicResource SearchResultDescriptionFontSize}"
-                           FontWeight="Regular"
-                           Foreground="{DynamicResource Text2}"
-                           FontFamily="{StaticResource GeistMono}" />
-            </StackPanel>
 
-            <Border Grid.Column="1"
-                    CornerRadius="4"
-                    ClipToBounds="True">
-                <controls:StarterIcon Width="{DynamicResource SearchResultIconSize}"
-                                      Height="{DynamicResource SearchResultIconSize}"
-                                      VerticalAlignment="Center"
-                                      IconSource="{Binding Result.Icon}"
-                                      FontSize="{DynamicResource SearchResultIconSize}"
-                                      ExtraPaddingForSymbol="4" />
-            </Border>
-        </Grid>
-    </Border>
+        <!-- Loaded result -->
+        <Border x:Name="LoadedControl" Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
+            <Border.IsVisible>
+                <MultiBinding Converter="{x:Static BoolConverters.And}">
+                    <Binding Path="Loaded" />
+                    <Binding Path="IsSeparator" Converter="{x:Static BoolConverters.Not}" />
+                </MultiBinding>
+            </Border.IsVisible>
+            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
+                <StackPanel Grid.Column="0"
+                            VerticalAlignment="Center"
+                            Spacing="-1">
+                    <controls:AccentuatedTextBlock x:Name="NameTextBlock"
+                                                   FontSize="{DynamicResource SearchResultFontSize}"
+                                                   Foreground="{DynamicResource Text1}"
+                                                   AccentuatedForeground="{DynamicResource TextControlSelectionHighlightColor}"
+                                                   AccentuationMap="{Binding AccentuationMap}"
+                                                   Text="{Binding Name}"
+                                                   FontFamily="{StaticResource Geist}"
+                                                   FontWeight="{DynamicResource TextBoxFontWeight}" />
+
+                    <TextBlock Text="{Binding Description}"
+                               IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                               FontSize="{DynamicResource SearchResultDescriptionFontSize}"
+                               FontWeight="Regular"
+                               Foreground="{DynamicResource Text2}"
+                               FontFamily="{StaticResource GeistMono}" />
+                </StackPanel>
+
+                <Border Grid.Column="1"
+                        CornerRadius="4"
+                        ClipToBounds="True">
+                    <controls:StarterIcon Width="{DynamicResource SearchResultIconSize}"
+                                          Height="{DynamicResource SearchResultIconSize}"
+                                          VerticalAlignment="Center"
+                                          IconSource="{Binding Icon}"
+                                          FontSize="{DynamicResource SearchResultIconSize}"
+                                          ExtraPaddingForSymbol="4" />
+                </Border>
+            </Grid>
+        </Border>
+
+
+        <!-- Separator -->
+        <Border x:Name="SeparatorControl"
+                IsVisible="{Binding IsSeparator}"
+                Height="{StaticResource BorderThicknessInt}"
+                HorizontalAlignment="Stretch"
+                Background="{DynamicResource BorderBrush}" />
+    </Panel>
+
 </UserControl>
