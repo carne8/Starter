@@ -53,10 +53,9 @@ type DesktopApplication =
             { new IContextMenuLoader with
                 member _.LoadItems(_platformHandle, _addItem) =
                     [| { new IContextMenuEntry with
-                            member _.Loaded = true
+                            member _.Status = ContextMenuStatus.Loaded
                             member _.add_OnLoaded value = ()
                             member _.remove_OnLoaded value = ()
-                            member _.IsSeparator = false
                             member _.Id = null
                             member _.Name = "Open"
                             member _.Description = null
@@ -65,8 +64,7 @@ type DesktopApplication =
                             member _.Invoke() = app.Launch(false); null }
 
                        { new IContextMenuEntry with
-                            member _.Loaded = true
-                            member _.IsSeparator = false
+                            member _.Status = ContextMenuStatus.Loaded
                             member _.add_OnLoaded value = ()
                             member _.remove_OnLoaded value = ()
                             member _.Id = null
@@ -77,10 +75,9 @@ type DesktopApplication =
                             member _.Invoke() = app.Launch(true); null }
 
                        { new IContextMenuEntry with
-                            member _.Loaded = true
+                            member _.Status = ContextMenuStatus.Loaded
                             member _.add_OnLoaded value = ()
                             member _.remove_OnLoaded value = ()
-                            member _.IsSeparator = false
                             member _.Id = null
                             member _.Name = "Open .desktop file"
                             member _.Description = "Open the .desktop associated file"

@@ -229,7 +229,7 @@ public partial class MainWindow : TranslucentWindow
         if (!openedNewContextMenu) previousSelectionState.Pop();
     }
 
-    private void CloseContextMenu()
+    private async void CloseContextMenu()
     {
         ContextMenuResultList.Selection.Clear();
         ContextMenuResultList.Scroll?.Offset = Vector.Zero;
@@ -240,6 +240,7 @@ public partial class MainWindow : TranslucentWindow
         TextBox.Text = state.text;
         TextBox.CaretIndex = 0; // Fixes caret visual position bug
         TextBox.CaretIndex = state.caretPosition;
+        await Dispatcher.Yield(); // Let the UI thread change the result list
         CurrentResultList.SelectedItem = state.selectedItem;
     }
 

@@ -6,7 +6,7 @@
              x:DataType="vm:ContextMenuEntryData">
     <Panel>
         <!-- Loading -->
-        <Border x:Name="LoadingControl" IsVisible="{Binding !Loaded}" Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
+        <Border x:Name="LoadingControl" IsVisible="{Binding IsLoading}" Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
             <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
                 <StackPanel Grid.Column="0"
                             VerticalAlignment="Center"
@@ -29,13 +29,7 @@
 
 
         <!-- Loaded result -->
-        <Border x:Name="LoadedControl" Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
-            <Border.IsVisible>
-                <MultiBinding Converter="{x:Static BoolConverters.And}">
-                    <Binding Path="Loaded" />
-                    <Binding Path="IsSeparator" Converter="{x:Static BoolConverters.Not}" />
-                </MultiBinding>
-            </Border.IsVisible>
+        <Border x:Name="LoadedControl" IsVisible="{Binding IsLoaded}" Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
             <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
                 <StackPanel Grid.Column="0"
                             VerticalAlignment="Center"

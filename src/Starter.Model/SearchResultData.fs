@@ -62,12 +62,14 @@ type ContextMenuEntryData =
     member this.Name = this.Result.Name
     member this.Description = this.Result.Description
     member this.Icon = this.Result.Icon
-    member this.Loaded = this.Result.Loaded
-    member this.IsSeparator = this.Result.IsSeparator
+    member this.IsLoading = this.Result.Status = ContextMenuStatus.Loading
+    member this.IsLoaded = this.Result.Status = ContextMenuStatus.Loaded
+    member this.IsFailed = this.Result.Status = ContextMenuStatus.Failed
+    member this.IsSeparator = this.Result.Status = ContextMenuStatus.Separator
 
     static member create (result: IContextMenuEntry) =
         let handlers = List<_>()
-        result.OnLoaded.Subscribe(fun _succeed ->
+        result.OnLoaded.Subscribe(fun _ ->
             for i = 0 to handlers.Count - 1 do
                 let h: PropertyChangedEventHandler = handlers[i]
                 h.Invoke(null, PropertyChangedEventArgs null)

@@ -35,10 +35,9 @@ type StaThreadDispatcher() =
             thread.Join()
 
 type WindowsContextMenuEntry(invokeSubMenu, invoke) =
-    let mutable loaded = false
-    let mutable isSeparator = false
+    let mutable status = ContextMenuStatus.Loading
     let mutable data = ValueNone
-    let onLoadedEvent = Event<EventHandler<bool>, bool>()
+    let onLoadedEvent = Event<EventHandler, EventArgs>()
 
     member this.SetLoaded(
         id: string | null,
@@ -48,7 +47,7 @@ type WindowsContextMenuEntry(invokeSubMenu, invoke) =
         icon: StarterIconSource,
         subMenu: int voption
     ) =
-        loaded <- true
+        status <- ContextMenuStatus.Loaded
         data <- ValueSome struct {|
             Id = id;
             CmdOffset = cmdOffset;
@@ -58,24 +57,23 @@ type WindowsContextMenuEntry(invokeSubMenu, invoke) =
             SubMenu = subMenu
         |}
 
-        onLoadedEvent.Trigger(this, true)
+        onLoadedEvent.Trigger(this, EventArgs.Empty)
 
     member this.SetSeparator() =
-        loaded <- true
-        isSeparator <- true
-        onLoadedEvent.Trigger(this, true)
+        status <- ContextMenuStatus.Separator
+        onLoadedEvent.Trigger(this, EventArgs.Empty)
 
-    member this.SetFailed() = onLoadedEvent.Trigger(this, false)
+    member this.SetFailed() =
+        status <- ContextMenuStatus.Failed
+        onLoadedEvent.Trigger(this, EventArgs.Empty)
 
-    member _.Loaded = loaded
+    member _.Status = status
     member _.CmdOffset = data |> ValueOption.get |> _.CmdOffset
 
     interface IContextMenuEntry with
-        member _.Loaded = loaded
+        member _.Status = status
         [<CLIEvent>]
         member _.OnLoaded = onLoadedEvent.Publish
-
-        member _.IsSeparator = isSeparator
 
         member _.Id = data |> ValueOption.get |> _.Id
         member _.Name = data |> ValueOption.map _.Text |> ValueOption.defaultValue null
@@ -346,7 +344,7 @@ type ContextMenuLoader(itemPath: string) =
                                 )
 
                                 if i = entries.Length - 1 then // When last item has been loaded
-                                    entries |> Array.iter (fun e -> if not e.Loaded then e.SetFailed())
+                                    entries |> Array.iter (fun e -> if e.Status = ContextMenuStatus.Loading then e.SetFailed())
                             )
                             (fun i _ -> entries[i].SetFailed()) // Item failed
                             contextMenu

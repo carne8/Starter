@@ -68,7 +68,6 @@ type ContextMenuStore(resultScoreDb) =
             match c.Loader with
             | :? System.IDisposable as d -> d.Dispose()
             | _ -> ()
-            contextMenuResults.Clear()
             propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuEnabled))
             propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuLoading))
 
@@ -81,6 +80,7 @@ type ContextMenuStore(resultScoreDb) =
                     if not items.IsCompletedSuccessfully then
                         Log.Error "Cannot insert new result in context menu before it is loaded."
                     else
+                        newResult.OnLoaded.Subscribe(fun _ -> this.RefreshResults()) |> ignore
                         Dispatcher.UIThread.Post(
                             fun () ->
                                 items.Result.Insert(
@@ -92,7 +92,13 @@ type ContextMenuStore(resultScoreDb) =
                             DispatcherPriority.Background
                         )
                 )
-                |> Task.map (Seq.map ContextMenuEntryData.create >> List)
+                |> Task.map (
+                    Seq.map (fun entry ->
+                        entry.OnLoaded.Subscribe(fun _ -> this.RefreshResults()) |> ignore
+                        ContextMenuEntryData.create entry
+                    )
+                    >> List
+                )
 
             contextMenuStack.Push(struct {| Items = items; Loader = loader |})
             propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuEnabled))
@@ -106,7 +112,6 @@ type ContextMenuStore(resultScoreDb) =
 
         lastQueryText <- ValueSome text
         // stopwatch.Restart()
-        contextMenuResults.Clear()
 
         match contextMenuStack.TryPeek() with
         | false, _ -> ()
@@ -116,41 +121,52 @@ type ContextMenuStore(resultScoreDb) =
                 |> TextNormalization.String.normalize
                 |> Array.map System.Text.Rune.ToLowerInvariant
 
-            Task.Run<unit>(fun () -> task {
+            task {
                 let! items = c.Items
-                propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuLoading))
                 if cts.Token.IsCancellationRequested then () else
 
                 let newResults =
                     match text with
                     | "" ->
                         // Show all search engine results
-                        items
-                        |> Seq.filter (fun entry ->
-                            // TODO: if entry.Result.Failed then false else
-                            entry.AccentuationMap <- null
-                            true
-                        )
-                        :> _ seq
+                        let r = new List<_>(items.Count)
+
+                        let mutable lastTookIsSeparator = true // Prevent starting with a separator
+                        for i = 0 to items.Count-1 do
+                            let entry = items[i]
+                            let v =
+                                not entry.IsFailed &&
+                                (not entry.IsSeparator
+                                || entry.IsSeparator && not lastTookIsSeparator)
+
+                            if v then
+                                entry.AccentuationMap <- null
+                                lastTookIsSeparator <- entry.IsSeparator
+                                r.Add entry
+
+                        while r.Count > 0 && r[r.Count-1].IsSeparator do // Remove ending separator
+                            r.RemoveAt(r.Count-1)
+
+                        r :> _ seq
                     | _ ->
                         // Show matching results
                         items
                         |> Seq.filter (fun entry ->
-                            entry.Result.Loaded
-                            && not entry.Result.IsSeparator
-                            (* TODO: && not entry.Result.Failed *)
+                            entry.Result.Status = ContextMenuStatus.Loaded
                             && fuzzyMatchResult normalizedText entry
                         )
                         |> Seq.sortWith contextMenuComparer
 
                 Dispatcher.UIThread.Post(
                     fun () ->
+                        contextMenuResults.Clear()
                         contextMenuResults.AddRange newResults
                         contextMenuResults.NotifyChanged()
+                        propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuLoading))
                     ,
-                    DispatcherPriority.Render
+                    DispatcherPriority.Loaded
                 )
-            }) |> ignore
+            } |> ignore
 
         // stopwatch.Stop()
         // stopwatch.Elapsed |> loadingTimes.OnNext

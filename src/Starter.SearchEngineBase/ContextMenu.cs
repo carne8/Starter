@@ -3,15 +3,21 @@ using System.Threading.Tasks;
 
 namespace Starter.SearchEngine;
 
+public enum ContextMenuStatus
+{
+    Loading,
+    Loaded,
+    Failed,
+    Separator
+}
+
 /// <summary>
 /// An invokable entry of a context menu
 /// </summary>
 public interface IContextMenuEntry
 {
-    bool Loaded { get; }
-    event EventHandler<bool>? OnLoaded;
-
-    bool IsSeparator { get; }
+    ContextMenuStatus Status { get; }
+    event EventHandler? OnLoaded;
 
     string? Id { get; }
     string Name { get; }
