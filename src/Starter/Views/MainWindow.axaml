@@ -17,7 +17,7 @@
                             Topmost="True"
                             ShowInTaskbar="False"
                             WindowStartupLocation="Manual"
-                            BackgroundColor="Transparent"
+                            BackgroundColor="{DynamicResource DefaultBackgroundColor}"
                             BackgroundKind="{Binding ConfigSystemObservable^.Background}"
                             AcrylicBackgroundColor="{DynamicResource WindowBackground}"
                             CornerRadius="{DynamicResource CornerRadius}"
@@ -104,7 +104,6 @@
 
     <Border Margin="{OnPlatform Linux='18,15,18,25',
                                 Default='0'}"
-            Background="{DynamicResource DefaultBackgroundColor}"
             CornerRadius="{DynamicResource CornerRadius}"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="{StaticResource BorderThickness}">
