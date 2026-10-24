@@ -88,7 +88,7 @@ public partial class SettingsViewModel : ObservableObject
 
         ActivatorViewModels.AddRange(
             engines.SearchEngines.Values
-                .SelectMany(engine => engine.Activators)
+                .SelectMany(engine => engine.Activators ?? [])
                 .Select(activator => new ActivatorInputFieldViewModel(
                     activator,
                     baseConfig.ActivatorPrefixes,
@@ -96,17 +96,17 @@ public partial class SettingsViewModel : ObservableObject
                 ))
         );
         engines.SearchEngineAdded += se => ActivatorViewModels.AddRange(
-            se.Activators.Select(activator =>
+            se.Activators?.Select(activator =>
                 new ActivatorInputFieldViewModel(
                     activator,
                     baseConfig.ActivatorPrefixes,
                     ActivatorPrefixChanged
                 )
-            )
+            ) ?? []
         );
     }
 
-    private void ActivatorPrefixChanged(ISearchEngineActivator activator, string newPrefix)
+    private void ActivatorPrefixChanged(SearchEngineActivator activator, string newPrefix)
     {
         var newMap =
             string.IsNullOrEmpty(newPrefix)

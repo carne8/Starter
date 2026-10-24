@@ -1,12 +1,14 @@
 ﻿<UserControl x:Class="Starter.Controls.ContextMenuResult"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:Starter.Features"
+             xmlns:vm="using:Starter.SearchEngine"
              xmlns:controls="using:Starter.Controls"
-             x:DataType="vm:ContextMenuEntryData">
+             x:DataType="vm:IContextMenuEntry">
     <Panel>
         <!-- Loading -->
-        <Border x:Name="LoadingControl" IsVisible="{Binding IsLoading}" Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
+        <Border Padding="{DynamicResource SearchResultPadding}"
+                HorizontalAlignment="Stretch"
+                IsVisible="{Binding Status, Converter={x:Static controls:ContextMenuStatusConverters.IsLoading}}">
             <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
                 <StackPanel Grid.Column="0"
                             VerticalAlignment="Center"
@@ -29,7 +31,9 @@
 
 
         <!-- Loaded result -->
-        <Border x:Name="LoadedControl" IsVisible="{Binding IsLoaded}" Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
+        <Border Padding="{DynamicResource SearchResultPadding}"
+                HorizontalAlignment="Stretch"
+                IsVisible="{Binding Status, Converter={x:Static controls:ContextMenuStatusConverters.IsLoaded}}">
             <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
                 <StackPanel Grid.Column="0"
                             VerticalAlignment="Center"
@@ -38,7 +42,6 @@
                                                    FontSize="{DynamicResource SearchResultFontSize}"
                                                    Foreground="{DynamicResource Text1}"
                                                    AccentuatedForeground="{DynamicResource TextControlSelectionHighlightColor}"
-                                                   AccentuationMap="{Binding AccentuationMap}"
                                                    Text="{Binding Name}"
                                                    FontFamily="{StaticResource Geist}"
                                                    FontWeight="{DynamicResource TextBoxFontWeight}" />
@@ -66,11 +69,22 @@
 
 
         <!-- Separator -->
-        <Border x:Name="SeparatorControl"
-                IsVisible="{Binding IsSeparator}"
-                Height="{StaticResource BorderThicknessInt}"
+        <Border Height="{StaticResource BorderThicknessInt}"
                 HorizontalAlignment="Stretch"
+                IsVisible="{Binding Status, Converter={x:Static controls:ContextMenuStatusConverters.IsSeparator}}"
                 Background="{DynamicResource BorderBrush}" />
+
+
+        <!-- Failed -->
+        <Border Padding="{DynamicResource SearchResultPadding}"
+                HorizontalAlignment="Stretch"
+                IsVisible="{Binding Status, Converter={x:Static controls:ContextMenuStatusConverters.IsFailed}}">
+            <TextBlock FontSize="{DynamicResource SearchResultFontSize}"
+                       Foreground="{DynamicResource Text1}"
+                       Text="Failed"
+                       FontFamily="{StaticResource Geist}"
+                       FontWeight="{DynamicResource TextBoxFontWeight}" />
+        </Border>
     </Panel>
 
 </UserControl>

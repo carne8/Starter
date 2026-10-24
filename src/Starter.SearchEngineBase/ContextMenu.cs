@@ -1,4 +1,4 @@
-using System;
+using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 
 namespace Starter.SearchEngine;
@@ -17,7 +17,6 @@ public enum ContextMenuStatus
 public interface IContextMenuEntry
 {
     ContextMenuStatus Status { get; }
-    event EventHandler? OnLoaded;
 
     string? Id { get; }
     string Name { get; }
@@ -35,8 +34,5 @@ public interface IContextMenuEntry
 /// </summary>
 public interface IContextMenuLoader
 {
-    public Task<IContextMenuEntry[]> LoadItems(
-        Avalonia.Platform.IPlatformHandle? platformHandle,
-        Action<IContextMenuEntry, int> newEntryLoaded
-    );
+    public Task<ObservableCollection<IContextMenuEntry>> LoadItems(Avalonia.Platform.IPlatformHandle? platformHandle);
 }

@@ -12,6 +12,8 @@ open Starter.ApplicationSearchEngine.Logger
 open Starter.SearchEngine
 
 type LinuxAppsSearchEngine() =
+    inherit StaticSearchEngine()
+
     let icon = Constants.getIcon ()
 
     static let defaultDataDirectories = // TODO: Make it respect the hierarchy and prioritize the first matches
@@ -33,8 +35,8 @@ type LinuxAppsSearchEngine() =
           ExcludedFolders = Array.empty
           AllowDuplicates = true } // Not applicable for Linux
 
-    let apps = ResizeArray<ISearchResult> 200
-    let resultsChanged = DelegateEvent<EventHandler<ISearchResult seq>>()
+    let apps = ResizeArray<SearchResult> 200
+    let resultsChanged = DelegateEvent<EventHandler<SearchResult seq>>()
     let mutable disposables = ResizeArray 3 // Btw: keep a reference of the app watcher and prevent it from being garbage collected
 
     let useGtkLaunch =
@@ -78,32 +80,31 @@ type LinuxAppsSearchEngine() =
             observable.Subscribe(fun () -> resultsChanged.Trigger [| null; apps |]) |> ignore
         }
 
-    interface IStaticSearchEngine with
-        member this.LoadResults() =
-            if not <| OperatingSystem.IsLinux() then
-                logger.Warning "This search engine is not supported on this platform."
-            else
-                this.LoadApps |> Task.Run<unit> |> ignore
 
-            ValueTask.FromResult Seq.empty
 
-        member _.Id = nameof LinuxAppsSearchEngine
-        member _.Name = "Applications"
-        member _.Icon = icon
-        member this.Activators = [| DefaultSearchEngineActivator(this) |]
+    override this.LoadResults() =
+        if not <| OperatingSystem.IsLinux() then
+            logger.Warning "This search engine is not supported on this platform."
+        else
+            this.LoadApps |> Task.Run<unit> |> ignore
 
-        member _.SearchResultSelected(searchResult) =
-            match searchResult with
-            | :? DesktopApplication as app ->  app.Launch(false)
-                // TODO: DBus Activation -> https://specifications.freedesktop.org/desktop-entry-spec/latest/dbus.html
-                // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
-                // TODO: Maybe this https://specifications.freedesktop.org/desktop-entry-spec/latest/extra-actions.html
-            | _ -> ()
+        ValueTask.FromResult Seq.empty
 
-        [<CLIEvent>]
-        member this.ResultsChanged = resultsChanged.Publish
-        member this.add_Changed _ = ()
-        member this.remove_Changed _ = ()
+    override _.Id = nameof LinuxAppsSearchEngine
+    override _.Name = "Applications"
+    override _.Icon = icon
+    override this.Activators = [| DefaultSearchEngineActivator(this) |]
+
+    override _.SearchResultSelected(searchResult) =
+        match searchResult with
+        | :? DesktopApplication as app ->  app.Launch(false)
+            // TODO: DBus Activation -> https://specifications.freedesktop.org/desktop-entry-spec/latest/dbus.html
+            // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
+            // TODO: Maybe this https://specifications.freedesktop.org/desktop-entry-spec/latest/extra-actions.html
+        | _ -> ()
+
+    [<CLIEvent>]
+    member this.ResultsChanged = resultsChanged.Publish
 
 type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)

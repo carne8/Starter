@@ -12,6 +12,7 @@ using Serilog;
 using Starter.Controls;
 using Starter.Features;
 using Starter.Features.PlatformInterop;
+using Starter.SearchEngine;
 using Starter.ViewModels;
 
 namespace Starter.Views;
@@ -74,7 +75,7 @@ public partial class MainWindow : TranslucentWindow
         throw new Exception("This constructor should never be called");
     }
 
-    public MainWindow(IPlatformInterop platformInterop)
+    public MainWindow(IPlatformInterop platformInterop, Dictionary<IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult> fuzzyMatchResults)
     {
         this.platformInterop = platformInterop;
 
@@ -87,6 +88,10 @@ public partial class MainWindow : TranslucentWindow
         this.platformHandle = platformHandle;
 
         InitializeComponent();
+
+        ResultList.ItemTemplate = new SearchResultDataTemplate();
+        ContextMenuResultList.ItemTemplate = new ContextMenuDataTemplate(fuzzyMatchResults);
+
         platformInterop.SetupHotkeyCallback(this);
         TextBox.AddHandler(KeyDownEvent, TextBox_OnKeyDown, RoutingStrategies.Tunnel);
 
@@ -203,7 +208,7 @@ public partial class MainWindow : TranslucentWindow
 
     private void SelectContextMenuResult(object? result)
     {
-        if (result is not ContextMenuEntryData data) return;
+        if (result is not IContextMenuEntry data) return;
 
         previousSelectionState.Push((
             TextBox.Text,
@@ -231,17 +236,27 @@ public partial class MainWindow : TranslucentWindow
 
     private async void CloseContextMenu()
     {
-        ContextMenuResultList.Selection.Clear();
-        ContextMenuResultList.Scroll?.Offset = Vector.Zero;
+        try
+        {
+            if (!vm.ContextMenu.ContextMenuLoading)
+            {
+                ContextMenuResultList.Selection.Clear();
+                ContextMenuResultList.Scroll?.Offset = Vector.Zero;
+            }
 
-        vm.CloseContextMenuCommand.Execute(null);
-        if (!previousSelectionState.TryPop(out var state)) return;
+            vm.CloseContextMenuCommand.Execute(null);
+            if (!previousSelectionState.TryPop(out var state)) return;
 
-        TextBox.Text = state.text;
-        TextBox.CaretIndex = 0; // Fixes caret visual position bug
-        TextBox.CaretIndex = state.caretPosition;
-        await Dispatcher.Yield(); // Let the UI thread change the result list
-        CurrentResultList.SelectedItem = state.selectedItem;
+            TextBox.Text = state.text;
+            TextBox.CaretIndex = 0; // Fixes caret visual position bug
+            TextBox.CaretIndex = state.caretPosition;
+            await Dispatcher.Yield(); // Let the UI thread change the result list
+            CurrentResultList.SelectedItem = state.selectedItem;
+        }
+        catch (Exception e)
+        {
+            Log.Error(e, "Error occured while closing context menu");
+        }
     }
 
     private void ResultList_OnPointerReleased(object? sender, PointerReleasedEventArgs e)
@@ -249,14 +264,14 @@ public partial class MainWindow : TranslucentWindow
         var pos = e.GetPosition(this);
         var clickedControl =
             this.GetVisualsAt(pos)
-                .FirstOrDefault(v => v.DataContext is SearchResultData or ContextMenuEntryData);
+                .FirstOrDefault(v => v.DataContext is SearchResultData or IContextMenuEntry);
 
         if (clickedControl is null) return;
 
         if (clickedControl.DataContext is SearchResultData)
             vm.SelectResultCommand.Execute(clickedControl.DataContext);
 
-        if (clickedControl.DataContext is ContextMenuEntryData { IsSeparator: false })
+        if (clickedControl.DataContext is IContextMenuEntry entry && entry.Status != ContextMenuStatus.Separator)
             SelectContextMenuResult(clickedControl.DataContext);
     }
 
@@ -311,6 +326,12 @@ public partial class MainWindow : TranslucentWindow
             newSelectedIdx = Math.Min(CurrentResultList.SelectedIndex + 1, CurrentResultList.ItemCount - 1);
         else return;
 
+        if (vm.ContextMenu.ContextMenuLoading)
+        {
+            e.Handled = true;
+            return;
+        }
+
         // TODO: Always keep bottom padding
         // Scroll to top or bottom to preserve the paddings
         if (CurrentResultList.Scroll is not null)
@@ -326,7 +347,7 @@ public partial class MainWindow : TranslucentWindow
         // Prevent focusing a separator
         if (vm.ContextMenu.ContextMenuEnabled
             && previousSelectedIdx != newSelectedIdx
-            && ContextMenuResultList.Selection.SelectedItem is ContextMenuEntryData { IsSeparator: true })
+            && ContextMenuResultList.Selection.SelectedItem is IContextMenuEntry { Status: ContextMenuStatus.Separator })
             TextBox_OnKeyDown(sender, e);
 
         e.Handled = true;

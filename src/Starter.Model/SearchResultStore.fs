@@ -12,9 +12,9 @@ open Serilog
 open Starter.Features.CustomCollections
 open Starter.SearchEngine
 
-type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearchEngine>) =
+type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, SearchEngine>) =
     let staticResults = new BehaviorSubject<_>(ResizeArray())
-    let dynamicSearchEngines = ResizeArray<IDynamicSearchEngine>()
+    let dynamicSearchEngines = ResizeArray<DynamicSearchEngine>()
 
     let slab = Memory.Slab.createDefault()
     let comparer =
@@ -57,7 +57,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
                     | _ -> false
                 )
 
-    let querySingleDynamicSearchEngine ct (activator: ISearchEngineActivator | null) query (engine: IDynamicSearchEngine) = // Show only this engine results
+    let querySingleDynamicSearchEngine ct (activator: SearchEngineActivator | null) query (engine: DynamicSearchEngine) = // Show only this engine results
         try
             let struct (instantResults, futureResults) = engine.Search(query, ct, activator)
 
@@ -126,7 +126,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
         )
         |> disposeOnCancelled ct
 
-    let querySingleStaticSearchEngine ct (activator: ISearchEngineActivator) query = // Show only this engine results
+    let querySingleStaticSearchEngine ct (activator: SearchEngineActivator) query = // Show only this engine results
         stopwatch.Restart()
         let normalizedText =
             query
@@ -169,7 +169,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
     member this.Results = results
     member this.LoadingTimes = loadingTimes
 
-    member this.AddSource(searchEngine: IStaticSearchEngine) =
+    member this.AddSource(searchEngine: StaticSearchEngine) =
         Task.Run<unit>(fun () -> task {
             try
                 let! results = searchEngine.LoadResults()
@@ -205,7 +205,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
             with e -> Log.Error(e, $"{searchEngine.Name} failed to load results:\n{e.Message}")
         })
 
-    member this.AddSource(searchEngine: IDynamicSearchEngine) =
+    member this.AddSource(searchEngine: DynamicSearchEngine) =
         dynamicSearchEngines.Add searchEngine
 
     member this.ClearResults() =
@@ -214,7 +214,7 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
         results.Clear()
         results.NotifyChanged()
 
-    member this.Query(text: string, activator: ISearchEngineActivator | null) =
+    member this.Query(text: string, activator: SearchEngineActivator | null) =
         queryCancellationTokenSource.Cancel()
         queryCancellationTokenSource <- new CancellationTokenSource()
         let ct = queryCancellationTokenSource.Token
@@ -224,8 +224,8 @@ type SearchResultStore(resultScoreDb, searchEngines: IDictionary<string, ISearch
         | null -> queryAllSearchEngines ct text
         | activator ->
             match searchEngines.TryGetValue activator.SearchEngineId with
-            | true, :? IStaticSearchEngine -> querySingleStaticSearchEngine ct activator text
-            | true, (:? IDynamicSearchEngine as searchEngine) ->
+            | true, :? StaticSearchEngine -> querySingleStaticSearchEngine ct activator text
+            | true, (:? DynamicSearchEngine as searchEngine) ->
                 results.Clear()
                 querySingleDynamicSearchEngine ct activator text searchEngine
             | _ -> Log.Error $"Cannot find search engine matching the current activator: {activator.Id}"

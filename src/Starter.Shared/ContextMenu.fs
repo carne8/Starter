@@ -1,7 +1,9 @@
 ﻿module Starter.Shared.ContextMenu
 
 open System
+open System.ComponentModel
 open System.Collections.Concurrent
+open System.Collections.ObjectModel
 open System.Runtime.InteropServices
 open System.Threading
 open System.Threading.Tasks
@@ -32,12 +34,14 @@ type StaThreadDispatcher() =
     interface IDisposable with
         member _.Dispose() =
             queue.CompleteAdding()
-            thread.Join()
+            Task.Run<unit>(fun () -> thread.Join()) |> ignore
 
-type WindowsContextMenuEntry(invokeSubMenu, invoke) =
+type WindowsContextMenuEntry(index, invokeSubMenu, invoke) =
     let mutable status = ContextMenuStatus.Loading
     let mutable data = ValueNone
-    let onLoadedEvent = Event<EventHandler, EventArgs>()
+    let propertyChangedEvent = Event<PropertyChangedEventHandler, PropertyChangedEventArgs>()
+
+    member _.Index = index
 
     member this.SetLoaded(
         id: string | null,
@@ -57,24 +61,21 @@ type WindowsContextMenuEntry(invokeSubMenu, invoke) =
             SubMenu = subMenu
         |}
 
-        onLoadedEvent.Trigger(this, EventArgs.Empty)
+        propertyChangedEvent.Trigger(this, PropertyChangedEventArgs null)
 
     member this.SetSeparator() =
         status <- ContextMenuStatus.Separator
-        onLoadedEvent.Trigger(this, EventArgs.Empty)
+        propertyChangedEvent.Trigger(this, PropertyChangedEventArgs(nameof this.Status))
 
     member this.SetFailed() =
         status <- ContextMenuStatus.Failed
-        onLoadedEvent.Trigger(this, EventArgs.Empty)
+        propertyChangedEvent.Trigger(this, PropertyChangedEventArgs(nameof this.Status))
 
     member _.Status = status
     member _.CmdOffset = data |> ValueOption.get |> _.CmdOffset
 
     interface IContextMenuEntry with
         member _.Status = status
-        [<CLIEvent>]
-        member _.OnLoaded = onLoadedEvent.Publish
-
         member _.Id = data |> ValueOption.get |> _.Id
         member _.Name = data |> ValueOption.map _.Text |> ValueOption.defaultValue null
         member _.Description = data |> ValueOption.map _.Description |> ValueOption.defaultValue null
@@ -83,7 +84,11 @@ type WindowsContextMenuEntry(invokeSubMenu, invoke) =
         member this.Invoke() =
             match data |> ValueOption.bind _.SubMenu with
             | ValueNone -> invoke this
-            | ValueSome subMenu -> invokeSubMenu this subMenu
+            | ValueSome subMenu -> invokeSubMenu subMenu
+
+    interface INotifyPropertyChanged with
+        [<CLIEvent>]
+        member _.PropertyChanged = propertyChangedEvent.Publish
 
 
 let idCmdFirst = 1u
@@ -227,8 +232,8 @@ let rec private loadContextMenuEntries itemsCountLoaded separatorLoaded itemLoad
                         SubMenu = if subMenu.IsInvalid then ValueNone else ValueSome i
                     |}
                     |> itemLoaded i
-                with e ->
-                    itemFailed i e
+            with e ->
+                itemFailed i e
         true
 
 type SubContextMenuLoader(
@@ -245,7 +250,7 @@ type SubContextMenuLoader(
         null
 
     interface IContextMenuLoader with
-        override this.LoadItems(platformHandle, _) =
+        override this.LoadItems(platformHandle) =
             let tcs = TaskCompletionSource<_>()
             sta.Invoke(fun () ->
                 use hMenu = User32.CreatePopupMenu()
@@ -256,37 +261,55 @@ type SubContextMenuLoader(
                 if subHMenu.IsInvalid then () else
 
                 let mutable entries = null
+                let mutable observableCollection = null
 
-                let res =
+                let succeed =
                     loadContextMenuEntries
                         (fun count -> // Items count loaded
-                            entries <- Array.init count (fun _ ->
-                                WindowsContextMenuEntry(
-                                    (fun _ _ -> null),
-                                    this.Invoke platformHandle
+                            entries <-
+                                Array.init count (fun idx ->
+                                    WindowsContextMenuEntry(
+                                        idx,
+                                        (fun _ -> null),
+                                        this.Invoke platformHandle
+                                    )
                                 )
-                            )
+                            observableCollection <-
+                                entries
+                                |> Seq.cast<IContextMenuEntry>
+                                |> ObservableCollection
+
+                            tcs.SetResult observableCollection
                         )
                         (fun i -> entries[i].SetSeparator()) // Separator loaded
-                        (fun i entry -> entries[i].SetLoaded( // Item loaded
-                            entry.Id,
-                            entry.CmdOffset,
-                            entry.Text,
-                            entry.Description,
-                            entry.Icon,
-                            entry.SubMenu
-                        ))
-                        (fun i _ -> entries[i].SetFailed()) // Item failed
+                        (fun i entry -> // Item loaded
+                            entries[i].SetLoaded(
+                                entry.Id,
+                                entry.CmdOffset,
+                                entry.Text,
+                                entry.Description,
+                                entry.Icon,
+                                entry.SubMenu
+                            )
+
+                            if i = entries.Length - 1 then // When last item has been loaded
+                                entries |> Seq.iter (fun e ->
+                                    if e.Status = ContextMenuStatus.Loading then
+                                        observableCollection.Remove e |> ignore
+                                )
+                        )
+                        (fun i _ -> // Item failed
+                            entries[i].SetFailed()
+                            observableCollection.Remove entries[i] |> ignore
+                        )
                         contextMenu
                         subHMenu
 
-                if res then
-                    tcs.SetResult entries
-                else
+                if not succeed then
                     tcs.SetException(exn "Failed to load context menu entries.")
             )
 
-            tcs.Task |> Task.map (Array.map (fun e -> e :> IContextMenuEntry))
+            tcs.Task
 
 
 type ContextMenuLoader(itemPath: string) =
@@ -302,7 +325,7 @@ type ContextMenuLoader(itemPath: string) =
             )
         null
 
-    member private _.InvokeSubMenu (entry: WindowsContextMenuEntry) subMenu =
+    member private _.InvokeSubMenu subMenu =
         match savedInterfaces with
         | ValueNone ->
             null :> IContextMenuLoader
@@ -310,8 +333,8 @@ type ContextMenuLoader(itemPath: string) =
             SubContextMenuLoader(sta, contextMenu, subMenu)
 
     interface IContextMenuLoader with
-        override this.LoadItems(platformHandle, onNewResult) =
-            let tcs = TaskCompletionSource<_>()
+        override this.LoadItems(platformHandle) =
+            let tcs = TaskCompletionSource<ObservableCollection<_>>()
             sta <- new StaThreadDispatcher()
             sta.Invoke(fun () ->
                 match loadContextMenuInterface itemPath with
@@ -320,21 +343,29 @@ type ContextMenuLoader(itemPath: string) =
                     savedInterfaces <- ValueSome (contextMenu, disposable)
 
                     let mutable entries = null
+                    let mutable observableCollection = null
 
                     let res =
                         loadContextMenuEntries
                             (fun count -> // Items count loaded
-                                entries <- Array.init count (fun _ ->
-                                    WindowsContextMenuEntry(
-                                        this.InvokeSubMenu,
-                                        this.Invoke platformHandle
+                                entries <-
+                                    Array.init count (fun idx ->
+                                        WindowsContextMenuEntry(
+                                            idx,
+                                            this.InvokeSubMenu,
+                                            this.Invoke platformHandle
+                                        )
                                     )
-                                )
-                                tcs.SetResult entries
+                                observableCollection <-
+                                    entries
+                                    |> Seq.cast<IContextMenuEntry>
+                                    |> ObservableCollection
+
+                                tcs.SetResult observableCollection
                             )
                             (fun i -> entries[i].SetSeparator()) // Separator loaded
-                            (fun i entry ->
-                                entries[i].SetLoaded( // Item loaded
+                            (fun i entry -> // Item loaded
+                                entries[i].SetLoaded(
                                     entry.Id,
                                     entry.CmdOffset,
                                     entry.Text,
@@ -344,9 +375,15 @@ type ContextMenuLoader(itemPath: string) =
                                 )
 
                                 if i = entries.Length - 1 then // When last item has been loaded
-                                    entries |> Array.iter (fun e -> if e.Status = ContextMenuStatus.Loading then e.SetFailed())
+                                    entries |> Seq.iter (fun e ->
+                                        if e.Status = ContextMenuStatus.Loading then
+                                            observableCollection.Remove e |> ignore
+                                    )
                             )
-                            (fun i _ -> entries[i].SetFailed()) // Item failed
+                            (fun i _ -> // Item failed
+                                entries[i].SetFailed()
+                                observableCollection.Remove entries[i] |> ignore
+                            )
                             contextMenu
                             hMenu
 
@@ -354,7 +391,7 @@ type ContextMenuLoader(itemPath: string) =
                         tcs.SetException(exn "Failed to load context menu entries.")
             )
 
-            tcs.Task |> Task.map (Array.map (fun e -> e :> IContextMenuEntry))
+            tcs.Task
 
     interface IDisposable with
         override _.Dispose() =

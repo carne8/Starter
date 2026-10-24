@@ -8,12 +8,12 @@ open System.Collections.Generic
 
 [<Struct>]
 type private ActivatorPrefixPair =
-    { Activator: ISearchEngineActivator
+    { Activator: SearchEngineActivator
       Prefix: string }
 
 /// Keep an up-to-date store of activator associated with a prefix
 type ActivatorStore(configObservable: BehaviorSubject<Configuration>) as this =
-    let activatorList = List<ISearchEngineActivator>()
+    let activatorList = List<SearchEngineActivator>()
     let pairList = List<ActivatorPrefixPair>()
 
     let mutable config = configObservable.Value
@@ -41,16 +41,19 @@ type ActivatorStore(configObservable: BehaviorSubject<Configuration>) as this =
             pairList.Clear()
             pairList.AddRange(newListContent)
 
-    member _.AddSearchEngineActivators(searchEngine: ISearchEngine) =
+    member _.AddSearchEngineActivators(searchEngine: SearchEngine) =
         // Add activators
-        searchEngine.Activators |> activatorList.AddRange
-        searchEngine.Activators
-        |> Array.choose (fun activator ->
-            config.ActivatorPrefixes
-            |> Map.tryFind activator.Id
-            |> Option.map (fun prefix -> { Activator = activator; Prefix = prefix })
-        )
-        |> pairList.AddRange
+        match searchEngine.Activators with
+        | null -> ()
+        | activators ->
+            activators |> activatorList.AddRange
+            activators
+            |> Array.choose (fun activator ->
+                config.ActivatorPrefixes
+                |> Map.tryFind activator.Id
+                |> Option.map (fun prefix -> { Activator = activator; Prefix = prefix })
+            )
+            |> pairList.AddRange
 
     member _.GetActivatorFromText(text: string) =
         pairList

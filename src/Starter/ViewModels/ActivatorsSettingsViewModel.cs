@@ -1,21 +1,22 @@
-﻿using Microsoft.FSharp.Collections;
+﻿using System.ComponentModel;
+using Microsoft.FSharp.Collections;
 using Starter.SearchEngine;
 
 namespace Starter.ViewModels;
 
 public partial class ActivatorInputFieldViewModel : ObservableObject
 {
-    private readonly ISearchEngineActivator activator;
-    private readonly Action<ISearchEngineActivator, string> activatorPrefixChanged;
+    private readonly SearchEngineActivator activator;
+    private readonly Action<SearchEngineActivator, string> activatorPrefixChanged;
 
     [ObservableProperty] public partial string Name { get; set; }
     [ObservableProperty] public partial StarterIconSource Icon { get; set; }
     [ObservableProperty] public partial string ActivationString { get; set; }
 
     public ActivatorInputFieldViewModel(
-        ISearchEngineActivator activator,
+        SearchEngineActivator activator,
         FSharpMap<string,string> activatorPrefixes,
-        Action<ISearchEngineActivator, string> activatorPrefixChanged
+        Action<SearchEngineActivator, string> activatorPrefixChanged
     )
     {
         this.activatorPrefixChanged = activatorPrefixChanged;
@@ -27,10 +28,10 @@ public partial class ActivatorInputFieldViewModel : ObservableObject
                 : string.Empty;
         Name = activator.Name;
         Icon = activator.Icon;
-        if (activator is ISearchEngineDynamicActivator dynActivator) dynActivator.Changed += DynamicActivatorOnChanged;
+        if (activator is INotifyPropertyChanged dynActivator) dynActivator.PropertyChanged += DynamicActivatorOnChanged;
     }
 
-    private void DynamicActivatorOnChanged(object? sender, EventArgs e)
+    private void DynamicActivatorOnChanged(object? sender, PropertyChangedEventArgs e)
     {
         Name = activator.Name;
         Icon = activator.Icon;

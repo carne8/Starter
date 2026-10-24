@@ -2,18 +2,20 @@
 
 open Starter.SearchEngine
 
-type UwpApplication =
-    { Id: string
-      Name: string
-      PackageId: string
-      Icon: StarterIconSource }
+type UwpApplication(
+    Id: string,
+    Name: string,
+    PackageId: string,
+    Icon: StarterIconSource
+) =
+    inherit SearchResult()
 
-    interface ISearchResult with
-        member this.Id = this.Id
-        member this.Name = this.Name
-        member this.Description = "Application"
-        member this.Keywords = Array.empty
-        member this.Icon = this.Icon
-        member this.ShowIfNoActivator = true
-        member this.ActivatorFilter = Array.empty
-        member this.ContextMenuLoader = null
+    member _.PackageId = PackageId
+    override this.Id = Id
+    override this.Name = Name
+    override this.Description = "Application"
+    override this.Keywords = Array.empty
+    override this.Icon = Icon
+    override this.ShowIfNoActivator = true
+    override this.ActivatorFilter = Array.empty
+    override this.ContextMenuLoader = null

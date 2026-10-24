@@ -2,27 +2,27 @@ using Avalonia.Controls.Templates;
 
 namespace Starter.SearchEngine;
 
-public interface ISearchResult
+public abstract class SearchResult()
 {
-    string? Id { get; }
-    string Name { get; }
-    string? Description { get; }
+    public virtual string? Id { get; }
+    public abstract string Name { get; }
+    public virtual string? Description { get; }
     /// <summary>
     /// Additional strings that are compared to the user query
     /// </summary>
-    string[]? Keywords { get; }
-    StarterIconSource Icon { get; }
+    public virtual string[]? Keywords { get; }
+    public virtual StarterIconSource Icon { get; } = StarterIconSource.Empty;
     /// <summary>
     /// Show this result in the default mode of Starter, without any activator being in use.
     /// </summary>
-    bool ShowIfNoActivator { get; }
-    ISearchEngineActivator[] ActivatorFilter { get; }
-    IContextMenuLoader? ContextMenuLoader { get; }
+    public virtual bool ShowIfNoActivator { get; } = true;
+    public virtual SearchEngineActivator[]? ActivatorFilter { get; }
+    public virtual IContextMenuLoader? ContextMenuLoader { get; }
 }
 
-public interface IControlSearchResult : ISearchResult
+public abstract class ControlSearchResult : SearchResult
 {
-    bool ShowIcon { get; }
-    object ControlDataContext { get; }
-    IDataTemplate ControlDataTemplate { get; }
+    public virtual bool ShowIcon { get; }
+    public abstract object ControlDataContext { get; }
+    public abstract IDataTemplate ControlDataTemplate { get; }
 }

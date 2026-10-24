@@ -126,7 +126,7 @@
                                     IsVisible="{Binding Activator, Converter={x:Static ObjectConverters.IsNotNull}}"
                                     Content="{Binding Activator}">
                         <ContentControl.ContentTemplate>
-                            <DataTemplate DataType="starter:ISearchEngineActivator">
+                            <DataTemplate DataType="starter:SearchEngineActivator">
                                 <controls:StarterIcon Width="18"
                                                       Height="18"
                                                       FontSize="18"
@@ -185,18 +185,14 @@
                         <Setter Property="Margin" Value="0, 0, 0, 0" />
                     </Style>
                 </ListBox.Styles>
-
-                <ListBox.ItemTemplate>
-                    <controls:SearchResultDataTemplate />
-                </ListBox.ItemTemplate>
             </ListBox>
 
             <Border Height="150" IsVisible="{Binding ContextMenu.ContextMenuLoading}">
-                <ui:FAProgressRing IsIndeterminate="True"
-                                   Width="50"
+                <ui:FAProgressRing Width="50"
                                    Height="50"
+                                   HorizontalAlignment="Center"
                                    VerticalAlignment="Center"
-                                   HorizontalAlignment="Center" />
+                                   IsIndeterminate="True" />
             </Border>
 
             <ListBox x:Name="ContextMenuResultList"
@@ -229,12 +225,6 @@
                         <Setter Property="Margin" Value="0, 0, 0, 0" />
                     </Style>
                 </ListBox.Styles>
-
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <controls:ContextMenuResult />
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
             </ListBox>
 
             <!-- Footer -->

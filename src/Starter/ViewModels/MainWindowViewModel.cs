@@ -9,6 +9,8 @@ using Const = Starter.Features.Constants;
 
 namespace Starter.ViewModels;
 
+using FuzzyMatchResults = Dictionary<IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult>;
+
 public partial class MainWindowViewModel : ObservableObject
 {
     private readonly SearchEngineStore searchEngineStore;
@@ -26,20 +28,21 @@ public partial class MainWindowViewModel : ObservableObject
     public IObservable<Configuration> ConfigSystemObservable { get; private set; }
     public ContextMenuStore ContextMenu => contextMenuStore;
     public ObservableList<SearchResultData> SearchResults => searchResultStore.Results;
-    public ObservableList<ContextMenuEntryData> ContextMenuResults => contextMenuStore.ContextMenuResults;
+    public ObservableList<IContextMenuEntry> ContextMenuResults => contextMenuStore.ContextMenuResults;
     public IObservable<TimeSpan?> LoadingTime => searchResultStore.LoadingTimes.AsSystemObservable();
 
     [ObservableProperty]
     public partial string Text { get; set; } = string.Empty;
     [ObservableProperty]
-    public partial ISearchEngineActivator? Activator { get; set; }
+    public partial SearchEngineActivator? Activator { get; set; }
 
 
     public MainWindowViewModel(
         BehaviorSubject<Configuration> config,
         IScoreDb resultScoreDb,
         SearchEngineStore searchEngineStore,
-        ActivatorStore activatorStore
+        ActivatorStore activatorStore,
+        FuzzyMatchResults fuzzyMatchResults
     )
     {
         Config = config;
@@ -52,13 +55,13 @@ public partial class MainWindowViewModel : ObservableObject
         searchResultStore = new SearchResultStore(resultScoreDb, searchEngineStore.SearchEngines);
         searchEngineStore.SearchEngineAdded += se =>
         {
-            if (se is IStaticSearchEngine staticSe) searchResultStore.AddSource(staticSe);
-            else if (se is IDynamicSearchEngine dynamicSe) searchResultStore.AddSource(dynamicSe);
+            if (se is StaticSearchEngine staticSe) searchResultStore.AddSource(staticSe);
+            else if (se is DynamicSearchEngine dynamicSe) searchResultStore.AddSource(dynamicSe);
         };
         foreach (var se in searchEngineStore.StaticSearchEngines) searchResultStore.AddSource(se);
         foreach (var se in searchEngineStore.DynamicSearchEngines) searchResultStore.AddSource(se);
 
-        contextMenuStore = new ContextMenuStore(resultScoreDb);
+        contextMenuStore = new ContextMenuStore(resultScoreDb, fuzzyMatchResults);
     }
 
     private void IncreaseResultScore(string resultId)
@@ -69,7 +72,7 @@ public partial class MainWindowViewModel : ObservableObject
         searchResultStore.SortResults(); // Sort results for next opening
     }
 
-    private void IncreaseResultScore(ISearchResult searchResult)
+    private void IncreaseResultScore(SearchResult searchResult)
     {
         if (searchResult.Id is null) return;
         IncreaseResultScore(searchResult.Id);
@@ -100,7 +103,7 @@ public partial class MainWindowViewModel : ObservableObject
         else searchResultStore.Query(value, Activator);
     }
 
-    partial void OnActivatorChanged(ISearchEngineActivator? value)
+    partial void OnActivatorChanged(SearchEngineActivator? value)
     {
         if (value is not null) return;
         searchResultStore.Query(Text, value);
@@ -129,11 +132,11 @@ public partial class MainWindowViewModel : ObservableObject
         IncreaseResultScore(searchResult.SearchResult);
     }
 
-    public bool SelectContextMenuResult(ContextMenuEntryData entry, IPlatformHandle platformHandle)
+    public bool SelectContextMenuResult(IContextMenuEntry entry, IPlatformHandle platformHandle)
     {
         try
         {
-            var newContextMenu = entry.Result.Invoke();
+            var newContextMenu = entry.Invoke();
             if (newContextMenu is null)
             {
                 HideWindow?.Invoke(this, EventArgs.Empty);
@@ -144,7 +147,7 @@ public partial class MainWindowViewModel : ObservableObject
             if (Text == string.Empty) OnTextChanged(Text);
             else Text = string.Empty;
 
-            IncreaseResultScore(entry.Result);
+            IncreaseResultScore(entry);
             return true;
         }
         catch (Exception exn)

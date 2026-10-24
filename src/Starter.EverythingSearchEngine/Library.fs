@@ -20,23 +20,26 @@ open R3
 open Vanara
 open Vanara.Windows.Shell
 
-[<Struct>]
-type SearchResult =
-    { Name: string
-      Path: string
-      Icon: StarterIconSource }
+type EverythingSearchResult(
+        Name: string,
+        Path: string,
+        Icon: StarterIconSource
+    ) =
+    inherit SearchResult()
 
-    interface ISearchResult with
-        member this.Id = $"everything:{this.Path}"
-        member this.Name = this.Name
-        member this.Description = this.Path
-        member this.Keywords = null
-        member this.Icon = this.Icon
-        member this.ShowIfNoActivator = true
-        member this.ActivatorFilter = Array.empty
-        member this.ContextMenuLoader = new ContextMenu.ContextMenuLoader(this.Path)
+    member this.Path = Path
+    override this.Id = $"everything:{Path}"
+    override this.Name = Name
+    override this.Description = Path
+    override this.Keywords = null
+    override this.Icon = Icon
+    override this.ShowIfNoActivator = true
+    override this.ActivatorFilter = Array.empty
+    override this.ContextMenuLoader = new ContextMenu.ContextMenuLoader(Path)
 
 type EverythingSearchEngine(icon, api: IEverything) =
+    inherit DynamicSearchEngine()
+
     let pathStrBuilder = StringBuilder(300)
 
     let loadResultIcon (path: string) =
@@ -67,10 +70,8 @@ type EverythingSearchEngine(icon, api: IEverything) =
 
             let icon = loadResultIcon path
 
-            { Name = name
-              Path = path
-              Icon = icon }
-            :> ISearchResult
+            EverythingSearchResult(name, path, icon)
+            :> SearchResult
             |> ValueSome
 
     let queryEverything (ct: CancellationToken) maxResultsCount query : Observable<_> =
@@ -99,35 +100,31 @@ type EverythingSearchEngine(icon, api: IEverything) =
 
         results
 
-    interface IDynamicSearchEngine with
-        member this.Id = nameof EverythingSearchEngine
-        member this.Name = "Everything"
-        member this.Icon = icon
-        member this.Activators = [| DefaultSearchEngineActivator(this) |]
-        member this.ResultsPriority = ResultPriority.Search
-        member this.BufferResults = true
+    override this.Id = nameof EverythingSearchEngine
+    override this.Name = "Everything"
+    override this.Icon = icon
+    override this.Activators = [| DefaultSearchEngineActivator(this) |]
+    override this.ResultsPriority = ResultPriority.Search
+    override this.BufferResults = true
 
-        member this.Search(query, ct, activator) =
-            let results =
-                if activator <> null then
-                    queryEverything ct 300u query
-                elif query |> String.IsNullOrWhiteSpace |> not then
-                    queryEverything ct 30u query
-                else
-                    Observable.Empty()
+    override this.Search(query, ct, activator) =
+        let results =
+            if activator <> null then
+                queryEverything ct 300u query
+            elif query |> String.IsNullOrWhiteSpace |> not then
+                queryEverything ct 30u query
+            else
+                Observable.Empty()
 
-            Seq.empty, results
+        Seq.empty, results
 
-        member this.SearchResultSelected(selectedSearchResult) =
-            match selectedSearchResult with
-            | :? SearchResult as sr ->
-                ProcessStartInfo(sr.Path, UseShellExecute = true)
-                |> Process.Start
-                |> function null -> () | d -> d.Dispose()
-            | _ -> ()
-
-        member this.add_Changed _ = ()
-        member this.remove_Changed _ = ()
+    override this.SearchResultSelected(selectedSearchResult) =
+        match selectedSearchResult with
+        | :? EverythingSearchResult as sr ->
+            ProcessStartInfo(sr.Path, UseShellExecute = true)
+            |> Process.Start
+            |> function null -> () | d -> d.Dispose()
+        | _ -> ()
 
 type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)

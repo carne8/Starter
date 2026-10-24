@@ -7,12 +7,12 @@ namespace Starter;
 
 public class SearchEngineStore
 {
-    public readonly List<IStaticSearchEngine> StaticSearchEngines = [];
-    public readonly List<IDynamicSearchEngine> DynamicSearchEngines = [];
-    public readonly Dictionary<string, ISearchEngine> SearchEngines = new();
-    public readonly Dictionary<string, SearchEngineFactory.SearchEngineSettings> Settings = new();
+    public readonly List<StaticSearchEngine> StaticSearchEngines = [];
+    public readonly List<DynamicSearchEngine> DynamicSearchEngines = [];
+    public readonly Dictionary<string, SearchEngine.SearchEngine> SearchEngines = [];
+    public readonly Dictionary<string, SearchEngineFactory.SearchEngineSettings> Settings = [];
 
-    public event Action<ISearchEngine>? SearchEngineAdded;
+    public event Action<SearchEngine.SearchEngine>? SearchEngineAdded;
     public event Action<string, SearchEngineFactory.SearchEngineSettings>? SearchEngineSettingsAdded;
 
     public void LoadSearchEnginesFromDirectory(string directory, IClipboard clipboard)
@@ -36,8 +36,8 @@ public class SearchEngineStore
         {
             switch (engine)
             {
-                case IStaticSearchEngine staticEngine: StaticSearchEngines.Add(staticEngine); break;
-                case IDynamicSearchEngine dynamicEngine: DynamicSearchEngines.Add(dynamicEngine); break;
+                case StaticSearchEngine staticEngine: StaticSearchEngines.Add(staticEngine); break;
+                case DynamicSearchEngine dynamicEngine: DynamicSearchEngines.Add(dynamicEngine); break;
                 default:
                     log.Warning("Unknown search engine type: {Engine}", engine);
                     return;
@@ -65,14 +65,14 @@ public class SearchEngineStore
         }
     }
 
-    public void AddSearchEngine(IStaticSearchEngine se)
+    public void AddSearchEngine(StaticSearchEngine se)
     {
         StaticSearchEngines.Add(se);
         SearchEngines.Add(se.Id, se);
         SearchEngineAdded?.Invoke(se);
     }
 
-    public void AddSearchEngine(IDynamicSearchEngine se)
+    public void AddSearchEngine(DynamicSearchEngine se)
     {
         DynamicSearchEngines.Add(se);
         SearchEngines.Add(se.Id, se);

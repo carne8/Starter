@@ -3,39 +3,24 @@ using Starter.SearchEngine;
 
 namespace Starter;
 
-internal class ExitSearchResult : ISearchResult
+internal class ExitSearchResult : SearchResult
 {
-    public string Id => nameof(ExitSearchResult);
-    public string Name => "Exit";
-    public string Description => "Quit starter";
-    public string[] Keywords => ["quit"];
-    public StarterIconSource Icon => Icons.Exit;
-    public bool ShowIfNoActivator => true;
-    public ISearchEngineActivator[] ActivatorFilter => [];
-    public IContextMenuLoader? ContextMenuLoader => null;
+    public override string Id => nameof(ExitSearchResult);
+    public override string Name => "Exit";
+    public override string Description => "Quit starter";
+    public override string[] Keywords => ["quit"];
+    public override StarterIconSource Icon => Icons.Exit;
+    public override bool ShowIfNoActivator => true;
 }
 
-internal class ExitSearchEngine(IClassicDesktopStyleApplicationLifetime lifetime) : IStaticSearchEngine
+internal class ExitSearchEngine(IClassicDesktopStyleApplicationLifetime lifetime) : StaticSearchEngine
 {
-    public string Id => nameof(ExitSearchEngine);
-    public string Name => "Exit";
-    public string ShortName => "Exit";
-    public StarterIconSource Icon => Icons.Exit;
-    public ISearchEngineActivator[] Activators => [];
+    public override string Id => nameof(ExitSearchEngine);
+    public override string Name => "Exit";
+    public override StarterIconSource Icon => Icons.Exit;
 
-    public event EventHandler? Changed
-    {
-        add { }
-        remove { }
-    }
-    public event EventHandler<IEnumerable<ISearchResult>>? ResultsChanged
-    {
-        add { }
-        remove { }
-    }
+    private static readonly IEnumerable<SearchResult> SearchResults = [new ExitSearchResult()];
 
-    private static readonly IEnumerable<ISearchResult> SearchResults = [new ExitSearchResult()];
-
-    public void SearchResultSelected(ISearchResult selectedSearchResult) => lifetime.TryShutdown();
-    public ValueTask<IEnumerable<ISearchResult>> LoadResults() => ValueTask.FromResult(SearchResults);
+    public override void SearchResultSelected(SearchResult selectedSearchResult) => lifetime.TryShutdown();
+    public override ValueTask<IEnumerable<SearchResult>> LoadResults() => ValueTask.FromResult(SearchResults);
 }

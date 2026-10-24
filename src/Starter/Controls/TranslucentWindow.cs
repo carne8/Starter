@@ -12,7 +12,7 @@ public class TranslucentWindow : Window
     public static readonly StyledProperty<IBrush?> BackgroundColorProperty = AvaloniaProperty.Register<TranslucentWindow, IBrush?>(nameof(BackgroundColor));
     public static readonly StyledProperty<Antialiasing?> AntialiasingProperty = AvaloniaProperty.Register<TranslucentWindow, Antialiasing?>(nameof(Antialiasing));
 
-    private static readonly IReadOnlyList<WindowTransparencyLevel> NoneHint = [WindowTransparencyLevel.None];
+    private static readonly IReadOnlyList<WindowTransparencyLevel> NoneHint = [WindowTransparencyLevel.Transparent];
     private static readonly IReadOnlyList<WindowTransparencyLevel> AcrylicHint = [WindowTransparencyLevel.AcrylicBlur, WindowTransparencyLevel.Blur, WindowTransparencyLevel.Transparent];
     private static readonly IReadOnlyList<WindowTransparencyLevel> MicaHint = [WindowTransparencyLevel.Mica, WindowTransparencyLevel.Blur, WindowTransparencyLevel.Transparent];
 

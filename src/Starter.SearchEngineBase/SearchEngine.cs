@@ -27,14 +27,13 @@ public enum ResultPriority
     Search
 }
 
-public interface ISearchEngine
+public abstract class SearchEngine
 {
-    public string Id { get; }
-    public string Name { get; }
-    public StarterIconSource Icon { get; }
-    public ISearchEngineActivator[] Activators { get; }
-    public event EventHandler? Changed;
-    public void SearchResultSelected(ISearchResult selectedSearchResult);
+    public abstract string Id { get; }
+    public abstract string Name { get; }
+    public virtual StarterIconSource Icon { get; } = StarterIconSource.Empty;
+    public virtual SearchEngineActivator[]? Activators { get; }
+    public abstract void SearchResultSelected(SearchResult selectedSearchResult);
 }
 
 /// <summary>
@@ -42,10 +41,11 @@ public interface ISearchEngine
 /// Fuzzy finding is applicable on its results.
 /// Applicable for an application search engine.
 /// </summary>
-public interface IStaticSearchEngine : ISearchEngine
+public abstract class StaticSearchEngine : SearchEngine
 {
-    public ValueTask<IEnumerable<ISearchResult>> LoadResults();
-    public event EventHandler<IEnumerable<ISearchResult>>? ResultsChanged;
+    public abstract ValueTask<IEnumerable<SearchResult>> LoadResults();
+    public event EventHandler<IEnumerable<SearchResult>>? ResultsChanged;
+    protected void OnResultsChanged(IEnumerable<SearchResult> results) => ResultsChanged?.Invoke(this, results);
 }
 
 /// <summary>
@@ -53,20 +53,20 @@ public interface IStaticSearchEngine : ISearchEngine
 /// Fuzzy finding is not applicable for its results.
 /// Applicable for a web search engine.
 /// </summary>
-public interface IDynamicSearchEngine : ISearchEngine
+public abstract class DynamicSearchEngine : SearchEngine
 {
     /// <summary>
     /// Indicate if the instant results from this search engine should be shown on
     /// top of others results (like for the calculator search engine) or if they
     /// should be shown in the last results (like for the URL search engine)
     /// </summary>
-    public ResultPriority ResultsPriority { get; }
+    public abstract ResultPriority ResultsPriority { get; }
 
     /// <summary>
     /// Indicate if the results from the observable should be buffered or not.
     /// Add some lag when true.
     /// </summary>
-    public bool BufferResults { get; }
+    public virtual bool BufferResults { get; }
 
-    public (IEnumerable<ISearchResult>, Observable<IEnumerable<ISearchResult>>) Search(string query, CancellationToken cancellationToken, ISearchEngineActivator? activator);
+    public abstract (IEnumerable<SearchResult>, Observable<IEnumerable<SearchResult>>) Search(string query, CancellationToken cancellationToken, SearchEngineActivator? activator);
 }

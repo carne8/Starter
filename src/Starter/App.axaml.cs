@@ -17,6 +17,8 @@ using Const = Starter.Features.Constants;
 
 namespace Starter;
 
+using FuzzyMatchResults = Dictionary<SearchEngine.IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult>;
+
 public class App : Application
 {
     public bool IsTestMode = false;
@@ -73,11 +75,14 @@ public class App : Application
             return LoadConfiguration(config);
         });
 
+        serviceCollection.AddSingleton(new FuzzyMatchResults());
+
         // Main window
         serviceCollection.AddSingleton<MainWindow>(provider =>
         {
             var platformInterop = provider.GetRequiredService<IPlatformInterop>();
-            return new MainWindow(platformInterop);
+            var fuzzyMatchResults = provider.GetRequiredService<FuzzyMatchResults>();
+            return new MainWindow(platformInterop, fuzzyMatchResults);
         });
 
         serviceCollection.AddSingleton(lifetime);

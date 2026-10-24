@@ -1,28 +1,21 @@
-using System;
-
 namespace Starter.SearchEngine;
 
-public interface ISearchEngineActivator
+public abstract class SearchEngineActivator
 {
-    string Id { get; }
-    string SearchEngineId { get; }
-    string Name { get; }
-    StarterIconSource Icon { get; }
-}
-
-public interface ISearchEngineDynamicActivator : ISearchEngineActivator
-{
-    public event EventHandler? Changed;
+    public abstract string Id { get; }
+    public abstract string SearchEngineId { get; }
+    public abstract string Name { get; }
+    public virtual StarterIconSource Icon { get; } = StarterIconSource.Empty;
 }
 
 /// <summary>
 /// Activator used when a search engine doesn't declare
 /// activators and the user used the single-search-engine mode
 /// </summary>
-public readonly struct DefaultSearchEngineActivator(ISearchEngine se) : ISearchEngineActivator
+public class DefaultSearchEngineActivator(SearchEngine se) : SearchEngineActivator
 {
-    public string Id { get; } = se.Id;
-    public string SearchEngineId { get; } = se.Id;
-    public string Name { get; } = se.Name;
-    public StarterIconSource Icon { get; } = se.Icon;
+    public override string Id => se.Id;
+    public override string SearchEngineId => se.Id;
+    public override string Name => se.Name;
+    public override StarterIconSource Icon => se.Icon;
 }

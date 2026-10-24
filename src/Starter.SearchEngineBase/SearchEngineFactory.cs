@@ -24,7 +24,7 @@ public abstract class SearchEngineFactory(string pluginDirectory)
     /// </remarks>
     public abstract string[] LoadSearchEngineIds();
 
-    public abstract (ISearchEngine searchEngine, SearchEngineSettings? settings) LoadSearchEngine(
+    public abstract (SearchEngine searchEngine, SearchEngineSettings? settings) LoadSearchEngine(
         string searchEngineId,
         string pluginConfigDirectory,
         ILogger logger,

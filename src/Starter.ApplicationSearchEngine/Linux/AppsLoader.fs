@@ -27,20 +27,21 @@ let loadApplication (iconLoader: IconLoader.IconLoader) useGtkLaunch entry =
                     String.Empty
                 )
 
-        return
-            { Id = $"application:{entry.DesktopFilePath}:{entry.Name}"
-              DesktopFile = entry.DesktopFilePath
-              Name = entry.Name
-              Icon = icon
-              Description = entry.Comment |> ValueOption.defaultValue "Applications" // TODO: I18n
-              Keywords = entry.AdditionalSearchKeywords
-              Exec = exec
-              WorkingDirectory = entry.WorkingDirectory }
+        return DesktopApplication(
+            Id = $"application:{entry.DesktopFilePath}:{entry.Name}",
+            DesktopFile = entry.DesktopFilePath,
+            Name = entry.Name,
+            Icon = icon,
+            Description = (entry.Comment |> ValueOption.defaultValue "Applications"), // TODO: I18n
+            Keywords = entry.AdditionalSearchKeywords,
+            Exec = exec,
+            WorkingDirectory = entry.WorkingDirectory
+        )
     }
 
 
-let loadApplications iconLoader useGtkLaunch (config: FolderConfiguration) : Task<ISearchResult seq> =
-    Task.Run<ISearchResult seq>(fun () -> task {
+let loadApplications iconLoader useGtkLaunch (config: FolderConfiguration) : Task<SearchResult seq> =
+    Task.Run<SearchResult seq>(fun () -> task {
         let sw = Diagnostics.Stopwatch()
         sw.Start()
 
@@ -70,7 +71,7 @@ let loadApplications iconLoader useGtkLaunch (config: FolderConfiguration) : Tas
                     let! app = loadApplication iconLoader useGtkLaunch entry
 
                     app
-                    :> ISearchResult
+                    :> SearchResult
                     |> apps.Add
             } |> ValueTask
         ))
@@ -78,10 +79,10 @@ let loadApplications iconLoader useGtkLaunch (config: FolderConfiguration) : Tas
         sw.Stop()
         logger.Debug $"Loaded apps: {sw.ElapsedMilliseconds}ms"
 
-        return apps :> ISearchResult seq
+        return apps :> SearchResult seq
     })
 
-let observeApplicationChanges iconLoader useGtkLaunch (config: FolderConfiguration) (appList: ResizeArray<ISearchResult>) =
+let observeApplicationChanges iconLoader useGtkLaunch (config: FolderConfiguration) (appList: ResizeArray<SearchResult>) =
     let subject = new Subject<unit>()
     let semaphore = new SemaphoreSlim(1, 1)
 

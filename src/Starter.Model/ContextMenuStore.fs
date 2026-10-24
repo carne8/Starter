@@ -4,50 +4,183 @@ open System.Threading
 open System.Threading.Tasks
 open System.ComponentModel
 open System.Collections.Generic
+open System.Collections.ObjectModel
+open System.Collections.Specialized
 open Avalonia.Threading
-open FsToolkit.ErrorHandling
 open Serilog
 open Starter.Features.CustomCollections
 open Starter.SearchEngine
 open Starter.TextMatching
+open FsToolkit.ErrorHandling
 
-type ContextMenuStore(resultScoreDb) =
+type ContextMenuStore(resultScoreDb, fuzzyMatchResults: Dictionary<IContextMenuEntry, FuzzyMatch.FuzzyResult>) as this =
+
     let contextMenuComparer =
         fun e1 e2 ->
+            let f1, f2 =
+                fuzzyMatchResults.TryGetValue e1 |> ValueOption.ofPair,
+                fuzzyMatchResults.TryGetValue e2 |> ValueOption.ofPair
+
             compare
-                (ContextMenuEntryData.getWeight resultScoreDb e1)
-                (ContextMenuEntryData.getWeight resultScoreDb e2)
+                (ContextMenuEntry.getWeight resultScoreDb f1 e1)
+                (ContextMenuEntry.getWeight resultScoreDb f2 e2)
 
     let slab = Memory.Slab.createDefault()
-    let fuzzyMatchResult normalizedText (result: ContextMenuEntryData) =
+    let fuzzyMatchResult normalizedText (result: IContextMenuEntry) =
         let res = FuzzyMatch.string false true true slab normalizedText result.Name
-
-        result.FuzzyMatchResult <- res
 
         match res with
         | ValueSome fusilResult when fusilResult.Score > 0s ->
-            result.AccentuationMap <- fusilResult.MatchingPositions
+            fuzzyMatchResults[result] <- fusilResult
             true
         | _ ->
-            match result.Result.Keywords with
-            | null -> false
+            match result.Keywords with
+            | null ->
+                fuzzyMatchResults.Remove result |> ignore
+                false
             | keywords ->
                 keywords |> Array.exists (fun keyword ->
                     match FuzzyMatch.fastString false normalizedText keyword with
-                    | ValueSome res when res.Score > 0s ->
-                        result.AccentuationMap <- null
-                        result.FuzzyMatchResult <- ValueSome res
+                    | ValueSome fusilResult when fusilResult.Score > 0s ->
+                        fuzzyMatchResults[result] <- fusilResult
                         true
                     | _ -> false
                 )
 
 
+    let syncCollections (source: ObservableCollection<_>) (target: ObservableList<_>) (ct: CancellationToken) = lock source (fun () ->
+        source.CollectionChanged.Subscribe(fun evt ->
+            Dispatcher.UIThread.Post(
+                fun () ->
+                    // match evt.Action with
+                    // | NotifyCollectionChangedAction.Add -> printfn "Add at %i" evt.NewStartingIndex
+                    // | NotifyCollectionChangedAction.Move -> printfn "Move %i to %i" evt.OldStartingIndex evt.NewStartingIndex
+                    // | NotifyCollectionChangedAction.Remove -> printfn "Remove at %i" evt.OldStartingIndex
+                    // | NotifyCollectionChangedAction.Replace -> printfn "Replace at %i" evt.OldStartingIndex
+                    // | NotifyCollectionChangedAction.Reset -> printfn "Reset - new length: %i" evt.NewItems.Count
+                    // | _ -> ()
+
+                    match evt.Action with
+                    | NotifyCollectionChangedAction.Add ->
+                        let newItem = (nonNull evt.NewItems)[0] |> unbox
+                        target.Insert(evt.NewStartingIndex, newItem)
+
+                    | NotifyCollectionChangedAction.Move ->
+                        let newItem = (nonNull evt.NewItems)[0] |> unbox
+                        target.RemoveAt evt.OldStartingIndex
+                        target.Insert(evt.NewStartingIndex, newItem)
+
+                    | NotifyCollectionChangedAction.Remove ->
+                        let oldItem = (nonNull evt.OldItems)[0] |> unbox
+                        target.Remove oldItem |> ignore
+
+                    | NotifyCollectionChangedAction.Replace ->
+                        let oldItem = (nonNull evt.OldItems)[0] |> unbox
+                        let oldItemIdx = target.FindIndex oldItem
+                        let newItem = (nonNull evt.NewItems)[0] |> unbox
+                        target.RemoveAt oldItemIdx
+                        target.Insert(oldItemIdx, newItem)
+
+                    | NotifyCollectionChangedAction.Reset ->
+                        target.Clear()
+                        evt.NewItems
+                        |> nonNull
+                        |> unbox
+                        |> target.AddRange
+
+                    | _ -> ()
+
+                    target.NotifyChanged()
+                ,
+                DispatcherPriority.Loaded
+            )
+        )
+        |> _.Dispose
+        |> ct.Register
+        |> ignore
+
+        target.Clear()
+        target.AddRange source
+        target.NotifyChanged()
+    )
+
+    let syncCollectionsWithQuery query (source: ObservableCollection<IContextMenuEntry>) (target: ObservableList<_>) (ct: CancellationToken) = lock source (fun () ->
+        source.CollectionChanged.Subscribe(fun evt ->
+            Dispatcher.UIThread.Post(
+                fun () ->
+                    match evt.Action with
+                    | NotifyCollectionChangedAction.Add ->
+                        let newItem = (nonNull evt.NewItems)[0] |> unbox<IContextMenuEntry>
+                        if newItem.Status <> ContextMenuStatus.Loaded &&
+                           fuzzyMatchResult query newItem then
+                            let insertIdx = target.BinarySearch(newItem, Comparer.Create contextMenuComparer)
+                            if insertIdx < 0 then target.Insert(~~~insertIdx, newItem)
+
+                    | NotifyCollectionChangedAction.Move -> ()
+
+                    | NotifyCollectionChangedAction.Remove ->
+                        let oldItem = (nonNull evt.OldItems)[0] |> unbox
+                        target.Remove oldItem |> ignore
+
+                    | NotifyCollectionChangedAction.Replace ->
+                        let oldItem = (nonNull evt.OldItems)[0] |> unbox
+                        let oldItemIdx = target.FindIndex oldItem
+                        let newItem = (nonNull evt.NewItems)[0] |> unbox
+                        target.RemoveAt oldItemIdx
+
+                        let insertIdx = target.BinarySearch(newItem, Comparer.Create contextMenuComparer)
+                        if insertIdx < 0 then target.Insert(~~~insertIdx, newItem)
+
+                    | NotifyCollectionChangedAction.Reset ->
+                        target.Clear()
+                        evt.NewItems
+                        |> nonNull
+                        |> unbox<IContextMenuEntry seq>
+                        |> Seq.filter (fun entry -> entry.Status = ContextMenuStatus.Loaded && fuzzyMatchResult query entry)
+                        |> Seq.sortWith contextMenuComparer
+                        |> target.AddRange
+
+                    | _ -> ()
+
+                    target.NotifyChanged()
+                ,
+                DispatcherPriority.Loaded
+            )
+        )
+        |> _.Dispose
+        |> ct.Register
+        |> ignore
+
+        target.Clear()
+        source
+        |> Seq.filter (fun entry ->
+            let pass = entry.Status = ContextMenuStatus.Loaded && fuzzyMatchResult query entry
+
+            // Listens updates to refresh
+            match entry with
+            | :? INotifyPropertyChanged as e ->
+                e.PropertyChanged.Subscribe(fun _ ->
+                    Dispatcher.UIThread.Post(this.RefreshResults, DispatcherPriority.Loaded)
+                )
+                |> _.Dispose
+                |> ct.Register
+                |> ignore
+            | _ -> ()
+
+            pass
+        )
+        |> Seq.sortWith contextMenuComparer
+        |> target.AddRange
+        target.NotifyChanged()
+    )
+
+
     let mutable cts = new CancellationTokenSource()
-    let mutable contextMenuStack = Stack<struct {| Items: Task<List<_>>; Loader: obj |}>()
-    let contextMenuResults = ObservableList<ContextMenuEntryData> 20
+    let mutable contextMenuStack = Stack<struct {| Items: Task<ObservableCollection<_>>; Loader: obj |}>()
+    let contextMenuResults = ObservableList<IContextMenuEntry> 20
     let mutable lastQueryText = ValueNone
 
-    let propertyChangedEvent = new Event<PropertyChangedEventHandler, PropertyChangedEventArgs>()
+    let propertyChangedEvent = Event<PropertyChangedEventHandler, PropertyChangedEventArgs>()
     interface INotifyPropertyChanged with
         #nowarn 3261
         [<CLIEvent>]
@@ -60,6 +193,8 @@ type ContextMenuStore(resultScoreDb) =
         match contextMenuStack.TryPeek() with
         | false, _ -> false
         | true, l -> not l.Items.IsCompleted
+
+    member _.FuzzyMatchResults = fuzzyMatchResults
 
     member this.ExitContextMenu() =
         match contextMenuStack.TryPop() with
@@ -75,32 +210,9 @@ type ContextMenuStore(resultScoreDb) =
         try
             contextMenuResults.Clear()
 
-            let rec items: Task<List<_>> =
-                loader.LoadItems(platformHandle, fun newResult newResultIdx ->
-                    if not items.IsCompletedSuccessfully then
-                        Log.Error "Cannot insert new result in context menu before it is loaded."
-                    else
-                        newResult.OnLoaded.Subscribe(fun _ -> this.RefreshResults()) |> ignore
-                        Dispatcher.UIThread.Post(
-                            fun () ->
-                                items.Result.Insert(
-                                    newResultIdx,
-                                    newResult |> ContextMenuEntryData.create
-                                )
-                                this.RefreshResults()
-                            ,
-                            DispatcherPriority.Background
-                        )
-                )
-                |> Task.map (
-                    Seq.map (fun entry ->
-                        entry.OnLoaded.Subscribe(fun _ -> this.RefreshResults()) |> ignore
-                        ContextMenuEntryData.create entry
-                    )
-                    >> List
-                )
-
+            let items = loader.LoadItems(platformHandle)
             contextMenuStack.Push(struct {| Items = items; Loader = loader |})
+
             propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuEnabled))
             propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuLoading))
         with e ->
@@ -109,6 +221,7 @@ type ContextMenuStore(resultScoreDb) =
     member this.Query(text: string) =
         cts.Cancel()
         cts <- new CancellationTokenSource()
+        let ct = cts.Token
 
         lastQueryText <- ValueSome text
         // stopwatch.Restart()
@@ -123,49 +236,28 @@ type ContextMenuStore(resultScoreDb) =
 
             task {
                 let! items = c.Items
-                if cts.Token.IsCancellationRequested then () else
+                if ct.IsCancellationRequested then () else
 
-                let newResults =
-                    match text with
-                    | "" ->
-                        // Show all search engine results
-                        let r = new List<_>(items.Count)
-
-                        let mutable lastTookIsSeparator = true // Prevent starting with a separator
-                        for i = 0 to items.Count-1 do
-                            let entry = items[i]
-                            let v =
-                                not entry.IsFailed &&
-                                (not entry.IsSeparator
-                                || entry.IsSeparator && not lastTookIsSeparator)
-
-                            if v then
-                                entry.AccentuationMap <- null
-                                lastTookIsSeparator <- entry.IsSeparator
-                                r.Add entry
-
-                        while r.Count > 0 && r[r.Count-1].IsSeparator do // Remove ending separator
-                            r.RemoveAt(r.Count-1)
-
-                        r :> _ seq
-                    | _ ->
-                        // Show matching results
-                        items
-                        |> Seq.filter (fun entry ->
-                            entry.Result.Status = ContextMenuStatus.Loaded
-                            && fuzzyMatchResult normalizedText entry
-                        )
-                        |> Seq.sortWith contextMenuComparer
-
-                Dispatcher.UIThread.Post(
-                    fun () ->
-                        contextMenuResults.Clear()
-                        contextMenuResults.AddRange newResults
-                        contextMenuResults.NotifyChanged()
-                        propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuLoading))
-                    ,
-                    DispatcherPriority.Loaded
-                )
+                match text with
+                | "" -> // Show all results in given order
+                    Dispatcher.UIThread.Post(
+                        fun () ->
+                            fuzzyMatchResults.Clear()
+                            syncCollections items contextMenuResults ct
+                            propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuEnabled))
+                            propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuLoading))
+                        ,
+                        DispatcherPriority.Loaded
+                    )
+                | _ -> // Show matching results
+                    Dispatcher.UIThread.Post(
+                        fun () ->
+                            syncCollectionsWithQuery normalizedText items contextMenuResults ct
+                            propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuEnabled))
+                            propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuLoading))
+                        ,
+                        DispatcherPriority.Loaded
+                    )
             } |> ignore
 
         // stopwatch.Stop()

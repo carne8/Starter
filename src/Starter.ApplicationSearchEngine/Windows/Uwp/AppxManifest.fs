@@ -261,7 +261,7 @@ type AppxApplication(packageVersion: PackageVersion, installLocation, packageId:
         )
         |> ValueOption.ofOption
 
-    member this.ToSearchResult() : ISearchResult voption =
+    member this.ToSearchResult() : SearchResult voption =
         try
             voption {
                 let! appId = this.GetId()
@@ -282,11 +282,12 @@ type AppxApplication(packageVersion: PackageVersion, installLocation, packageId:
                     | ValueSome "none" -> ValueNone
                     | _ -> ValueSome ()
 
-                return
-                    { Id = packageId.FullName + appId
-                      Name = name
-                      PackageId = $"{packageId.FamilyName}!{appId}"
-                      Icon = icon } :> ISearchResult
+                return UwpApplication(
+                    Id = packageId.FullName + appId,
+                    Name = name,
+                    PackageId = $"{packageId.FamilyName}!{appId}",
+                    Icon = icon
+                )
             }
         with exn ->
             logger.Warning(exn, "Failed to convert package to search result")
