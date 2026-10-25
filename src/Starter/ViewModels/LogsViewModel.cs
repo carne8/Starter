@@ -5,6 +5,7 @@ using R3;
 using Serilog.Events;
 using Serilog.Formatting.Display;
 using Starter.Features;
+using Starter.Views;
 
 namespace Starter.ViewModels;
 
@@ -59,23 +60,6 @@ public partial class LogsViewModel : ObservableObject
             });
     }
 
-    private static Run CreateRun(string message, LogEventLevel level)
-    {
-        var run = new Run(message);
-        run.Classes.Add(level switch
-        {
-            LogEventLevel.Verbose => "log-verbose",
-            LogEventLevel.Debug => "log-debug",
-            LogEventLevel.Information => "log-information",
-            LogEventLevel.Warning => "log-warning",
-            LogEventLevel.Error => "log-error",
-            LogEventLevel.Fatal => "log-fatal",
-            _ => string.Empty
-        });
-
-        return run;
-    }
-
     private void PrintLogEvent(LogEvent logEvent)
     {
         var rawLogContext = logEvent.Properties["Context"].ToString();
@@ -95,7 +79,7 @@ public partial class LogsViewModel : ObservableObject
             sb.Append(logEvent.Exception.Message);
         }
 
-        Lines.Add(CreateRun(sb.ToString(), logEvent.Level));
+        Lines.Add(new LogLine { Text = sb.ToString(), LogLevel = logEvent.Level });
     }
 
     private void RefreshLogs()
