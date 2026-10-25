@@ -5,7 +5,7 @@ using Starter.TextMatching;
 
 namespace Starter.Controls;
 
-using FuzzyMatchResults = Dictionary<SearchEngine.SearchResult, FuzzyMatch.FuzzyResult>;
+using FuzzyMatchResults = Dictionary<SearchResult, FuzzyMatch.FuzzyResult>;
 using ContextMenuFuzzyMatchResults = Dictionary<IContextMenuEntry, FuzzyMatch.FuzzyResult>;
 
 public abstract class RecyclingDataTemplate<T> : IRecyclingDataTemplate where T : Control
@@ -19,7 +19,6 @@ public abstract class RecyclingDataTemplate<T> : IRecyclingDataTemplate where T 
     {
         if (existing is not T view && !pool.TryDequeue(out view!))
         {
-            Console.WriteLine("Create control");
             view = CreateControl();
             view.DetachedFromVisualTree += (_, _) =>
             {
@@ -34,20 +33,20 @@ public abstract class RecyclingDataTemplate<T> : IRecyclingDataTemplate where T 
     protected abstract T CreateControl();
 }
 
-public class SearchResultDataTemplate(FuzzyMatchResults fuzzyMatchResults) : RecyclingDataTemplate<SearchResult>
+public class SearchResultDataTemplate(FuzzyMatchResults fuzzyMatchResults) : RecyclingDataTemplate<SearchResultView>
 {
-    public override bool Match(object? data) => data is SearchEngine.SearchResult and not Starter.SearchEngine.ControlSearchResult;
-    protected override SearchResult CreateControl() => new(fuzzyMatchResults);
+    public override bool Match(object? data) => data is SearchResult and not ControlSearchResult;
+    protected override SearchResultView CreateControl() => new(fuzzyMatchResults);
 }
 
-public class ControlSearchResultDataTemplate : RecyclingDataTemplate<ControlSearchResult>
+public class ControlSearchResultDataTemplate : RecyclingDataTemplate<ControlSearchResultView>
 {
-    public override bool Match(object? data) => data is Starter.SearchEngine.ControlSearchResult;
-    protected override ControlSearchResult CreateControl() => new();
+    public override bool Match(object? data) => data is ControlSearchResult;
+    protected override ControlSearchResultView CreateControl() => new();
 }
 
-public class ContextMenuEntryDataTemplate(ContextMenuFuzzyMatchResults fuzzyMatchResults) : RecyclingDataTemplate<ContextMenuResult>
+public class ContextMenuEntryDataTemplate(ContextMenuFuzzyMatchResults fuzzyMatchResults) : RecyclingDataTemplate<ContextMenuResultView>
 {
     public override bool Match(object? data) => data is IContextMenuEntry;
-    protected override ContextMenuResult CreateControl() => new(fuzzyMatchResults);
+    protected override ContextMenuResultView CreateControl() => new(fuzzyMatchResults);
 }

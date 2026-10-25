@@ -3,8 +3,8 @@
 open Avalonia.Headless
 open Avalonia.Headless.NUnit
 open Avalonia.Input
-open Starter.Features
 open Starter.Features.Config
+open Starter.SearchEngine
 open Starter.Tests.Common
 
 [<AvaloniaTest>]
@@ -15,11 +15,7 @@ let ensureKeyboardResultSelectionWorks () =
            Mock.searchResult "Result 2"
            Mock.searchResult "Result 3" |]
 
-    let searchEngine =
-        { Id = "engine-id"
-          OnLoadResults = fun () -> results
-          OnSearchResultSelected = ignore
-          Activators = Array.empty }
+    let searchEngine = Mock.staticSearchEngine "engine-id" Array.empty (fun () -> results) ignore
 
     Mock.withWindowConfig Configuration.Default [ searchEngine ] (fun window _ ->
         // Type text
@@ -31,8 +27,7 @@ let ensureKeyboardResultSelectionWorks () =
             Assert.AreEqual(
                 results[expectedResultIdx],
                 resultList.SelectedItem
-                |> unbox<SearchResultData>
-                |> _.SearchResult,
+                |> unbox<SearchResult>,
                 "The results are not displayed in the correct order"
             )
 

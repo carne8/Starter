@@ -11,14 +11,15 @@ using Serilog;
 using Starter.Features;
 using Starter.Features.Config;
 using Starter.Features.PlatformInterop;
+using Starter.SearchEngine;
 using Starter.ViewModels;
 using Starter.Views;
 using Const = Starter.Features.Constants;
 
 namespace Starter;
 
-using FuzzyMatchResults = Dictionary<SearchEngine.SearchResult, TextMatching.FuzzyMatch.FuzzyResult>;
-using ContextMenuFuzzyMatchResults = Dictionary<SearchEngine.IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult>;
+using FuzzyMatchResults = Dictionary<SearchResult, TextMatching.FuzzyMatch.FuzzyResult>;
+using ContextMenuFuzzyMatchResults = Dictionary<IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult>;
 
 public class App : Application
 {

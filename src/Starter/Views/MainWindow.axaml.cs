@@ -16,7 +16,7 @@ using Starter.ViewModels;
 
 namespace Starter.Views;
 
-using FuzzyMatchResults = Dictionary<SearchEngine.SearchResult, TextMatching.FuzzyMatch.FuzzyResult>;
+using FuzzyMatchResults = Dictionary<SearchResult, TextMatching.FuzzyMatch.FuzzyResult>;
 using ContextMenuFuzzyMatchResults = Dictionary<IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult>;
 
 public class FirstNonNullConverter : IMultiValueConverter
@@ -229,7 +229,7 @@ public partial class MainWindow : TranslucentWindow
 
     private void OpenContextMenu(object? result)
     {
-        if (result is not SearchEngine.SearchResult data) return;
+        if (result is not SearchResult data) return;
 
         previousSelectionState.Push((
             TextBox.Text,
@@ -271,11 +271,11 @@ public partial class MainWindow : TranslucentWindow
         var pos = e.GetPosition(this);
         var clickedControl =
             this.GetVisualsAt(pos)
-                .FirstOrDefault(v => v.DataContext is SearchEngine.SearchResult or IContextMenuEntry);
+                .FirstOrDefault(v => v.DataContext is SearchResult or IContextMenuEntry);
 
         if (clickedControl is null) return;
 
-        if (clickedControl.DataContext is SearchEngine.SearchResult)
+        if (clickedControl.DataContext is SearchResult)
             vm.SelectResultCommand.Execute(clickedControl.DataContext);
 
         if (clickedControl.DataContext is IContextMenuEntry entry && entry.Status != ContextMenuStatus.Separator)

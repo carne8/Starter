@@ -20,10 +20,10 @@ public static class ContextMenuStatusConverters
         new(status => status == ContextMenuStatus.Separator);
 }
 
-public partial class ContextMenuResult : UserControl
+public partial class ContextMenuResultView : UserControl
 {
     private readonly ContextMenuFuzzyMatchResults fuzzyMatchResults;
-    public ContextMenuResult(ContextMenuFuzzyMatchResults fuzzyMatchResults)
+    public ContextMenuResultView(ContextMenuFuzzyMatchResults fuzzyMatchResults)
     {
         this.fuzzyMatchResults = fuzzyMatchResults;
         InitializeComponent();

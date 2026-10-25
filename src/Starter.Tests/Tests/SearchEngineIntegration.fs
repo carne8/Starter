@@ -15,15 +15,18 @@ let ensureSelectedSearchResultIsCalled_Static () =
            Mock.searchResult "Result 3"
            Mock.searchResult "Result 4" |]
 
-    let searchEngines : ISearchEngine array =
-        [| { Id = "engine-id"
-             OnLoadResults = fun () -> results
-             OnSearchResultSelected = fun result -> called[0] <- result
-             Activators = Array.empty }
-           { Id = "other-engine-id"
-             OnLoadResults = fun () -> Array.empty
-             OnSearchResultSelected = fun result -> called[1] <- result
-             Activators = Array.empty } |]
+    let searchEngines : SearchEngine array =
+        [| Mock.staticSearchEngine
+            "engine-id"
+            Array.empty
+            (fun () -> results)
+            (fun result -> called[0] <- result)
+
+           Mock.staticSearchEngine
+            "other-engine-id"
+            Array.empty
+            (fun () -> Array.empty)
+            (fun result -> called[1] <- result) |]
 
     Mock.withWindowConfig Configuration.Default searchEngines (fun window _ ->
         // Select last result

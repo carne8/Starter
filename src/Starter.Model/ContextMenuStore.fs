@@ -22,8 +22,8 @@ type ContextMenuStore(resultScoreDb, fuzzyMatchResults: Dictionary<IContextMenuE
                 fuzzyMatchResults.TryGetValue e2 |> ValueOption.ofPair
 
             compare
-                (ContextMenuEntry.getWeight resultScoreDb f1 e1)
-                (ContextMenuEntry.getWeight resultScoreDb f2 e2)
+                (ContextMenuEntryHelpers.getWeight resultScoreDb f1 e1)
+                (ContextMenuEntryHelpers.getWeight resultScoreDb f2 e2)
 
     let slab = Memory.Slab.createDefault()
     let fuzzyMatchResult normalizedText (result: IContextMenuEntry) =

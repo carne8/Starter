@@ -13,9 +13,9 @@ let testActivatorPrefix () =
         [ Mock.activator "activator-id-1" "static"
           Mock.activator "activator-id-2" "dynamic" ]
 
-    let engines: ISearchEngine list =
-        [ Mock.staticSearchEngine "static" [ activators[0] ] (fun () -> [])
-          Mock.dynamicSearchEngine "dynamic" [ activators[1] ] false (fun _ _ _ -> []) ]
+    let engines: SearchEngine list =
+        [ Mock.staticSearchEngine "static" [ activators[0] ] (fun () -> []) ignore
+          Mock.dynamicSearchEngine "dynamic" [ activators[1] ] false (fun _ _ _ -> []) ignore ]
 
     let config =
         { Configuration.Default with
@@ -61,9 +61,9 @@ let ensureActivatorIsPassedToDynamicSearchEngine () =
 
     let calls = ResizeArray()
 
-    let engines: ISearchEngine list =
-        [ Mock.dynamicSearchEngine "engine-1" [ activators[0] ] false (fun _ _ activator -> calls.Add activator; [])
-          Mock.dynamicSearchEngine "engine-2" [ activators[1] ] false (fun _ _ _ -> []) ]
+    let engines: SearchEngine list =
+        [ Mock.dynamicSearchEngine "engine-1" [ activators[0] ] false (fun _ _ activator -> calls.Add activator; []) ignore
+          Mock.dynamicSearchEngine "engine-2" [ activators[1] ] false (fun _ _ _ -> []) ignore ]
 
     let config =
         { Configuration.Default with

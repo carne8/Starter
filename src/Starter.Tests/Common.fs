@@ -15,25 +15,65 @@ open Starter.SearchEngine
 
 type Assert = Legacy.ClassicAssert
 
-type TestStaticSearchEngine =
-    { Id: string
-      OnLoadResults: unit -> ISearchResult seq
-      OnSearchResultSelected: ISearchResult -> unit
-      Activators: ISearchEngineActivator seq }
+type TestStaticSearchEngine(
+    args: {| Id: string
+             OnLoadResults: unit -> SearchResult seq
+             OnSearchResultSelected: SearchResult -> unit
+             Activators: SearchEngineActivator seq |}
+    ) =
+    inherit StaticSearchEngine()
 
-    interface IStaticSearchEngine with
-        member this.LoadResults() = this.OnLoadResults () |> ValueTask.FromResult
-        member this.SearchResultSelected result = this.OnSearchResultSelected result
-        member this.Id = this.Id
-        member this.Name = $"Engine name: {this.Id}"
-        member this.Icon = StarterIconSource.Empty
-        member this.Activators = this.Activators |> Seq.toArray
-        member this.add_Changed _ = ()
-        member this.remove_Changed _ = ()
-        member this.add_ResultsChanged _ = ()
-        member this.remove_ResultsChanged _ = ()
+    override this.LoadResults() = args.OnLoadResults () |> ValueTask.FromResult
+    override this.SearchResultSelected result = args.OnSearchResultSelected result
+    override this.Id = this.Id
+    override this.Name = $"Engine name: {this.Id}"
+    override this.Icon = StarterIconSource.Empty
+    override this.Activators = this.Activators |> Seq.toArray
 
 module Mock =
+    type MockSearchResult(name, ?priority, ?keywords, ?showIfNoActivator, ?activatorFilter, ?contextMenuLoader) =
+        inherit SearchResult()
+
+        override this.Id = name
+        override this.Name = name
+        override this.Description = name
+        override this.Keywords = keywords |> Option.defaultValue null
+        override this.Priority = priority |> Option.defaultValue ResultPriority.Static
+        override this.Icon = StarterIconSource.Empty
+        override this.ShowIfNoActivator = showIfNoActivator |> Option.defaultValue true
+        override this.ActivatorFilter = activatorFilter |> Option.defaultValue null
+        override this.ContextMenuLoader = contextMenuLoader |> Option.defaultValue null
+
+    type MockActivator(name, engineId) =
+        inherit SearchEngineActivator()
+
+        override this.Id = name
+        override this.SearchEngineId = engineId
+        override this.Name = $"Activator name: {name}"
+        override this.Icon = StarterIconSource.Empty
+
+    type MockStaticSearchEngine(id, activators, onLoadResults, cb) =
+        inherit StaticSearchEngine()
+
+        override this.LoadResults() = onLoadResults () |> ValueTask.FromResult
+        override this.SearchResultSelected result = cb result
+        override this.Id = id
+        override this.Name = $"Engine name: {id}"
+        override this.Icon = StarterIconSource.Empty
+        override this.Activators = activators |> Seq.toArray
+
+    type MockDynamicSearchEngine(id, activators, buffer, onQueryResults, cb) =
+        inherit DynamicSearchEngine()
+
+        override this.SearchResultSelected result = cb result
+        override this.Search(query, ct, activator) = onQueryResults query ct activator, Observable.Empty()
+        override this.Id = id
+        override this.Name = $"Engine name: {id}"
+        override this.Icon = StarterIconSource.Empty
+        override this.Activators = activators |> Seq.toArray
+        override this.ResultsPriority = ResultPriority.Search
+        override this.BufferResults = buffer
+
 
     // Create instances
     let platform () =
@@ -46,9 +86,9 @@ module Mock =
             member this.ToggleLaunchAtStartup(enable) = ()
             member this.HotkeyRegistrable = true }
 
+    /// Create a score database where saving to a file does nothing
     let scoreDb () =
-        let scoreDb : IScoreDb =
-            ScoreDb(Dictionary<_, _>(), Starter.Features.Constants.ScoresMaxAging)
+        let scoreDb : IScoreDb = ScoreDb(Dictionary<_, _>(), Constants.ScoresMaxAging)
 
         { new IScoreDb with
             member this.GetResultScore(resultId) = scoreDb.GetResultScore(resultId)
@@ -56,66 +96,22 @@ module Mock =
             member this.RunMaxAgingPolicy() = scoreDb.RunMaxAgingPolicy()
             member this.SaveToFile(filePath) = Task.FromResult() }
 
-    let searchResult name =
-        { new ISearchResult with
-           member this.Id = name
-           member this.Name = name
-           member this.Description = name
-           member this.Keywords = null
-           member this.Icon = StarterIconSource.Empty
-           member this.ShowIfNoActivator = true
-           member this.ActivatorFilter = Array.empty
-           member this.ContextMenuLoader = null }
+    let searchResult name = MockSearchResult(name) :> SearchResult
+    let searchResultWithPriority name priority = MockSearchResult(name, priority) :> SearchResult
 
     let searchResultWithActivator name showIfNoActivator activators =
-        { new ISearchResult with
-           member this.Id = name
-           member this.Name = name
-           member this.Description = name
-           member this.Keywords = null
-           member this.Icon = StarterIconSource.Empty
-           member this.ShowIfNoActivator = showIfNoActivator
-           member this.ActivatorFilter = activators
-           member this.ContextMenuLoader = null }
+        MockSearchResult(name, showIfNoActivator = showIfNoActivator, activatorFilter = activators)
+         :> SearchResult
 
-    let activator name engineId =
-        { new ISearchEngineActivator with
-            member this.Id = name
-            member this.SearchEngineId = engineId
-            member this.Name = $"Activator name: {name}"
-            member this.Icon = StarterIconSource.Empty }
+    let activator name engineId = MockActivator(name, engineId) :> SearchEngineActivator
+    let staticSearchEngine id activators onLoadResults cb = MockStaticSearchEngine(id, activators, onLoadResults, cb) :> StaticSearchEngine
+    let dynamicSearchEngine id activators buffer onQueryResults cb = MockDynamicSearchEngine(id, activators, buffer, onQueryResults, cb) :> DynamicSearchEngine
 
-    let staticSearchEngine id activators onLoadResults =
-        { new IStaticSearchEngine with
-            member this.LoadResults() = onLoadResults () |> ValueTask.FromResult
-            member this.SearchResultSelected result = ()
-            member this.Id = id
-            member this.Name = $"Engine name: {id}"
-            member this.Icon = StarterIconSource.Empty
-            member this.Activators = activators |> Seq.toArray
-            member this.add_Changed _ = ()
-            member this.remove_Changed _ = ()
-            member this.add_ResultsChanged _ = ()
-            member this.remove_ResultsChanged _ = () }
-
-    let dynamicSearchEngine id activators buffer onQueryResults =
-        { new IDynamicSearchEngine with
-            member this.SearchResultSelected result = ()
-            member this.Search(query, ct, activator) = onQueryResults query ct activator, Observable.Empty()
-            member this.Id = id
-            member this.Name = $"Engine name: {id}"
-            member this.Icon = StarterIconSource.Empty
-            member this.Activators = activators |> Seq.toArray
-            member this.ResultsPriority = ResultPriority.Search
-            member this.BufferResults = buffer
-            member this.add_Changed _ = ()
-            member this.remove_Changed _ = () }
-
-    let searchEngineStore (engines: ISearchEngine seq) =
+    let searchEngineStore (engines: SearchEngine seq) =
         let store = SearchEngineStore()
         engines |> Seq.iter (function
-            | :? IStaticSearchEngine as e -> store.AddSearchEngine e
-            | :? IDynamicSearchEngine as e -> store.AddSearchEngine e
+            | :? StaticSearchEngine as e -> store.AddSearchEngine e
+            | :? DynamicSearchEngine as e -> store.AddSearchEngine e
             | other -> failwithf "Invalid search engine type: %A" other
         )
         store
@@ -135,13 +131,21 @@ module Mock =
         use activatorStore = new ActivatorStore(config)
         searchEngines |> Seq.iter activatorStore.AddSearchEngineActivators
 
+        let fuzzyMatchResults1, fuzzyMatchResults2 = Dictionary<_, _>(), Dictionary<_, _>()
         let vm = ViewModels.MainWindowViewModel(
             config,
             scoreDb (),
             searchEngineStore searchEngines,
-            activatorStore
+            activatorStore,
+            fuzzyMatchResults1,
+            fuzzyMatchResults2
         )
-        let window = Views.MainWindow(platform (), DataContext = vm)
+        let window = Views.MainWindow(
+            platform (),
+            fuzzyMatchResults1,
+            fuzzyMatchResults2,
+            DataContext = vm
+        )
 
         // Show window
         Dispatcher.UIThread.RunJobs() // Let window acknowledge about vm
@@ -150,7 +154,7 @@ module Mock =
 
         test window vm
 
-    let selectResult (window: Window) (result: ISearchResult) =
+    let selectResult (window: Window) (result: SearchResult) =
         window.KeyTextInput (result.Name.ToLowerInvariant())
         window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
         window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)

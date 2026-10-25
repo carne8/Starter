@@ -9,7 +9,7 @@ using Const = Starter.Features.Constants;
 
 namespace Starter.ViewModels;
 
-using FuzzyMatchResults = Dictionary<SearchEngine.SearchResult, TextMatching.FuzzyMatch.FuzzyResult>;
+using FuzzyMatchResults = Dictionary<SearchResult, TextMatching.FuzzyMatch.FuzzyResult>;
 using ContextMenuFuzzyMatchResults = Dictionary<IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult>;
 
 public partial class MainWindowViewModel : ObservableObject
@@ -28,7 +28,7 @@ public partial class MainWindowViewModel : ObservableObject
     public BehaviorSubject<Configuration> Config { get; private set; }
     public IObservable<Configuration> ConfigSystemObservable { get; private set; }
     public ContextMenuStore ContextMenu => contextMenuStore;
-    public ObservableList<SearchEngine.SearchResult> SearchResults => searchResultStore.Results;
+    public ObservableList<SearchResult> SearchResults => searchResultStore.Results;
     public ObservableList<IContextMenuEntry> ContextMenuResults => contextMenuStore.ContextMenuResults;
     public IObservable<TimeSpan?> LoadingTime => searchResultStore.LoadingTimes.AsSystemObservable();
 
@@ -74,7 +74,7 @@ public partial class MainWindowViewModel : ObservableObject
         searchResultStore.SortResults(); // Sort results for next opening
     }
 
-    private void IncreaseResultScore(SearchEngine.SearchResult searchResult)
+    private void IncreaseResultScore(SearchResult searchResult)
     {
         if (searchResult.Id is null) return;
         IncreaseResultScore(searchResult.Id);
@@ -112,7 +112,7 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SelectResult(SearchEngine.SearchResult searchResult)
+    private void SelectResult(SearchResult searchResult)
     {
         HideWindow?.Invoke(this, EventArgs.Empty);
 
@@ -162,7 +162,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void ResetActivator() => Activator = null;
 
-    public bool OpenContextMenu(SearchEngine.SearchResult result, IPlatformHandle platformHandle)
+    public bool OpenContextMenu(SearchResult result, IPlatformHandle platformHandle)
     {
         try
         {

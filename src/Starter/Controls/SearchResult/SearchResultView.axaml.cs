@@ -1,15 +1,16 @@
 ﻿using Avalonia;
 using Avalonia.Controls;
+using Starter.SearchEngine;
 using Starter.TextMatching;
 
 namespace Starter.Controls;
 
-using FuzzyMatchResults = Dictionary<SearchEngine.SearchResult, FuzzyMatch.FuzzyResult>;
+using FuzzyMatchResults = Dictionary<SearchResult, FuzzyMatch.FuzzyResult>;
 
-public partial class SearchResult : UserControl
+public partial class SearchResultView : UserControl
 {
     private readonly FuzzyMatchResults fuzzyMatchResults;
-    public SearchResult(FuzzyMatchResults fuzzyMatchResults)
+    public SearchResultView(FuzzyMatchResults fuzzyMatchResults)
     {
         this.fuzzyMatchResults = fuzzyMatchResults;
         InitializeComponent();
@@ -19,7 +20,7 @@ public partial class SearchResult : UserControl
     {
         base.OnPropertyChanged(change);
         if (change.Property != DataContextProperty) return;
-        if (DataContext is not SearchEngine.SearchResult entry) return;
+        if (DataContext is not SearchResult entry) return;
 
         NameTextBlock.AccentuationMap = fuzzyMatchResults.GetValueOrDefault(entry).MatchingPositions;
     }

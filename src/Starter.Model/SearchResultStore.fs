@@ -32,8 +32,8 @@ type SearchResultStore(
                 fuzzyMatchResults.TryGetValue e2 |> ValueOption.ofPair
 
             compare
-                (SearchResult.getWeight resultScoreDb f1 e1)
-                (SearchResult.getWeight resultScoreDb f2 e2)
+                (SearchResultHelpers.getWeight resultScoreDb f1 e1)
+                (SearchResultHelpers.getWeight resultScoreDb f2 e2)
         )
 
     let stopwatch = Stopwatch()
@@ -52,7 +52,7 @@ type SearchResultStore(
 
 
         match fusilResult with
-        | ValueSome fusilResult when fusilResult.Score > 0s ->
+        | ValueSome fusilResult when fusilResult.Score >= 0s ->
             fuzzyMatchResults[result] <- fusilResult
             true
         | _ ->
@@ -75,15 +75,18 @@ type SearchResultStore(
 
             let inline addResults r =
                 let c = results.Count
-                results.AddRange r
+                r
+                |> Seq.map (fun (s: SearchResult) ->
+                    s.SearchEngineId <- engine.Id
+                    s
+                )
+                |> results.AddRange
 
                 if c <> results.Count then // If r was not empty
                     results.Sort comparer
                     results.NotifyChanged()
 
-            results.AddRange instantResults
-            results.Sort comparer
-            results.NotifyChanged()
+            addResults instantResults
 
             match engine.BufferResults with
             | false ->
@@ -148,23 +151,16 @@ type SearchResultStore(
             stopwatch.Start()
             results.Clear()
 
-            match query with
-            | "" -> // Show all search engine results
-                staticResults |> Seq.filter (fun result ->
-                    if result.SearchEngineId = activator.SearchEngineId
-                       && (result.ActivatorFilter |> Array.isEmpty
-                           || result.ActivatorFilter |> Array.contains activator) then
-                        fuzzyMatchResults.Remove result |> ignore
-                        true
-                    else false
-                )
-            | _ -> // Show matching results
-                staticResults |> Seq.filter (fun result ->
-                    result.SearchEngineId = activator.SearchEngineId
-                    && (result.ActivatorFilter |> Array.isEmpty
-                        || result.ActivatorFilter |> Array.contains activator)
-                    && fuzzyMatchResult normalizedText result
-                )
+            staticResults
+            |> Seq.filter (fun result ->
+                result.SearchEngineId = activator.SearchEngineId
+                &&
+                match result.ActivatorFilter with
+                | null | [| |] -> true
+                | activators -> activators |> Array.contains activator
+                &&
+                fuzzyMatchResult normalizedText result
+            )
             |> results.AddRange
 
             results.Sort comparer

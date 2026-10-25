@@ -5,7 +5,7 @@ open Starter.Features
 open Starter.SearchEngine
 open Starter.TextMatching.FuzzyMatch
 
-module SearchResult =
+module SearchResultHelpers =
     // Returns a low value for a result that should be on top of the list
     let getWeight (resultScoreDb: IScoreDb) (fuzzyMatchResult: FuzzyResult voption) (sr: SearchResult) =
         let struct (usageScore, d) =
@@ -27,7 +27,7 @@ module SearchResult =
             sr.Name
         )
 
-module ContextMenuEntry =
+module ContextMenuEntryHelpers =
     // Returns a low value for a result that should be on top of the list
     let getWeight (resultScoreDb: IScoreDb) (f: FuzzyResult voption) (r: IContextMenuEntry) =
         let struct (usageScore, d) =

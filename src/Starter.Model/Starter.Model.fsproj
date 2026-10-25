@@ -33,7 +33,7 @@
         <Compile Include="ResultScores.fs" />
         <Compile Include="ActivatorStore.fs" />
         <Compile Include="CustomCollections.fs" />
-        <Compile Include="SearchResultData.fs" />
+        <Compile Include="SearchResultHelpers.fs" />
         <Compile Include="SearchResultStore.fs" />
         <Compile Include="ContextMenuStore.fs" />
     </ItemGroup>
