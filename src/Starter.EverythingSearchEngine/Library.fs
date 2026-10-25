@@ -33,6 +33,7 @@ type EverythingSearchResult(
     override this.Description = Path
     override this.Keywords = null
     override this.Icon = Icon
+    override this.Priority = ResultPriority.Search
     override this.ShowIfNoActivator = true
     override this.ActivatorFilter = Array.empty
     override this.ContextMenuLoader = new ContextMenu.ContextMenuLoader(Path)
@@ -104,7 +105,6 @@ type EverythingSearchEngine(icon, api: IEverything) =
     override this.Name = "Everything"
     override this.Icon = icon
     override this.Activators = [| DefaultSearchEngineActivator(this) |]
-    override this.ResultsPriority = ResultPriority.Search
     override this.BufferResults = true
 
     override this.Search(query, ct, activator) =

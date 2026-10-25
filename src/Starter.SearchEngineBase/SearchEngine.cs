@@ -56,13 +56,6 @@ public abstract class StaticSearchEngine : SearchEngine
 public abstract class DynamicSearchEngine : SearchEngine
 {
     /// <summary>
-    /// Indicate if the instant results from this search engine should be shown on
-    /// top of others results (like for the calculator search engine) or if they
-    /// should be shown in the last results (like for the URL search engine)
-    /// </summary>
-    public abstract ResultPriority ResultsPriority { get; }
-
-    /// <summary>
     /// Indicate if the results from the observable should be buffered or not.
     /// Add some lag when true.
     /// </summary>

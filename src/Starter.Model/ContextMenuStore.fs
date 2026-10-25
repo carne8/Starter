@@ -182,10 +182,8 @@ type ContextMenuStore(resultScoreDb, fuzzyMatchResults: Dictionary<IContextMenuE
 
     let propertyChangedEvent = Event<PropertyChangedEventHandler, PropertyChangedEventArgs>()
     interface INotifyPropertyChanged with
-        #nowarn 3261
         [<CLIEvent>]
         member _.PropertyChanged = propertyChangedEvent.Publish
-        #warnon 3261
 
     member this.ContextMenuResults = contextMenuResults
     member this.ContextMenuEnabled = contextMenuStack.Count <> 0

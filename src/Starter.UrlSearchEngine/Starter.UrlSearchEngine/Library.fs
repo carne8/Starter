@@ -31,21 +31,22 @@ let icon =
         StarterIconSource(createIcon true, createIcon false)
     )
 
-[<Struct>]
-type SearchResult =
-    { Uri: Uri }
+type UrlSearchResult(uri: Uri) =
+    inherit SearchResult()
 
-    interface ISearchResult with
-        member this.Id = this.Uri.AbsoluteUri
-        member this.Name = "Open link"
-        member this.Description = $"Open: {this.Uri.AbsoluteUri}"
-        member this.Keywords = Array.empty
-        member this.Icon = icon
-        member this.ShowIfNoActivator = true
-        member this.ActivatorFilter = Array.empty
-        member this.ContextMenuLoader = null
+    member this.Uri = uri
+    override this.Id = uri.AbsoluteUri
+    override this.Name = "Open link"
+    override this.Description = $"Open: {uri.AbsoluteUri}"
+    override this.Keywords = Array.empty
+    override this.Icon = icon
+    override this.Priority = ResultPriority.Fallback
+    override this.ShowIfNoActivator = true
+    override this.ActivatorFilter = Array.empty
+    override this.ContextMenuLoader = null
 
 type UrlSearchEngine(icon) =
+    inherit DynamicSearchEngine()
     let regex = UriRegex.Regex()
 
     let tryParseUri (match': Match) =
@@ -64,44 +65,39 @@ type UrlSearchEngine(icon) =
     do  // Warm-up the regex for faster first result
         regex.Matches "" |> ignore
 
-    interface IDynamicSearchEngine with
-        member this.Id = nameof UrlSearchEngine
-        member this.Name = "Link opener"
-        member this.Icon = icon
-        member this.Activators = [| DefaultSearchEngineActivator(this) |]
-        member this.ResultsPriority = ResultPriority.Fallback
-        member this.BufferResults = false
+    override this.Id = nameof UrlSearchEngine
+    override this.Name = "Link opener"
+    override this.Icon = icon
+    override this.Activators = [| DefaultSearchEngineActivator(this) |]
+    override this.BufferResults = false
 
-        member this.Search(query, _ct, _) =
-            query
-            |> regex.Matches
-            |> Seq.collect (
-                tryParseUri
-                >> Option.map (fun uri ->
-                    match uri.Host with
-                    | "localhost" ->
-                        [| { Uri = uri } :> ISearchResult
-                           { Uri = Uri("https://localhost:8080") }
-                           { Uri = Uri("https://localhost:5174") } |] // TODO: Allow the user to set custom values
-                    | _ -> [| { Uri = uri } |]
-                )
-                >> Option.defaultValue Array.empty
-            ),
-            Observable.Empty()
+    override this.Search(query, _ct, _) =
+        query
+        |> regex.Matches
+        |> Seq.collect (
+            tryParseUri
+            >> Option.map (fun uri ->
+                match uri.Host with
+                | "localhost" ->
+                    [| UrlSearchResult uri :> SearchResult
+                       UrlSearchResult(Uri("https://localhost:8080"))
+                       UrlSearchResult(Uri("https://localhost:5174")) |] // TODO: Allow the user to set custom values
+                | _ -> [| UrlSearchResult uri |]
+            )
+            >> Option.defaultValue Array.empty
+        ),
+        Observable.Empty()
 
-        member this.SearchResultSelected(searchResult) =
-            match searchResult with
-            | :? SearchResult as sr ->
-                ProcessStartInfo(
-                    FileName = sr.Uri.AbsoluteUri,
-                    UseShellExecute = true
-                )
-                |> Process.Start
-                |> function null -> () | d -> d.Dispose()
-            | _ -> ()
-
-        member this.add_Changed _ = ()
-        member this.remove_Changed _ = ()
+    override this.SearchResultSelected(searchResult) =
+        match searchResult with
+        | :? UrlSearchResult as sr ->
+            ProcessStartInfo(
+                FileName = sr.Uri.AbsoluteUri,
+                UseShellExecute = true
+            )
+            |> Process.Start
+            |> function null -> () | d -> d.Dispose()
+        | _ -> ()
 
 type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)

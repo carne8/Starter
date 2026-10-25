@@ -1,8 +1,5 @@
 ﻿module Starter.WorkspaceSearchEngine.WorkspaceSourceProvider
 
-open ObservableCollections
-open Starter.WorkspaceSearchEngine.Logger
-
 // type Software =
 //     | VisualStudio
 //     | GitKraken
@@ -39,16 +36,3 @@ let loadWorkspaceSources pluginPath (settings: Settings) : WorkspaceSource array
         )
     )
     |> Array.sortBy _.Name
-    |> fun workspaceSources ->
-        settings.ShowIfNoActivator.add_CollectionChanged(NotifyCollectionChangedEventHandler(fun args ->
-            let sourceId = args.NewItem.Key
-            let source =
-                workspaceSources
-                |> Array.tryFind (fun source -> source.Id = sourceId)
-
-            match source with
-            | None -> logger.Error $"Cannot apply \"show if activator\" settings to {sourceId}: Workspace source not found"
-            | Some source -> source.ShowIfNoActivator <- args.NewItem.Value
-        ))
-
-        workspaceSources

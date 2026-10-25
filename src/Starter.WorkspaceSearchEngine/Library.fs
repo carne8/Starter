@@ -1,6 +1,5 @@
 module Starter.WorkspaceSearchEngine.Engine
 
-open System
 open System.Threading.Tasks
 open Avalonia.Controls.Templates
 open Starter.SearchEngine
@@ -10,11 +9,11 @@ open System.Threading
 
 open R3
 
-type WorkspaceSearchEngine(workspaceSources, _settingsSaver) = // Kee a reference to the settings saver
-    let workspaces = ResizeArray<ISearchResult>()
-    let semaphore = new SemaphoreSlim(1, 1)
+type WorkspaceSearchEngine(workspaceSources) as this =
+    inherit StaticSearchEngine()
 
-    let resultsChanged = DelegateEvent<EventHandler<ISearchResult seq>>()
+    let workspaces = ResizeArray<SearchResult>()
+    let semaphore = new SemaphoreSlim(1, 1)
 
     /// Loads workspaces from one source and add them to the list
     let loadWorkspaces (source: WorkspaceSource) =
@@ -28,38 +27,37 @@ type WorkspaceSearchEngine(workspaceSources, _settingsSaver) = // Kee a referenc
                 ) |> ignore
 
                 newWorkspaces
-                |> Seq.map (SearchResult.fromWorkspace source)
+                |> Seq.map (fun w ->
+                    w
+                    |> WorkspaceSearchResult.fromWorkspace source
+                    :> SearchResult
+                )
                 |> workspaces.AddRange
 
-                resultsChanged.Trigger [| null; workspaces |]
+                this.OnResultsChanged()
             finally semaphore.Release() |> ignore
         } |> ignore
 
-    interface IStaticSearchEngine with
-        member this.Id = Constants.searchEngineId
-        member this.Name = "Dev workspaces"
-        member this.Icon = Icons.searchEngineIcon
-        member this.Activators = workspaceSources |> Array.map (fun s -> s :> ISearchEngineActivator)
+    member this.OnResultsChanged() = this.OnResultsChanged(workspaces)
 
-        member this.LoadResults() =
-            // Load workspaces for each source
-            workspaceSources |> Array.iter (fun source ->
-                source |> loadWorkspaces
-                source.WorkspacesChanged.Subscribe(fun () -> source |> loadWorkspaces) |> ignore
-            )
+    override this.Id = Constants.searchEngineId
+    override this.Name = "Dev workspaces"
+    override this.Icon = Icons.searchEngineIcon
+    override this.Activators = workspaceSources |> Array.map (fun s -> s :> SearchEngineActivator)
 
-            ValueTask.FromResult Seq.empty
+    override this.LoadResults() =
+        // Load workspaces for each source
+        workspaceSources |> Array.iter (fun source ->
+            source |> loadWorkspaces
+            source.WorkspacesChanged.Subscribe(fun () -> source |> loadWorkspaces) |> ignore
+        )
 
-        member this.SearchResultSelected(selectedSearchResult) =
-            match selectedSearchResult with
-            | :? SearchResult as workspace -> workspace.Open()
-            | _ -> ()
+        ValueTask.FromResult Seq.empty
 
-        [<CLIEvent>]
-        member this.ResultsChanged = resultsChanged.Publish
-
-        member this.add_Changed _ = ()
-        member this.remove_Changed _ = ()
+    override this.SearchResultSelected(selectedSearchResult) =
+        match selectedSearchResult with
+        | :? WorkspaceSearchResult as workspace -> workspace.Open()
+        | _ -> ()
 
 
 type Factory(pluginPath) =
@@ -72,12 +70,11 @@ type Factory(pluginPath) =
 
         let filePath = pluginConfigDirectory |> Settings.getFilePath
         let settings = filePath |> Settings.loadSettings
-        let settingsSaver = SettingsSaver(settings, filePath)
 
         let workspaceSources = WorkspaceSourceProvider.loadWorkspaceSources pluginPath settings // Load sources
-        let settingsVm = Views.SettingsViewModel(workspaceSources, settings)
+        let settingsVm = Views.SettingsViewModel(workspaceSources, filePath, settings)
 
-        WorkspaceSearchEngine(workspaceSources, settingsSaver),
+        WorkspaceSearchEngine(workspaceSources),
         SearchEngineFactory.SearchEngineSettings(
             settingsVm,
             FuncDataTemplate<Views.SettingsViewModel>(fun vm _ ->

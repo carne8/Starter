@@ -234,6 +234,7 @@ type SearchResultStore(
             | true, :? StaticSearchEngine -> querySingleStaticSearchEngine ct activator text
             | true, (:? DynamicSearchEngine as searchEngine) ->
                 results.Clear()
+                results.NotifyChanged()
                 querySingleDynamicSearchEngine ct activator text searchEngine
             | _ -> Log.Error $"Cannot find search engine matching the current activator: {activator.Id}"
 

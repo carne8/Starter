@@ -135,18 +135,19 @@ type SearchEngine =
           LoadSearchUrl = seKind |> SearchEngineKind.getQueryUrl }
 
 
-type SearchResult =
-    { Name: string
-      Description: string
-      Uri: string
-      Icon: StarterIconSource }
-
-    interface ISearchResult with
-        member this.Id = this.Uri
-        member this.Name = this.Name
-        member this.Description = this.Description
-        member this.Keywords = Array.empty
-        member this.Icon = this.Icon
-        member this.ShowIfNoActivator = true
-        member this.ActivatorFilter = Array.empty
-        member this.ContextMenuLoader = null
+type WebSearchResult(
+        name: string,
+        description: string,
+        uri: string,
+        icon: StarterIconSource
+    ) =
+    inherit SearchResult()
+    member this.Uri = uri
+    override this.Id = uri
+    override this.Name = name
+    override this.Description = description
+    override this.Keywords = Array.empty
+    override this.Icon = icon
+    override this.ShowIfNoActivator = true
+    override this.ActivatorFilter = Array.empty
+    override this.ContextMenuLoader = null

@@ -13,6 +13,7 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
         <Compile Include="Types.fs" />
+        <Compile Include="Settings.fs" />
         <Compile Include="Icons.fs" />
         <Compile Include="WorkspaceSources\Common.fs" />
         <Compile Include="WorkspaceSources\VsCode.fs" />

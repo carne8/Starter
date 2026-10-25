@@ -71,7 +71,6 @@ module Mock =
         override this.Name = $"Engine name: {id}"
         override this.Icon = StarterIconSource.Empty
         override this.Activators = activators |> Seq.toArray
-        override this.ResultsPriority = ResultPriority.Search
         override this.BufferResults = buffer
 
 
