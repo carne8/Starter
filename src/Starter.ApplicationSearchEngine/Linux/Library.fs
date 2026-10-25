@@ -36,7 +36,6 @@ type LinuxAppsSearchEngine() =
           AllowDuplicates = true } // Not applicable for Linux
 
     let apps = ResizeArray<SearchResult> 200
-    let resultsChanged = DelegateEvent<EventHandler<SearchResult seq>>()
     let mutable disposables = ResizeArray 3 // Btw: keep a reference of the app watcher and prevent it from being garbage collected
 
     let useGtkLaunch =
@@ -57,6 +56,8 @@ type LinuxAppsSearchEngine() =
     do if not useGtkLaunch then
         logger.Information "gtk-launch not available"
 
+    member this.OnResultsChanged() = this.OnResultsChanged(apps)
+
     member private this.LoadApps() =
         task {
             let! iconLoader = IconLoader.create()
@@ -67,7 +68,7 @@ type LinuxAppsSearchEngine() =
                     defaultFolderConfig
 
             newApps |> apps.AddRange
-            resultsChanged.Trigger [| null; apps |]
+            this.OnResultsChanged()
 
             let observable, disposable =
                 AppsLoader.observeApplicationChanges
@@ -77,7 +78,7 @@ type LinuxAppsSearchEngine() =
                     apps
 
             disposables.Add disposable
-            observable.Subscribe(fun () -> resultsChanged.Trigger [| null; apps |]) |> ignore
+            observable.Subscribe(fun () -> this.OnResultsChanged()) |> ignore
         }
 
 
@@ -102,9 +103,6 @@ type LinuxAppsSearchEngine() =
             // TODO: Check manually into the $PATH -> https://specifications.freedesktop.org/desktop-entry-spec/latest/exec-variables.html
             // TODO: Maybe this https://specifications.freedesktop.org/desktop-entry-spec/latest/extra-actions.html
         | _ -> ()
-
-    [<CLIEvent>]
-    member this.ResultsChanged = resultsChanged.Publish
 
 type Factory(pluginPath) =
     inherit SearchEngineFactory(pluginPath)

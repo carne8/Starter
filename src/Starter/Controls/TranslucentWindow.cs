@@ -62,6 +62,8 @@ public class TranslucentWindow : Window
                 TransparencyLevelHint = MicaHint;
                 Background = null;
             }
+
+            OnBackgroundChanged();
         }
         else if (change.Property == AntialiasingProperty)
         {
@@ -78,4 +80,6 @@ public class TranslucentWindow : Window
 
         base.OnPropertyChanged(change);
     }
+
+    protected virtual void OnBackgroundChanged() {}
 }

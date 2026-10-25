@@ -134,7 +134,7 @@ public partial class MainWindowViewModel : ObservableObject
         IncreaseResultScore(searchResult);
     }
 
-    public bool SelectContextMenuResult(IContextMenuEntry entry, IPlatformHandle platformHandle)
+    public bool SelectContextMenuResult(IContextMenuEntry entry, IPlatformHandle? platformHandle)
     {
         try
         {
@@ -162,7 +162,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void ResetActivator() => Activator = null;
 
-    public bool OpenContextMenu(SearchResult result, IPlatformHandle platformHandle)
+    public bool OpenContextMenu(SearchResult result, IPlatformHandle? platformHandle)
     {
         try
         {

@@ -61,7 +61,7 @@ public partial class MainWindow : TranslucentWindow
 {
     private MainWindowViewModel vm = null!;
     private readonly IPlatformInterop platformInterop;
-    private readonly IPlatformHandle platformHandle;
+    private readonly IPlatformHandle? platformHandle;
 
     private readonly Stack<(string? text, int caretPosition, object? selectedItem)> previousSelectionState = new();
 
@@ -85,21 +85,24 @@ public partial class MainWindow : TranslucentWindow
     {
         this.platformInterop = platformInterop;
 
-        var platformHandle = TryGetPlatformHandle();
+        platformHandle = TryGetPlatformHandle();
         if (platformHandle is null)
         {
             Log.Error("Failed to get platform handle");
             throw new Exception("Failed to get platform handle");
         }
-        this.platformHandle = platformHandle;
 
         InitializeComponent();
 
+        // Setup UI
         DataTemplates.Add(new ControlSearchResultDataTemplate());
         ResultList.ItemTemplate = new SearchResultDataTemplate(fuzzyMatchResults);
         ContextMenuResultList.ItemTemplate = new ContextMenuEntryDataTemplate(contextMenuFuzzyMatchResults);
 
+        // Setup hotkey
         platformInterop.SetupHotkeyCallback(this);
+
+        // Listen events
         TextBox.AddHandler(KeyDownEvent, TextBox_OnKeyDown, RoutingStrategies.Tunnel);
 
         Closing += (_, args) =>
@@ -113,6 +116,13 @@ public partial class MainWindow : TranslucentWindow
 #if !DEBUG
         Deactivated += (_, _) => Hide();
 #endif
+    }
+
+    protected override void OnBackgroundChanged()
+    {
+        if (!OperatingSystem.IsLinux()) return;
+        MainBorder?.Background = Background;
+        Background = null;
     }
 
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)

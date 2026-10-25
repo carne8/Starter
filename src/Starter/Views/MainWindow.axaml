@@ -102,7 +102,8 @@
         </Style>
     </Window.Styles>
 
-    <Border Margin="{OnPlatform Linux='18,15,18,25',
+    <Border x:Name="MainBorder"
+            Margin="{OnPlatform Linux='18,15,18,25',
                                 Default='0'}"
             CornerRadius="{DynamicResource CornerRadius}"
             BorderBrush="{DynamicResource BorderBrush}"
