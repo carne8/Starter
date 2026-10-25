@@ -17,7 +17,8 @@ using Const = Starter.Features.Constants;
 
 namespace Starter;
 
-using FuzzyMatchResults = Dictionary<SearchEngine.IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult>;
+using FuzzyMatchResults = Dictionary<SearchEngine.SearchResult, TextMatching.FuzzyMatch.FuzzyResult>;
+using ContextMenuFuzzyMatchResults = Dictionary<SearchEngine.IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult>;
 
 public class App : Application
 {
@@ -76,13 +77,15 @@ public class App : Application
         });
 
         serviceCollection.AddSingleton(new FuzzyMatchResults());
+        serviceCollection.AddSingleton(new ContextMenuFuzzyMatchResults());
 
         // Main window
         serviceCollection.AddSingleton<MainWindow>(provider =>
         {
             var platformInterop = provider.GetRequiredService<IPlatformInterop>();
             var fuzzyMatchResults = provider.GetRequiredService<FuzzyMatchResults>();
-            return new MainWindow(platformInterop, fuzzyMatchResults);
+            var contextMenuFuzzyMatchResults = provider.GetRequiredService<ContextMenuFuzzyMatchResults>();
+            return new MainWindow(platformInterop, fuzzyMatchResults, contextMenuFuzzyMatchResults);
         });
 
         serviceCollection.AddSingleton(lifetime);

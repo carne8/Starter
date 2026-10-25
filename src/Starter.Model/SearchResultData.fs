@@ -4,42 +4,18 @@ open System
 open Starter.Features
 open Starter.SearchEngine
 open Starter.TextMatching.FuzzyMatch
-open Starter.TextMatching.TextNormalization
 
-type SearchResultData =
-    { SearchResult: SearchResult
-      NormalizedName: Text.Rune array voption
-      Priority: ResultPriority
-      SearchEngineId: string
-      mutable FuzzyMatchResult: FuzzyResult voption
-      mutable AccentuationMap: bool array | null }
-
-    static member createStatic (searchEngineId: string) searchResult =
-        { SearchResult = searchResult
-          NormalizedName = searchResult.Name |> String.normalize |> ValueSome
-          Priority = ResultPriority.Static
-          SearchEngineId = searchEngineId
-          FuzzyMatchResult = ValueNone
-          AccentuationMap = null }
-
-    static member createDynamic (searchEngine: DynamicSearchEngine) searchResult =
-        { SearchResult = searchResult
-          NormalizedName = ValueNone
-          Priority = searchEngine.ResultsPriority
-          SearchEngineId = searchEngine.Id
-          FuzzyMatchResult = ValueNone
-          AccentuationMap = null }
-
+module SearchResult =
     // Returns a low value for a result that should be on top of the list
-    static member getWeight (resultScoreDb: IScoreDb) (sr: SearchResultData) =
+    let getWeight (resultScoreDb: IScoreDb) (fuzzyMatchResult: FuzzyResult voption) (sr: SearchResult) =
         let struct (usageScore, d) =
-            sr.SearchResult.Id
+            sr.Id
             |> ValueOption.ofObj
             |> ValueOption.map resultScoreDb.GetResultScore
             |> ValueOption.defaultValue (struct (Int32.MaxValue, TimeSpan.MaxValue))
 
         let fuzzyMatchScore =
-            match sr.FuzzyMatchResult with
+            match fuzzyMatchResult with
             | ValueSome fuzzyResult -> float fuzzyResult.Score
             | ValueNone -> 0.
 
@@ -47,8 +23,8 @@ type SearchResultData =
             sr.Priority,
             -(fuzzyMatchScore + (2. * usageScore)),
             d,
-            sr.SearchResult.Name.Length,
-            sr.SearchResult.Name
+            sr.Name.Length,
+            sr.Name
         )
 
 module ContextMenuEntry =

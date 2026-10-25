@@ -19,6 +19,11 @@
     </PropertyGroup>
 
     <ItemGroup>
+        <InternalsVisibleTo Include="Starter.Model" />
+        <InternalsVisibleTo Include="Starter" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" IncludeAssets="compile" />
         <PackageReference Include="Svg.Controls.Skia.Avalonia" Version="12.0.0.17" IncludeAssets="compile" />
         <PackageReference Include="R3" Version="1.3.1" IncludeAssets="compile" />

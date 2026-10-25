@@ -9,7 +9,8 @@ using Const = Starter.Features.Constants;
 
 namespace Starter.ViewModels;
 
-using FuzzyMatchResults = Dictionary<IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult>;
+using FuzzyMatchResults = Dictionary<SearchEngine.SearchResult, TextMatching.FuzzyMatch.FuzzyResult>;
+using ContextMenuFuzzyMatchResults = Dictionary<IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult>;
 
 public partial class MainWindowViewModel : ObservableObject
 {
@@ -27,7 +28,7 @@ public partial class MainWindowViewModel : ObservableObject
     public BehaviorSubject<Configuration> Config { get; private set; }
     public IObservable<Configuration> ConfigSystemObservable { get; private set; }
     public ContextMenuStore ContextMenu => contextMenuStore;
-    public ObservableList<SearchResultData> SearchResults => searchResultStore.Results;
+    public ObservableList<SearchEngine.SearchResult> SearchResults => searchResultStore.Results;
     public ObservableList<IContextMenuEntry> ContextMenuResults => contextMenuStore.ContextMenuResults;
     public IObservable<TimeSpan?> LoadingTime => searchResultStore.LoadingTimes.AsSystemObservable();
 
@@ -42,7 +43,8 @@ public partial class MainWindowViewModel : ObservableObject
         IScoreDb resultScoreDb,
         SearchEngineStore searchEngineStore,
         ActivatorStore activatorStore,
-        FuzzyMatchResults fuzzyMatchResults
+        FuzzyMatchResults fuzzyMatchResults,
+        ContextMenuFuzzyMatchResults contextMenuFuzzyMatchResults
     )
     {
         Config = config;
@@ -52,7 +54,7 @@ public partial class MainWindowViewModel : ObservableObject
         this.searchEngineStore = searchEngineStore;
         this.resultScoreDb = resultScoreDb;
 
-        searchResultStore = new SearchResultStore(resultScoreDb, searchEngineStore.SearchEngines);
+        searchResultStore = new SearchResultStore(resultScoreDb, searchEngineStore.SearchEngines, fuzzyMatchResults);
         searchEngineStore.SearchEngineAdded += se =>
         {
             if (se is StaticSearchEngine staticSe) searchResultStore.AddSource(staticSe);
@@ -61,7 +63,7 @@ public partial class MainWindowViewModel : ObservableObject
         foreach (var se in searchEngineStore.StaticSearchEngines) searchResultStore.AddSource(se);
         foreach (var se in searchEngineStore.DynamicSearchEngines) searchResultStore.AddSource(se);
 
-        contextMenuStore = new ContextMenuStore(resultScoreDb, fuzzyMatchResults);
+        contextMenuStore = new ContextMenuStore(resultScoreDb, contextMenuFuzzyMatchResults);
     }
 
     private void IncreaseResultScore(string resultId)
@@ -72,7 +74,7 @@ public partial class MainWindowViewModel : ObservableObject
         searchResultStore.SortResults(); // Sort results for next opening
     }
 
-    private void IncreaseResultScore(SearchResult searchResult)
+    private void IncreaseResultScore(SearchEngine.SearchResult searchResult)
     {
         if (searchResult.Id is null) return;
         IncreaseResultScore(searchResult.Id);
@@ -110,7 +112,7 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SelectResult(SearchResultData searchResult)
+    private void SelectResult(SearchEngine.SearchResult searchResult)
     {
         HideWindow?.Invoke(this, EventArgs.Empty);
 
@@ -122,14 +124,14 @@ public partial class MainWindowViewModel : ObservableObject
 
         try
         {
-            searchEngine.SearchResultSelected(searchResult.SearchResult);
+            searchEngine.SearchResultSelected(searchResult);
         }
         catch (Exception exn)
         {
-            Log.Error(exn, "Failed to select result: {Result}", searchResult.SearchResult.Name);
+            Log.Error(exn, "Failed to select result: {Result}", searchResult.Name);
         }
 
-        IncreaseResultScore(searchResult.SearchResult);
+        IncreaseResultScore(searchResult);
     }
 
     public bool SelectContextMenuResult(IContextMenuEntry entry, IPlatformHandle platformHandle)
@@ -160,22 +162,22 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void ResetActivator() => Activator = null;
 
-    public bool OpenContextMenu(SearchResultData result, IPlatformHandle platformHandle)
+    public bool OpenContextMenu(SearchEngine.SearchResult result, IPlatformHandle platformHandle)
     {
         try
         {
-            var contextMenu = result.SearchResult.ContextMenuLoader;
+            var contextMenu = result.ContextMenuLoader;
             if (contextMenu is null) return false;
 
             contextMenuStore.SetContextMenu(platformHandle, contextMenu);
             Text = string.Empty;
 
-            IncreaseResultScore(result.SearchResult);
+            IncreaseResultScore(result);
             return true;
         }
         catch (Exception exn)
         {
-            Log.Error(exn, "Failed to open context menu: {Result}", result.SearchResult.Name);
+            Log.Error(exn, "Failed to open context menu: {Result}", result.Name);
             return false;
         }
     }

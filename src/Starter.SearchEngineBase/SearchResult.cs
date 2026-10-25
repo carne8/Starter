@@ -2,8 +2,9 @@ using Avalonia.Controls.Templates;
 
 namespace Starter.SearchEngine;
 
-public abstract class SearchResult()
+public abstract class SearchResult
 {
+    internal string SearchEngineId = null!;
     public virtual string? Id { get; }
     public abstract string Name { get; }
     public virtual string? Description { get; }
@@ -16,6 +17,8 @@ public abstract class SearchResult()
     /// Show this result in the default mode of Starter, without any activator being in use.
     /// </summary>
     public virtual bool ShowIfNoActivator { get; } = true;
+
+    public virtual ResultPriority Priority { get; } = ResultPriority.Static;
     public virtual SearchEngineActivator[]? ActivatorFilter { get; }
     public virtual IContextMenuLoader? ContextMenuLoader { get; }
 }

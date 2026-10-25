@@ -6,7 +6,7 @@ using Starter.TextMatching;
 
 namespace Starter.Controls;
 
-using FuzzyMatchResults = Dictionary<IContextMenuEntry, FuzzyMatch.FuzzyResult>;
+using ContextMenuFuzzyMatchResults = Dictionary<IContextMenuEntry, FuzzyMatch.FuzzyResult>;
 
 public static class ContextMenuStatusConverters
 {
@@ -22,8 +22,8 @@ public static class ContextMenuStatusConverters
 
 public partial class ContextMenuResult : UserControl
 {
-    private readonly FuzzyMatchResults fuzzyMatchResults;
-    public ContextMenuResult(FuzzyMatchResults fuzzyMatchResults)
+    private readonly ContextMenuFuzzyMatchResults fuzzyMatchResults;
+    public ContextMenuResult(ContextMenuFuzzyMatchResults fuzzyMatchResults)
     {
         this.fuzzyMatchResults = fuzzyMatchResults;
         InitializeComponent();

@@ -10,12 +10,14 @@ using Avalonia.VisualTree;
 using R3;
 using Serilog;
 using Starter.Controls;
-using Starter.Features;
 using Starter.Features.PlatformInterop;
 using Starter.SearchEngine;
 using Starter.ViewModels;
 
 namespace Starter.Views;
+
+using FuzzyMatchResults = Dictionary<SearchEngine.SearchResult, TextMatching.FuzzyMatch.FuzzyResult>;
+using ContextMenuFuzzyMatchResults = Dictionary<IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult>;
 
 public class FirstNonNullConverter : IMultiValueConverter
 {
@@ -75,7 +77,11 @@ public partial class MainWindow : TranslucentWindow
         throw new Exception("This constructor should never be called");
     }
 
-    public MainWindow(IPlatformInterop platformInterop, Dictionary<IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult> fuzzyMatchResults)
+    public MainWindow(
+        IPlatformInterop platformInterop,
+        FuzzyMatchResults fuzzyMatchResults,
+        ContextMenuFuzzyMatchResults contextMenuFuzzyMatchResults
+    )
     {
         this.platformInterop = platformInterop;
 
@@ -89,8 +95,9 @@ public partial class MainWindow : TranslucentWindow
 
         InitializeComponent();
 
-        ResultList.ItemTemplate = new SearchResultDataTemplate();
-        ContextMenuResultList.ItemTemplate = new ContextMenuDataTemplate(fuzzyMatchResults);
+        DataTemplates.Add(new ControlSearchResultDataTemplate());
+        ResultList.ItemTemplate = new SearchResultDataTemplate(fuzzyMatchResults);
+        ContextMenuResultList.ItemTemplate = new ContextMenuEntryDataTemplate(contextMenuFuzzyMatchResults);
 
         platformInterop.SetupHotkeyCallback(this);
         TextBox.AddHandler(KeyDownEvent, TextBox_OnKeyDown, RoutingStrategies.Tunnel);
@@ -144,7 +151,7 @@ public partial class MainWindow : TranslucentWindow
         vm.Config
             .Select(config => config.KeyboardShortcut)
             .DistinctUntilChanged()
-            .Subscribe(shortcut => platformInterop.RegisterHotkey(shortcut, this));
+            .Subscribe(this, (shortcut, t) => platformInterop.RegisterHotkey(shortcut, t));
         platformInterop.RegisterHotkey(vm.Config.Value.KeyboardShortcut, this);
     }
 
@@ -222,7 +229,7 @@ public partial class MainWindow : TranslucentWindow
 
     private void OpenContextMenu(object? result)
     {
-        if (result is not SearchResultData data) return;
+        if (result is not SearchEngine.SearchResult data) return;
 
         previousSelectionState.Push((
             TextBox.Text,
@@ -264,11 +271,11 @@ public partial class MainWindow : TranslucentWindow
         var pos = e.GetPosition(this);
         var clickedControl =
             this.GetVisualsAt(pos)
-                .FirstOrDefault(v => v.DataContext is SearchResultData or IContextMenuEntry);
+                .FirstOrDefault(v => v.DataContext is SearchEngine.SearchResult or IContextMenuEntry);
 
         if (clickedControl is null) return;
 
-        if (clickedControl.DataContext is SearchResultData)
+        if (clickedControl.DataContext is SearchEngine.SearchResult)
             vm.SelectResultCommand.Execute(clickedControl.DataContext);
 
         if (clickedControl.DataContext is IContextMenuEntry entry && entry.Status != ContextMenuStatus.Separator)

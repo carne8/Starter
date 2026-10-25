@@ -1,34 +1,53 @@
 ﻿using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using Starter.Features;
 using Starter.SearchEngine;
+using Starter.TextMatching;
 
 namespace Starter.Controls;
 
-public class SearchResultDataTemplate : IRecyclingDataTemplate
+using FuzzyMatchResults = Dictionary<SearchEngine.SearchResult, FuzzyMatch.FuzzyResult>;
+using ContextMenuFuzzyMatchResults = Dictionary<IContextMenuEntry, FuzzyMatch.FuzzyResult>;
+
+public abstract class RecyclingDataTemplate<T> : IRecyclingDataTemplate where T : Control
 {
-    public bool Match(object? data) => data is SearchResultData or null;
+    private readonly Queue<T> pool = new();
 
-    public Control? Build(object? param, Control? existing)
+    public abstract bool Match(object? data);
+
+    public Control Build(object? param) => Build(param, null);
+    public Control Build(object? data, Control? existing)
     {
-        if (param is not SearchResultData data) return null;
-
-        return data.SearchResult is ControlSearchResult
-            ? existing as ControlSearchResult ?? new ControlSearchResult { DataContext = data.SearchResult }
-            : existing ?? new SearchResult();
+        if (existing is not T view && !pool.TryDequeue(out view!))
+        {
+            Console.WriteLine("Create control");
+            view = CreateControl();
+            view.DetachedFromVisualTree += (_, _) =>
+            {
+                view.DataContext = null;
+                pool.Enqueue(view);
+            };
+        }
+        view.DataContext = data;
+        return view;
     }
 
-    public Control? Build(object? param) => Build(param, null);
+    protected abstract T CreateControl();
 }
 
-public class ContextMenuDataTemplate(Dictionary<IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult> fuzzyMatchResults) : IRecyclingDataTemplate
+public class SearchResultDataTemplate(FuzzyMatchResults fuzzyMatchResults) : RecyclingDataTemplate<SearchResult>
 {
-    public bool Match(object? data) => data is IContextMenuEntry or null;
+    public override bool Match(object? data) => data is SearchEngine.SearchResult and not Starter.SearchEngine.ControlSearchResult;
+    protected override SearchResult CreateControl() => new(fuzzyMatchResults);
+}
 
-    public Control Build(object? param) => new ContextMenuResult(fuzzyMatchResults);
+public class ControlSearchResultDataTemplate : RecyclingDataTemplate<ControlSearchResult>
+{
+    public override bool Match(object? data) => data is Starter.SearchEngine.ControlSearchResult;
+    protected override ControlSearchResult CreateControl() => new();
+}
 
-    public Control Build(object? data, Control? existing) =>
-        existing is ContextMenuResult
-            ? existing
-            : Build(data);
+public class ContextMenuEntryDataTemplate(ContextMenuFuzzyMatchResults fuzzyMatchResults) : RecyclingDataTemplate<ContextMenuResult>
+{
+    public override bool Match(object? data) => data is IContextMenuEntry;
+    protected override ContextMenuResult CreateControl() => new(fuzzyMatchResults);
 }
