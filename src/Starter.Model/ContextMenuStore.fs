@@ -52,14 +52,6 @@ type ContextMenuStore(resultScoreDb, fuzzyMatchResults: Dictionary<IContextMenuE
         source.CollectionChanged.Subscribe(fun evt ->
             Dispatcher.UIThread.Post(
                 fun () ->
-                    // match evt.Action with
-                    // | NotifyCollectionChangedAction.Add -> printfn "Add at %i" evt.NewStartingIndex
-                    // | NotifyCollectionChangedAction.Move -> printfn "Move %i to %i" evt.OldStartingIndex evt.NewStartingIndex
-                    // | NotifyCollectionChangedAction.Remove -> printfn "Remove at %i" evt.OldStartingIndex
-                    // | NotifyCollectionChangedAction.Replace -> printfn "Replace at %i" evt.OldStartingIndex
-                    // | NotifyCollectionChangedAction.Reset -> printfn "Reset - new length: %i" evt.NewItems.Count
-                    // | _ -> ()
-
                     match evt.Action with
                     | NotifyCollectionChangedAction.Add ->
                         let newItem = (nonNull evt.NewItems)[0] |> unbox
@@ -83,10 +75,12 @@ type ContextMenuStore(resultScoreDb, fuzzyMatchResults: Dictionary<IContextMenuE
 
                     | NotifyCollectionChangedAction.Reset ->
                         target.Clear()
-                        evt.NewItems
-                        |> nonNull
-                        |> unbox
-                        |> target.AddRange
+                        match evt.NewItems with
+                        | null -> ()
+                        | newItems ->
+                            newItems
+                            |> unbox
+                            |> target.AddRange
 
                     | _ -> ()
 
@@ -111,7 +105,7 @@ type ContextMenuStore(resultScoreDb, fuzzyMatchResults: Dictionary<IContextMenuE
                     match evt.Action with
                     | NotifyCollectionChangedAction.Add ->
                         let newItem = (nonNull evt.NewItems)[0] |> unbox<IContextMenuEntry>
-                        if newItem.Status <> ContextMenuStatus.Loaded &&
+                        if newItem.Status = ContextMenuStatus.Loaded &&
                            fuzzyMatchResult query newItem then
                             let insertIdx = target.BinarySearch(newItem, Comparer.Create contextMenuComparer)
                             if insertIdx < 0 then target.Insert(~~~insertIdx, newItem)
@@ -203,6 +197,16 @@ type ContextMenuStore(resultScoreDb, fuzzyMatchResults: Dictionary<IContextMenuE
             | _ -> ()
             propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuEnabled))
             propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuLoading))
+
+    member this.ExitAllContextMenu() =
+        contextMenuStack |> Seq.iter (fun c ->
+            match c.Loader with
+            | :? System.IDisposable as d -> d.Dispose()
+            | _ -> ()
+        )
+        contextMenuStack.Clear()
+        propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuEnabled))
+        propertyChangedEvent.Trigger(null, PropertyChangedEventArgs(nameof this.ContextMenuLoading))
 
     member this.SetContextMenu(platformHandle, loader: IContextMenuLoader) =
         try

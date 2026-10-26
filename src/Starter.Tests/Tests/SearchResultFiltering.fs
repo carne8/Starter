@@ -279,8 +279,7 @@ let ensureSearchResultsAreCleared_WithActivator () =
         tb.CaretIndex <- tb.Text |> function null -> 0 | t -> t.Length
         window.KeyPress(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
         window.KeyRelease(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
-        window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
-        window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
+        window.PressBackspace()
 
         let displayedResults = window.ResultList
         Assert.AreEqual(0, displayedResults.ItemCount, "No results should displayed")

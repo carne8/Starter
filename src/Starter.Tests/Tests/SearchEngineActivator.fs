@@ -42,8 +42,7 @@ let testActivatorPrefix () =
         // Remove activator
         window.KeyPress(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
         window.KeyRelease(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
-        window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
-        window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
+        window.PressBackspace()
 
         // Assert activator disabled
         Assert.Null(vm.Activator, "MainWindowViewModel should not have an activator set")
@@ -85,8 +84,7 @@ let ensureActivatorIsPassedToDynamicSearchEngine () =
         // Remove activator
         window.KeyPress(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
         window.KeyRelease(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
-        window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
-        window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
+        window.PressBackspace()
 
         // Type something
         window.KeyTextInput "something"

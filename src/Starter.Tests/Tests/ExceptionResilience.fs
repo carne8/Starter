@@ -82,8 +82,7 @@ let testStaticSearchEngineCrash_OnSelectResult () =
         Action(fun () ->
             Mock.withWindowConfig Configuration.Default [ searchEngine ] (fun window _ ->
                 window.KeyTextInput "result"
-                window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
-                window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
+                window.PressEnter()
             )
         ),
         "Starter should not throw when an engine throws."
@@ -104,8 +103,7 @@ let testDynamicSearchEngineCrash_OnSelectResult () =
         Action(fun () ->
             Mock.withWindowConfig Configuration.Default [ searchEngine ] (fun window _ ->
                 window.KeyTextInput "result"
-                window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
-                window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
+                window.PressEnter()
             )
         ),
         "Starter should not throw when an engine throws."

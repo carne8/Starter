@@ -2,7 +2,6 @@
 
 open System.Collections.Generic
 open System.Threading.Tasks
-open Avalonia.Controls
 open Avalonia.Headless
 open Avalonia.Input
 open Avalonia.Threading
@@ -29,6 +28,18 @@ type TestStaticSearchEngine(
     override this.Name = $"Engine name: {this.Id}"
     override this.Icon = StarterIconSource.Empty
     override this.Activators = this.Activators |> Seq.toArray
+
+type Starter.Views.MainWindow with
+    member this.PressKey(key, physicalKey) =
+        this.KeyPress(key, RawInputModifiers.None, physicalKey, null)
+        this.KeyRelease(key, RawInputModifiers.None, physicalKey, null)
+
+    member this.PressUp() = this.PressKey(Key.Up, PhysicalKey.ArrowUp)
+    member this.PressDown() = this.PressKey(Key.Down, PhysicalKey.ArrowDown)
+    member this.PressTab() = this.PressKey(Key.Tab, PhysicalKey.Tab)
+    member this.PressEnter() = this.PressKey(Key.Enter, PhysicalKey.Enter)
+    member this.PressEscape() = this.PressKey(Key.Escape, PhysicalKey.Escape)
+    member this.PressBackspace() = this.PressKey(Key.Back, PhysicalKey.Backspace)
 
 module Mock =
     type MockSearchResult(name, ?priority, ?keywords, ?showIfNoActivator, ?activatorFilter, ?contextMenuLoader) =
@@ -97,6 +108,7 @@ module Mock =
 
     let searchResult name = MockSearchResult(name) :> SearchResult
     let searchResultWithPriority name priority = MockSearchResult(name, priority) :> SearchResult
+    let searchResultWithContextMenu name cmLoader = MockSearchResult(name, contextMenuLoader = cmLoader) :> SearchResult
 
     let searchResultWithActivator name showIfNoActivator activators =
         MockSearchResult(name, showIfNoActivator = showIfNoActivator, activatorFilter = activators)
@@ -153,11 +165,9 @@ module Mock =
 
         test window vm
 
-    let selectResult (window: Window) (result: SearchResult) =
+    let selectResult (window: Starter.Views.MainWindow) (result: SearchResult) =
         window.KeyTextInput (result.Name.ToLowerInvariant())
-        window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
-        window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
+        window.PressEnter()
         window.Show()
         for _ = 0 to result.Name.Length-1 do
-            window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
-            window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
+            window.PressBackspace()

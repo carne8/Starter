@@ -125,6 +125,20 @@ public partial class MainWindow : TranslucentWindow
         Background = null;
     }
 
+    public override void Hide()
+    {
+        // Restore text after context menu
+        ContextMenuResultList.Selection.Clear();
+        ContextMenuResultList.Scroll?.Offset = Vector.Zero;
+
+        var states = previousSelectionState.ToArray();
+        if (states.Length >= 1) TextBox.Text = states[^1].text;
+        previousSelectionState.Clear();
+
+        // Hide window
+        base.Hide();
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -184,6 +198,7 @@ public partial class MainWindow : TranslucentWindow
 
         // Reset focus
         TextBox.Focus();
+        TextBox.CaretIndex = 0; // Change caret index before text prevents a color bug
         TextBox.SelectAll();
 
         // Reset selection

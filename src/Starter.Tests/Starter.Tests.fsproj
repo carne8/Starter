@@ -17,6 +17,7 @@
         <Compile Include="Tests\KeyboardNavigation.fs" />
         <Compile Include="Tests\Settings.fs" />
         <Compile Include="Tests\ExceptionResilience.fs" />
+        <Compile Include="Tests\ContextMenu.fs" />
         <Compile Include="TestAppBuilder.fs" />
     </ItemGroup>
 

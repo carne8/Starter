@@ -141,6 +141,7 @@ public partial class MainWindowViewModel : ObservableObject
             var newContextMenu = entry.Invoke();
             if (newContextMenu is null)
             {
+                ContextMenu.ExitAllContextMenu();
                 HideWindow?.Invoke(this, EventArgs.Empty);
                 return false;
             }
