@@ -3,7 +3,6 @@
 open Avalonia.Headless
 open Avalonia.Headless.NUnit
 open Avalonia.Input
-open Starter.Features
 open Starter.Features.Config
 open Starter.SearchEngine
 open Starter.Tests.Common
@@ -16,7 +15,7 @@ let testDisplayedResults (shouldBeDisplayed: _ array) (shouldNotBeDisplayed: _ a
         let displayedResults =
             window.ResultList
             |> _.Items
-            |> Seq.map (unbox<SearchResultData> >> _.SearchResult)
+            |> Seq.cast<SearchResult>
             |> Seq.toArray
 
         Assert.AreEqual(
@@ -46,9 +45,9 @@ let ensureSearchResultsAppear () =
            Array.init 5 (fun i -> Mock.searchResult $"Dynamic buffered Result: {i}") |]
 
     let engines = [
-        Mock.staticSearchEngine "static" [] (fun () -> results[0]) :> ISearchEngine
-        Mock.dynamicSearchEngine "dynamic" [] false (fun _ _ _ -> results[1])
-        Mock.dynamicSearchEngine "buffered" [] true (fun _ _ _ -> results[2])
+        Mock.staticSearchEngine "static" [] (fun () -> results[0]) ignore :> SearchEngine
+        Mock.dynamicSearchEngine "dynamic" [] false (fun _ _ _ -> results[1]) ignore
+        Mock.dynamicSearchEngine "buffered" [] true (fun _ _ _ -> results[2]) ignore
     ]
 
     testDisplayedResults
@@ -78,13 +77,14 @@ let testActivatorFiltering_ActivatorDisabled () =
            Mock.searchResultWithActivator "Not matching text 2" false [| activator |] |]
 
     let searchEngine =
-        { Id = activator.SearchEngineId
-          OnLoadResults = fun () ->
-            Array.append
-                shouldBeDisplayedResults
-                shouldNotBeDisplayedResults
-          OnSearchResultSelected = ignore
-          Activators = [ activator ] }
+        Mock.staticSearchEngine
+            activator.SearchEngineId
+            [ activator ]
+            (fun () ->
+                Array.append
+                    shouldBeDisplayedResults
+                    shouldNotBeDisplayedResults)
+            ignore
 
     testDisplayedResults
         shouldBeDisplayedResults
@@ -116,13 +116,14 @@ let testActivatorFiltering_StaticEngine_ActivatorEnabled () =
            Mock.searchResultWithActivator "Not matching text 4" false [| otherActivator |] |]
 
     let searchEngine =
-        { Id = activator.SearchEngineId
-          OnLoadResults = fun () ->
-            Array.append
-                shouldBeDisplayedResults
-                shouldNotBeDisplayedResults
-          OnSearchResultSelected = ignore
-          Activators = [ activator ] }
+        Mock.staticSearchEngine
+            activator.SearchEngineId
+            [ activator ]
+            (fun () ->
+                Array.append
+                    shouldBeDisplayedResults
+                    shouldNotBeDisplayedResults)
+            ignore
 
     let config =
         { Configuration.Default with
@@ -158,13 +159,14 @@ let testActivatorFiltering_StaticEngine_ActivatorEnabled_EmptyQueryShowAllResult
            Mock.searchResultWithActivator "Not matching text 4" false [| otherActivator |] |]
 
     let searchEngine =
-        { Id = activator.SearchEngineId
-          OnLoadResults = fun () ->
-            Array.append
-                shouldBeDisplayedResults
-                shouldNotBeDisplayedResults
-          OnSearchResultSelected = ignore
-          Activators = [ activator ] }
+        Mock.staticSearchEngine
+            activator.SearchEngineId
+            [ activator ]
+            (fun () ->
+                Array.append
+                    shouldBeDisplayedResults
+                    shouldNotBeDisplayedResults)
+            ignore
 
     let config =
         { Configuration.Default with
@@ -208,6 +210,7 @@ let testActivatorFiltering_DynamicEngine_ActivatorEnabled_EmptyQuery () =
                 | "" -> Seq.empty
                 | _ -> results
             )
+            ignore
 
     let config =
         { Configuration.Default with
@@ -233,9 +236,9 @@ let ensureSearchResultsAreCleared () =
            Array.init 5 (fun i -> Mock.searchResult $"Dynamic buffered Result: {i}") |]
 
     let engines = [
-        Mock.staticSearchEngine "static" [] (fun () -> results[0]) :> ISearchEngine
-        Mock.dynamicSearchEngine "dynamic" [] false (fun _ _ _ -> results[1])
-        Mock.dynamicSearchEngine "buffered" [] true (fun _ _ _ -> results[2])
+        Mock.staticSearchEngine "static" [] (fun () -> results[0]) ignore :> SearchEngine
+        Mock.dynamicSearchEngine "dynamic" [] false (fun _ _ _ -> results[1]) ignore
+        Mock.dynamicSearchEngine "buffered" [] true (fun _ _ _ -> results[2]) ignore
     ]
 
     Mock.withWindowConfig Configuration.Default engines (fun window _ ->
@@ -258,9 +261,9 @@ let ensureSearchResultsAreCleared_WithActivator () =
            Array.init 5 (fun i -> Mock.searchResult $"Dynamic buffered Result: {i}") |]
 
     let engines = [
-        Mock.staticSearchEngine "static" [ activator ] (fun () -> results[0]) :> ISearchEngine
-        Mock.dynamicSearchEngine "dynamic" [] false (fun _ _ _ -> results[1])
-        Mock.dynamicSearchEngine "buffered" [] true (fun _ _ _ -> results[2])
+        Mock.staticSearchEngine "static" [ activator ] (fun () -> results[0]) ignore :> SearchEngine
+        Mock.dynamicSearchEngine "dynamic" [] false (fun _ _ _ -> results[1]) ignore
+        Mock.dynamicSearchEngine "buffered" [] true (fun _ _ _ -> results[2]) ignore
     ]
 
     let config =
@@ -276,8 +279,7 @@ let ensureSearchResultsAreCleared_WithActivator () =
         tb.CaretIndex <- tb.Text |> function null -> 0 | t -> t.Length
         window.KeyPress(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
         window.KeyRelease(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
-        window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
-        window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
+        window.PressBackspace()
 
         let displayedResults = window.ResultList
         Assert.AreEqual(0, displayedResults.ItemCount, "No results should displayed")

@@ -4,7 +4,7 @@ open System.Text
 
 /// highest ASCII code point
 let [<Literal>] private MaxAscii = 127
-let private delimiterRunes = "/,:;|".EnumerateRunes() |> Seq.toArray |> Array.map _.Value
+let delimiterRunes = "/,:;|".EnumerateRunes() |> Seq.toArray |> Array.map _.Value
 let private whiteRunes = " \t\n\v\f\r\x85\xA0".EnumerateRunes() |> Seq.toArray |> Array.map _.Value
 
 module Rune =

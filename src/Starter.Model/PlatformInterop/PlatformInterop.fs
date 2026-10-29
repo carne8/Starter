@@ -11,7 +11,7 @@ type IPlatformInterop =
     abstract member RegisterHotkey:
         shortcut: Config.KeyboardShortcut
         -> window: Avalonia.Controls.Window
-        -> ValueTask<bool>
+        -> Task<bool>
 
     abstract member SetupHotkeyCallback: window: Avalonia.Controls.Window -> unit
     abstract member SupportBackground: background: Config.Background -> bool

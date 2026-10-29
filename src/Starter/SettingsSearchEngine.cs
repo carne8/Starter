@@ -13,39 +13,22 @@ file enum TargetPage
     Logs
 }
 
-file class SettingsSearchResult(string name, string description, TargetPage targetPage, StarterIconSource icon)
-    : ISearchResult
+file class SettingsSearchResult(string name, string description, TargetPage targetPage, StarterIconSource icon) : SearchResult
 {
     public TargetPage TargetPage { get; } = targetPage;
-    public string? Id => null;
-    public string Name => name;
-    public string Description => description;
-    public string[]? Keywords => null;
-    public StarterIconSource Icon => icon;
-    public bool ShowIfNoActivator => true;
-    public ISearchEngineActivator[] ActivatorFilter => [];
+    public override string Name => name;
+    public override string Description => description;
+    public override StarterIconSource Icon => icon;
+    public override bool ShowIfNoActivator => true;
 }
 
-internal class SettingsSearchEngine(ILogger logger, SettingsWindowViewModel windowVm) : IStaticSearchEngine
+internal class SettingsSearchEngine(ILogger logger, SettingsWindowViewModel windowVm) : StaticSearchEngine
 {
-    public string Id => nameof(SettingsSearchEngine);
-    public string Name => "Settings";
-    public string ShortName => "Settings";
-    public StarterIconSource Icon => Icons.Settings;
-    public ISearchEngineActivator[] Activators => [];
+    public override string Id => nameof(SettingsSearchEngine);
+    public override string Name => "Settings";
+    public override StarterIconSource Icon => Icons.Settings;
 
-    public event EventHandler? Changed
-    {
-        add { }
-        remove { }
-    }
-    public event EventHandler<IEnumerable<ISearchResult>>? ResultsChanged
-    {
-        add { }
-        remove { }
-    }
-
-    private static readonly IEnumerable<ISearchResult> Results =
+    private static readonly IEnumerable<SearchResult> Results =
     [
         new SettingsSearchResult("Logs", "Open logs", TargetPage.Logs, Icons.Logs),
         new SettingsSearchResult("Settings", "Open settings", TargetPage.Settings, Icons.Settings),
@@ -55,7 +38,7 @@ internal class SettingsSearchEngine(ILogger logger, SettingsWindowViewModel wind
 
     public BehaviorSubject<Configuration> Config => windowVm.Config;
 
-    public void SearchResultSelected(ISearchResult selectedSearchResult)
+    public override void SearchResultSelected(SearchResult selectedSearchResult)
     {
         if (selectedSearchResult is not SettingsSearchResult result) return;
         switch (result.TargetPage)
@@ -85,5 +68,5 @@ internal class SettingsSearchEngine(ILogger logger, SettingsWindowViewModel wind
         }
     }
 
-    public ValueTask<IEnumerable<ISearchResult>> LoadResults() => ValueTask.FromResult(Results);
+    public override ValueTask<IEnumerable<SearchResult>> LoadResults() => ValueTask.FromResult(Results);
 }

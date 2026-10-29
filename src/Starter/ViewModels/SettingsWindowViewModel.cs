@@ -1,4 +1,5 @@
-﻿using Avalonia.Controls.Templates;
+﻿using System.ComponentModel;
+using Avalonia.Controls.Templates;
 using R3;
 using Starter.Features.Config;
 using Starter.SearchEngine;
@@ -18,10 +19,12 @@ public partial class MenuItemViewModel(
 
     [ObservableProperty] public partial StarterIconSource Icon { get; set; } = icon;
 
-    public MenuItemViewModel(ISearchEngine engine, object vm, IDataTemplate dataTemplate) :
+    public MenuItemViewModel(SearchEngine.SearchEngine engine, object vm, IDataTemplate dataTemplate) :
         this(engine.Name, engine.Icon, vm, dataTemplate)
-        =>
-            engine.Changed += (_, _) => Icon = engine.Icon;
+    {
+        if (engine is INotifyPropertyChanged e)
+            e.PropertyChanged += (_, _) => Icon = engine.Icon;
+    }
 }
 
 public partial class SettingsWindowViewModel : ObservableObject

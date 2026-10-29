@@ -11,11 +11,15 @@ using Serilog;
 using Starter.Features;
 using Starter.Features.Config;
 using Starter.Features.PlatformInterop;
+using Starter.SearchEngine;
 using Starter.ViewModels;
 using Starter.Views;
 using Const = Starter.Features.Constants;
 
 namespace Starter;
+
+using FuzzyMatchResults = Dictionary<SearchResult, TextMatching.FuzzyMatch.FuzzyResult>;
+using ContextMenuFuzzyMatchResults = Dictionary<IContextMenuEntry, TextMatching.FuzzyMatch.FuzzyResult>;
 
 public class App : Application
 {
@@ -73,11 +77,16 @@ public class App : Application
             return LoadConfiguration(config);
         });
 
+        serviceCollection.AddSingleton(new FuzzyMatchResults());
+        serviceCollection.AddSingleton(new ContextMenuFuzzyMatchResults());
+
         // Main window
         serviceCollection.AddSingleton<MainWindow>(provider =>
         {
             var platformInterop = provider.GetRequiredService<IPlatformInterop>();
-            return new MainWindow(platformInterop);
+            var fuzzyMatchResults = provider.GetRequiredService<FuzzyMatchResults>();
+            var contextMenuFuzzyMatchResults = provider.GetRequiredService<ContextMenuFuzzyMatchResults>();
+            return new MainWindow(platformInterop, fuzzyMatchResults, contextMenuFuzzyMatchResults);
         });
 
         serviceCollection.AddSingleton(lifetime);
@@ -152,7 +161,6 @@ public class App : Application
 
         platformInterop
             .RegisterHotkey(initialConfig.KeyboardShortcut, window)
-            .AsTask()
             .ContinueWith(task =>
             {
                 if (task.IsFaulted)
@@ -179,22 +187,20 @@ public class App : Application
         return platform.EnsureConfigCompatibility(configRes.ResultValue);
     }
 
-    private void LoadSearchEngines(SearchEngineStore searchEngineStore, IClipboard clipboard, IClassicDesktopStyleApplicationLifetime appLifetime)
+    private static void LoadSearchEngines(SearchEngineStore searchEngineStore, IClipboard clipboard, IClassicDesktopStyleApplicationLifetime appLifetime)
     {
 #if DEBUG
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.UrlSearchEngine/Starter.UrlSearchEngine/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.WebSearchEngine/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.WorkspaceSearchEngine/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.Calculator/bin/Debug/net10.0/", clipboard);
+        searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.EverythingSearchEngine/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory(
             OperatingSystem.IsWindows()
                 ? "./src/Starter.ApplicationSearchEngine/bin/Debug/net10.0-windows10.0.19041.0/"
                 : "./src/Starter.ApplicationSearchEngine/bin/Debug/net10.0/",
             clipboard
         );
-
-        if (OperatingSystem.IsWindows())
-            searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.EverythingSearchEngine/bin/Debug/net10.0/", clipboard);
 #else
         foreach (var pluginDir in Directory.GetDirectories(Const.PluginsDirectory))
             searchEngineStore.LoadSearchEnginesFromDirectory(pluginDir, clipboard);

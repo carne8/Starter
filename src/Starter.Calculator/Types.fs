@@ -1,7 +1,6 @@
 namespace Starter.Calculator.Types
 
 open Avalonia
-open Avalonia.Controls.Templates
 open Avalonia.Media
 open Avalonia.Threading
 open MathNet.Numerics
@@ -64,30 +63,33 @@ module Icon =
             StarterIconSource(createIcon true, createIcon false)
         )
 
-type LaTeXSearchResult =
-    { LaTeX: string
-      DataTemplate: IDataTemplate }
+type LaTeXSearchResult(LaTeX: string, dataTemplate) =
+    inherit ControlSearchResult()
 
-    interface IControlSearchResult with
-        member this.Id = null
-        member this.Name = ""
-        member this.Description = ""
-        member this.Keywords = Array.empty
-        member this.Icon = Icon.icon
-        member this.ShowIfNoActivator = true
-        member this.ActivatorFilter = Array.empty
-        member this.ShowIcon = true
-        member this.ControlDataContext = this
-        member this.ControlDataTemplate = this.DataTemplate
+    member _.LaTeX = LaTeX
+    override this.Id = null
+    override this.Name = ""
+    override this.Description = ""
+    override this.Keywords = Array.empty
+    override this.Icon = Icon.icon
+    override this.Priority = ResultPriority.Unique
+    override this.ShowIfNoActivator = true
+    override this.ActivatorFilter = Array.empty
+    override this.ShowIcon = true
+    override this.ControlDataContext = this
+    override this.ControlDataTemplate = dataTemplate
+    override this.ContextMenuLoader = null
 
-type NumberSearchResult =
-    { Result: string }
+type NumberSearchResult(result) =
+    inherit SearchResult()
 
-    interface ISearchResult with
-        member this.Id = null
-        member this.Name = this.Result
-        member this.Description = null
-        member this.Keywords = Array.empty
-        member this.Icon = Icon.icon
-        member this.ShowIfNoActivator = true
-        member this.ActivatorFilter = Array.empty
+    member this.Result = result
+    override this.Id = null
+    override this.Name = result
+    override this.Description = null
+    override this.Keywords = Array.empty
+    override this.Icon = Icon.icon
+    override this.Priority = ResultPriority.Unique
+    override this.ShowIfNoActivator = true
+    override this.ActivatorFilter = Array.empty
+    override this.ContextMenuLoader = null

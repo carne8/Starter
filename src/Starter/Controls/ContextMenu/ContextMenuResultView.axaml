@@ -1,0 +1,94 @@
+﻿<UserControl x:Class="Starter.Controls.ContextMenuResultView"
+             xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Starter.SearchEngine"
+             xmlns:controls="using:Starter.Controls"
+             x:DataType="vm:IContextMenuEntry">
+    <Panel>
+        <!-- Loading -->
+        <Border x:Name="LoadingControl"
+                Padding="{DynamicResource SearchResultPadding}"
+                HorizontalAlignment="Stretch"
+                IsVisible="{Binding Status, Converter={x:Static controls:ContextMenuStatusConverters.IsLoading}}">
+            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
+                <StackPanel Grid.Column="0"
+                            VerticalAlignment="Center"
+                            Spacing="-1">
+                    <TextBlock FontSize="{DynamicResource SearchResultFontSize}"
+                               Foreground="{DynamicResource Text1}"
+                               FontFamily="{StaticResource Geist}"
+                               FontWeight="{DynamicResource TextBoxFontWeight}">
+                        Loading...
+                    </TextBlock>
+
+                    <TextBlock Text="Loading..."
+                               FontSize="{DynamicResource SearchResultDescriptionFontSize}"
+                               FontWeight="Regular"
+                               Foreground="{DynamicResource Text2}"
+                               FontFamily="{StaticResource GeistMono}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+
+        <!-- Loaded result -->
+        <Border x:Name="LoadedControl"
+                Padding="{DynamicResource SearchResultPadding}"
+                HorizontalAlignment="Stretch"
+                IsVisible="{Binding Status, Converter={x:Static controls:ContextMenuStatusConverters.IsLoaded}}">
+            <Grid ColumnDefinitions="*, Auto" ColumnSpacing="6">
+                <StackPanel Grid.Column="0"
+                            VerticalAlignment="Center"
+                            Spacing="-1">
+                    <controls:AccentuatedTextBlock x:Name="NameTextBlock"
+                                                   FontSize="{DynamicResource SearchResultFontSize}"
+                                                   Foreground="{DynamicResource Text1}"
+                                                   AccentuatedForeground="{DynamicResource TextControlSelectionHighlightColor}"
+                                                   Text="{Binding Name}"
+                                                   FontFamily="{StaticResource Geist}"
+                                                   FontWeight="{DynamicResource TextBoxFontWeight}" />
+
+                    <TextBlock Text="{Binding Description}"
+                               IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                               FontSize="{DynamicResource SearchResultDescriptionFontSize}"
+                               FontWeight="Regular"
+                               Foreground="{DynamicResource Text2}"
+                               FontFamily="{StaticResource GeistMono}" />
+                </StackPanel>
+
+                <Border Grid.Column="1"
+                        CornerRadius="4"
+                        ClipToBounds="True">
+                    <controls:StarterIcon Width="{DynamicResource SearchResultIconSize}"
+                                          Height="{DynamicResource SearchResultIconSize}"
+                                          VerticalAlignment="Center"
+                                          IconSource="{Binding Icon}"
+                                          FontSize="{DynamicResource SearchResultIconSize}"
+                                          ExtraPaddingForSymbol="4" />
+                </Border>
+            </Grid>
+        </Border>
+
+
+        <!-- Separator -->
+        <Border x:Name="SeparatorControl"
+                Height="{StaticResource BorderThicknessInt}"
+                HorizontalAlignment="Stretch"
+                IsVisible="{Binding Status, Converter={x:Static controls:ContextMenuStatusConverters.IsSeparator}}"
+                Background="{DynamicResource BorderBrush}" />
+
+
+        <!-- Failed -->
+        <Border x:Name="FailedControl"
+                Padding="{DynamicResource SearchResultPadding}"
+                HorizontalAlignment="Stretch"
+                IsVisible="{Binding Status, Converter={x:Static controls:ContextMenuStatusConverters.IsFailed}}">
+            <TextBlock FontSize="{DynamicResource SearchResultFontSize}"
+                       Foreground="{DynamicResource Text1}"
+                       Text="Failed"
+                       FontFamily="{StaticResource Geist}"
+                       FontWeight="{DynamicResource TextBoxFontWeight}" />
+        </Border>
+    </Panel>
+
+</UserControl>

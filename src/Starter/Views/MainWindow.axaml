@@ -2,11 +2,13 @@
                             xmlns="https://github.com/avaloniaui"
                             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                             xmlns:vm="using:Starter.ViewModels"
+                            xmlns:ui="using:FluentAvalonia.UI.Controls"
                             xmlns:controls="using:Starter.Controls"
                             xmlns:starter="using:Starter.SearchEngine"
                             xmlns:local="using:Starter.Views"
                             Title="Starter"
                             Width="560"
+                            MinWidth="560"
                             MinHeight="52"
                             x:DataType="vm:MainWindowViewModel"
                             WindowDecorations="None"
@@ -16,8 +18,8 @@
                             ShowInTaskbar="False"
                             WindowStartupLocation="Manual"
                             BackgroundColor="{DynamicResource DefaultBackgroundColor}"
-                            AcrylicBackgroundColor="{DynamicResource WindowBackground}"
                             BackgroundKind="{Binding ConfigSystemObservable^.Background}"
+                            AcrylicBackgroundColor="{DynamicResource WindowBackground}"
                             CornerRadius="{DynamicResource CornerRadius}"
                             Antialiasing="{Binding ConfigSystemObservable^.Antialiasing}">
 
@@ -45,6 +47,7 @@
 
         <local:FirstNonNullConverter x:Key="FirstNonNull" />
         <local:TimeSpanConverter x:Key="TimeSpanToString" />
+        <local:IsNotZeroConverter x:Key="IsNotZero" />
     </Window.Resources>
 
     <Window.Styles>
@@ -67,7 +70,7 @@
             <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
 
-        <Style Selector="ListBox#ResultList">
+        <Style Selector="ListBox.ResultList">
             <Setter Property="Padding" Value="{DynamicResource ResultsPadding}" />
             <Setter Property="MaxHeight" Value="380" />
         </Style>
@@ -86,6 +89,10 @@
 
         <Style Selector="ListBoxItem">
             <Setter Property="CornerRadius" Value="14" />
+            <!-- Background needed for mouse click to work -->
+            <Setter Property="Background">
+                <SolidColorBrush Opacity="0" Color="White" />
+            </Setter>
         </Style>
 
         <Style Selector="ListBoxItem:selected">
@@ -95,9 +102,23 @@
         </Style>
     </Window.Styles>
 
-    <Border CornerRadius="{DynamicResource CornerRadius}"
+    <Border x:Name="MainBorder"
+            Margin="{OnPlatform Linux='18,15,18,25',
+                                Default='0'}"
+            CornerRadius="{DynamicResource CornerRadius}"
             BorderBrush="{DynamicResource BorderBrush}"
             BorderThickness="{StaticResource BorderThickness}">
+        <Border.Effect>
+            <OnPlatform>
+                <OnPlatform.Linux>
+                    <DropShadowEffect BlurRadius="25"
+                                      OffsetX="0"
+                                      OffsetY="5"
+                                      Opacity="0.2"
+                                      Color="#111111" />
+                </OnPlatform.Linux>
+            </OnPlatform>
+        </Border.Effect>
         <StackPanel>
             <!-- Main text box -->
             <Border Height="52" Margin="14,0">
@@ -106,7 +127,7 @@
                                     IsVisible="{Binding Activator, Converter={x:Static ObjectConverters.IsNotNull}}"
                                     Content="{Binding Activator}">
                         <ContentControl.ContentTemplate>
-                            <DataTemplate DataType="starter:ISearchEngineActivator">
+                            <DataTemplate DataType="starter:SearchEngineActivator">
                                 <controls:StarterIcon Width="18"
                                                       Height="18"
                                                       FontSize="18"
@@ -126,40 +147,33 @@
                     <TextBox x:Name="TextBox"
                              Grid.Column="1"
                              PlaceholderText="Start anything..."
-                             Text="{Binding Text}">
-                        <TextBox.KeyBindings>
-                            <KeyBinding Command="{Binding SelectResultCommand}"
-                                        CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
-                                        Gesture="Enter" />
-                        </TextBox.KeyBindings>
-                    </TextBox>
+                             Text="{Binding Text}" />
                 </Grid>
             </Border>
 
             <!-- Separator -->
-            <Border Classes="Separator" IsVisible="{Binding SearchResults.Count}" />
-            <!-- Hide when empty -->
+            <Border Classes="Separator">
+                <Border.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                        <Binding Path="SearchResults.Count" Converter="{StaticResource IsNotZero}" />
+                        <Binding Path="ContextMenu.ContextMenuEnabled" />
+                    </MultiBinding>
+                </Border.IsVisible>
+            </Border>
 
             <!-- Results -->
             <ListBox x:Name="ResultList"
+                     Classes="ResultList"
                      ItemContainerTheme="{StaticResource CustomListBoxItem}"
                      SelectionMode="AlwaysSelected"
                      ItemsSource="{Binding SearchResults}"
-                     IsVisible="{Binding SearchResults.Count}"
                      PointerReleased="ResultList_OnPointerReleased">
-                <!-- Hide when empty -->
-
-                <!-- <ListBox.ItemsPanel> -->
-                <!--     <ItemsPanelTemplate> -->
-                <!--         <StackPanel /> -->
-                <!--     </ItemsPanelTemplate> -->
-                <!-- </ListBox.ItemsPanel> -->
-
-                <ListBox.KeyBindings>
-                    <KeyBinding Command="{Binding SelectResultCommand}"
-                                CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
-                                Gesture="Enter" />
-                </ListBox.KeyBindings>
+                <ListBox.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding Path="SearchResults.Count" Converter="{StaticResource IsNotZero}" />
+                        <Binding Path="!ContextMenu.ContextMenuEnabled" />
+                    </MultiBinding>
+                </ListBox.IsVisible>
 
                 <!-- Add spacing between items -->
                 <ListBox.Styles>
@@ -172,17 +186,59 @@
                         <Setter Property="Margin" Value="0, 0, 0, 0" />
                     </Style>
                 </ListBox.Styles>
+            </ListBox>
 
-                <ListBox.ItemTemplate>
-                    <controls:SearchResultDataTemplate />
-                </ListBox.ItemTemplate>
+            <Border Height="150" IsVisible="{Binding ContextMenu.ContextMenuLoading}">
+                <ui:FAProgressRing Width="50"
+                                   Height="50"
+                                   HorizontalAlignment="Center"
+                                   VerticalAlignment="Center"
+                                   IsIndeterminate="True" />
+            </Border>
+
+            <ListBox x:Name="ContextMenuResultList"
+                     Classes="ResultList"
+                     ItemContainerTheme="{StaticResource CustomListBoxItem}"
+                     SelectionMode="AlwaysSelected"
+                     ItemsSource="{Binding ContextMenuResults}"
+                     PointerReleased="ResultList_OnPointerReleased">
+                <ListBox.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.And}">
+                        <Binding Path="ContextMenu.ContextMenuEnabled" />
+                        <Binding Path="ContextMenu.ContextMenuLoading" Converter="{x:Static BoolConverters.Not}" />
+                    </MultiBinding>
+                </ListBox.IsVisible>
+                <ListBox.KeyBindings>
+                    <KeyBinding Command="{Binding SelectResultCommand}"
+                                CommandParameter="{Binding SelectedItem, ElementName=ResultList}"
+                                Gesture="Enter" />
+                </ListBox.KeyBindings>
+
+                <!-- Add spacing between items -->
+                <ListBox.Styles>
+                    <Style Selector="ListBoxItem">
+                        <Setter Property="Margin" Value="0, 4, 0, 0" />
+                        <Setter Property="CornerRadius" Value="{DynamicResource SearchResultCornerRadius}" />
+                        <Setter Property="MinHeight" Value="1" />
+                    </Style>
+                    <Style Selector="ListBoxItem:nth-child(1)">
+                        <!-- Why is the of the first one 1 ?! -->
+                        <Setter Property="Margin" Value="0, 0, 0, 0" />
+                    </Style>
+                </ListBox.Styles>
             </ListBox>
 
             <!-- Footer -->
             <Border Padding="14,7"
                     BorderThickness="0,0.8,0,0"
-                    BorderBrush="{DynamicResource BorderBrush}"
-                    IsVisible="{Binding SearchResults.Count}">
+                    BorderBrush="{DynamicResource BorderBrush}">
+                <Border.IsVisible>
+                    <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                        <Binding Path="SearchResults.Count" Converter="{StaticResource IsNotZero}" />
+                        <Binding Path="ContextMenu.ContextMenuEnabled" />
+                    </MultiBinding>
+                </Border.IsVisible>
+
                 <DockPanel>
                     <TextBlock Margin="0,0,8,0"
                                VerticalAlignment="Center"
@@ -218,6 +274,19 @@
                                FontFamily="{StaticResource Geist}"
                                FontWeight="SemiLight"
                                Foreground="{DynamicResource Text3}"> close</TextBlock>
+
+                    <Border Margin="8,0,0,0"
+                            DockPanel.Dock="Left"
+                            Classes="KeyboardSpan">
+                        <TextBlock FontSize="11">tab</TextBlock>
+                    </Border>
+                    <TextBlock VerticalAlignment="Center"
+                               xml:space="preserve"
+                               DockPanel.Dock="Left"
+                               FontSize="13"
+                               FontFamily="{StaticResource Geist}"
+                               FontWeight="SemiLight"
+                               Foreground="{DynamicResource Text3}"> more</TextBlock>
 
                     <TextBlock x:Name="GreetingOrActivatorLabel"
                                HorizontalAlignment="Right"

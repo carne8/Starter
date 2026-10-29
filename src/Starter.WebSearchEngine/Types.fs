@@ -29,14 +29,6 @@ type SearchEngineKind =
         | Bing -> "Bing"
         | Ecosia -> "Ecosia"
 
-    static member getShortName =
-        function
-        | Google -> "Google"
-        | Qwant -> "Qwant"
-        | DuckDuckGo -> "DDG"
-        | Bing -> "Bing"
-        | Ecosia -> "Ecosia"
-
     static member getIconFilename =
         function
         | Google -> "Google.svg"
@@ -114,7 +106,6 @@ type SearchEngineKind =
 type SearchEngine =
     { Kind: SearchEngineKind
       Name: string
-      ShortName: string
       Icon:
         {| Light: Avalonia.Media.IImage
            Dark: Avalonia.Media.IImage |}
@@ -138,24 +129,25 @@ type SearchEngine =
 
         { Kind = seKind
           Name = seKind |> SearchEngineKind.getName
-          ShortName = seKind |> SearchEngineKind.getShortName
           Icon = {| Light = lightIcon; Dark = darkIcon |}
           StarterIcon = StarterIconSource(lightIcon, darkIcon)
           LoadSuggestions = seKind |> SearchEngineKind.loadSuggestions httpClient
           LoadSearchUrl = seKind |> SearchEngineKind.getQueryUrl }
 
 
-type SearchResult =
-    { Name: string
-      Description: string
-      Uri: string
-      Icon: StarterIconSource }
-
-    interface ISearchResult with
-        member this.Id = this.Uri
-        member this.Name = this.Name
-        member this.Description = this.Description
-        member this.Keywords = Array.empty
-        member this.Icon = this.Icon
-        member this.ShowIfNoActivator = true
-        member this.ActivatorFilter = Array.empty
+type WebSearchResult(
+        name: string,
+        description: string,
+        uri: string,
+        icon: StarterIconSource
+    ) =
+    inherit SearchResult()
+    member this.Uri = uri
+    override this.Id = uri
+    override this.Name = name
+    override this.Description = description
+    override this.Keywords = Array.empty
+    override this.Icon = icon
+    override this.ShowIfNoActivator = true
+    override this.ActivatorFilter = Array.empty
+    override this.ContextMenuLoader = null

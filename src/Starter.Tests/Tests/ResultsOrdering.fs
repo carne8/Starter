@@ -3,8 +3,8 @@
 open Avalonia.Headless
 open Avalonia.Headless.NUnit
 open Avalonia.Threading
-open Starter.Features
 open Starter.Features.Config
+open Starter.SearchEngine
 open Starter.Tests.Common
 
 [<AvaloniaTest>]
@@ -14,11 +14,7 @@ let ensureMostUsedResultsAreTheFirstShowed () =
            Mock.searchResultWithActivator "Result 1" true Array.empty
            Mock.searchResultWithActivator "Result 2" true Array.empty |]
 
-    let searchEngine =
-        { Id = "engine-id"
-          OnLoadResults = fun () -> results
-          OnSearchResultSelected = ignore
-          Activators = List.empty }
+    let searchEngine = Mock.staticSearchEngine "engine-id" List.empty (fun () -> results) ignore
 
     Mock.withWindowConfig Configuration.Default [ searchEngine ] (fun window _ ->
         // Type text
@@ -39,7 +35,7 @@ let ensureMostUsedResultsAreTheFirstShowed () =
         let displayedResults =
             window.ResultList
             |> _.Items
-            |> Seq.map (unbox<SearchResultData> >> _.SearchResult)
+            |> Seq.cast<SearchResult>
             |> Seq.toArray
 
         Assert.IsTrue(

@@ -21,10 +21,10 @@ let testStaticSearchEngineCrash_OnLoadResults () =
            Mock.searchResult "Result 1/3"
            Mock.searchResult "Result 1/4" |]
 
-    let searchEngines : ISearchEngine array =
-        [| Mock.staticSearchEngine "crashing-engine-id" [] (fun () -> failwith "Sorry, but not sorry")
-           Mock.staticSearchEngine "engine-id-1" [] (fun () -> results1)
-           Mock.dynamicSearchEngine "engine-id-2" [] false (fun _ _ _ -> results2) |]
+    let searchEngines : SearchEngine array =
+        [| Mock.staticSearchEngine "crashing-engine-id" [] (fun () -> failwith "Sorry, but not sorry") ignore
+           Mock.staticSearchEngine "engine-id-1" [] (fun () -> results1) ignore
+           Mock.dynamicSearchEngine "engine-id-2" [] false (fun _ _ _ -> results2) ignore |]
 
     Assert.DoesNotThrow(
         Action(fun () ->
@@ -51,10 +51,10 @@ let testDynamicSearchEngineCrash_OnLoadResults () =
            Mock.searchResult "Result 1/3"
            Mock.searchResult "Result 1/4" |]
 
-    let searchEngines : ISearchEngine array =
-        [| Mock.dynamicSearchEngine "crashing-engine-id" [] false (fun _ _ _ -> failwith "Sorry, but not sorry")
-           Mock.staticSearchEngine "engine-id-1" [] (fun () -> results1)
-           Mock.dynamicSearchEngine "engine-id-2" [] false (fun _ _ _ -> results2) |]
+    let searchEngines : SearchEngine array =
+        [| Mock.dynamicSearchEngine "crashing-engine-id" [] false (fun _ _ _ -> failwith "Sorry, but not sorry") ignore
+           Mock.staticSearchEngine "engine-id-1" [] (fun () -> results1) ignore
+           Mock.dynamicSearchEngine "engine-id-2" [] false (fun _ _ _ -> results2) ignore |]
 
     Assert.DoesNotThrow(
         Action(fun () ->
@@ -72,17 +72,17 @@ let testDynamicSearchEngineCrash_OnLoadResults () =
 [<AvaloniaTest>]
 let testStaticSearchEngineCrash_OnSelectResult () =
     let searchEngine =
-        { Id = "engine-id"
-          OnLoadResults = fun () -> [| Mock.searchResult "Result" |]
-          OnSearchResultSelected = fun _ -> failwith "Sorry, but not sorry"
-          Activators = [||] }
+        Mock.staticSearchEngine
+            "engine-id"
+            Array.empty
+            (fun () -> [| Mock.searchResult "Result" |])
+            (fun _ -> failwith "Sorry, but not sorry")
 
     Assert.DoesNotThrow(
         Action(fun () ->
             Mock.withWindowConfig Configuration.Default [ searchEngine ] (fun window _ ->
                 window.KeyTextInput "result"
-                window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
-                window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
+                window.PressEnter()
             )
         ),
         "Starter should not throw when an engine throws."
@@ -92,25 +92,18 @@ let testStaticSearchEngineCrash_OnSelectResult () =
 [<AvaloniaTest>]
 let testDynamicSearchEngineCrash_OnSelectResult () =
     let searchEngine =
-        { new IDynamicSearchEngine with
-            member this.SearchResultSelected result = failwith "Sorry, but not sorry"
-            member this.Search(query, ct, activator) = [ Mock.searchResult "Result" ], R3.Observable.Empty()
-            member this.Id = "crashing-engine-id"
-            member this.Name = "Engine name: crashing-engine-id"
-            member this.ShortName = "Engine short name: crashing-engine-id"
-            member this.Icon = StarterIconSource.Empty
-            member this.Activators = [| |]
-            member this.ResultsPriority = ResultPriority.Search
-            member this.BufferResults = false
-            member this.add_Changed _ = ()
-            member this.remove_Changed _ = () }
+        Mock.dynamicSearchEngine
+            "crashing-engine-id"
+            Array.empty
+            false
+            (fun _ _ _ -> [ Mock.searchResultWithPriority "Result" ResultPriority.Search ])
+            (fun _ -> failwith "Sorry, but not sorry")
 
     Assert.DoesNotThrow(
         Action(fun () ->
             Mock.withWindowConfig Configuration.Default [ searchEngine ] (fun window _ ->
                 window.KeyTextInput "result"
-                window.KeyPress(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
-                window.KeyRelease(Key.Enter, RawInputModifiers.None, PhysicalKey.Enter, null)
+                window.PressEnter()
             )
         ),
         "Starter should not throw when an engine throws."

@@ -16,28 +16,32 @@ let loadApplication (iconLoader: IconLoader.IconLoader) useGtkLaunch entry =
     task {
         let! icon = iconLoader.LoadIcon entry
 
-        return
-            { Id = $"application:{entry.DesktopFilePath}:{entry.Name}"
-              Name = entry.Name
-              Icon = icon
-              Description = "Applications" // TODO: I18n or use Generic Name
-              Keywords = entry.AdditionalSearchKeywords
-              Exec =
-                match useGtkLaunch with
-                | true -> $"gtk-launch {entry.DesktopFilePath |> Path.GetFileNameWithoutExtension}"
-                | false ->
-                    entry
-                    |> XDGDesktopFileParser.parseExec
-                    |> ValueOption.defaultWith (fun () ->
-                        logger.Warning $"{entry.DesktopFilePath} does not provide a valid Exec string"
-                        String.Empty
-                    )
-              WorkingDirectory = entry.WorkingDirectory }
+        let exec =
+            if useGtkLaunch then
+                $"gtk-launch {entry.DesktopFilePath |> Path.GetFileNameWithoutExtension}"
+            else
+                entry
+                |> XDGDesktopFileParser.parseExec
+                |> ValueOption.defaultWith (fun () ->
+                    logger.Warning $"{entry.DesktopFilePath} does not provide a valid Exec string"
+                    String.Empty
+                )
+
+        return DesktopApplication(
+            Id = $"application:{entry.DesktopFilePath}:{entry.Name}",
+            DesktopFile = entry.DesktopFilePath,
+            Name = entry.Name,
+            Icon = icon,
+            Description = (entry.Comment |> ValueOption.defaultValue "Applications"), // TODO: I18n
+            Keywords = entry.AdditionalSearchKeywords,
+            Exec = exec,
+            WorkingDirectory = entry.WorkingDirectory
+        )
     }
 
 
-let loadApplications iconLoader useGtkLaunch (config: FolderConfiguration) : Task<ISearchResult seq> =
-    Task.Run<ISearchResult seq>(fun () -> task {
+let loadApplications iconLoader useGtkLaunch (config: FolderConfiguration) : Task<SearchResult seq> =
+    Task.Run<SearchResult seq>(fun () -> task {
         let sw = Diagnostics.Stopwatch()
         sw.Start()
 
@@ -67,7 +71,7 @@ let loadApplications iconLoader useGtkLaunch (config: FolderConfiguration) : Tas
                     let! app = loadApplication iconLoader useGtkLaunch entry
 
                     app
-                    :> ISearchResult
+                    :> SearchResult
                     |> apps.Add
             } |> ValueTask
         ))
@@ -75,10 +79,10 @@ let loadApplications iconLoader useGtkLaunch (config: FolderConfiguration) : Tas
         sw.Stop()
         logger.Debug $"Loaded apps: {sw.ElapsedMilliseconds}ms"
 
-        return apps :> ISearchResult seq
+        return apps :> SearchResult seq
     })
 
-let observeApplicationChanges iconLoader useGtkLaunch (appList: ResizeArray<ISearchResult>) (config: FolderConfiguration) =
+let observeApplicationChanges iconLoader useGtkLaunch (config: FolderConfiguration) (appList: ResizeArray<SearchResult>) =
     let subject = new Subject<unit>()
     let semaphore = new SemaphoreSlim(1, 1)
 

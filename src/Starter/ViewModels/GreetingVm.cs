@@ -34,8 +34,7 @@ public partial class GreetingVm : ObservableObject
         "Time to relax a bit",
         "Evening productivity session",
         "Finishing the last tasks?",
-        "Hope today went well",
-        "Quiet evenings are perfect for focus"
+        "Hope today went well"
     ];
 
     private readonly string[] lateNight =

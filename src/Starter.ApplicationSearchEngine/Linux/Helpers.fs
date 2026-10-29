@@ -66,6 +66,9 @@ module Seq =
 
         loop ()
 
+    let inline choosev f =
+        Seq.choose (f >> Option.ofValueOption)
+
 [<RequireQualifiedAccess>]
 module Task =
     open System.Threading.Tasks
@@ -84,3 +87,14 @@ module Result =
         match value with
         | null -> Error error
         | nonnull -> Ok nonnull
+
+type System.String with
+    member inline this.TryIndexOf(s: string) =
+        match this.IndexOf s with
+        | -1 -> ValueNone
+        | n -> ValueSome n
+
+    member inline this.TryIndexOf(c: char) =
+        match this.IndexOf c with
+        | -1 -> ValueNone
+        | n -> ValueSome n

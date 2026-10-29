@@ -1,10 +1,10 @@
-﻿module Starter.ApplicationSearchEngine.Windows.ExeLoader
+module Starter.ApplicationSearchEngine.Windows.ExeLoader
 
 open Avalonia.Threading
 open Starter.SearchEngine
 open Starter.ApplicationSearchEngine
-open Starter.ApplicationSearchEngine.Windows.Exe.IconHelper
 open Starter.ApplicationSearchEngine.Logger
+open Starter.Shared
 
 open System
 open System.IO
@@ -15,25 +15,34 @@ open System.Collections.Generic
 open System.Collections.Concurrent
 
 open FsToolkit.ErrorHandling
+open Starter.Shared.IconHelper
 open Vanara.PInvoke
 open Vanara.Windows.Shell
 
-type ExeApplication =
-    { Id: string
-      Name: string
-      Path: string
-      Keywords: string array
-      mutable AlternativeDescription: bool
-      Icon: StarterIconSource }
+type ExeApplication(
+    Id: string,
+    Name: string,
+    Path: string,
+    Keywords: string array,
+    AlternativeDescription: bool,
+    Icon: StarterIconSource
+) =
+    inherit SearchResult()
+    let mutable alternativeDescription = AlternativeDescription
 
-    interface ISearchResult with
-        member this.Id = this.Id
-        member this.Name = this.Name
-        member this.Description = if this.AlternativeDescription then this.Path else "Application"
-        member this.Keywords = this.Keywords
-        member this.Icon = this.Icon
-        member this.ShowIfNoActivator = true
-        member this.ActivatorFilter = Array.empty
+    member this.AlternativeDescription
+        with get () = alternativeDescription
+        and set v = alternativeDescription <- v
+
+    override this.Id = Id
+    override this.Name = Name
+    member this.Path = Path
+    override this.Description = if this.AlternativeDescription then Path else "Application"
+    override this.Keywords = Keywords
+    override this.Icon = Icon
+    override this.ShowIfNoActivator = true
+    override this.ActivatorFilter = Array.empty
+    override this.ContextMenuLoader = new ContextMenu.ContextMenuLoader(Path)
 
 let runApp (app: ExeApplication) =
     ProcessStartInfo(
@@ -71,13 +80,14 @@ let private getAppFromFile (file: string) =
                     .ToAvaloniaBitmap()
             )
 
-        return
-            { Id = file
-              Name = name
-              Path = file
-              Keywords = [| ext |]
-              AlternativeDescription = false
-              Icon = StarterIconSource(icon, icon) }
+        return ExeApplication(
+            Id = file,
+            Name = name,
+            Path = file,
+            Keywords = [| ext |],
+            AlternativeDescription = false,
+            Icon = StarterIconSource(icon, icon)
+        )
     }
 
 let loadApplications (ct: CancellationToken) (config: FolderConfiguration) =
@@ -114,7 +124,7 @@ let loadApplications (ct: CancellationToken) (config: FolderConfiguration) =
             |> Task.WhenAll
 
         let appsDict = Dictionary()
-        let appsOutput = ResizeArray<ISearchResult>()
+        let appsOutput = ResizeArray<SearchResult>()
 
         // Load apps according to the config order to prevent duplicate names
         apps |> Array.iter (Seq.iter (fun app ->
@@ -139,6 +149,7 @@ let observeFolder added removed (folder: string) =
 
     watcher.Filters.Add("*.exe")
     watcher.Filters.Add("*.lnk")
+    watcher.Filters.Add("*.url")
     watcher.NotifyFilter <-
         NotifyFilters.CreationTime
         ||| NotifyFilters.DirectoryName
@@ -163,7 +174,7 @@ let observeFolder added removed (folder: string) =
     watcher :> IDisposable
 
 type ExeAppsLoader() =
-    let apps  = ResizeArray<ISearchResult>()
+    let apps  = ResizeArray<SearchResult>()
     let changedEvent = Event<unit>()
     let mutable watchers = Array.empty<IDisposable>
 

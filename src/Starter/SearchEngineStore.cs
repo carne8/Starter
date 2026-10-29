@@ -7,36 +7,45 @@ namespace Starter;
 
 public class SearchEngineStore
 {
-    public readonly List<IStaticSearchEngine> StaticSearchEngines = [];
-    public readonly List<IDynamicSearchEngine> DynamicSearchEngines = [];
-    public readonly Dictionary<string, ISearchEngine> SearchEngines = new();
-    public readonly Dictionary<string, SearchEngineFactory.SearchEngineSettings> Settings = new();
+    public readonly List<StaticSearchEngine> StaticSearchEngines = [];
+    public readonly List<DynamicSearchEngine> DynamicSearchEngines = [];
+    public readonly Dictionary<string, SearchEngine.SearchEngine> SearchEngines = [];
+    public readonly Dictionary<string, SearchEngineFactory.SearchEngineSettings> Settings = [];
 
-    public event Action<ISearchEngine>? SearchEngineAdded;
+    public event Action<SearchEngine.SearchEngine>? SearchEngineAdded;
     public event Action<string, SearchEngineFactory.SearchEngineSettings>? SearchEngineSettingsAdded;
 
     public void LoadSearchEnginesFromDirectory(string directory, IClipboard clipboard)
     {
         foreach (var factory in SearchEngineLoading.loadFactoriesFromDirectory(directory))
-            LoadSearchEnginesFromFactory(factory, clipboard);
+            LoadSearchEnginesFromFactory(directory, factory, clipboard);
     }
 
-    private void LoadSearchEnginesFromFactory(SearchEngineFactory factory, IClipboard clipboard)
+    private readonly ILogger log = Log.ForContext("Context", "Starter/EngineLoading");
+
+    private void LoadSearchEnginesFromFactory(string dir, SearchEngineFactory factory, IClipboard clipboard)
     {
-        foreach (var (engine, settings) in SearchEngineLoading.loadSearchEnginesFromFactory(clipboard, factory))
+        var factories = SearchEngineLoading.loadSearchEnginesFromFactory(clipboard, factory);
+        if (factories.Length == 0)
+        {
+            log.Warning("{FactoryDir} does not provide any search engine", dir);
+            return;
+        }
+
+        foreach (var (engine, settings) in factories)
         {
             switch (engine)
             {
-                case IStaticSearchEngine staticEngine: StaticSearchEngines.Add(staticEngine); break;
-                case IDynamicSearchEngine dynamicEngine: DynamicSearchEngines.Add(dynamicEngine); break;
+                case StaticSearchEngine staticEngine: StaticSearchEngines.Add(staticEngine); break;
+                case DynamicSearchEngine dynamicEngine: DynamicSearchEngines.Add(dynamicEngine); break;
                 default:
-                    Log.Warning("Unknown search engine type: {Engine}", engine);
+                    log.Warning("Unknown search engine type: {Engine}", engine);
                     return;
             }
 
             if (!SearchEngines.TryAdd(engine.Id, engine))
             {
-                Log.Error(
+                log.Error(
                     "Several engines have the same id: ({Engine1}, {Engine1Name}) and ({Engine2}, {Engine2Name})",
                     engine.Id,
                     engine.Name,
@@ -47,6 +56,7 @@ public class SearchEngineStore
             }
 
             SearchEngineAdded?.Invoke(engine);
+            log.Information("Loaded {EngineId}", engine.Id);
             if (settings is not null)
             {
                 Settings.Add(engine.Id, settings);
@@ -55,14 +65,14 @@ public class SearchEngineStore
         }
     }
 
-    public void AddSearchEngine(IStaticSearchEngine se)
+    public void AddSearchEngine(StaticSearchEngine se)
     {
         StaticSearchEngines.Add(se);
         SearchEngines.Add(se.Id, se);
         SearchEngineAdded?.Invoke(se);
     }
 
-    public void AddSearchEngine(IDynamicSearchEngine se)
+    public void AddSearchEngine(DynamicSearchEngine se)
     {
         DynamicSearchEngines.Add(se);
         SearchEngines.Add(se.Id, se);

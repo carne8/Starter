@@ -1,14 +1,11 @@
 ﻿namespace Starter.WorkspaceSearchEngine.Views
 
-open System.Collections.Generic
 open Avalonia.Controls
 open Avalonia.Markup.Xaml
 open FluentAvalonia.UI.Controls
-open ObservableCollections
 open ReactiveUI
 open Starter.SearchEngine
 open Starter.WorkspaceSearchEngine
-open Starter.WorkspaceSearchEngine.Logger
 
 [<AutoOpen>]
 module private Helpers =
@@ -19,44 +16,27 @@ module private Helpers =
             | null -> FAImageIconSource(Source = iconSource.GetImage lightMode) :> FAIconSource
             | geo -> FAPathIconSource(Data = geo)
 
-type WorkspaceSourceViewModel(source: WorkspaceSource, settings: Settings) =
+type WorkspaceSourceViewModel(source: WorkspaceSource, settings: Settings, changed: unit -> unit) =
     inherit ReactiveObject()
-
-    let mutable show = source.ShowIfNoActivator
 
     member this.WorkspaceSource = source
     member this.Icon = source.Icon |> StarterIconSource.buildIconSource true // TODO: Set light/dark mode
 
-    member this.SetShowIfNoActivatorValue(show') = show <- show'
+    member this.SetShowIfNoActivatorValue(show) = source.ShowIfNoActivator <- show
     member this.Show
-        with get () = show
+        with get () = source.ShowIfNoActivator
         and set v =
-            this.RaiseAndSetIfChanged(&show, v) |> ignore
+            source.ShowIfNoActivator <- v
             settings.ShowIfNoActivator[source.Id] <- v
+            changed ()
+            this.RaisePropertyChanged(nameof this.Show)
 
-type SettingsViewModel(workspaceSources: WorkspaceSource array, settings: Settings) =
+type SettingsViewModel(workspaceSources: WorkspaceSource array, settingsFilePath, settings: Settings) =
+    let onWorkspaceSourceChanged () = settings |> Settings.saveSettings settingsFilePath
+
     let workspaceSourceViewModels =
         workspaceSources
-        |> Array.map (fun source -> WorkspaceSourceViewModel(source, settings))
-
-    let onSettingsShowIfNoActivatorChanges =
-        NotifyCollectionChangedEventHandler<KeyValuePair<_, _>>(fun args ->
-            let workspaceSourceId = args.NewItem.Key
-            let workspaceSourceVm =
-                workspaceSourceViewModels
-                |> Array.tryFind (fun vm -> vm.WorkspaceSource.Id = workspaceSourceId)
-
-            match workspaceSourceVm with
-            | None -> logger.Error($"A workspace source is present in the settings but not in the view model list: {workspaceSourceId}")
-            | Some workspaceSourceVm ->
-                use _ = workspaceSourceVm.SuppressChangeNotifications()
-                workspaceSourceVm.SetShowIfNoActivatorValue args.NewItem.Value
-        )
-
-    do settings.ShowIfNoActivator.add_CollectionChanged(onSettingsShowIfNoActivatorChanges)
-
-    override this.Finalize() =
-        settings.ShowIfNoActivator.remove_CollectionChanged(onSettingsShowIfNoActivatorChanges)
+        |> Array.map (fun source -> WorkspaceSourceViewModel(source, settings, onWorkspaceSourceChanged))
 
     // --- Bindings ---
     member this.WorkspaceSources = workspaceSourceViewModels

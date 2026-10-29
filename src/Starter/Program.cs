@@ -1,4 +1,5 @@
-﻿using Avalonia;
+﻿using System.Globalization;
+using Avalonia;
 using Serilog;
 
 namespace Starter;
@@ -38,12 +39,24 @@ public static class Program
     }
 
     private static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<App>()
+    {
+        // Check if the current user's culture actually requires an East Asian IME
+        var isCjk = IsCjkLanguage(CultureInfo.CurrentUICulture);
+
+        return AppBuilder.Configure<App>()
             .UsePlatformDetect()
             // .UseR3() can't use because of https://github.com/Cysharp/R3/issues/379
             .With(Win32PlatformOptions)
+            .With(new X11PlatformOptions { EnableIme = isCjk })
             #if DEBUG
             .WithDeveloperTools()
             #endif
             .LogToTrace();
+    }
+
+    private static bool IsCjkLanguage(CultureInfo culture)
+    {
+        var lang = culture.TwoLetterISOLanguageName.ToLower();
+        return lang is "zh" or "ja" or "ko" or "vi";
+    }
 }

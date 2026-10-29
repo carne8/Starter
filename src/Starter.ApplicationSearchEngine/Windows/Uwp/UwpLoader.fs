@@ -43,7 +43,7 @@ let loadApplications () =
 
 
 type UwpAppsLoader() =
-    let apps = ResizeArray<ISearchResult>()
+    let apps = ResizeArray<SearchResult>()
     let changedEvent = Event<unit>()
     let mutable watcher: IDisposable voption = ValueNone
 

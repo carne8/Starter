@@ -117,10 +117,10 @@ type WindowsPlatformInterop() =
                 | true -> return ()
             }
             |> function
-                | Ok () -> ValueTask.FromResult false
+                | Ok () -> Task.FromResult false
                 | Error err ->
                     logger.Error err
-                    ValueTask.FromResult true
+                    Task.FromResult true
 
         override _.SetupHotkeyCallback(window: Window) =
             let wndProcCallback =

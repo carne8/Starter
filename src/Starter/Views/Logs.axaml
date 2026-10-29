@@ -33,26 +33,6 @@
         <Style Selector="ScrollViewer.wrapText &gt; StackPanel &gt; controls|CustomSelectableTextBlock">
             <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
-
-        <!-- Logs colors -->
-        <Style Selector="Run.log-verbose">
-            <Setter Property="Foreground" Value="{DynamicResource LogBrushVerbose}" />
-        </Style>
-        <Style Selector="Run.log-debug">
-            <Setter Property="Foreground" Value="{StaticResource LogBrushDebug}" />
-        </Style>
-        <Style Selector="Run.log-information">
-            <Setter Property="Foreground" Value="{StaticResource LogBrushInformation}" />
-        </Style>
-        <Style Selector="Run.log-warning">
-            <Setter Property="Foreground" Value="{StaticResource LogBrushWarning}" />
-        </Style>
-        <Style Selector="Run.log-error">
-            <Setter Property="Foreground" Value="{StaticResource LogBrushError}" />
-        </Style>
-        <Style Selector="Run.log-fatal">
-            <Setter Property="Foreground" Value="{StaticResource LogBrushFatal}" />
-        </Style>
     </UserControl.Styles>
 
     <DockPanel Margin="20" LastChildFill="True">

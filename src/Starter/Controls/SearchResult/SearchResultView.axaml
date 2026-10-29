@@ -1,36 +1,41 @@
-﻿<UserControl x:Class="Starter.Controls.ControlSearchResult"
+﻿<UserControl x:Class="Starter.Controls.SearchResultView"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:Starter.SearchEngine"
              xmlns:controls="using:Starter.Controls"
-             x:DataType="vm:IControlSearchResult">
+             x:DataType="vm:SearchResult">
 
     <Border Padding="{DynamicResource SearchResultPadding}" HorizontalAlignment="Stretch">
-        <StackPanel Orientation="Horizontal" Spacing="10">
-            <Border CornerRadius="4"
-                    ClipToBounds="True"
-                    IsVisible="{Binding ShowIcon}">
+        <Grid ColumnDefinitions="Auto, *, Auto" ColumnSpacing="6">
+            <Border Grid.Column="0"
+                    CornerRadius="4"
+                    ClipToBounds="True">
                 <controls:StarterIcon Width="{DynamicResource SearchResultIconSize}"
                                       Height="{DynamicResource SearchResultIconSize}"
-                                      Margin="0,6"
                                       VerticalAlignment="Center"
                                       IconSource="{Binding Icon}"
                                       FontSize="{DynamicResource SearchResultIconSize}"
                                       ExtraPaddingForSymbol="4" />
             </Border>
 
-            <StackPanel VerticalAlignment="Center">
-                <ContentControl FontFamily="{StaticResource Geist}"
-                                Content="{Binding ControlDataContext}"
-                                ContentTemplate="{Binding ControlDataTemplate}" />
+            <StackPanel Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Spacing="-1">
+                <controls:AccentuatedTextBlock x:Name="NameTextBlock"
+                                               FontSize="{DynamicResource SearchResultFontSize}"
+                                               Foreground="{DynamicResource Text1}"
+                                               AccentuatedForeground="{DynamicResource TextControlSelectionHighlightColor}"
+                                               Text="{Binding Name}"
+                                               FontFamily="{StaticResource Geist}"
+                                               FontWeight="{DynamicResource TextBoxFontWeight}" />
 
                 <TextBlock Text="{Binding Description}"
                            IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
-                           FontSize="12"
+                           FontSize="{DynamicResource SearchResultDescriptionFontSize}"
                            FontWeight="Regular"
                            Foreground="{DynamicResource Text2}"
                            FontFamily="{StaticResource GeistMono}" />
             </StackPanel>
-        </StackPanel>
+        </Grid>
     </Border>
 </UserControl>

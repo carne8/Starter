@@ -106,7 +106,6 @@ Comment=Launch Starter at startup
 
                 return res.IsOk
             }
-            |> ValueTask<bool>
 
         override _.SetupHotkeyCallback(window: Window) =
             Task.Run<unit>(fun () -> task {

@@ -5,6 +5,7 @@ using R3;
 using Serilog.Events;
 using Serilog.Formatting.Display;
 using Starter.Features;
+using Starter.Views;
 
 namespace Starter.ViewModels;
 
@@ -29,38 +30,34 @@ public partial class LogsViewModel : ObservableObject
     [ObservableProperty] public partial ObservableCollection<Inline> Lines { get; set; } = [];
     [ObservableProperty] public partial bool WrapText { get; set; }
     [ObservableProperty] public partial string SelectedLogContext { get; set; } = "None";
-    public ObservableCollection<string> LogContexts { get; } = [ "None" ];
+    [ObservableProperty] public partial string[] LogContexts { get; set; } = [ "None" ];
 
     public LogsViewModel()
     {
+        var start = new string(char.MinValue, "Starter".Length);
+
         Logging.logs
             .ObserveOnUIThreadDispatcher()
-            .Subscribe(logEvent =>
+            .Subscribe(this, (logEvent, t) =>
             {
                 // Register log context
                 var rawLogContext = logEvent.Properties["Context"].ToString();
                 var logContext = rawLogContext.Substring(1, rawLogContext.Length - 2);
-                if (!LogContexts.Contains(logContext)) LogContexts.Add(logContext);
+                if (!LogContexts.Contains(logContext))
+                {
+                    LogContexts = LogContexts
+                        .Append(logContext)
+                        .OrderBy(c =>
+                        {
+                            if (c == "None") return string.Empty;
+                            if (c.StartsWith("Starter")) return start + c["Starter".Length..];
+                            return start + c;
+                        })
+                        .ToArray();
+                }
 
-                PrintLogEvent(logEvent);
+                t.PrintLogEvent(logEvent);
             });
-    }
-
-    private Run CreateRun(string message, LogEventLevel level)
-    {
-        var run = new Run(message);
-        run.Classes.Add(level switch
-        {
-            LogEventLevel.Verbose => "log-verbose",
-            LogEventLevel.Debug => "log-debug",
-            LogEventLevel.Information => "log-information",
-            LogEventLevel.Warning => "log-warning",
-            LogEventLevel.Error => "log-error",
-            LogEventLevel.Fatal => "log-fatal",
-            _ => string.Empty
-        });
-
-        return run;
     }
 
     private void PrintLogEvent(LogEvent logEvent)
@@ -82,7 +79,7 @@ public partial class LogsViewModel : ObservableObject
             sb.Append(logEvent.Exception.Message);
         }
 
-        Lines.Add(CreateRun(sb.ToString(), logEvent.Level));
+        Lines.Add(new LogLine { Text = sb.ToString(), LogLevel = logEvent.Level });
     }
 
     private void RefreshLogs()

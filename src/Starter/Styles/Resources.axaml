@@ -5,18 +5,14 @@
             <SolidColorBrush x:Key="IconsColor">Black</SolidColorBrush>
             <SolidColorBrush x:Key="Text1">#111114</SolidColorBrush>
             <SolidColorBrush x:Key="Text2">#70707e</SolidColorBrush>
-            <SolidColorBrush x:Key="Text3">#b0b0be</SolidColorBrush>
+            <SolidColorBrush x:Key="Text3">#AAAAAA</SolidColorBrush>
             <FontWeight x:Key="TextBoxFontWeight">SemiBold</FontWeight>
 
             <!-- Window -->
             <SolidColorBrush x:Key="WindowBackground">#B2F9F9F9</SolidColorBrush>
             <!-- <SolidColorBrush x:Key="BorderBrush">rgba(0, 0, 0, 0.07)</SolidColorBrush> -->
             <SolidColorBrush x:Key="BorderBrush">rgba(103, 103, 103, 0.2)</SolidColorBrush>
-            <Color x:Key="DefaultBackgroundColor">#F2F2F2</Color>
-
-            <!-- Search engine pill -->
-            <SolidColorBrush x:Key="SearchEnginePillBackground">White</SolidColorBrush>
-            <SolidColorBrush x:Key="SearchEnginePillForeground">#353A42</SolidColorBrush>
+            <Color x:Key="DefaultBackgroundColor">#FFFFFF</Color>
         </ResourceDictionary>
 
         <!-- Dark -->
@@ -30,11 +26,7 @@
             <!-- Window -->
             <SolidColorBrush x:Key="WindowBackground">#B2232323</SolidColorBrush>
             <SolidColorBrush x:Key="BorderBrush">rgba(63, 63, 63, 0.6)</SolidColorBrush>
-            <Color x:Key="DefaultBackgroundColor">#242424</Color>
-
-            <!-- Search engine pill -->
-            <SolidColorBrush x:Key="SearchEnginePillBackground">rgba(15, 15, 15, 0.7)</SolidColorBrush>
-            <SolidColorBrush x:Key="SearchEnginePillForeground">#E2E2E2</SolidColorBrush>
+            <Color x:Key="DefaultBackgroundColor">#1D1D20</Color>
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 

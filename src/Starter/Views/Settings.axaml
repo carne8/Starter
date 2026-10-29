@@ -6,6 +6,7 @@
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              xmlns:vm="using:Starter.ViewModels"
              xmlns:controls="using:Starter.Controls"
+             xmlns:behaviors="using:Starter.Controls"
              d:DesignHeight="450"
              d:DesignWidth="600"
              x:DataType="vm:SettingsViewModel"
@@ -100,7 +101,9 @@
                               SelectedItem="{Binding SelectedAntialiasing}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate DataType="vm:AntialiasingKind">
-                                <TextBlock VerticalAlignment="Center" Text="{Binding Name}" />
+                                <TextBlock VerticalAlignment="Center"
+                                           behaviors:TextOptionsBehavior.TextRenderingMode="{Binding TextRenderingMode}"
+                                           Text="{Binding Name}" />
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>

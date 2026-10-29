@@ -66,9 +66,7 @@ type IconLoader(currentTheme: string, database: IconLookup.Database) = // TODO: 
             |> ValueOption.bind (fun file ->
                 match File.ResolveLinkTarget(file, true) with
                 | null -> ValueSome file
-                | f ->
-                    logger.Debug $"{f}"
-                    ValueSome f.FullName
+                | f -> ValueSome f.FullName
             )
 
         match iconFile with

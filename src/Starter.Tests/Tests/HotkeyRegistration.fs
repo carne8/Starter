@@ -1,5 +1,6 @@
 ﻿module Starter.Tests.HotkeyRegistration
 
+open System.Collections.Generic
 open R3
 open System.Threading.Tasks
 open Avalonia.Threading
@@ -23,20 +24,28 @@ let ensureHotkeyRegistration () =
             member this.SupportBackground(background) = true
             member this.RegisterHotkey shortcut window =
                 hotkeyRegistered <- true
-                ValueTask.FromResult true
+                Task.FromResult true
             member this.SetupHotkeyCallback(window) = callbackRegistered <- Some window
             member this.ToggleLaunchAtStartup(enable) = ()
             member this.HotkeyRegistrable = true }
 
     use config = new BehaviorSubject<_>(Configuration.Default)
     use activatorStore = new ActivatorStore(config)
+    let fuzzyMatchResults1, fuzzyMatchResults2 = Dictionary<_, _>(), Dictionary<_, _>()
     let vm = ViewModels.MainWindowViewModel(
         config,
         Mock.scoreDb (),
         SearchEngineStore(),
-        activatorStore
+        activatorStore,
+        fuzzyMatchResults1,
+        fuzzyMatchResults2
     )
-    let window = Views.MainWindow(platform, DataContext = vm)
+    let window = Views.MainWindow(
+        platform,
+        fuzzyMatchResults1,
+        fuzzyMatchResults2,
+        DataContext = vm
+    )
 
     Dispatcher.UIThread.RunJobs();
 
@@ -56,20 +65,28 @@ let ensureHotkeyNotRegisteredWhenNotRegistrable () =
             member this.SupportBackground(background) = true
             member this.RegisterHotkey shortcut window =
                 hotkeyRegistered <- true
-                ValueTask.FromResult true
+                Task.FromResult true
             member this.SetupHotkeyCallback(window) = callbackRegistered <- Some window
             member this.ToggleLaunchAtStartup(enable) = ()
             member this.HotkeyRegistrable = false }
 
     use config = new BehaviorSubject<_>(Configuration.Default)
     use activatorStore = new ActivatorStore(config)
+    let fuzzyMatchResults1, fuzzyMatchResults2 = Dictionary<_, _>(), Dictionary<_, _>()
     let vm = ViewModels.MainWindowViewModel(
         config,
         Mock.scoreDb (),
         Mock.searchEngineStore [],
-        activatorStore
+        activatorStore,
+        fuzzyMatchResults1,
+        fuzzyMatchResults2
     )
-    Views.MainWindow(platform, DataContext = vm) |> ignore
+    Views.MainWindow(
+        platform,
+        fuzzyMatchResults1,
+        fuzzyMatchResults2,
+        DataContext = vm
+    ) |> ignore
 
     Dispatcher.UIThread.RunJobs();
 

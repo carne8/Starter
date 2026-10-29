@@ -13,9 +13,9 @@ let testActivatorPrefix () =
         [ Mock.activator "activator-id-1" "static"
           Mock.activator "activator-id-2" "dynamic" ]
 
-    let engines: ISearchEngine list =
-        [ Mock.staticSearchEngine "static" [ activators[0] ] (fun () -> [])
-          Mock.dynamicSearchEngine "dynamic" [ activators[1] ] false (fun _ _ _ -> []) ]
+    let engines: SearchEngine list =
+        [ Mock.staticSearchEngine "static" [ activators[0] ] (fun () -> []) ignore
+          Mock.dynamicSearchEngine "dynamic" [ activators[1] ] false (fun _ _ _ -> []) ignore ]
 
     let config =
         { Configuration.Default with
@@ -42,8 +42,7 @@ let testActivatorPrefix () =
         // Remove activator
         window.KeyPress(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
         window.KeyRelease(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
-        window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
-        window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
+        window.PressBackspace()
 
         // Assert activator disabled
         Assert.Null(vm.Activator, "MainWindowViewModel should not have an activator set")
@@ -61,9 +60,9 @@ let ensureActivatorIsPassedToDynamicSearchEngine () =
 
     let calls = ResizeArray()
 
-    let engines: ISearchEngine list =
-        [ Mock.dynamicSearchEngine "engine-1" [ activators[0] ] false (fun _ _ activator -> calls.Add activator; [])
-          Mock.dynamicSearchEngine "engine-2" [ activators[1] ] false (fun _ _ _ -> []) ]
+    let engines: SearchEngine list =
+        [ Mock.dynamicSearchEngine "engine-1" [ activators[0] ] false (fun _ _ activator -> calls.Add activator; []) ignore
+          Mock.dynamicSearchEngine "engine-2" [ activators[1] ] false (fun _ _ _ -> []) ignore ]
 
     let config =
         { Configuration.Default with
@@ -85,8 +84,7 @@ let ensureActivatorIsPassedToDynamicSearchEngine () =
         // Remove activator
         window.KeyPress(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
         window.KeyRelease(Key.Back, RawInputModifiers.Control, PhysicalKey.Backspace, null)
-        window.KeyPress(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
-        window.KeyRelease(Key.Back, RawInputModifiers.None, PhysicalKey.Backspace, null)
+        window.PressBackspace()
 
         // Type something
         window.KeyTextInput "something"

@@ -1,6 +1,5 @@
 namespace Starter.Features.Config
 
-open System
 open System.IO
 
 open Starter.Features

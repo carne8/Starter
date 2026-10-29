@@ -63,7 +63,7 @@ let testLaunchAtStartup () =
                 isLaunchAtStartupEnabled
             member this.EnsureConfigCompatibility(config) = config
             member this.SupportBackground(background) = true
-            member this.RegisterHotkey shortcut window = ValueTask.FromResult true
+            member this.RegisterHotkey shortcut window = Task.FromResult true
             member this.SetupHotkeyCallback(window) = ()
             member this.ToggleLaunchAtStartup(enable) =
                 isLaunchAtStartupEnabled <- not isLaunchAtStartupEnabled
@@ -146,7 +146,7 @@ let testBackground_Linux () =
                 | Background.None -> true
                 | Background.Mica
                 | Background.Acrylic -> false
-            member this.RegisterHotkey shortcut window = ValueTask.FromResult true
+            member this.RegisterHotkey shortcut window = Task.FromResult true
             member this.SetupHotkeyCallback(window) = ()
             member this.ToggleLaunchAtStartup(enable) = ()
             member this.HotkeyRegistrable = true }
@@ -266,9 +266,9 @@ let testActivatorPrefixes () =
     let activator1 = Mock.activator "activator-1" "engine-1"
     let activator2 = Mock.activator "activator-2" "engine-1"
 
-    let engines : ISearchEngine list =
-        [ Mock.staticSearchEngine "engine-1" [ activator1 ] (fun _ -> Seq.empty)
-          Mock.dynamicSearchEngine "engine-2" [ activator2 ] false (fun _ _ _ -> Seq.empty) ]
+    let engines : SearchEngine list =
+        [ Mock.staticSearchEngine "engine-1" [ activator1 ] (fun _ -> Seq.empty) ignore
+          Mock.dynamicSearchEngine "engine-2" [ activator2 ] false (fun _ _ _ -> Seq.empty) ignore ]
 
     withSettingsWindow launcher platform engines (fun window settings vm ->
         let activatorStore = new Features.ActivatorStore(vm.Config)

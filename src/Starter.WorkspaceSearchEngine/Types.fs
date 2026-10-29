@@ -4,7 +4,6 @@ open System
 open System.Threading.Tasks
 
 open Starter.SearchEngine
-open ObservableCollections
 open FsToolkit.ErrorHandling
 open R3
 
@@ -23,23 +22,30 @@ type Workspace =
       Open: unit -> unit }
 
 /// Loads workspaces. For instance, it can represent a vscode installation
-type WorkspaceSource =
-    { Id: string
-      Name: string
-      ShortName: string
-      Icon: StarterIconSource
-      LoadWorkspaces: unit -> Task<Workspace seq>
-      WorkspacesChanged: Observable<unit>
-      mutable ShowIfNoActivator: bool
-      /// Needed for the FileSystemWatcher to not be garbage collected
-      Watcher: IDisposable }
+type WorkspaceSource(
+        id: string,
+        name: string,
+        icon: StarterIconSource,
+        loadWorkspaces: unit -> Task<Workspace seq>,
+        workspacesChanged: Observable<unit>,
+        showIfNoActivator: bool,
+        _watcher: IDisposable // Needed for the FileSystemWatcher to not be garbage collected
+    ) =
+    inherit SearchEngineActivator()
 
-    interface ISearchEngineActivator with
-        member this.Id = this.Id
-        member this.Icon = this.Icon
-        member this.Name = this.Name
-        member this.ShortName = this.ShortName
-        member this.SearchEngineId = Constants.searchEngineId
+    let mutable showIfNoActivator = showIfNoActivator
+
+    override this.Id = id
+    override this.Name = name
+    override this.Icon = icon
+    override this.SearchEngineId = Constants.searchEngineId
+
+    member this.ShowIfNoActivator
+        with get () = showIfNoActivator
+        and set v = showIfNoActivator <- v
+
+    member this.LoadWorkspaces() = loadWorkspaces ()
+    member this.WorkspacesChanged = workspacesChanged
 
 type WorkspaceSourceBuilder =
     { Id: string
@@ -64,88 +70,43 @@ type WorkspaceSourceBuilder =
 
             let workspacesChanged, watcher = builder.GetChangesObservable dbPath
 
-            return
-                { Id = builder.Id
-                  Name = builder.Name
-                  ShortName = builder.ShortName
-                  Icon = pluginPath |> builder.LoadIcon
-                  LoadWorkspaces = fun () -> builder.LoadWorkspaces dbPath executablePath
-                  WorkspacesChanged = workspacesChanged
-                  ShowIfNoActivator = showIfNoActivator
-                  Watcher = watcher }
+            return WorkspaceSource(
+                id = builder.Id,
+                name = builder.Name,
+                icon = (pluginPath |> builder.LoadIcon),
+                loadWorkspaces = (fun () -> builder.LoadWorkspaces dbPath executablePath),
+                workspacesChanged = workspacesChanged,
+                showIfNoActivator = showIfNoActivator,
+                _watcher = watcher
+            )
         }
 
+type WorkspaceSearchResult(
+        id: string,
+        name: string,
+        path: string,
+        source: WorkspaceSource,
+        open': unit -> unit
+    ) =
+    inherit SearchResult()
+    let activators = [| source :> SearchEngineActivator |]
 
-type SearchResult =
-    { Id: string
-      Name: string
-      Path: string
-      Source: WorkspaceSource
-      Open: unit -> unit }
+    member this.Open() = open' ()
 
-    interface ISearchResult with
-        member this.Id = this.Id
-        member this.Name = this.Name
-        member this.Description = this.Path
-        member this.Keywords = Array.empty
-        member this.Icon = this.Source.Icon
-        member this.ShowIfNoActivator = this.Source.ShowIfNoActivator
-        member this.ActivatorFilter = [| this.Source |]
+    override this.Id = id
+    override this.Name = name
+    override this.Description = path
+    override this.Keywords = Array.empty
+    override this.Icon = source.Icon
+    override this.ShowIfNoActivator = source.ShowIfNoActivator
+    override this.ActivatorFilter = activators
+    override this.ContextMenuLoader = null
 
     static member fromWorkspace (workspaceSource: WorkspaceSource) (workspace: Workspace) =
-        { Id = $"{workspaceSource.Id}:{workspace.Id}"
-          Name = workspace.Name
-          Path = workspace.Path
-          Source = workspaceSource
-          Open = workspace.Open } :> ISearchResult
-
-type Settings =
-    { ShowIfNoActivator: ObservableDictionary<string, bool> }
-    static member defaultSettings = { ShowIfNoActivator = ObservableDictionary() }
-
-module Settings =
-    open System.IO
-    open System.Text.Json
-
-    [<Literal>]
-    let private SettingsFilename = "settings.json"
-
-    let getFilePath settingsDirectory = Path.Combine(settingsDirectory, SettingsFilename)
-
-    let ensureConfigFileExists (filePath: string) =
-        let fileDir = filePath |> Path.GetDirectoryName
-        if fileDir |> Directory.Exists |> not then
-            fileDir |> Directory.CreateDirectory |> ignore
-
-        if filePath |> File.Exists |> not then
-            logger.Information "Config file does not exist. Creating it."
-            use file = File.Create filePath
-
-            Settings.defaultSettings
-            |> JsonSerializer.SerializeToUtf8Bytes
-            |> file.Write
-
-    let saveSettings (filePath: string) (settings: Settings) =
-        try
-            ensureConfigFileExists filePath
-            let json = settings |> JsonSerializer.SerializeToUtf8Bytes
-            File.WriteAllBytes(filePath, json)
-        with e ->
-            logger.Error(e, "Failed to save config")
-
-    let loadSettings (filePath: string) =
-        try
-            ensureConfigFileExists filePath
-            use stream = File.OpenRead filePath
-            JsonSerializer.Deserialize<Settings> stream
-        with
-        | e ->
-            logger.Error(e, "Failed to load config")
-            Settings.defaultSettings |> saveSettings filePath
-            Settings.defaultSettings
-
-type SettingsSaver(settings: Settings, settingsFilePath) =
-    do
-        settings.ShowIfNoActivator.add_CollectionChanged(NotifyCollectionChangedEventHandler(fun _args ->
-            settings |> Settings.saveSettings settingsFilePath
-        ))
+        WorkspaceSearchResult(
+            id = $"{workspaceSource.Id}:{workspace.Id}",
+            name = workspace.Name,
+            path = workspace.Path,
+            source = workspaceSource,
+            open' = workspace.Open
+        )

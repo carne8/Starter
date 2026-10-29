@@ -40,12 +40,12 @@ let private pfunction pexpr =
       skipStringCI "sec(" >>% Sec
       skipStringCI "cot(" >>% Cot
 
-      skipStringCI "sh(" >>% Sh//
-      skipStringCI "sinh(" >>% Sh//
-      skipStringCI "ch(" >>% Ch//
-      skipStringCI "cosh(" >>% Ch//
-      skipStringCI "th(" >>% Th //
-      skipStringCI "tanh(" >>% Th //
+      skipStringCI "sh(" >>% Sh
+      skipStringCI "sinh(" >>% Sh
+      skipStringCI "ch(" >>% Ch
+      skipStringCI "cosh(" >>% Ch
+      skipStringCI "th(" >>% Th
+      skipStringCI "tanh(" >>% Th
 
       skipStringCI "csch(" >>% Csch
       skipStringCI "sech(" >>% Sech
