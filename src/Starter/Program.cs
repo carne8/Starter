@@ -1,6 +1,8 @@
 ﻿using System.Globalization;
 using Avalonia;
 using Serilog;
+using Starter.Features;
+using Starter.Features.PlatformInterop;
 
 namespace Starter;
 
@@ -18,13 +20,14 @@ public static class Program
         using var mutex = new Mutex(true, MutexName, out var createdNew);
         if (!createdNew)
         {
+            foreach (var arg in args) IPC.sendString(arg);
             Console.WriteLine("Starter is already running.");
             return;
         }
 
         try
         {
-            Features.Logging.setupLogger();
+            Logging.setupLogger();
             Log.Information("---*--- Starting up ---*---");
             BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
         }

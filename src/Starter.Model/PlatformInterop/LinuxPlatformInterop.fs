@@ -26,6 +26,18 @@ type StarterLauncher(onLaunched) =
             onLaunched()
             Task.FromResult()
 
+module Process =
+    open System.Diagnostics
+
+    let run proc args =
+        ProcessStartInfo(
+            FileName = proc,
+            Arguments = args,
+            UseShellExecute = true
+        )
+        |> Process.Start
+        |> function null -> () | d -> d.Dispose()
+
 type LinuxPlatformInterop() =
     static let startupFolder =
         match Environment.GetEnvironmentVariable "XDG_CONFIG_HOME" with
@@ -43,13 +55,12 @@ type LinuxPlatformInterop() =
 
     static let startupFile = Path.Combine(startupFolder, Constants.Platform.Linux.StartupFile)
 
-    static let startupFileContent =
-        $"""[Desktop Entry]
+    static let startupFileContent = $"[Desktop Entry]
 Type=Application
 Name=Starter
 Exec={Constants.ProcessExecutableFile}
 Comment=Launch Starter at startup
-"""
+"
 
     let desktopEnvironment = DesktopEnvironment.detectDesktopEnvironment()
     let hotkeyRegistrable =
@@ -120,3 +131,33 @@ Comment=Launch Starter at startup
                 with e -> logger.Error(e, "Failed to setup dbus service");
             })
             |> ignore
+
+        // Deep linking
+        override _.SetupDeepLinking () =
+            // 1. Define standard XDG application directory
+            let homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)
+            let appsDir = Path.Combine(homeDir, ".local", "share", "applications")
+            let desktopFileName = $"{Constants.DeepLinkProtocolName}-app.desktop"
+            let desktopFilePath = Path.Combine(appsDir, desktopFileName)
+
+            // 2. Create the .desktop file content
+            if not (File.Exists desktopFilePath) then
+                let desktopFileContent = $"
+                    [Desktop Entry]
+                    Name=Starter
+                    Exec={Constants.ProcessExecutableFile} %%u
+                    Type=Application
+                    Terminal=false
+                    MimeType=x-scheme-handler/{Constants.DeepLinkProtocolName};
+                    "
+
+                Directory.CreateDirectory(appsDir) |> ignore
+                File.WriteAllText(desktopFilePath, desktopFileContent)
+
+            // 3. Register with xdg-mime so the desktop environment recognizes it
+            try
+                Process.run "xdg-mime" $"default {desktopFilePath} x-scheme-handler/{Constants.DeepLinkProtocolName}"
+                Process.run "update-desktop-database" appsDir
+                logger.Verbose("Linux XDG desktop entry and MIME handler registered.")
+            with ex ->
+                logger.Warning(ex, "Failed to run xdg-mime commands automatically.")

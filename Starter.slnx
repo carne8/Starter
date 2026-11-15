@@ -3,6 +3,7 @@
     <Project Path="src/Starter.WebSearchEngine/Starter.WebSearchEngine.fsproj" />
     <Project Path="src/Starter.WorkspaceSearchEngine/Starter.WorkspaceSearchEngine.fsproj" />
     <Project Path="src/Starter.UrlSearchEngine/Starter.UrlSearchEngine/Starter.UrlSearchEngine.fsproj" />
+    <Project Path="src/Starter.Spotify/Starter.Spotify.fsproj" />
     <Project Path="src/Starter.UrlSearchEngine/Starter.UrlSearchEngine.Regex/Starter.UrlSearchEngine.Regex.csproj" />
     <Project Path="src/Starter.EverythingSearchEngine/Starter.EverythingSearchEngine.fsproj" />
     <Project Path="src/Starter.ApplicationSearchEngine/Starter.ApplicationSearchEngine.fsproj" />

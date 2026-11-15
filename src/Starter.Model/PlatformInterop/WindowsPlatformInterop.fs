@@ -132,3 +132,5 @@ type WindowsPlatformInterop() =
                 )
 
             Win32Properties.AddWndProcHookCallback(window, wndProcCallback)
+
+        override _.SetupDeepLinking () = failwith "Not implemented"

@@ -30,4 +30,15 @@ public abstract class SearchEngineFactory(string pluginDirectory)
         ILogger logger,
         IClipboard clipboard
     );
+
+    /// <summary>
+    /// Array of url paths reserved for this engine factor.
+    /// </summary>
+    public virtual string[]? DeepLinkingPaths => null;
+
+    /// <summary>
+    /// Called when a deep link with a path matching one of DeepLinkingPaths is activated.
+    /// </summary>
+    /// <param name="url">The URL of the activated link.</param>
+    public virtual void DeepLinkActivated(string url) {}
 }

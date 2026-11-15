@@ -25,6 +25,7 @@ public class App : Application
 {
     public bool IsTestMode = false;
     private MainWindow? window;
+    private readonly IPC.Listener ipcListener = new();
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
@@ -151,12 +152,23 @@ public class App : Application
 
         // Start things
         var serviceProvider = serviceCollection.BuildServiceProvider();
+        var platformInterop = serviceProvider.GetRequiredService<IPlatformInterop>();
+
+        // Create window
         window = serviceProvider.GetRequiredService<MainWindow>();
         window.DataContext = serviceProvider.GetRequiredService<MainWindowViewModel>();
 
+        // Deep linking
+        platformInterop.SetupDeepLinking();
+        var searchEngines = serviceProvider.GetRequiredService<SearchEngineStore>();
+        ipcListener.ReceivedString += (_, message) => DeepLinkActivated(searchEngines, message);
+
+        if (lifetime.Args is not null) // If Starter was not started, handles deep links here
+            foreach (var arg in lifetime.Args)
+                DeepLinkActivated(searchEngines, arg);
+
         // Register hotkey
         var initialConfig = serviceProvider.GetRequiredKeyedService<Configuration>("initial-config");
-        var platformInterop = serviceProvider.GetRequiredService<IPlatformInterop>();
         if (!platformInterop.HotkeyRegistrable) return;
 
         platformInterop
@@ -195,6 +207,7 @@ public class App : Application
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.WorkspaceSearchEngine/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.Calculator/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.EverythingSearchEngine/bin/Debug/net10.0/", clipboard);
+        searchEngineStore.LoadSearchEnginesFromDirectory("./src/Starter.Spotify/bin/Debug/net10.0/", clipboard);
         searchEngineStore.LoadSearchEnginesFromDirectory(
             OperatingSystem.IsWindows()
                 ? "./src/Starter.ApplicationSearchEngine/bin/Debug/net10.0-windows10.0.19041.0/"
@@ -238,5 +251,12 @@ public class App : Application
     {
         if (ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime desktop) return;
         desktop.TryShutdown();
+    }
+
+    private static void DeepLinkActivated(SearchEngineStore searchEngines, string message)
+    {
+        if (!Uri.TryCreate(message, UriKind.Absolute, out var uri)) return;
+        if (!searchEngines.DeepLinkEngines.TryGetValue(uri.Authority, out var engineFactory)) return;
+        engineFactory.DeepLinkActivated(uri.AbsoluteUri);
     }
 }

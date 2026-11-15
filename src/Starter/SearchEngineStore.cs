@@ -11,6 +11,7 @@ public class SearchEngineStore
     public readonly List<DynamicSearchEngine> DynamicSearchEngines = [];
     public readonly Dictionary<string, SearchEngine.SearchEngine> SearchEngines = [];
     public readonly Dictionary<string, SearchEngineFactory.SearchEngineSettings> Settings = [];
+    public readonly Dictionary<string, SearchEngineFactory> DeepLinkEngines = [];
 
     public event Action<SearchEngine.SearchEngine>? SearchEngineAdded;
     public event Action<string, SearchEngineFactory.SearchEngineSettings>? SearchEngineSettingsAdded;
@@ -25,14 +26,20 @@ public class SearchEngineStore
 
     private void LoadSearchEnginesFromFactory(string dir, SearchEngineFactory factory, IClipboard clipboard)
     {
-        var factories = SearchEngineLoading.loadSearchEnginesFromFactory(clipboard, factory);
-        if (factories.Length == 0)
+        // Add deep link
+        if (factory.DeepLinkingPaths is not null)
+            foreach (var deepLinkPath in factory.DeepLinkingPaths)
+                DeepLinkEngines.Add(deepLinkPath, factory);
+
+        // Load engines
+        var engines = SearchEngineLoading.loadSearchEnginesFromFactory(clipboard, factory);
+        if (engines.Length == 0)
         {
             log.Warning("{FactoryDir} does not provide any search engine", dir);
             return;
         }
 
-        foreach (var (engine, settings) in factories)
+        foreach (var (engine, settings) in engines)
         {
             switch (engine)
             {

@@ -21,6 +21,9 @@ let ProcessExecutableFile =
     | null -> failwith "Failed to retrieve process path"
     | processPath -> processPath
 
+// --- Deep linking ---
+let [<Literal>] DeepLinkProtocolName = "starter"
+
 // --- Plugins ---
 let ProcessDirectory =
     ProcessExecutableFile

@@ -16,3 +16,4 @@ type IPlatformInterop =
     abstract member SetupHotkeyCallback: window: Avalonia.Controls.Window -> unit
     abstract member SupportBackground: background: Config.Background -> bool
     abstract member EnsureConfigCompatibility: config: Config.Configuration -> Config.Configuration
+    abstract member SetupDeepLinking: unit -> unit
