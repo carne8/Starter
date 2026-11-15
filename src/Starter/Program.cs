@@ -9,7 +9,8 @@ namespace Starter;
 public static class Program
 {
     public static readonly Win32PlatformOptions Win32PlatformOptions = new() { WinUICompositionBackdropCornerRadius = 20 };
-    private const string MutexName = "Starter-426a2d89-cfe9-4554-b9a5-8c7d85417f25";
+    // ReSharper disable once NotAccessedField.Local
+    private static Stream? lockStream;
 
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
@@ -17,8 +18,7 @@ public static class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        using var mutex = new Mutex(true, MutexName, out var createdNew);
-        if (!createdNew)
+        if (!EnsureSingleInstance())
         {
             foreach (var arg in args) IPC.sendString(arg);
             Console.WriteLine("Starter is already running.");
@@ -61,5 +61,40 @@ public static class Program
     {
         var lang = culture.TwoLetterISOLanguageName.ToLower();
         return lang is "zh" or "ja" or "ko" or "vi";
+    }
+
+    private static bool EnsureSingleInstance()
+    {
+        if (OperatingSystem.IsMacOS()) throw new PlatformNotSupportedException();
+
+        var dir = Features.Constants.ConfigDirectory;
+        Directory.CreateDirectory(dir);
+
+        var lockFile = Path.Combine(dir, "starter.lock");
+        FileStream? stream = null;
+
+        try
+        {
+            stream = File.Open(
+                lockFile,
+                FileMode.OpenOrCreate,
+                FileAccess.ReadWrite
+            );
+
+            if (stream.Length == 0) stream.SetLength(1);
+            stream.Lock(0, 1);
+            lockStream = stream;
+            return true;
+        }
+        catch (IOException)
+        {
+            stream?.Dispose();
+            return false;
+        }
+        catch
+        {
+            stream?.Dispose();
+            throw;
+        }
     }
 }
