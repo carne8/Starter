@@ -49,7 +49,7 @@ module SecretManager =
             do! text.WriteLineAsync(secret.ExpirationDate.ToUnixTimeSeconds() |> string)
         }
 
-    let readFile configDir =
+    let readSecrets configDir =
         taskOption {
             let filePath = getFilePath configDir
             if not <| File.Exists filePath then do! None
@@ -73,6 +73,7 @@ module OAuth =
     open System.Web
     open System.Net.Http
     open System.Text
+    open System.Security.Cryptography
 
     type SpotifyAccessTokenResponse =
         { access_token: string
@@ -80,10 +81,26 @@ module OAuth =
           expires_in: int64 }
 
     let private clientId = ""
-    let private clientSecret = ""
     let private scope = "user-read-playback-state user-modify-playback-state user-read-currently-playing"
     let private redirectUri = "starter://spotify-callback"
     let private state = Random().GetHexString(16, true)
+
+    let mutable currentCodeVerifier = null
+    let generateCodeVerifier () =
+        currentCodeVerifier <-
+            RandomNumberGenerator.GetString(
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
+                64
+            )
+        currentCodeVerifier
+
+    let createCodeChallenge =
+        generateCodeVerifier
+        >> ASCIIEncoding.ASCII.GetBytes
+        >> SHA256.HashData // TODO: Make it use async (but it needs a stream)
+        >> Convert.ToBase64String
+        >> _.Replace("=", "").Replace('+', '-').Replace('/', '_')
+
 
     /// Requests user authorization
     let login () =
@@ -93,6 +110,8 @@ module OAuth =
         query.Add("scope", scope)
         query.Add("redirect_uri", redirectUri)
         query.Add("state", state)
+        query.Add("code_challenge_method", "S256")
+        query.Add("code_challenge", createCodeChallenge ())
 
         let uri = UriBuilder "https://accounts.spotify.com/authorize"
         uri.Query <- query.ToString()
@@ -105,19 +124,18 @@ module OAuth =
             use client = new HttpClient()
 
             let request =
-                new HttpRequestMessage(HttpMethod.Post, "https://accounts.spotify.com/api/token")
-
-            let auth =
-                $"{clientId}:{clientSecret}"
-                |> ASCIIEncoding.ASCII.GetBytes
-                |> Convert.ToBase64String
-            request.Headers.Add("Authorization", "Basic " + auth)
+                new HttpRequestMessage(
+                    HttpMethod.Post,
+                    "https://accounts.spotify.com/api/token"
+                )
 
             request.Content <-
                 new FormUrlEncodedContent([
-                      KeyValuePair("code", code)
-                      KeyValuePair("redirect_uri", redirectUri)
-                      KeyValuePair("grant_type", "authorization_code")
+                    KeyValuePair("grant_type", "authorization_code")
+                    KeyValuePair("code", code)
+                    KeyValuePair("redirect_uri", redirectUri)
+                    KeyValuePair("client_id", clientId)
+                    KeyValuePair("code_verifier", currentCodeVerifier)
                 ])
 
             let! response = client.SendAsync(request)
@@ -162,7 +180,7 @@ type LoginSearchResult() =
     override this.Description = "Open the browser to log you in"
     // TODO: override this.Icon = StarterIconSource.Empty
 
-type SpotifySearchEngine(configDir) =
+type SpotifySearchEngine() =
     inherit StaticSearchEngine()
 
     override this.Id = nameof SpotifySearchEngine
@@ -183,7 +201,7 @@ type SpotifySearchEngineFactory(pluginDirectory) =
     override this.LoadSearchEngine(searchEngineId, pluginConfigDirectory, logger, clipboard) =
         configDir <- pluginConfigDirectory
         Log.logger <- logger
-        SpotifySearchEngine(pluginConfigDirectory), null
+        SpotifySearchEngine(), null
 
     override this.DeepLinkingPaths = [| "spotify-callback" |]
     override this.DeepLinkActivated(url) = OAuth.codeReceived configDir url
