@@ -6,14 +6,27 @@
         <Deterministic>false</Deterministic>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <EnableDynamicLoading>true</EnableDynamicLoading>
+        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
+        <Compile Include="Types.fs" />
+        <Compile Include="Helpers.fs" />
+        <Compile Include="Log.fs" />
+        
+        <Compile Include="SpotifyApi.fs" />
+        <Compile Include="OAuth.fs" />
+        
+        <Compile Include="PlaybackControllerViewModel.fs" />
+        <Compile Include="PlaybackController.axaml.fs" />
+        <Content Include="PlaybackController.axaml" />
+        
         <Compile Include="Library.fs" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="StarterApp.SearchEngineBase" Version="0.5.0" ExcludeAssets="runtime" />
         <PackageReference Include="FsToolkit.ErrorHandling" Version="5.2.0" />
+        <PackageReference Include="AsyncImageLoader.Avalonia" Version="4.0.0" />
     </ItemGroup>
 </Project>

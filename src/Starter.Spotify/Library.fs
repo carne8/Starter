@@ -1,38 +1,15 @@
-﻿namespace Starter.Spotify
+﻿module Starter.Spotify.Core
 
 open System
-open System.Collections.Generic
-open System.Net.Http.Json
 open System.Threading.Tasks
+open Avalonia.Controls.Templates
 open Starter.SearchEngine
 open FsToolkit.ErrorHandling
-
-module Log =
-    let mutable logger: Serilog.ILogger = null
-open Log
-
-module Process =
-    open System.Diagnostics
-
-    let run proc args =
-        ProcessStartInfo(
-            FileName = proc,
-            Arguments = args,
-            UseShellExecute = true
-        )
-        |> Process.Start
-        |> function null -> () | d -> d.Dispose()
 
 module SecretManager =
     open System.IO
 
     let [<Literal>] private configFileName = "spotify.credentials"
-
-    type Secret =
-        { AccessToken: string
-          RefreshToken: string
-          ExpirationDate: DateTimeOffset }
-
     let private getFilePath configDir = Path.Combine(configDir, configFileName)
 
     let writeSecret configDir secret =
@@ -49,7 +26,7 @@ module SecretManager =
             do! text.WriteLineAsync(secret.ExpirationDate.ToUnixTimeSeconds() |> string)
         }
 
-    let readSecrets configDir =
+    let readSecret configDir =
         taskOption {
             let filePath = getFilePath configDir
             if not <| File.Exists filePath then do! None
@@ -57,135 +34,96 @@ module SecretManager =
             let! lines = File.ReadAllLinesAsync filePath
             if lines.Length < 3 then do! None
 
-            let! expirationDate =
-                lines[3]
-                |> Int64.TryParse
-                |> Option.ofPair
-                |> Option.map DateTimeOffset.FromUnixTimeSeconds
-
-            return { AccessToken = lines[0]
-                     RefreshToken = lines[1]
-                     ExpirationDate = expirationDate }
-        }
-
-
-module OAuth =
-    open System.Web
-    open System.Net.Http
-    open System.Text
-    open System.Security.Cryptography
-
-    type SpotifyAccessTokenResponse =
-        { access_token: string
-          refresh_token: string
-          expires_in: int64 }
-
-    let private clientId = ""
-    let private scope = "user-read-playback-state user-modify-playback-state user-read-currently-playing"
-    let private redirectUri = "starter://spotify-callback"
-    let private state = Random().GetHexString(16, true)
-
-    let mutable currentCodeVerifier = null
-    let generateCodeVerifier () =
-        currentCodeVerifier <-
-            RandomNumberGenerator.GetString(
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
-                64
-            )
-        currentCodeVerifier
-
-    let createCodeChallenge =
-        generateCodeVerifier
-        >> ASCIIEncoding.ASCII.GetBytes
-        >> SHA256.HashData // TODO: Make it use async (but it needs a stream)
-        >> Convert.ToBase64String
-        >> _.Replace("=", "").Replace('+', '-').Replace('/', '_')
-
-
-    /// Requests user authorization
-    let login () =
-        let query = HttpUtility.ParseQueryString String.Empty
-        query.Add("response_type", "code")
-        query.Add("client_id", clientId)
-        query.Add("scope", scope)
-        query.Add("redirect_uri", redirectUri)
-        query.Add("state", state)
-        query.Add("code_challenge_method", "S256")
-        query.Add("code_challenge", createCodeChallenge ())
-
-        let uri = UriBuilder "https://accounts.spotify.com/authorize"
-        uri.Query <- query.ToString()
-
-        // Open URL
-        Process.run (uri.ToString()) String.Empty
-
-    let requestAccessToken configDir code =
-        task {
-            use client = new HttpClient()
-
-            let request =
-                new HttpRequestMessage(
-                    HttpMethod.Post,
-                    "https://accounts.spotify.com/api/token"
-                )
-
-            request.Content <-
-                new FormUrlEncodedContent([
-                    KeyValuePair("grant_type", "authorization_code")
-                    KeyValuePair("code", code)
-                    KeyValuePair("redirect_uri", redirectUri)
-                    KeyValuePair("client_id", clientId)
-                    KeyValuePair("code_verifier", currentCodeVerifier)
-                ])
-
-            let! response = client.SendAsync(request)
-
-            if not response.IsSuccessStatusCode then
-                let! responseText = response.Content.ReadAsStringAsync()
-
-                logger.Error(
-                    "Failed to get access token: {ErrorCode} - {Error}",
-                    response.StatusCode,
-                    responseText
-                )
-            else
-                let! json = response.Content.ReadFromJsonAsync<SpotifyAccessTokenResponse>()
-                let secrets: SecretManager.Secret =
-                    { AccessToken = json.access_token
-                      RefreshToken = json.refresh_token
-                      ExpirationDate = DateTimeOffset.Now + (TimeSpan.FromSeconds json.expires_in) }
-
-                do! SecretManager.writeSecret configDir secrets
-        }
-
-    let codeReceived configDir url =
-        match Uri.TryCreate(url, UriKind.Absolute) with
-        | false, _ -> ()
-        | true, uri ->
             try
-                let query = HttpUtility.ParseQueryString uri.Query
-                let code = query.Get "code"
-                let state' = query.Get "state"
-                if state <> state' then
-                    logger.Error("Unexpected state returned by Spotify api.")
-                else
-                    requestAccessToken configDir code |> ignore
-            with e ->
-                logger.Error(e, "Failed to parse Spotify's response.")
+                let! expirationDate =
+                    lines[2]
+                    |> Int64.TryParse
+                    |> Option.ofPair
+                    |> Option.map DateTimeOffset.FromUnixTimeSeconds
+
+                return { AccessToken = lines[0]
+                         RefreshToken = lines[1]
+                         ExpirationDate = expirationDate }
+            with _ ->
+                return! None
+        }
 
 
 type LoginSearchResult() =
     inherit SearchResult()
-    override this.Name = "Log in"
+    override this.Name = "Log in to Spotify"
     override this.Description = "Open the browser to log you in"
+    override this.Keywords = [| "spotify"; "music" |]
     // TODO: override this.Icon = StarterIconSource.Empty
 
-type SpotifySearchEngine() =
+type SpotifySearchResult(secret) =
+    inherit ControlSearchResult()
+
+    static let dataTemplate =
+        FuncDataTemplate<ViewModels.PlaybackControllerViewModel>(fun vm _ ->
+            Views.PlaybackController()
+        )
+
+    let dataContext = ViewModels.PlaybackControllerViewModel(secret)
+
+    override this.ControlDataTemplate = dataTemplate
+    override this.ControlDataContext = dataContext
+    override this.Name = $"Playing: {secret}"
+    override this.Keywords = [| "playing"; "spotify"; "music"; "now" |]
+    // TODO: override this.Icon = StarterIconSource.Empty
+
+[<RequireQualifiedAccess>]
+type State =
+    | LoadingSecrets
+    | LoginRequired
+    | LoggingIn
+    | LoggedIn of Secret
+
+type SpotifySearchEngine(configDir) as this =
     inherit StaticSearchEngine()
+
+    let mutable state = State.LoadingSecrets
+
+    let loginResults = [| LoginSearchResult() :> SearchResult |]
+    let results secret = [| SpotifySearchResult(secret) :> SearchResult |]
+
+    do
+        OAuth.loggedIn.Add(fun secret ->
+            Task.Run<unit>(fun () -> SecretManager.writeSecret configDir secret) |> ignore
+            state <- State.LoggedIn secret
+            this.NotifyResultsChanged()
+        )
+
+        // Login / Get tokens
+        Task.Run<unit>(fun () -> task {
+            match! SecretManager.readSecret configDir with
+            | None -> state <- State.LoginRequired
+
+            | Some secret when DateTimeOffset.Now > secret.ExpirationDate ->  // Outdated tokens
+                match! OAuth.refreshAccessToken secret with
+                | None -> state <- State.LoginRequired
+                | Some refreshedSecret ->
+                    state <- State.LoggedIn refreshedSecret
+                    Task.Run<unit>(fun () -> SecretManager.writeSecret configDir secret) |> ignore
+
+            | Some secret -> // Valid tokens
+                state <- State.LoggedIn secret
+
+            this.NotifyResultsChanged()
+        })
+        |> ignore
+
+    member this.NotifyResultsChanged() =
+        match state with
+        | State.LoadingSecrets -> this.OnResultsChanged Seq.empty
+        | State.LoginRequired
+        | State.LoggingIn -> this.OnResultsChanged loginResults
+        | State.LoggedIn secrets -> this.OnResultsChanged(results secrets)
+
 
     override this.Id = nameof SpotifySearchEngine
     override this.Name = "Spotify"
-    override this.LoadResults() = ValueTask.FromResult [| LoginSearchResult() |]
+    override this.LoadResults() = ValueTask.FromResult Seq.empty
     override this.SearchResultSelected(selectedSearchResult) =
         match selectedSearchResult with
         | :? LoginSearchResult -> OAuth.login ()
@@ -195,13 +133,10 @@ type SpotifySearchEngine() =
 type SpotifySearchEngineFactory(pluginDirectory) =
     inherit SearchEngineFactory(pluginDirectory)
 
-    let mutable configDir = null
-
     override this.LoadSearchEngineIds() = [| nameof SpotifySearchEngine |]
-    override this.LoadSearchEngine(searchEngineId, pluginConfigDirectory, logger, clipboard) =
-        configDir <- pluginConfigDirectory
+    override this.LoadSearchEngine(searchEngineId, configDir, logger, clipboard) =
         Log.logger <- logger
-        SpotifySearchEngine(), null
+        SpotifySearchEngine(configDir), null
 
     override this.DeepLinkingPaths = [| "spotify-callback" |]
-    override this.DeepLinkActivated(url) = OAuth.codeReceived configDir url
+    override this.DeepLinkActivated(url) = OAuth.codeReceived url
