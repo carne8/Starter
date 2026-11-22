@@ -2,7 +2,6 @@ module Starter.Spotify.SpotifyApi
 
 open System.Net
 open System.Net.Http
-open System.Net.Http.Json
 open FsToolkit.ErrorHandling
 
 type MusicInfo =
@@ -44,18 +43,7 @@ let getCurrentMusicInfo (http: HttpClient) (secret: Secret) =
         match response.StatusCode with
         | HttpStatusCode.NoContent -> return None
         | HttpStatusCode.OK ->
-            let! json =
-                response.Content.ReadFromJsonAsync<SpotifyMusicJson>()
-                |> Task.catch
-                |> Task.map Result.ofChoice
-                |> TaskResult.mapError _.Message
-
-            let! json =
-                match json with
-                | null ->
-                    let error = response.Content.ReadAsStringAsync()
-                    Error $"Failed to parse response: {error}"
-                | json -> Ok json
+            let! json = response.Content.TryReadFromJsonAsync<SpotifyMusicJson>()
 
             let artists =
                 json.item.artists |> Array.fold

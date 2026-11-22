@@ -17,9 +17,9 @@ module SecretManager =
             Directory.CreateDirectory configDir |> ignore // Ensure directory exists
 
             let filePath = getFilePath configDir
-            use file = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Write)
-            file.SetLength 0
+            if File.Exists filePath then File.Delete filePath
 
+            use file = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.Write)
             use text = new StreamWriter(file)
             do! text.WriteLineAsync(secret.AccessToken)
             do! text.WriteLineAsync(secret.RefreshToken)
@@ -104,7 +104,7 @@ type SpotifySearchEngine(configDir) as this =
                 | None -> state <- State.LoginRequired
                 | Some refreshedSecret ->
                     state <- State.LoggedIn refreshedSecret
-                    Task.Run<unit>(fun () -> SecretManager.writeSecret configDir secret) |> ignore
+                    Task.Run<unit>(fun () -> SecretManager.writeSecret configDir refreshedSecret) |> ignore
 
             | Some secret -> // Valid tokens
                 state <- State.LoggedIn secret

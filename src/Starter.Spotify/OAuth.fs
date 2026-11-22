@@ -3,7 +3,6 @@ module Starter.Spotify.OAuth
 open System
 open System.Collections.Generic
 open System.Net.Http
-open System.Net.Http.Json
 open System.Threading.Tasks
 open System.Web
 open System.Text
@@ -92,13 +91,18 @@ let requestAccessToken code =
                 )
                 return! None
             else
-                let! json = response.Content.ReadFromJsonAsync<SpotifyAccessTokenResponse>()
+                let! json =
+                    response.Content.TryReadFromJsonAsync<SpotifyAccessTokenResponse>()
+                    |> Task.map (
+                        Result.teeError (fun err -> logger.Error(err))
+                        >> Result.toOption
+                    )
                 return
                     { AccessToken = json.access_token
                       RefreshToken = json.refresh_token
                       ExpirationDate = DateTimeOffset.Now + (TimeSpan.FromSeconds json.expires_in) }
         with exn ->
-            logger.Error(exn, "Failed to refresh token.")
+            logger.Error(exn, "Failed to request access token.")
             return! None
     }
 
@@ -119,34 +123,53 @@ let refreshAccessToken (secret: Secret) =
                 KeyValuePair("client_id", clientId)
             ])
 
-        let! response = client.SendAsync(request)
+        try
+            let! response = client.SendAsync(request)
 
-        if not response.IsSuccessStatusCode then
-            let! responseText = response.Content.ReadAsStringAsync()
+            if not response.IsSuccessStatusCode then
+                let! responseText = response.Content.ReadAsStringAsync()
 
-            logger.Error(
-                "Failed to refresh token: {ErrorCode} - {Error}",
-                response.StatusCode,
-                responseText
-            )
+                logger.Error(
+                    "Failed to refresh token: {ErrorCode} - {Error}",
+                    response.StatusCode,
+                    responseText
+                )
+                return! None
+            else
+                let! json =
+                    response.Content.TryReadFromJsonAsync<SpotifyAccessTokenResponse>()
+                    |> Task.map (
+                        Result.teeError (fun err -> logger.Error(err))
+                        >> Result.toOption
+                    )
+
+                return
+                    { AccessToken = json.access_token
+                      RefreshToken =
+                          match String.IsNullOrEmpty json.refresh_token with
+                          | true -> secret.RefreshToken
+                          | false -> json.refresh_token
+                      ExpirationDate = DateTimeOffset.Now + (TimeSpan.FromSeconds json.expires_in) }
+        with exn ->
+            logger.Error(exn, "Failed to refresh token.")
             return! None
-        else
-            let! json = response.Content.ReadFromJsonAsync<SpotifyAccessTokenResponse>()
-            return
-                { AccessToken = json.access_token
-                  RefreshToken = json.refresh_token
-                  ExpirationDate = DateTimeOffset.Now + (TimeSpan.FromSeconds json.expires_in) }
     }
 
 let codeReceived url =
     match Uri.TryCreate(url, UriKind.Absolute) with
-    | false, _ -> ()
+    | false, _
+    | true, null -> ()
     | true, uri ->
         voption {
+            let uri = unbox<Uri> uri // Prevents nullable warnings
+
             let! code, state' =
                 try
                     let query = HttpUtility.ParseQueryString uri.Query
-                    ValueSome (query.Get "code", query.Get "state")
+                    match query.Get "code", query.Get "state" with
+                    | null, _
+                    | _, null -> ValueNone
+                    | o -> ValueSome o
                 with e ->
                     logger.Error(e, "Failed to parse Spotify's response.")
                     ValueNone
