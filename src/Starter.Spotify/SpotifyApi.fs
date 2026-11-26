@@ -24,7 +24,7 @@ type SpotifyMusicJson =
                    height: int
                    width: int |} array |} |} }
 
-let getCurrentMusicInfo (http: HttpClient) (secret: Secret) =
+let getCurrentMusicInfo (http: HttpClient) (auth: OAuth.AuthManager) =
     taskResult {
         use request =
             new HttpRequestMessage(
@@ -32,7 +32,9 @@ let getCurrentMusicInfo (http: HttpClient) (secret: Secret) =
                 "https://api.spotify.com/v1/me/player/currently-playing"
             )
 
-        request.Headers.Add("Authorization", "Bearer " + secret.AccessToken)
+        let! accessTokenOpt = auth.AccessToken
+        let! accessToken = accessTokenOpt |> Result.requireSome "Failed to authenticate."
+        request.Headers.Add("Authorization", "Bearer " + accessToken)
 
         let! response =
             http.SendAsync(request)

@@ -3,6 +3,7 @@ module Starter.Spotify.OAuth
 open System
 open System.Collections.Generic
 open System.Net.Http
+open System.Threading
 open System.Threading.Tasks
 open System.Web
 open System.Text
@@ -25,7 +26,7 @@ let private scope = "user-read-playback-state user-modify-playback-state user-re
 let private redirectUri = "starter://spotify-callback"
 let private state = Random().GetHexString(16, true)
 
-let mutable currentCodeVerifier = null
+let mutable currentCodeVerifier : string = unbox null
 let generateCodeVerifier () =
     currentCodeVerifier <-
         RandomNumberGenerator.GetString(
@@ -54,10 +55,13 @@ let login () =
     query.Add("code_challenge", createCodeChallenge ())
 
     let uri = UriBuilder "https://accounts.spotify.com/authorize"
-    uri.Query <- query.ToString()
+    match query.ToString() with
+    | null -> logger.Error("Failed to redirect user to Spotify connection page: Failed to create url.")
+    | query ->
+        uri.Query <- query
 
-    // Open URL
-    Process.run (uri.ToString()) String.Empty
+        // Open URL
+        Process.run (uri.ToString()) String.Empty
 
 let requestAccessToken code =
     taskOption {
@@ -184,3 +188,86 @@ let codeReceived url =
                 |> Task.map (Option.iter loggedInEvent.Trigger)
             ) |> ignore
         } |> ignore
+
+type AuthManager(
+    secret: Secret option,
+    tryGetSavedSecret: unit -> Task<Secret option>,
+    saveSecret: Secret -> Task<unit>
+    )
+    =
+    let currentSecretLock = obj()
+    let mutable currentSecret = secret
+
+    member this.RequestUserToLogin() =
+        let tcs = TaskCompletionSource<Secret>()
+
+        // Cancel after 3 minutes
+        let cts = new CancellationTokenSource(TimeSpan.FromMinutes 3L)
+        cts.Token.Register(fun () -> tcs.TrySetCanceled() |> ignore) |> ignore
+
+#nowarn 40
+        let rec sub: IDisposable = loggedIn.Subscribe(fun newSecret ->
+            if tcs.TrySetResult(newSecret) then
+                lock currentSecretLock (fun () -> currentSecret <- Some newSecret)
+            else
+                logger.Error("Error while logging in.")
+
+            // TODO: Save token
+            // Task.Run<unit>(fun () -> SecretManager.writeSecret configDir secret) |> ignore
+            sub.Dispose()
+        )
+#warnon 40
+
+        login ()
+        tcs.Task |> Task.bind (fun newSecret ->
+            task {
+                do! saveSecret newSecret
+                return newSecret
+            }
+        )
+
+    member this.HasValidAccessToken =
+        lock currentSecretLock (fun () ->
+            currentSecret
+            |> Option.filter (fun s -> s.ExpirationDate > DateTimeOffset.Now)
+            |> Option.isSome
+        )
+
+    member this.AccessToken =
+        task {
+            match lock currentSecretLock (fun () -> currentSecret) with
+            | None ->
+                let! savedSecret = tryGetSavedSecret ()
+                lock currentSecretLock (fun () -> currentSecret <- savedSecret)
+                return! this.ReuseToken(savedSecret)
+
+            | Some secret -> return! this.ReuseToken(Some secret)
+        }
+
+    member this.ReuseToken(s) =
+        match s with
+        | Some s when s.ExpirationDate > DateTimeOffset.Now ->
+            s.AccessToken
+            |> Some
+            |> Task.singleton
+
+        | Some s ->
+            task {
+                let! newSecret =
+                    task {
+                        match! refreshAccessToken s with
+                        | None -> return! this.RequestUserToLogin()
+                        | Some newSecret ->
+                            lock currentSecretLock (fun () -> currentSecret <- Some newSecret)
+                            do! saveSecret newSecret
+                            return newSecret
+                    }
+
+                return Some newSecret.AccessToken
+            }
+
+        | None ->
+            task {
+                let! newSecret = this.RequestUserToLogin()
+                return Some newSecret.AccessToken
+            }

@@ -1,13 +1,13 @@
 <UserControl x:Class="Starter.Spotify.Views.PlaybackController"
              xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:vm="using:Starter.Spotify.ViewModels"
+             xmlns:vm="using:Starter.Spotify.SpotifyClient"
              xmlns:asyncImageLoader="using:AsyncImageLoader"
-             x:DataType="vm:PlaybackControllerViewModel">
+             x:DataType="vm:CurrentMusic">
     <StackPanel>
         <Image Width="150"
                Height="150"
-               asyncImageLoader:ImageLoader.Source="{Binding AlbumCoverUrl}" />
+               asyncImageLoader:ImageLoader.Source="{Binding AlbumCover}" />
         <TextBlock Text="{Binding MusicName}" />
         <TextBlock Text="{Binding Artists}" />
     </StackPanel>

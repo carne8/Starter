@@ -13,14 +13,14 @@
         <Compile Include="Types.fs" />
         <Compile Include="Helpers.fs" />
         <Compile Include="Log.fs" />
-        
-        <Compile Include="SpotifyApi.fs" />
+
         <Compile Include="OAuth.fs" />
-        
-        <Compile Include="PlaybackControllerViewModel.fs" />
+        <Compile Include="SpotifyApi.fs" />
+        <Compile Include="ObservableObject.fs" />
+        <Compile Include="SpotifyClient.fs" />
         <Compile Include="PlaybackController.axaml.fs" />
         <Content Include="PlaybackController.axaml" />
-        
+
         <Compile Include="Library.fs" />
     </ItemGroup>
 
